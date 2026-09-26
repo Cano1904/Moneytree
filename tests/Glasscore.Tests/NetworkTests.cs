@@ -109,13 +109,34 @@ public class NetworkTests
         // Fire a cobble at the floor ahead and watch tile deltas / RPC_ShatterTile arrive.
         var shatters = new List<ShatterEvent>();
         guest.OnShatter += shatters.Add;
-        // Switch once to the heavy cobble launcher, then aim down-right (+X) at standard glass and fire.
+        // Stop walking and make sure the host stands on glass (it may have walked off an edge).
+        host.InputProvider = seq => PlayerInput.Neutral(seq, host.LocalPlayer.Yaw, 0f);
+        var world = h.Server.World;
+        Assert.True(h.RunUntil(() => world.Players[host.LocalSlot].Alive && world.Players[host.LocalSlot].Grounded, 8));
+        h.RunUntil(() => false, 0.3);
+
+        // Switch once to the heavy cobble launcher, then aim at the nearest intact standard-glass tile.
+        Vec3 eye = world.Players[host.LocalSlot].EyePosition;
+        int target = -1;
+        float best = float.MaxValue;
+        for (int t = 0; t < world.Layout.Count; t++)
+        {
+            if (world.Layout.Types[t] != GlassType.Standard || !world.Tiles.IsSolid(t)) continue;
+            Vec3 d = world.Layout.Centers[t] - eye;
+            float horizontal = d.XZ.Length;
+            if (d.Y > -0.5f || horizontal < 2.5f || horizontal > 9f) continue;
+            if (horizontal < best) { best = horizontal; target = t; }
+        }
+        Assert.True(target >= 0, "no standard tile in range");
+        Vec3 aim = world.Layout.Centers[target] - eye;
+        float yaw = (float)(Math.Atan2(aim.X, aim.Z) * 180 / Math.PI);
+        float pitch = (float)(Math.Atan2(-aim.Y, aim.XZ.Length) * 180 / Math.PI);
         uint switchSeq = 0;
         host.InputProvider = seq =>
         {
             if (switchSeq == 0) switchSeq = seq;
             var buttons = seq == switchSeq ? InputButtons.NextWeapon : (seq > switchSeq + 30 ? InputButtons.Fire : InputButtons.None);
-            return new PlayerInput { Yaw = 90f, Pitch = 50f, Buttons = buttons };
+            return new PlayerInput { Yaw = yaw, Pitch = pitch, Buttons = buttons };
         };
         Assert.True(h.RunUntil(() => shatters.Count > 0, 8));
         int tile = shatters[0].TileId;

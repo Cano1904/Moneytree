@@ -629,7 +629,7 @@ namespace Glasscore.Simulation
             p.Yaw = (float)(Math.Atan2(-c.X, -c.Z) * 180.0 / Math.PI);
             p.Pitch = 0f;
             _attribution.Forget(slot);
-            Events.Add(new WorldEvent { Type = WorldEventType.Respawn, A = slot, C = tile, Point = p.Position });
+            Events.Add(new WorldEvent { Type = WorldEventType.Respawn, A = slot, C = tile, Point = p.Position, Value = p.Yaw }); // Value = spawn facing
             return true;
         }
 

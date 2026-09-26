@@ -357,12 +357,21 @@ namespace Glasscore.Net
                         seat.LastReceivedSeq = input.Sequence;
                         seat.Inputs.Enqueue(input);
                     }
-                    while (seat.Inputs.Count > MaxQueuedInputs)
+                    if (seat.Inputs.Count > MaxQueuedInputs)
                     {
-                        // Client is running ahead (e.g. after a hitch): skip to stay responsive.
-                        var dropped = seat.Inputs.Dequeue();
-                        seat.LastProcessedSeq = dropped.Sequence;
-                        seat.LastInput = dropped;
+                        // Client is running ahead (e.g. after a hitch): skip old inputs to stay responsive,
+                        // but carry their button presses forward so a tap (jump, weapon switch) is never lost.
+                        InputButtons carried = InputButtons.None;
+                        while (seat.Inputs.Count > MaxQueuedInputs)
+                        {
+                            var dropped = seat.Inputs.Dequeue();
+                            carried |= dropped.Buttons;
+                            seat.LastProcessedSeq = dropped.Sequence;
+                        }
+                        var queued = seat.Inputs.ToArray();
+                        queued[0].Buttons |= carried;
+                        seat.Inputs.Clear();
+                        foreach (var q in queued) seat.Inputs.Enqueue(q);
                     }
                     break;
 

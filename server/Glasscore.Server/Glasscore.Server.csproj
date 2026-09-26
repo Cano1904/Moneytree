@@ -1,0 +1,16 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net8.0</TargetFramework>
+    <LangVersion>9.0</LangVersion>
+    <Nullable>disable</Nullable>
+    <AssemblyName>GlasscoreServer</AssemblyName>
+    <RootNamespace>Glasscore.Server</RootNamespace>
+    <InvariantGlobalization>true</InvariantGlobalization>
+  </PropertyGroup>
+  <ItemGroup>
+    <!-- The dedicated server runs the exact same simulation and netcode sources as the Unity client. -->
+    <Compile Include="../../Glasscore/Assets/Scripts/Simulation/**/*.cs" Link="Simulation/%(RecursiveDir)%(Filename)%(Extension)" />
+    <Compile Include="../../Glasscore/Assets/Scripts/Net/**/*.cs" Link="Net/%(RecursiveDir)%(Filename)%(Extension)" />
+  </ItemGroup>
+</Project>
