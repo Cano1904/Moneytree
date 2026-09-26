@@ -1,0 +1,397 @@
+<title>Short Legs Key Art</title>
+<meta name="description" content="Social carousel key art for SHORT LEGS, laid out like the reference post: 2×2 gameplay grid, title and tagline on the seams.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Figtree:wght@500;700;800;900&family=DM+Serif+Display&family=JetBrains+Mono:wght@500&display=swap">
+<style>
+  /* Single dark look on purpose: the key art lives in a dark social feed. */
+  :root {
+    color-scheme: dark;
+    --feed: #0b0d10;
+    --feed-2: #15191e;
+    --ink: #f4f7f9;
+    --muted: #8d99a3;
+    --line: #262d34;
+    --night: #1d3140;
+    --cold: #2e4a5c;
+    --frost: #6f93a6;
+    --snow: #c9dce4;
+    --warm: #ff9a3c;
+    --lie: #ff2d55;
+    --skin: #f2b38f;
+    --display: "Figtree", "Arial Black", system-ui, sans-serif;
+    --noir: "DM Serif Display", Georgia, "Times New Roman", serif;
+    --mono: "JetBrains Mono", ui-monospace, Menlo, monospace;
+  }
+  * { box-sizing: border-box; }
+  body {
+    background: var(--feed);
+    color: var(--ink);
+    font: 500 15px/1.55 var(--display);
+    padding-inline: 16px;
+    padding-block: 28px 48px;
+  }
+  .wrap { max-width: 600px; margin: 0 auto; display: grid; gap: 18px; }
+  .kicker { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; flex-wrap: wrap; }
+  .kicker h1 { margin: 0; font-size: 15px; font-weight: 800; letter-spacing: .04em; }
+  .kicker span { color: var(--muted); font-size: 13px; }
+
+  /* Carousel */
+  .frame { position: relative; }
+  .track {
+    display: grid; grid-auto-flow: column; grid-auto-columns: 100%;
+    overflow-x: auto; scroll-snap-type: x mandatory; scrollbar-width: none;
+    border-radius: 6px; background: #000;
+  }
+  .track::-webkit-scrollbar { display: none; }
+  .slide { scroll-snap-align: start; position: relative; aspect-ratio: 1 / 1; max-width: 100%; overflow: hidden; }
+  .grid { position: absolute; inset: 0; display: grid; grid-template: 1fr 1fr / 1fr 1fr; }
+  .grid.one { grid-template: 1fr / 1fr; }
+  .grid svg { width: 100%; height: 100%; display: block; }
+
+  /* Overlay type, same treatment as the reference: heavy white sans, dark outline, soft shadow */
+  .ov {
+    position: absolute; left: 0; right: 0; margin: 0 auto; text-align: center; pointer-events: none;
+    color: #fff; font-family: var(--display); font-weight: 800; letter-spacing: -.01em;
+    -webkit-text-stroke: .09em #111; paint-order: stroke fill;
+    text-shadow: 0 .06em .18em rgba(0,0,0,.55);
+    text-wrap: balance;
+  }
+  .ov.title { top: 13.5%; font-size: clamp(30px, 8.6vw, 54px); line-height: 1; }
+  .ov.tag { top: 49%; transform: translateY(-50%); width: 68%; font-size: clamp(17px, 4.7vw, 30px); line-height: 1.12; font-weight: 700; }
+  .ov.tag.low { top: auto; bottom: 9%; transform: none; }
+  .chip {
+    position: absolute; left: 50%; bottom: 3%; transform: translateX(-50%);
+    font: 700 clamp(10px, 2.4vw, 13px)/1 var(--mono); color: #fff; white-space: nowrap;
+    background: rgba(8,10,12,.78); border: 1px solid rgba(255,255,255,.18); padding: 6px 8px; border-radius: 3px;
+  }
+  .chip b { color: var(--lie); font-weight: 700; }
+  .cell { position: relative; overflow: hidden; }
+
+  /* Menu mock (slide 5) */
+  .menu { position: absolute; inset: 0; background: radial-gradient(120% 90% at 70% 30%, #1e2328 0%, #0a0b0d 70%); overflow: hidden; }
+  .menu .flash { position: absolute; inset: 0; background: radial-gradient(50% 45% at 82% 18%, rgba(255,45,85,.55), transparent 70%); opacity: 0; transition: opacity .15s; }
+  .menu.on .flash { opacity: 1; }
+  .menu .logo { position: absolute; left: 7%; top: 9%; font: 400 clamp(32px, 9vw, 58px)/.9 var(--noir); letter-spacing: .01em; color: #fff; text-shadow: 0 0 18px rgba(255,45,85,.6), 0 4px 0 rgba(255,45,85,.45); }
+  .menu ul { position: absolute; left: 7%; top: 38%; margin: 0; padding: 0; list-style: none; display: grid; gap: clamp(6px, 1.8vw, 12px); }
+  .menu li { font: 700 clamp(11px, 2.9vw, 16px)/1 var(--mono); color: #b9c2c9; letter-spacing: .06em; }
+  .menu li.f { color: #fff; transform: translateX(10px); }
+  .menu li.f::before { content: "▸ "; color: var(--lie); }
+  .menu .sil { position: absolute; right: 4%; bottom: 0; width: 52%; height: 88%; }
+  .menu .foot { position: absolute; left: 7%; bottom: 5%; font: 500 clamp(9px, 2.2vw, 11px)/1 var(--mono); color: #6a747c; }
+
+  .nav { display: flex; align-items: center; justify-content: center; gap: 14px; }
+  .dots { display: flex; gap: 8px; }
+  .dots button { width: 8px; height: 8px; padding: 0; border-radius: 50%; border: 0; background: #4a535b; cursor: pointer; }
+  .dots button[aria-current="true"] { background: #fff; }
+  .arrow { background: var(--feed-2); color: var(--ink); border: 1px solid var(--line); width: 34px; height: 34px; border-radius: 50%; cursor: pointer; font: 700 15px/1 var(--display); }
+  button:focus-visible { outline: 2px solid var(--warm); outline-offset: 2px; }
+
+  .cap { display: grid; gap: 4px; min-height: 5.4em; }
+  .cap h2 { margin: 0; font-size: 17px; font-weight: 800; text-wrap: balance; }
+  .cap p { margin: 0; color: #c3ccd3; max-width: 62ch; }
+  .spec { border-top: 1px solid var(--line); padding-top: 14px; display: grid; gap: 10px; color: var(--muted); font-size: 13px; }
+  .spec dl { margin: 0; display: grid; grid-template-columns: max-content 1fr; gap: 6px 14px; }
+  .spec dt { font: 500 11px/1.8 var(--mono); letter-spacing: .08em; text-transform: uppercase; color: #6f7a83; }
+  .spec dd { margin: 0; color: #c3ccd3; }
+  .sw { display: inline-block; width: 10px; height: 10px; border-radius: 2px; vertical-align: -1px; margin-right: 4px; }
+  @media (prefers-reduced-motion: reduce) { .menu .flash { transition: none; } }
+</style>
+
+<div class="wrap">
+  <div class="kicker">
+    <h1>SHORT LEGS · social carousel</h1>
+    <span>Layout matched to the reference post</span>
+  </div>
+
+  <div class="frame">
+    <div class="track" id="track" tabindex="0" aria-label="Key art slides">
+      <!-- 1 · Key art -->
+      <section class="slide" aria-label="Key art">
+        <div class="grid" id="s1"></div>
+        <p class="ov title">Short Legs</p>
+        <p class="ov tag">Solve the crime, catch the liar, and watch their legs shrink with every lie</p>
+      </section>
+      <!-- 2 · Shrink matrix -->
+      <section class="slide" aria-label="Shrink matrix">
+        <div class="grid" id="s2"></div>
+        <p class="ov title">Every lie: −25% leg</p>
+      </section>
+      <!-- 3 · Multiplayer -->
+      <section class="slide" aria-label="Multiplayer">
+        <div class="grid one" id="s3"></div>
+        <p class="ov title">4–8 Players</p>
+        <p class="ov tag">One of you is lying. Find 3 clues and accuse them before the clock runs out</p>
+      </section>
+      <!-- 4 · Story mode -->
+      <section class="slide" aria-label="Story mode">
+        <div class="grid one" id="s4"></div>
+        <p class="ov title">Story Mode</p>
+        <p class="ov tag low">Case 1: The Missing Money Tree</p>
+      </section>
+      <!-- 5 · Main menu -->
+      <section class="slide" aria-label="Main menu">
+        <div class="menu" id="menu">
+          <div class="flash"></div>
+          <div class="logo">SHORT<br>LEGS</div>
+          <ul>
+            <li class="f">STORY MODE</li>
+            <li>MULTIPLAYER LOBBY</li>
+            <li>EVIDENCE ARCHIVE</li>
+            <li>SETTINGS</li>
+            <li>QUIT</li>
+          </ul>
+          <svg class="sil" id="sil" viewBox="0 0 200 340" preserveAspectRatio="xMidYMax meet" aria-hidden="true"></svg>
+          <div class="foot">v0.1 · online ●</div>
+        </div>
+      </section>
+    </div>
+  </div>
+
+  <div class="nav">
+    <button class="arrow" id="prev" aria-label="Previous slide">‹</button>
+    <div class="dots" id="dots"></div>
+    <button class="arrow" id="next" aria-label="Next slide">›</button>
+  </div>
+
+  <div class="cap" aria-live="polite">
+    <h2 id="capH"></h2>
+    <p id="capP"></p>
+  </div>
+
+  <div class="spec">
+    <dl>
+      <dt>Grid</dt><dd>2×2 panels, edge to edge, no gutters. Title on the top-row seam, tagline across the middle seam.</dd>
+      <dt>Type</dt><dd>Overlay in heavy white sans with a dark outline and soft shadow. In-game logo in a noir serif.</dd>
+      <dt>Palette</dt><dd><span class="sw" style="background:#2e4a5c"></span>cold night <span class="sw" style="background:#c9dce4"></span>snow <span class="sw" style="background:#ff9a3c"></span>lamp light <span class="sw" style="background:#ff2d55"></span>lie red (used only for lies)</dd>
+      <dt>Characters</dt><dd>Big heads, huge round eyes, bushy beards, legs drawn at 1.35× so every 25% shrink reads.</dd>
+    </dl>
+  </div>
+</div>
+
+<script>
+(() => {
+  const C = {
+    night: "#1d3140", cold: "#2e4a5c", frost: "#6f93a6", snow: "#c9dce4", warm: "#ff9a3c",
+    lie: "#ff2d55", skin: "#f2b38f", skinDk: "#d98e6b", beard: "#2a1d17", boot: "#231a15", trouser: "#3a3f47"
+  };
+
+  // One chunky suspect, drawn around its feet (0,0). leg = leg scale 0..1.
+  function suspect({ x = 0, y = 0, s = 1, leg = 1, coat = "#5a4a3a", hat = "#3d5a8a", beard = true,
+                     back = false, face = "calm", stride = 0, sit = false, fill = null }) {
+    const L = 78 * Math.max(0.06, leg);
+    const hip = -8 - L;
+    const f = (c) => fill || c;
+    const g = [];
+    // legs + boots
+    const legs = [[-13, stride], [13, -stride]];
+    for (const [lx, st] of legs) {
+      g.push(`<rect x="${lx - 7}" y="${hip + 4}" width="14" height="${L}" rx="6" fill="${f(C.trouser)}" transform="rotate(${st} ${lx} ${hip + 4})"/>`);
+      const fx = lx + Math.sin(st * Math.PI / 180) * -L;
+      g.push(`<ellipse cx="${fx + 3}" cy="-5" rx="13" ry="8" fill="${f(C.boot)}"/>`);
+    }
+    // coat
+    g.push(`<rect x="-36" y="${hip - 78}" width="72" height="88" rx="24" fill="${f(coat)}"/>`);
+    if (!fill) g.push(`<rect x="-3" y="${hip - 70}" width="6" height="74" rx="3" fill="rgba(0,0,0,.18)"/>`);
+    // arms
+    g.push(`<rect x="-46" y="${hip - 70}" width="18" height="60" rx="9" fill="${f(coat)}" transform="rotate(${sit ? -8 : 10} -37 ${hip - 70})"/>`);
+    g.push(`<rect x="28" y="${hip - 70}" width="18" height="60" rx="9" fill="${f(coat)}" transform="rotate(${sit ? 8 : -10} 37 ${hip - 70})"/>`);
+    if (!back) {
+      g.push(`<circle cx="-44" cy="${hip - 8}" r="10" fill="${f(C.skin)}"/><circle cx="44" cy="${hip - 8}" r="10" fill="${f(C.skin)}"/>`);
+    }
+    // head
+    const hy = hip - 110;
+    g.push(`<circle cx="0" cy="${hy}" r="36" fill="${f(C.skin)}"/>`);
+    if (back) {
+      g.push(`<ellipse cx="0" cy="${hy + 8}" rx="34" ry="26" fill="${f(C.beard)}"/>`);
+    } else {
+      if (beard) g.push(`<path d="M-34 ${hy + 2} Q-38 ${hy + 52} 0 ${hy + 60} Q38 ${hy + 52} 34 ${hy + 2} Q20 ${hy + 22} 0 ${hy + 20} Q-20 ${hy + 22} -34 ${hy + 2}Z" fill="${f(C.beard)}"/>`);
+      const er = face === "panic" ? 12 : 10, pr = face === "panic" ? 1.8 : 3;
+      if (!fill) {
+        g.push(`<circle cx="-13" cy="${hy - 6}" r="${er}" fill="#fff" stroke="#1a1a1a" stroke-width="1.5"/><circle cx="13" cy="${hy - 6}" r="${er}" fill="#fff" stroke="#1a1a1a" stroke-width="1.5"/>`);
+        g.push(`<circle cx="-12" cy="${hy - 5}" r="${pr}" fill="#111"/><circle cx="12" cy="${hy - 5}" r="${pr}" fill="#111"/>`);
+        g.push(`<path d="M-24 ${hy - 21} L-5 ${hy - 18} M24 ${hy - 21} L5 ${hy - 18}" stroke="${C.beard}" stroke-width="4" stroke-linecap="round"/>`);
+        g.push(`<ellipse cx="0" cy="${hy + 8}" rx="8" ry="7" fill="${C.skinDk}"/>`);
+        g.push(`<ellipse cx="0" cy="${hy + 23}" rx="${face === "panic" ? 6 : 8}" ry="${face === "panic" ? 5 : 2.5}" fill="#3b1410"/>`);
+        if (face !== "calm") g.push(`<path d="M30 ${hy - 26} q5 9 0 12 q-5 -3 0 -12z" fill="#9fd3ef"/><path d="M-32 ${hy - 14} q4 7 0 10 q-4 -3 0 -10z" fill="#9fd3ef"/>`);
+      }
+    }
+    // beanie
+    g.push(`<path d="M-35 ${hy - 22} Q-35 ${hy - 60} 0 ${hy - 62} Q35 ${hy - 60} 35 ${hy - 22}Z" fill="${f(hat)}"/>`);
+    g.push(`<rect x="-38" y="${hy - 34}" width="76" height="13" rx="6.5" fill="${f(hat)}" stroke="rgba(0,0,0,.2)"/>`);
+    return `<g transform="translate(${x} ${y}) scale(${s})">${g.join("")}</g>`;
+  }
+
+  const snow = (n, seed, w = 400, h = 400, op = .7) => {
+    let r = seed, out = "";
+    const rnd = () => (r = (r * 9301 + 49297) % 233280) / 233280;
+    for (let i = 0; i < n; i++) out += `<circle cx="${(rnd() * w).toFixed(1)}" cy="${(rnd() * h).toFixed(1)}" r="${(rnd() * 1.8 + .6).toFixed(1)}" fill="#fff" opacity="${(rnd() * op + .15).toFixed(2)}"/>`;
+    return out;
+  };
+  const svg = (inner, id) => `<div class="cell"><svg viewBox="0 0 400 400" preserveAspectRatio="xMidYMid slice" role="img" aria-label="${id}">${inner}</svg></div>`;
+
+  // Panel 1: panicking bearded suspect clutching the golden Money Tree, night + snow
+  function p1() {
+    return `
+      <defs><linearGradient id="p1sky" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#16283a"/><stop offset="1" stop-color="${C.cold}"/></linearGradient></defs>
+      <rect width="400" height="400" fill="url(#p1sky)"/>
+      ${snow(90, 7)}
+      <path d="M0 330 Q120 300 220 320 T400 300 V400 H0Z" fill="#3b4652"/>
+      ${suspect({ x: 190, y: 610, s: 2.3, coat: "#4c4133", hat: "#3d5a8a", face: "panic" })}
+      <g transform="translate(205 345)">
+        <rect x="-4" y="-70" width="8" height="70" fill="#6b4a2b"/>
+        <circle cx="-26" cy="-78" r="17" fill="#e8b43a"/><circle cx="18" cy="-86" r="19" fill="#f2c84b"/><circle cx="-4" cy="-104" r="17" fill="#e8b43a"/>
+        <circle cx="-26" cy="-78" r="7" fill="none" stroke="#b7851d" stroke-width="3"/><circle cx="18" cy="-86" r="8" fill="none" stroke="#b7851d" stroke-width="3"/><circle cx="-4" cy="-104" r="7" fill="none" stroke="#b7851d" stroke-width="3"/>
+        <path d="M-40 0 H40 L32 44 H-32Z" fill="#8a3b2a"/>
+        <ellipse cx="-42" cy="18" rx="24" ry="20" fill="${C.skin}"/><ellipse cx="42" cy="18" rx="24" ry="20" fill="${C.skin}"/>
+      </g>`;
+  }
+
+  // Panel 2: first-person magnifier, two suspects down a cold corridor
+  function p2() {
+    return `
+      <rect width="400" height="400" fill="#5d7c8d"/>
+      <polygon points="120,90 280,90 400,400 0,400" fill="#8aa7b5"/>
+      <rect x="120" y="40" width="160" height="200" fill="#415f70"/>
+      <rect x="160" y="80" width="80" height="160" fill="#233847"/>
+      <rect x="150" y="68" width="100" height="10" fill="${C.snow}" opacity=".5"/>
+      ${snow(40, 21, 400, 240, .5)}
+      ${suspect({ x: 175, y: 238, s: .52, coat: "#5b3b3b", hat: "#7a2b2b" })}
+      ${suspect({ x: 232, y: 238, s: .52, leg: .5, coat: "#3b4b5b", hat: "#2d3d4d", face: "sweat" })}
+      <g transform="translate(250 300) rotate(-28)">
+        <rect x="-10" y="20" width="24" height="120" rx="8" fill="#5b3d22"/>
+        <circle cx="2" cy="-40" r="64" fill="rgba(201,220,228,.28)" stroke="#2b2b2b" stroke-width="14"/>
+        <ellipse cx="-18" cy="-60" rx="18" ry="9" fill="#fff" opacity=".35"/>
+      </g>
+      <path d="M400 300 L330 300 Q300 320 300 350 L310 400 H400Z" fill="#2f3b2a"/>
+      <ellipse cx="300" cy="360" rx="40" ry="34" fill="${C.skin}"/>
+      <ellipse cx="276" cy="336" rx="14" ry="22" fill="${C.skin}" transform="rotate(-30 276 336)"/>`;
+  }
+
+  // Panel 3: interrogation table under a warm hanging lamp, first-person hand with exhibit card
+  function p3() {
+    return `
+      <defs>
+        <radialGradient id="p3glow" cx=".5" cy=".35" r=".7"><stop offset="0" stop-color="#6b4a2e"/><stop offset="1" stop-color="#1a1411"/></radialGradient>
+        <linearGradient id="p3cone" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${C.warm}" stop-opacity=".55"/><stop offset="1" stop-color="${C.warm}" stop-opacity="0"/></linearGradient>
+      </defs>
+      <rect width="400" height="400" fill="url(#p3glow)"/>
+      <line x1="200" y1="0" x2="200" y2="70" stroke="#111" stroke-width="3"/>
+      <polygon points="200,70 60,330 340,330" fill="url(#p3cone)"/>
+      <path d="M168 92 Q200 58 232 92Z" fill="#2c2c2c"/><ellipse cx="200" cy="93" rx="12" ry="5" fill="#ffd79a"/>
+      <rect x="150" y="238" width="10" height="100" fill="#3a2718"/><rect x="240" y="238" width="10" height="100" fill="#3a2718"/>
+      ${suspect({ x: 200, y: 262, s: .7, leg: .25, coat: "#6b5a2a", hat: "#8a3b2a", face: "sweat", sit: true })}
+      <rect x="60" y="250" width="280" height="22" rx="4" fill="#5a3a22"/>
+      <rect x="80" y="272" width="12" height="90" fill="#3a2718"/><rect x="308" y="272" width="12" height="90" fill="#3a2718"/>
+      <rect x="236" y="226" width="22" height="26" rx="4" fill="#d9d2c5"/><path d="M244 222 q-4 -8 2 -14 M252 222 q-4 -8 2 -14" stroke="#fff" stroke-opacity=".5" fill="none" stroke-width="2"/>
+      <g transform="translate(118 318) rotate(-10)">
+        <rect x="-50" y="-40" width="110" height="74" rx="4" fill="#efe6d2"/>
+        <rect x="-40" y="-30" width="54" height="8" fill="#8b806d"/><rect x="-40" y="-16" width="80" height="5" fill="#b3a891"/><rect x="-40" y="-6" width="70" height="5" fill="#b3a891"/>
+        <rect x="-4" y="8" width="54" height="20" rx="3" fill="none" stroke="${C.lie}" stroke-width="3" transform="rotate(-8 23 18)"/>
+        <text x="23" y="24" text-anchor="middle" font-family="Figtree, Arial, sans-serif" font-weight="900" font-size="15" fill="${C.lie}" transform="rotate(-8 23 18)">LIE</text>
+      </g>
+      <ellipse cx="80" cy="378" rx="46" ry="36" fill="${C.skin}"/>
+      <ellipse cx="96" cy="340" rx="13" ry="22" fill="${C.skin}" transform="rotate(25 96 340)"/>`;
+  }
+
+  // Panel 4: two players running down the manor hallway — the liar falls behind
+  function p4() {
+    let windows = "";
+    for (let i = 0; i < 3; i++) {
+      const x = 20 + i * 40, w = 30 - i * 6;
+      windows += `<rect x="${x}" y="${60 + i * 26}" width="${w}" height="${120 - i * 40}" fill="#2a4a63"/>`;
+      windows += `<rect x="${400 - x - w}" y="${60 + i * 26}" width="${w}" height="${120 - i * 40}" fill="#2a4a63"/>`;
+    }
+    return `
+      <rect width="400" height="400" fill="#6d5a4a"/>
+      <polygon points="0,0 150,120 250,120 400,0" fill="#3e332b"/>
+      <polygon points="0,0 150,120 150,230 0,400" fill="#7b6655"/>
+      <polygon points="400,0 250,120 250,230 400,400" fill="#7b6655"/>
+      <polygon points="0,400 150,230 250,230 400,400" fill="#a88a64"/>
+      <polygon points="130,400 180,230 220,230 270,400" fill="#8a2b2b"/>
+      <rect x="150" y="120" width="100" height="110" fill="#c9dce4"/>
+      ${snow(18, 40, 400, 230, .4)}
+      ${windows}
+      ${suspect({ x: 188, y: 268, s: .5, back: true, coat: "#b3262b", hat: "#e8e1d0", stride: 22 })}
+      ${suspect({ x: 238, y: 360, s: .9, back: true, leg: .5, coat: "#2e3642", hat: "#1f262e", stride: 14 })}`;
+  }
+
+  // Shrink matrix panels
+  const matrix = [
+    [1, 0, "100%", "full moves", "#2e4a5c"],
+    [.75, 1, "75%", "no sprint", "#3b3a4e"],
+    [.5, 2, "50%", "no stairs", "#4a3a2e"],
+    [.25, 3, "25%", "crawl · no jump", "#4e2a30"],
+  ];
+  function pm([leg, lies, speed, rule, bg]) {
+    const face = lies === 0 ? "calm" : lies < 3 ? "sweat" : "panic";
+    return `<div class="cell"><svg viewBox="0 0 400 400" preserveAspectRatio="xMidYMid slice" role="img" aria-label="${lies} lies">
+      <rect width="400" height="400" fill="${bg}"/>
+      <rect y="350" width="400" height="50" fill="rgba(0,0,0,.25)"/>
+      ${[0.25, .5, .75, 1].map(k => `<line x1="40" x2="360" y1="${350 - (8 + 78 * k) * 1.05}" y2="${350 - (8 + 78 * k) * 1.05}" stroke="#fff" stroke-opacity=".08" stroke-dasharray="4 6"/>`).join("")}
+      ${suspect({ x: 200, y: 350, s: 1.05, leg, coat: "#5a4a3a", face })}
+    </svg><span class="chip"><b>${lies} ${lies === 1 ? "lie" : "lies"}</b> · ${speed} speed · ${rule}</span></div>`;
+  }
+
+  document.getElementById("s1").innerHTML = svg(p1(), "Panicking suspect with the golden Money Tree") + svg(p2(), "First-person magnifier") + svg(p3(), "Interrogation under the lamp") + svg(p4(), "Two players running down the hallway");
+  document.getElementById("s2").innerHTML = matrix.map(pm).join("");
+  document.getElementById("s3").innerHTML = svg(p4(), "Hallway chase");
+  document.getElementById("s4").innerHTML = svg(p1(), "Baron Brumm with the Money Tree");
+
+  // Main menu silhouette: legs shrink on each lie-detector flash
+  const sil = document.getElementById("sil"), menu = document.getElementById("menu");
+  let step = 0;
+  const drawSil = () => {
+    sil.innerHTML = `<rect x="70" y="${340 - 120}" width="8" height="120" fill="#1b1d20"/><rect x="122" y="${340 - 120}" width="8" height="120" fill="#1b1d20"/>` +
+      suspect({ x: 100, y: 330, s: 1.1, leg: [1, .75, .5, .25][step], fill: "#050506" });
+  };
+  drawSil();
+  const reduced = matchMedia("(prefers-reduced-motion: reduce)").matches;
+  if (!reduced) setInterval(() => {
+    step = (step + 1) % 4;
+    menu.classList.add("on");
+    setTimeout(() => menu.classList.remove("on"), 260);
+    drawSil();
+  }, 2400);
+
+  // Carousel
+  const caps = [
+    ["Key art", "Four gameplay moments on a 2×2 grid: the panic stare, the magnifier, the interrogation lamp, the chase. Title and tagline sit on the seams."],
+    ["The Shrink Matrix", "Each lie takes 25% off the leg bones. Speed follows leg scale. One lie ends sprinting, two end stairs, three means crawling. The voice climbs 15% per lie."],
+    ["Social deduction for 4–8", "One secret Liar, everyone else investigates. Lies that no clue contradicts yet stay hidden, then shrink the liar the moment someone finds the clue."],
+    ["Solo detective campaign", "Interrogate Baron Brumm, Madame Velours and Kip the gardener. Present the right clue and watch the culprit shrink until he crawls and confesses."],
+    ["Main menu", "A dark interrogation room. Every time the lie detector flashes red, the suspect's legs drop one step. Navigation sits on the left."],
+  ];
+  const track = document.getElementById("track"), dots = document.getElementById("dots");
+  const slides = [...track.children];
+  slides.forEach((_, i) => {
+    const b = document.createElement("button");
+    b.setAttribute("aria-label", `Slide ${i + 1}`);
+    b.addEventListener("click", () => go(i));
+    dots.appendChild(b);
+  });
+  let cur = 0;
+  function mark(i) {
+    cur = i;
+    [...dots.children].forEach((d, k) => d.setAttribute("aria-current", k === i ? "true" : "false"));
+    document.getElementById("capH").textContent = caps[i][0];
+    document.getElementById("capP").textContent = caps[i][1];
+  }
+  function go(i) {
+    i = (i + slides.length) % slides.length;
+    track.scrollTo({ left: i * track.clientWidth, behavior: reduced ? "auto" : "smooth" });
+    mark(i);
+  }
+  track.addEventListener("scroll", () => {
+    const i = Math.round(track.scrollLeft / track.clientWidth);
+    if (i !== cur) mark(i);
+  }, { passive: true });
+  document.getElementById("prev").addEventListener("click", () => go(cur - 1));
+  document.getElementById("next").addEventListener("click", () => go(cur + 1));
+  track.addEventListener("keydown", (e) => {
+    if (e.key === "ArrowRight") { e.preventDefault(); go(cur + 1); }
+    if (e.key === "ArrowLeft") { e.preventDefault(); go(cur - 1); }
+  });
+  mark(0);
+})();
+</script>
