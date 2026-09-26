@@ -326,4 +326,6 @@ Unity/Assets/ShortLegs/
   Scripts/UI/                                       ← §2 MainMenu, §7 PauseMenu, Notebook + Leg Status Tracker,
                                                       Evidence Binding Wheel, HUD, Lobby room
   Tests/EditMode/                                   ← NUnit tests for ShrinkMatrix + DeceptionEngine
+  Scripts/Prototype/ShortLegsEngine.cs              ← offline single-object Shrink Matrix prototype (no network)
+  Editor/ShortLegsSetup.cs                          ← Tools ▸ Short Legs ▸ Create Test Scene
 ```
