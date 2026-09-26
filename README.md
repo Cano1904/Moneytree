@@ -12,10 +12,25 @@ leichtsinnig schießt, zerbricht sein eigenes Glashaus.
 * 3 Glasarten, 4 Stein-Waffen, Saugstiefel-Anker, 3 Arenen, Fracture-Cascade-Endphase
 * Hauptmenü, Lobby mit Code, Quick Match (SBMM), Einstellungen, Tastenbelegung, Gamepad,
   Pause ohne Zeitstopp, Proximity-Voice-Chat, Highlight-Clip-Export
-* Eigenständiger **Dedicated Server** (.NET 8) und **36 automatische Tests** (inklusive echtem Netzwerk-Match über Loopback)
+* Eigenständiger **Dedicated Server** (.NET 8) und **40 automatische Tests** (inklusive echtem Netzwerk-Match über Loopback)
 
 Der komplette technische Entwurf (alle 8 Abschnitte der Spezifikation plus Timeline) steht in
 [`docs/GLASSCORE_BLUEPRINT.md`](docs/GLASSCORE_BLUEPRINT.md).
+
+---
+
+## Sofort spielen: Windows-Version (ohne Unity)
+
+`desktop/Glasscore.Desktop` ist ein eigenständiger GLASSCORE-Client (C# + raylib) mit denselben Regeln
+und demselben Netzcode wie die Unity-Version. Unity-, Desktop- und Dedicated-Server-Spieler können
+also gemeinsam spielen.
+
+```
+dotnet publish desktop/Glasscore.Desktop -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true -o Build/Desktop
+```
+
+Ergebnis: `Build/Desktop/GLASSCORE.exe`, per Doppelklick startbar, ohne Installation.
+Alleine spielen: **CREATE LOBBY → 3× „+ BOT“ → READY → START GAME**.
 
 ---
 
@@ -90,7 +105,8 @@ Glasscore/                       Unity-Projekt
   Assets/Resources/Shaders/      Glas-, Neon-, Lit-, Himmel- und Blur-Shader
   ProjectSettings/InputManager.asset   Gamepad-Achsen
 server/Glasscore.Server/         Headless Dedicated Server (.NET 8)
-tests/Glasscore.Tests/           36 xUnit-Tests
+desktop/Glasscore.Desktop/       eigenständiger Windows/Linux-Client (raylib), sofort startbar
+tests/Glasscore.Tests/           40 xUnit-Tests (inkl. Bot-Matches auf allen Karten)
 tests/UnityCompileCheck/         kompiliert alle Unity-Skripte gegen Unity-Referenzbibliotheken
 scripts/                         build_and_shutdown.ps1/.bat, build_only.bat, run_dedicated_server.bat
 docs/GLASSCORE_BLUEPRINT.md      technischer Entwurf

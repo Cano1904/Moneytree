@@ -158,6 +158,7 @@ namespace Glasscore.Net
         public void HostApplySettings(LobbySettings s) { Begin(MsgType.HostSettings); s.Write(_w); _transport.SendReliable(_w); }
         public void HostKick(byte slot) { Begin(MsgType.HostKick); _w.Byte(slot); _transport.SendReliable(_w); }
         public void HostStart() { Begin(MsgType.HostStart); _transport.SendReliable(_w); }
+        public void HostAddBot() { Begin(MsgType.HostAddBot); _transport.SendReliable(_w); }
 
         /// <summary>Unity calls this once the arena visuals are built; the server waits for everyone.</summary>
         public void SendSceneLoaded()

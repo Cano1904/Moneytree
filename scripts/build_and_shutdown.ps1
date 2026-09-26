@@ -96,8 +96,11 @@ if ($dotnet) {
     & dotnet publish (Join-Path $Root 'server\Glasscore.Server') -c Release -o (Join-Path $BuildDir 'Server') --nologo 2>&1 | Tee-Object -FilePath (Join-Path $BuildDir 'server_publish.log') | Out-Null
     $serverOk = ($LASTEXITCODE -eq 0)
     Log ("Dedicated server: " + $(if ($serverOk) { 'OK -> Build\Server\GlasscoreServer.exe' } else { 'FAILED (see Build\server_publish.log)' }))
+    Log 'Publishing standalone desktop client (raylib)...'
+    & dotnet publish (Join-Path $Root 'desktop\Glasscore.Desktop') -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true -o (Join-Path $BuildDir 'Desktop') --nologo 2>&1 | Tee-Object -FilePath (Join-Path $BuildDir 'desktop_publish.log') | Out-Null
+    Log ("Desktop client: " + $(if ($LASTEXITCODE -eq 0) { 'OK -> Build\Desktop\GLASSCORE.exe' } else { 'FAILED (see Build\desktop_publish.log)' }))
 } else {
-    Log '.NET SDK not found - skipping tests and the standalone dedicated server (the game itself does not need it).'
+    Log '.NET SDK not found - skipping tests, the standalone dedicated server and the desktop client.'
 }
 
 # ── 2) Unity build ─────────────────────────────────────────────────────────────────────────

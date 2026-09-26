@@ -58,6 +58,9 @@ namespace Glasscore.Client
                 if (Ui.NeonButton("lobby.start", new Rect(400, y, 360, 70), "START GAME", 30, false, allReady, Ui.Magenta)
                     || (allReady && app.Input.PadPressed(KeyCode.JoystickButton7)))
                     c.HostStart();
+                if (Ui.NeonButton("lobby.bot", new Rect(780, y, 220, 70), "+ BOT", 28, false, lobby.Roster.Count < lobby.Settings.MaxPlayers)
+                    || app.Input.PadPressed(KeyCode.JoystickButton3))
+                    c.HostAddBot();
             }
             else
             {

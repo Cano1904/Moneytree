@@ -5,7 +5,7 @@ namespace Glasscore.Net
 {
     public static class Protocol
     {
-        public const ushort Version = 3;
+        public const ushort Version = 4;
         public const ushort UdpMagic = 0x4C47;      // "GL"
         public const int DefaultPort = 27015;
         public const int DiscoveryPort = 27100;
@@ -28,6 +28,7 @@ namespace Glasscore.Net
         Chat,
         SceneLoaded,
         LeaveMatch,
+        HostAddBot,
 
         // ── reliable (TCP) server → client
         Welcome = 32,

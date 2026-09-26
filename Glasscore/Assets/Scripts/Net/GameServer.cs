@@ -46,6 +46,8 @@ namespace Glasscore.Net
             public bool Connected = true;
             public double DisconnectedAt;
             public bool InMatch;
+            public bool IsBot;
+            public BotBrain Brain;
             public uint LastReceivedSeq;
             public uint LastProcessedSeq;
             public PlayerInput LastInput;
@@ -86,6 +88,7 @@ namespace Glasscore.Net
         public bool InMatch => _world != null;
         public GameWorld World => _world;
         public int PlayerCount { get { int n = 0; foreach (var s in _seats) if (s != null && s.Connected) n++; return n; } }
+        public int HumanCount { get { int n = 0; foreach (var s in _seats) if (s != null && s.Connected && !s.IsBot) n++; return n; } }
 
         public GameServer(ServerConfig config)
         {
@@ -229,13 +232,18 @@ namespace Glasscore.Net
                     if (target == seat.Slot || target >= _seats.Length || _seats[target] == null) break;
                     Seat victim = _seats[target];
                     SystemChat($"{victim.Name} was kicked by the host.");
-                    if (victim.Connected)
+                    if (victim.Connected && !victim.IsBot)
                     {
                         Begin(MsgType.Kicked);
                         _transport.SendReliable(victim.ConnectionId, _w);
                         _transport.Disconnect(victim.ConnectionId);
                     }
                     RemoveSeat(victim);
+                    break;
+
+                case MsgType.HostAddBot:
+                    if (!isHost || _world != null) break;
+                    AddBot();
                     break;
 
                 case MsgType.HostStart:
@@ -396,7 +404,7 @@ namespace Glasscore.Net
                     _uw.UShort(seq);
                     _uw.Bytes(audio, 0, audio.Length);
                     foreach (var other in _seats)
-                        if (other != null && other.Connected && other != seat) _transport.SendUnreliable(other.ConnectionId, _uw);
+                        if (other != null && other.Connected && !other.IsBot && other != seat) _transport.SendUnreliable(other.ConnectionId, _uw);
                     break;
 
                 case MsgType.UdpHello:
@@ -430,7 +438,17 @@ namespace Glasscore.Net
         {
             _seats[seat.Slot] = null;
             if (_world != null) _world.RemovePlayer(seat.Slot);
-            if (seat.Connected) _byConnection.Remove(seat.ConnectionId);
+            if (seat.Connected && !seat.IsBot) _byConnection.Remove(seat.ConnectionId);
+            if (!seat.IsBot && HumanCount == 0)
+            {
+                // Nobody left to play with the bots.
+                for (int i = 0; i < _seats.Length; i++)
+                {
+                    if (_seats[i] == null || !_seats[i].IsBot) continue;
+                    if (_world != null) _world.RemovePlayer(i);
+                    _seats[i] = null;
+                }
+            }
             if (_hostSlot == seat.Slot) MigrateHost();
             _startCountdownAt = -1;
             AssignTeams();
@@ -438,10 +456,37 @@ namespace Glasscore.Net
             BroadcastLobby();
         }
 
+        /// <summary>Adds a server-side AI opponent (always READY, never host).</summary>
+        public bool AddBot()
+        {
+            if (PlayerCount >= _settings.MaxPlayers) { SystemChat("Lobby is full."); return false; }
+            int slot = Array.IndexOf(_seats, null);
+            if (slot < 0) return false;
+            int n = 0;
+            foreach (var s in _seats) if (s != null && s.IsBot) n++;
+            var bot = new Seat
+            {
+                Slot = (byte)slot,
+                ConnectionId = -1,
+                IsBot = true,
+                Ready = true,
+                Name = "Bot " + BotBrain.Names[(slot + n) % BotBrain.Names.Length],
+                Skin = (byte)(slot % 6),
+                Trail = (byte)(1 + slot % 4),
+                JoinOrder = _joinCounter++,
+            };
+            _seats[slot] = bot;
+            AssignTeams();
+            SystemChat($"{bot.Name} joined.");
+            _lobbyDirty = true;
+            BroadcastLobby();
+            return true;
+        }
+
         private void MigrateHost()
         {
             var remaining = new List<(int, int)>();
-            foreach (var s in _seats) if (s != null && s.Connected) remaining.Add((s.Slot, s.JoinOrder));
+            foreach (var s in _seats) if (s != null && s.Connected && !s.IsBot) remaining.Add((s.Slot, s.JoinOrder));
             int next = LobbyRules.NextHost(remaining);
             _hostSlot = next < 0 ? Protocol.SystemSlot : (byte)next;
             if (next >= 0) SystemChat($"{_seats[next].Name} is now the host.");
@@ -586,9 +631,14 @@ namespace Glasscore.Net
                 s.LastInput = default;
                 _world.AddPlayer(s.Slot, s.Team);
                 _world.SetLatency(s.Slot, s.PingMs / 1000f);
+                if (s.IsBot)
+                {
+                    s.Brain = new BotBrain(s.Slot, (ulong)config.MatchSeed, 0.55f);
+                    _world.Loaded[s.Slot] = true;
+                }
             }
 
-            foreach (var s in _seats) if (s != null && s.Connected) SendMatchStart(s.ConnectionId);
+            foreach (var s in _seats) if (s != null && s.Connected && !s.IsBot) SendMatchStart(s.ConnectionId);
             _lobbyDirty = true;
             BroadcastLobby();
             Log($"match started on {MapCatalog.Get(config.MapId).Name} (seed {config.MatchSeed})");
@@ -636,6 +686,11 @@ namespace Glasscore.Net
             foreach (var s in _seats)
             {
                 if (s == null || !s.InMatch || !s.Connected) continue;
+                if (s.IsBot)
+                {
+                    _inputs[s.Slot] = s.Brain.Think(_world, 1f / _config.TickRate);
+                    continue;
+                }
                 if (s.Inputs.Count > 0)
                 {
                     s.LastInput = s.Inputs.Dequeue();
@@ -718,7 +773,7 @@ namespace Glasscore.Net
 
             foreach (var s in _seats)
             {
-                if (s == null || !s.Connected) continue;
+                if (s == null || !s.Connected || s.IsBot) continue;
                 _snapshot.AckSequence = s.LastProcessedSeq;
                 UdpFraming.BeginServerPacket(_uw, MsgType.Snapshot);
                 Codec.WriteSnapshot(_uw, _snapshot, mask);
@@ -804,7 +859,7 @@ namespace Glasscore.Net
             {
                 if (s == null) continue;
                 s.InMatch = false;
-                s.Ready = false;
+                s.Ready = s.IsBot;
                 if (!s.Connected) RemoveSeat(s);
             }
             Begin(MsgType.ReturnToLobby);
@@ -825,7 +880,7 @@ namespace Glasscore.Net
         private void BroadcastReliable()
         {
             foreach (var s in _seats)
-                if (s != null && s.Connected) _transport.SendReliable(s.ConnectionId, _w);
+                if (s != null && s.Connected && !s.IsBot) _transport.SendReliable(s.ConnectionId, _w);
         }
 
         public void Dispose()
