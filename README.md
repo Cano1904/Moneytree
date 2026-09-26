@@ -4,6 +4,7 @@
 
 - **Design & technical blueprint:** [`docs/SHORT_LEGS_GDD.md`](docs/SHORT_LEGS_GDD.md) (all 8 spec sections, plus art direction and the gameflow script)
 - **Key art carousel** (styled after the reference post): [`promo/index.html`](promo/index.html)
+- **Playable browser game:** [`web/index.html`](web/index.html) — main menu, Story Mode (Case 1), Party Mode vs. bots, Shrink Lab, notebook, pause menu, settings (DE/EN), Evidence Archive. Open `web/index.html` in a browser; no build step.
 - **Unity reference implementation:** [`Unity/Assets/ShortLegs`](Unity/Assets/ShortLegs)
 
 ## Unity setup
