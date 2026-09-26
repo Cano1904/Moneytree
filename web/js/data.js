@@ -6,7 +6,7 @@
   // ───────────── Texts ─────────────
   const STR = {
     de: {
-      story: "STORY-MODUS", lobby: "MULTIPLAYER-LOBBY", lab: "SHRINK-LABOR", archive: "BEWEIS-ARCHIV", settings: "EINSTELLUNGEN", quit: "BEENDEN",
+      story: "STORY-MODUS", intro: "INTRO-FILM", ctrlCam: "Kamera drehen", lobby: "MULTIPLAYER-LOBBY", lab: "SHRINK-LABOR", archive: "BEWEIS-ARCHIV", settings: "EINSTELLUNGEN", quit: "BEENDEN",
       quitTitle: "Spiel beenden?", quitText: "Im Browser kann sich das Spiel nicht selbst schließen. Schließe einfach den Tab.", back: "Zurück", yes: "Ja", no: "Nein",
       paused: "ERMITTLUNG PAUSIERT", resume: "FORTSETZEN", notebook: "NOTIZBUCH ANSEHEN", options: "OPTIONEN", abandon: "FALL AUFGEBEN",
       abandonQ: "Fall wirklich aufgeben? Der Fortschritt dieses Falls geht verloren.",
@@ -37,7 +37,7 @@
       shoe: "Schuhgröße", coat: "Mantel", wasAt: "Alibi 23:00",
     },
     en: {
-      story: "STORY MODE", lobby: "MULTIPLAYER LOBBY", lab: "SHRINK LAB", archive: "EVIDENCE ARCHIVE", settings: "SETTINGS", quit: "QUIT",
+      story: "STORY MODE", intro: "INTRO FILM", ctrlCam: "Rotate camera", lobby: "MULTIPLAYER LOBBY", lab: "SHRINK LAB", archive: "EVIDENCE ARCHIVE", settings: "SETTINGS", quit: "QUIT",
       quitTitle: "Quit the game?", quitText: "A browser game cannot close itself. Just close the tab.", back: "Back", yes: "Yes", no: "No",
       paused: "INVESTIGATION PAUSED", resume: "RESUME", notebook: "REVIEW NOTEBOOK", options: "OPTIONS", abandon: "ABANDON CASE",
       abandonQ: "Abandon this case? Progress in this case will be lost.",

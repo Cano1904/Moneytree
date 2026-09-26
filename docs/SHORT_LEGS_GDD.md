@@ -304,7 +304,7 @@ Reference code: `Networking/MatchDirector.cs`.
 ```
 docs/SHORT_LEGS_GDD.md                              ← this document
 promo/index.html                                    ← key-art carousel in the style of the reference photo
-web/index.html + web/js/{engine,data,game}.js       ← playable browser build (same rules as Scripts/Core)
+web/index.html + web/js/*.js                        ← playable 3D browser build: engine, data, render3d, intro film, game
 Unity/Assets/ShortLegs/
   Input/ShortLegsControls.inputactions              ← §6 bindings (KB&M + Gamepad schemes)
   Scripts/Core/            (pure C#, no UnityEngine — unit tested)

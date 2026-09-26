@@ -31,6 +31,30 @@
   :focus-visible { outline: 2px solid var(--warm); outline-offset: 2px; }
 
   #cv { position: fixed; inset: 0; width: 100%; height: 100%; display: block; background: #07080a; touch-action: none; }
+  #cv.noir { filter: grayscale(1) contrast(1.18) brightness(1.04); }
+
+  /* ── Intro film ── */
+  #intro { position: fixed; inset: 0; z-index: 7; pointer-events: none; }
+  #intro .lb { position: absolute; left: 0; right: 0; height: 11vh; background: #000; }
+  #intro .lb.top { top: 0; } #intro .lb.bottom { bottom: 0; }
+  #introCap { position: absolute; left: 50%; bottom: calc(11vh + 18px); transform: translateX(-50%); width: min(92vw, 860px); margin: 0; text-align: center;
+    font: 400 clamp(18px, 2.6vw, 28px)/1.35 var(--noir); color: #f4efe4; text-shadow: 0 2px 10px #000, 0 0 2px #000; opacity: 0; transition: opacity .6s; text-wrap: balance; }
+  #introCap.on { opacity: 1; }
+  #introCap b { font-family: var(--display); font-weight: 800; color: var(--warm); }
+  #introChap { position: absolute; top: calc(11vh + 16px); left: 50%; transform: translateX(-50%); font: 700 clamp(26px, 5vw, 54px)/1 var(--mono); color: var(--lie); letter-spacing: .1em; text-shadow: 0 0 18px rgba(255,45,85,.6); }
+  #introTitle { position: absolute; inset: 0; display: grid; place-content: center; justify-items: center; text-align: center; opacity: 0; transform: scale(1.06); transition: opacity 1.2s, transform 4s ease-out; }
+  #introTitle.on { opacity: 1; transform: scale(1); }
+  #introTitle span { display: block; font: 400 clamp(64px, 14vw, 170px)/.82 var(--noir); color: #fff; text-shadow: 0 0 30px rgba(255,45,85,.6), 0 6px 0 rgba(255,45,85,.45); }
+  #introTitle .legs { transform-origin: 50% 0; animation: legs 3.2s ease-in-out infinite; }
+  #introTitle small { margin-top: 18px; font: 500 clamp(12px, 1.6vw, 16px)/1 var(--mono); letter-spacing: .12em; color: #d8dde2; }
+  @keyframes legs { 0%, 40% { transform: scaleY(1); } 50%, 90% { transform: scaleY(.62); } 100% { transform: scaleY(1); } }
+  #introSkip { position: absolute; right: 16px; top: calc(11vh + 12px); pointer-events: auto; background: rgba(0,0,0,.55); font-family: var(--mono); }
+
+  /* ── Name tags over characters ── */
+  #tags { position: absolute; inset: 0; overflow: hidden; }
+  .tag3d { position: absolute; left: 0; top: 0; white-space: nowrap; background: rgba(8,9,11,.82); border: 1px solid rgba(255,255,255,.14); border-radius: 4px; padding: 2px 7px; font: 700 12px/1.4 var(--display); color: #fff; will-change: transform; }
+  .tag3d.lied { color: var(--lie); border-color: rgba(255,45,85,.5); }
+
   #flash { position: fixed; inset: 0; pointer-events: none; background: var(--lie); opacity: 0; transition: opacity .5s ease-out; mix-blend-mode: screen; }
   #flash.on { opacity: .42; transition: none; }
   #flash.border { background: none; box-shadow: inset 0 0 0 10px var(--lie); mix-blend-mode: normal; }
@@ -158,13 +182,22 @@
   #tbtns button.on { border-color: var(--warm); color: var(--warm); }
   #tbtns .e { background: rgba(255,45,85,.35); }
 
-  @media (prefers-reduced-motion: reduce) { .logo .legs, .nav button { transition: none; } #toast div { animation-duration: .01s; animation-fill-mode: forwards; opacity: 1; } }
+  @media (prefers-reduced-motion: reduce) { #introTitle .legs { animation: none; } .logo .legs, .nav button { transition: none; } #toast div { animation-duration: .01s; animation-fill-mode: forwards; opacity: 1; } }
 </style>
 
 <canvas id="cv" aria-label="Spielwelt"></canvas>
 <div id="flash"></div>
 
+<div id="intro" hidden>
+  <div class="lb top"></div><div class="lb bottom"></div>
+  <div id="introChap"></div>
+  <div id="introTitle"><span>SHORT</span><span class="legs">LEGS</span><small>„Lügen haben kurze Beine.“</small></div>
+  <p id="introCap"></p>
+  <button id="introSkip" class="btn">Überspringen ▸▸</button>
+</div>
+
 <div id="hud" hidden>
+  <div id="tags"></div>
   <div class="hud-bar">
     <div class="hud-l" id="hudL"></div>
     <div class="hud-r" id="hudR"></div>
@@ -209,6 +242,9 @@
   </div>
 </div>
 
+<script src="https://cdn.jsdelivr.net/npm/three@0.158.0/build/three.min.js"></script>
 <script src="js/engine.js"></script>
 <script src="js/data.js"></script>
+<script src="js/render3d.js"></script>
+<script src="js/intro.js"></script>
 <script src="js/game.js"></script>

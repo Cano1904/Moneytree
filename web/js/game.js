@@ -25,20 +25,6 @@
   const t = (k, ...a) => { const v = (STR[S.lang] || STR.de)[k]; return typeof v === "function" ? v(...a) : v; };
   const tx = (o) => T(o, S.lang);
 
-  // Noir palette: desaturate every color except lie red.
-  const noirCache = new Map();
-  function P(hex) {
-    if (S.art !== "noir" || hex === LIE) return hex;
-    let v = noirCache.get(hex);
-    if (!v) {
-      const n = parseInt(hex.slice(1), 16);
-      const l = clamp(Math.round((0.3 * (n >> 16 & 255) + 0.59 * (n >> 8 & 255) + 0.11 * (n & 255) - 128) * 1.25 + 128), 0, 255);
-      v = `rgb(${l},${l},${l})`;
-      noirCache.set(hex, v);
-    }
-    return v;
-  }
-
   // ═════════════════════════ Audio (WebAudio, starts on first interaction) ═════════════════════════
   const Sound = {
     ctx: null, bus: {},
@@ -101,101 +87,22 @@
     } catch (e) { /* no speech available */ }
   }
 
-  // ═════════════════════════ Canvas & drawing ═════════════════════════
-  const cv = $("cv"), ctx = cv.getContext("2d");
+  // ═════════════════════════ 3D view ═════════════════════════
+  const cv = $("cv");
   let VW = 0, VH = 0, DPR = 1;
   function resize() {
     const cap = S.res === "auto" ? 2 : Number(S.res);
     DPR = Math.min(window.devicePixelRatio || 1, cap);
     VW = window.innerWidth; VH = window.innerHeight;
-    cv.width = Math.round(VW * DPR); cv.height = Math.round(VH * DPR);
+    R3.resize(VW, VH, DPR);
   }
   window.addEventListener("resize", resize);
-
-  function rr(c, x, y, w, h, r) {
-    c.beginPath();
-    if (c.roundRect) c.roundRect(x, y, w, h, r); else c.rect(x, y, w, h);
-  }
-  function ell(c, x, y, rx, ry) { c.beginPath(); c.ellipse(x, y, rx, ry, 0, 0, Math.PI * 2); }
-
-  // One chunky suspect (art direction §0), feet at (x, y). leg = leg scale 0..1.
-  function drawChar(c, o) {
-    const s = o.s, leg = Math.max(0.06, o.leg), L = 78 * leg, hip = -8 - L;
-    const f = (col) => o.fill || P(col);
-    c.save();
-    c.translate(o.x, o.y);
-    c.scale(s, s);
-    c.globalAlpha = o.alpha == null ? 1 : o.alpha;
-    if (!o.fill) { c.fillStyle = "rgba(0,0,0,.28)"; ell(c, 0, -2, 38, 10); c.fill(); }
-    c.translate(0, -(o.lift || 0));
-
-    const st = o.stride || 0;
-    for (const [lx, a] of [[-13, st], [13, -st]]) {
-      const th = a * Math.PI / 180;
-      c.save(); c.translate(lx, hip + 4); c.rotate(th);
-      c.fillStyle = f("#3a3f47"); rr(c, -7, 0, 14, L, 6); c.fill();
-      c.restore();
-      const fx = lx - Math.sin(th) * L, fy = hip + 4 + Math.cos(th) * L;
-      c.fillStyle = f("#231a15"); ell(c, fx + 3, fy - 3, 13, 8); c.fill();
-    }
-    // coat + arms
-    c.fillStyle = f(o.coat); rr(c, -36, hip - 78, 72, 88, 24); c.fill();
-    if (!o.fill) { c.fillStyle = "rgba(0,0,0,.18)"; rr(c, -3, hip - 70, 6, 74, 3); c.fill(); }
-    for (const [sx, a] of [[-37, 10], [37, -10]]) {
-      c.save(); c.translate(sx, hip - 70); c.rotate(a * Math.PI / 180);
-      c.fillStyle = f(o.coat); rr(c, -9, 0, 18, 60, 9); c.fill(); c.restore();
-    }
-    if (!o.back) { c.fillStyle = f("#f2b38f"); ell(c, -44, hip - 8, 10, 10); c.fill(); ell(c, 44, hip - 8, 10, 10); c.fill(); }
-
-    // head
-    const hy = hip - 110;
-    c.fillStyle = f("#f2b38f"); ell(c, 0, hy, 36, 36); c.fill();
-    if (o.back) {
-      c.fillStyle = f(o.beard ? "#2a1d17" : "#5a3a22"); ell(c, 0, hy + 6, 34, 28); c.fill();
-    } else if (!o.fill) {
-      if (o.beard) {
-        c.fillStyle = P("#2a1d17"); c.beginPath();
-        c.moveTo(-34, hy + 2); c.quadraticCurveTo(-38, hy + 52, 0, hy + 60); c.quadraticCurveTo(38, hy + 52, 34, hy + 2);
-        c.quadraticCurveTo(20, hy + 22, 0, hy + 20); c.quadraticCurveTo(-20, hy + 22, -34, hy + 2); c.fill();
-      } else {
-        c.fillStyle = P("#5a3a22"); ell(c, -30, hy + 4, 9, 22); c.fill(); ell(c, 30, hy + 4, 9, 22); c.fill();
-      }
-      const panic = o.face === "panic", er = panic ? 12 : 10, pr = panic ? 1.8 : 3;
-      c.lineWidth = 1.5; c.strokeStyle = "#1a1a1a";
-      for (const ex of [-13, 13]) { c.fillStyle = "#ffffff"; ell(c, ex, hy - 6, er, er); c.fill(); c.stroke(); c.fillStyle = "#111111"; ell(c, ex * 0.93, hy - 5, pr, pr); c.fill(); }
-      c.strokeStyle = P("#2a1d17"); c.lineWidth = 4; c.lineCap = "round";
-      c.beginPath(); c.moveTo(-24, hy - 21 - (panic ? 4 : 0)); c.lineTo(-5, hy - 18); c.moveTo(24, hy - 21 - (panic ? 4 : 0)); c.lineTo(5, hy - 18); c.stroke();
-      c.fillStyle = P("#d98e6b"); ell(c, 0, hy + 8, 8, 7); c.fill();
-      c.fillStyle = "#3b1410"; ell(c, 0, hy + 23, panic ? 6 : 8, panic ? 5 : 2.5); c.fill();
-      if (o.face !== "calm") {
-        c.fillStyle = "#9fd3ef";
-        ell(c, 32, hy - 18, 3.5, 6); c.fill(); ell(c, -33, hy - 8, 3, 5); c.fill();
-      }
-    }
-    drawHat(c, o.hatStyle || "beanie", o.fill || P(o.hat), hy);
-    c.restore();
-  }
-
-  function drawHat(c, style, col, hy) {
-    c.fillStyle = col;
-    if (style === "fedora") {
-      ell(c, 0, hy - 28, 52, 10); c.fill();
-      rr(c, -28, hy - 66, 56, 40, 12); c.fill();
-      c.fillStyle = "#7a2b2b"; c.fillRect(-28, hy - 40, 56, 8);
-    } else if (style === "tophat") {
-      ell(c, 0, hy - 28, 48, 9); c.fill();
-      c.fillRect(-26, hy - 98, 52, 70);
-      c.fillStyle = LIE; c.fillRect(-26, hy - 42, 52, 8);
-    } else {
-      c.beginPath(); c.moveTo(-35, hy - 22); c.quadraticCurveTo(-35, hy - 60, 0, hy - 62); c.quadraticCurveTo(35, hy - 60, 35, hy - 22); c.closePath(); c.fill();
-      rr(c, -38, hy - 34, 76, 13, 6.5); c.fill();
-      c.fillStyle = "rgba(255,255,255,.18)"; ell(c, 0, hy - 64, 8, 8); c.fill();
-    }
-  }
-
+  const num = (hex) => (typeof hex === "number" ? hex : parseInt(String(hex).slice(1), 16));
   const faceFor = (lies) => (lies >= 3 ? "panic" : lies >= 1 ? "sweat" : "calm");
   const hatStyleFor = (id) => (id === "fedora" ? "fedora" : id === "tophat" ? "tophat" : "beanie");
   const hatColorFor = (id) => (HATS.find((h) => h.id === id) || HATS[0]).color;
+  const charOpts = (ch) => ({ coat: num(ch.coat), hat: num(ch.hat), hatStyle: ch.hatStyle || "beanie", beard: !!ch.beard, detective: !!ch.detective, hair: ch.hair ? num(ch.hair) : undefined });
+  R3.init(cv);
 
   // ═════════════════════════ Input ═════════════════════════
   const keys = new Set(), hit = new Set();
@@ -226,6 +133,9 @@
     if (down(1)) hit.add("Space");
     if (down(12)) virtualKey("ArrowUp");
     if (down(13)) virtualKey("ArrowDown");
+    const rx = gp.axes[2] || 0, ry = gp.axes[3] || 0;
+    if (Math.abs(rx) > 0.2) R3.cam.yaw -= rx * 0.04;
+    if (Math.abs(ry) > 0.2) R3.cam.pitch = clamp(R3.cam.pitch + ry * 0.02, 0.45, 1.3);
     return { x: Math.abs(gp.axes[0]) > 0.2 ? gp.axes[0] : 0, y: Math.abs(gp.axes[1]) > 0.2 ? gp.axes[1] : 0, sprint: !!b[10] };
   }
   function virtualKey(code) {
@@ -332,7 +242,7 @@
 
   // ═════════════════════════ Menu screens ═════════════════════════
   function renderMenu() {
-    const items = [["story", () => startGame("story")], ["lobby", () => show("lobby")], ["lab", () => startGame("lab")], ["archive", () => show("archive")], ["settings", () => show("settings")], ["quit", () => { $("quitBox").innerHTML = `<h2>${t("quitTitle")}</h2><p class="note">${t("quitText")}</p><div class="actions"><button class="btn" id="qBack">${t("back")}</button></div>`; $("qBack").onclick = () => closeModal("quit"); openModal("quit"); }]];
+    const items = [["story", () => playIntro(() => startGame("story"))], ["lobby", () => show("lobby")], ["lab", () => startGame("lab")], ["intro", () => playIntro(() => show("menu"))], ["archive", () => show("archive")], ["settings", () => show("settings")], ["quit", () => { $("quitBox").innerHTML = `<h2>${t("quitTitle")}</h2><p class="note">${t("quitText")}</p><div class="actions"><button class="btn" id="qBack">${t("back")}</button></div>`; $("qBack").onclick = () => closeModal("quit"); openModal("quit"); }]];
     const nav = $("mainNav");
     nav.innerHTML = "";
     for (const [k, fn] of items) {
@@ -405,6 +315,8 @@
           <tr><td>${k("Tab")} · View · D-Pad ↑↓</td><td>${t("ctrlNote")}</td></tr>
           <tr><td>${k("M")}</td><td>${t("ctrlMeet")}</td></tr>
           <tr><td>${k("V")}</td><td>${t("ctrlPtt")} <small>(${t("voiceOnly")})</small></td></tr>
+          <tr><td>${k(S.lang === "de" ? "Maus ziehen" : "Mouse drag")} · R-Stick</td><td>${t("ctrlCam")}</td></tr>
+          <tr><td>${k(S.lang === "de" ? "Mausrad" : "Wheel")}</td><td>Zoom</td></tr>
           <tr><td>${k("Esc")} · Start</td><td>${t("ctrlPause")}</td></tr>
         </tbody></table>
       </div>
@@ -436,7 +348,7 @@
   }
 
   function applySettings() {
-    Sound.apply(); resize(); noirCache.clear();
+    Sound.apply(); resize(); cv.classList.toggle("noir", S.art === "noir");
     document.documentElement.style.setProperty("--sub-size", [16, 20, 24, 30][S.subSize] + "px");
     $("subs").classList.toggle("hc", !!S.contrast);
     document.documentElement.lang = S.lang;
@@ -458,8 +370,7 @@
       <div class="actions"><button class="btn" id="arBack">${t("back")}</button></div>
     </div>`;
     for (const c of $("scr-archive").querySelectorAll("canvas[data-hat]")) {
-      const g = c.getContext("2d");
-      drawChar(g, { x: 96, y: 330, s: 1.05, leg: 1, coat: PLAYER.coat, hat: hatColorFor(c.dataset.hat), hatStyle: hatStyleFor(c.dataset.hat), face: "calm" });
+      R3.portrait(c, "hat-" + c.dataset.hat, { coat: num(PLAYER.coat), hat: num(hatColorFor(c.dataset.hat)), hatStyle: hatStyleFor(c.dataset.hat), detective: true }, { leg: 1, face: "calm", focusY: 1.95, dist: 3.4, yaw: 0.3 });
     }
     for (const b of $("scr-archive").querySelectorAll("[data-wear]")) b.onclick = () => { S.hat = b.dataset.wear; saved.hat = S.hat; store.set("shortlegs.settings", Object.assign({}, saved)); renderArchive(); };
     $("arBack").onclick = () => show("menu");
@@ -570,6 +481,10 @@
       g.maxLies = 99;
       say(null, t("labHelp"));
     }
+    R3.clearDynamic(); clearTags();
+    for (const ch of g.chars) { ch.h = R3.char(charOpts(ch)); ch.yaw = 0; }
+    for (const c of g.clues) c.m = R3.clue(c.tile[0] + 0.5, c.tile[1] + 0.5);
+    R3.cam.yaw = 0; R3.cam.ready = false;
     show("game");
   }
   function closeAllModals() { for (const m of MODALS) closeModal(m); }
@@ -640,6 +555,7 @@
     const exposed = G.engine.discover(clue.id);
     Sound.chime();
     G.notebook.clues.push(clue.id);
+    if (clue.m) clue.m.found(G.notebook.clues.length);
     unlock("lore", tx(clue.name));
     if (finder && !finder.isPlayer) toast((S.lang === "de" ? `${finder.name} hat etwas gefunden: ` : `${finder.name} found something: `) + tx(clue.name));
     else showClueCard(clue);
@@ -710,9 +626,7 @@
     }
   }
   function drawPortrait(c, ch) {
-    const g = c.getContext("2d");
-    g.clearRect(0, 0, c.width, c.height);
-    drawChar(g, { x: 180, y: 420, s: 1.12, leg: ch.legShown, coat: ch.coat, hat: ch.hat, hatStyle: ch.hatStyle, beard: ch.beard, face: faceFor(ch.lies) });
+    R3.portrait(c, "p-" + ch.id, charOpts(ch), { leg: ch.legShown, face: faceFor(ch.lies), focusY: 1.2, dist: 6.4 });
   }
 
   function presentEvidence(rec, clue) {
@@ -918,6 +832,7 @@
   function closeNotebook() { closeModal("notebook"); if (nbFromPause) openPause(); }
 
   function onKey(e) {
+    if (screen === "intro") { if (e.key === "Escape" || e.key === " " || e.key === "Enter") Intro.skip(); return; }
     if (e.key === "ArrowDown" || e.key === "ArrowUp") {
       if (screen !== "game" || anyModal()) { if (navFocus(e.key === "ArrowDown" ? 1 : -1)) e.preventDefault && e.preventDefault(); return; }
     }
@@ -975,9 +890,11 @@
     const sprint = inp.sprint && SM.canSprint(lies);
     if (inp.sprint && !SM.canSprint(lies) && (inp.x || inp.y)) hint(S.lang === "de" ? "Mit einer Lüge auf dem Konto: kein Sprint." : "With a lie on record: no sprinting.");
     const speed = SM.speed(p.speedBase, lies) * (sprint ? 1.6 : 1);
-    const vx = frozenInput ? 0 : inp.x * speed, vy = frozenInput ? 0 : inp.y * speed;
+    const cy = Math.cos(R3.cam.yaw), sy = Math.sin(R3.cam.yaw);
+    const wx = inp.x * cy + inp.y * sy, wy = -inp.x * sy + inp.y * cy;
+    const vx = frozenInput ? 0 : wx * speed, vy = frozenInput ? 0 : wy * speed;
     p.moving = Math.abs(vx) + Math.abs(vy) > 1;
-    if (p.moving) { p.walkT += dt * (sprint ? 1.6 : 1); p.back = vy < -Math.abs(vx) * 0.5; }
+    if (p.moving) { p.walkT += dt * (sprint ? 1.6 : 1); p.yaw = Math.atan2(vx, vy); }
     const blocked = p.moving ? moveChar(p, vx, vy, dt, p.jumpT > 0) : null;
     if (blocked === "S") hint(t("stairsBlocked"));
     if (blocked === "h") hint(SM.canJump(lies) ? t("hedgeBlocked") : (S.lang === "de" ? "Die Hecke ist zu hoch, und springen kannst du nicht mehr." : "The hedge is too high, and you can't jump any more."));
@@ -1010,7 +927,7 @@
     if (sp <= 0) { ch.moving = false; return; }
     if (d < 2) { ch.path.shift(); if (!ch.path.length) ch.hold = ch.flee ? 999 : 1 + rnd() * 3.5; return; }
     ch.x += (dx / d) * sp * dt; ch.y += (dy / d) * sp * dt;
-    ch.moving = true; ch.walkT += dt; ch.back = dy < -Math.abs(dx) * 0.5;
+    ch.moving = true; ch.walkT += dt; ch.yaw = Math.atan2(dx, dy);
 
     // Investigator bots search clue spots they walk over (after the first quarter of the match).
     if (G.mode === "party" && ch.id !== G.case.liar && G.elapsed > G.totalTime * 0.25) {
@@ -1052,7 +969,9 @@
           g.events.plant = true;
           const pl = g.case.planted, tile = g.clues.some((c) => c.tile[0] === pl.tile[0] && c.tile[1] === pl.tile[1]) ? randomTileIn("hall") : pl.tile;
           g.engine.register(Object.assign({}, pl));
-          g.clues.push({ id: pl.id, tile, name: pl.name, desc: pl.desc, found: false });
+          const pcl = { id: pl.id, tile, name: pl.name, desc: pl.desc, found: false };
+          pcl.m = R3.clue(tile[0] + 0.5, tile[1] + 0.5);
+          g.clues.push(pcl);
         }
         if (!g.events.lights && g.elapsed >= g.lightsAt && g.phase === "play") { g.events.lights = true; g.lightsOut = 15; toast(t("lightsOut"), true); }
         if (g.timeLeft <= 0 && g.phase === "play") endGame(false, t("timeUp"));
@@ -1106,137 +1025,45 @@
     if ($("legs").innerHTML !== lg) $("legs").innerHTML = lg;
   }
 
-  // ═════════════════════════ Render ═════════════════════════
-  const cam = { x: 0, y: 0, z: 1.6 };
-
-  function drawWorld(dtVisual) {
-    const g = G, p = g.player;
-    cam.z = clamp(Math.min(VW / (19 * TILE), VH / (12 * TILE)), 0.9, 2.2);
-    const vw = VW / cam.z, vh = VH / cam.z;
-    const tx = clamp(p.x - vw / 2, -TILE * 2, MAP.W * TILE - vw + TILE * 2), ty = clamp(p.y - vh / 2 - 20, -TILE * 2, MAP.H * TILE - vh + TILE * 2);
-    cam.x += (tx - cam.x) * Math.min(1, dtVisual * 8); cam.y += (ty - cam.y) * Math.min(1, dtVisual * 8);
-    ctx.setTransform(DPR * cam.z, 0, 0, DPR * cam.z, -cam.x * DPR * cam.z, -cam.y * DPR * cam.z);
-    ctx.fillStyle = "#07080a"; ctx.fillRect(cam.x - 10, cam.y - 10, vw + 20, vh + 20);
-
-    const x0 = Math.max(0, Math.floor(cam.x / TILE)), y0 = Math.max(0, Math.floor(cam.y / TILE));
-    const x1 = Math.min(MAP.W - 1, Math.ceil((cam.x + vw) / TILE)), y1 = Math.min(MAP.H - 1, Math.ceil((cam.y + vh) / TILE));
-    for (let y = y0; y <= y1; y++) for (let x = x0; x <= x1; x++) drawTile(x, y);
-    drawDecor();
-
-    // clues
-    for (const c of g.clues) {
-      const q = center(c.tile[0], c.tile[1]);
-      if (c.found) { ctx.fillStyle = "rgba(255,255,255,.12)"; ell(ctx, q.x, q.y + 6, 8, 4); ctx.fill(); continue; }
-      const pulse = 0.6 + Math.sin(g.time * 4 + c.tile[0]) * 0.25;
-      ctx.fillStyle = `rgba(255,214,120,${0.25 * pulse})`; ell(ctx, q.x, q.y + 4, 14, 7); ctx.fill();
-      ctx.strokeStyle = P("#ffd678"); ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(q.x - 2, q.y - 4, 5, 0, Math.PI * 2); ctx.stroke();
-      ctx.beginPath(); ctx.moveTo(q.x + 2, q.y); ctx.lineTo(q.x + 7, q.y + 5); ctx.stroke();
+  // ═════════════════════════ Render (3D) ═════════════════════════
+  const tagEls = new Map();
+  function renderWorld(dt) {
+    const g = G, p = g.player, U = R3.PX;
+    for (const ch of g.chars) {
+      const ux = ch.x * U, uz = ch.y * U;
+      const lift = ch.jumpT > 0 ? Math.sin((1 - ch.jumpT / 0.55) * Math.PI) * 0.7 : 0;
+      ch.h.setPose({ x: ux, z: uz, y: R3.heightAt(ux, uz) + lift, yaw: ch.yaw, dt, leg: ch.legShown, moving: ch.moving, walk: ch.walkT * 10, crawl: SM.mustCrawl(ch.lies), face: faceFor(ch.lies), ghost: ch.ghost });
     }
+    for (const c of g.clues) if (c.m && !c.found) c.m.tick(g.time);
+    const px = p.x * U, pz = p.y * U, py = R3.heightAt(px, pz);
+    R3.updateCamera(dt, px, py + 1.1, pz);
+    R3.render(dt, g.time, { x: px, z: pz }, { lightsOut: g.lightsOut > 0, flashFrom: { x: px, y: py, z: pz, yaw: p.yaw || 0 } });
 
-    // characters, y-sorted
-    const list = g.chars.slice().sort((a, b) => a.y - b.y);
-    for (const ch of list) {
-      const stride = ch.moving ? Math.sin(ch.walkT * 12) * 22 : 0;
-      const lift = ch.jumpT > 0 ? Math.sin((1 - ch.jumpT / 0.55) * Math.PI) * 60 : 0;
-      drawChar(ctx, { x: ch.x, y: ch.y + 6, s: 0.2, leg: ch.legShown, coat: ch.coat, hat: ch.hat, hatStyle: ch.hatStyle, beard: ch.beard, face: faceFor(ch.lies), back: ch.back, stride, lift, alpha: ch.ghost ? 0.3 : 1 });
-      if (!ch.isPlayer && !ch.ghost && Math.hypot(ch.x - p.x, ch.y - p.y) < 120) {
-        ctx.font = "700 8px Figtree, system-ui, sans-serif"; ctx.textAlign = "center";
-        const label = ch.name + (ch.lies ? " " + "▼".repeat(ch.lies) : "");
-        const w = ctx.measureText(label).width + 8, top = ch.y + 6 - 0.2 * (8 + 78 * ch.legShown + 172) - 14;
-        ctx.fillStyle = "rgba(8,9,11,.8)"; rr(ctx, ch.x - w / 2, top - 8, w, 11, 3); ctx.fill();
-        ctx.fillStyle = ch.lies ? LIE : "#ffffff"; ctx.fillText(label, ch.x, top);
-      }
+    // name tags above nearby characters
+    const seen = new Set();
+    for (const ch of g.chars) {
+      if (ch.isPlayer || ch.ghost) continue;
+      const ux = ch.x * U, uz = ch.y * U;
+      if (Math.hypot(ux - px, uz - pz) > 6.5) continue;
+      const sp = R3.project(ux, R3.heightAt(ux, uz) + 0.62 * ch.legShown + 2.05, uz, VW, VH);
+      if (!sp) continue;
+      let el = tagEls.get(ch.id);
+      if (!el) { el = document.createElement("div"); el.className = "tag3d"; $("tags").appendChild(el); tagEls.set(ch.id, el); }
+      const txt = ch.name + (ch.lies ? " " + "▼".repeat(ch.lies) : "");
+      if (el.textContent !== txt) el.textContent = txt;
+      el.classList.toggle("lied", ch.lies > 0);
+      el.style.transform = `translate(${sp.x.toFixed(1)}px, ${sp.y.toFixed(1)}px) translate(-50%, -100%)`;
+      el.hidden = false; seen.add(ch.id);
     }
-
-    // warm lamp glows
-    ctx.globalCompositeOperation = "lighter";
-    for (const [lx, ly, r, a] of [[13.5 * TILE, 9.6 * TILE, 150, 0.22], [3 * TILE, 2 * TILE, 90, 0.18], [22 * TILE, 21 * TILE, 110, 0.18], [36 * TILE, 3 * TILE, 80, 0.12]]) {
-      const gr = ctx.createRadialGradient(lx, ly, 4, lx, ly, r);
-      gr.addColorStop(0, S.art === "noir" ? `rgba(255,255,255,${a})` : `rgba(255,154,60,${a})`); gr.addColorStop(1, "rgba(0,0,0,0)");
-      ctx.fillStyle = gr; ctx.fillRect(lx - r, ly - r, r * 2, r * 2);
-    }
-    ctx.globalCompositeOperation = "source-over";
-
-    // falling snow over the garden
-    ctx.fillStyle = "rgba(255,255,255,.7)";
-    for (let i = 0; i < 40; i++) {
-      const sx = ((i * 97) % (16 * TILE)) + TILE, sy = (((i * 53) + g.time * 30 * (1 + (i % 3) * 0.3)) % (7 * TILE)) + 18 * TILE;
-      ell(ctx, sx + Math.sin(g.time + i) * 4, sy, 1.3, 1.3); ctx.fill();
-    }
-
-    ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
-    if (g.lightsOut > 0) {
-      const sx = (p.x - cam.x) * cam.z, sy = (p.y - cam.y) * cam.z;
-      const gr = ctx.createRadialGradient(sx, sy, 30, sx, sy, 170);
-      gr.addColorStop(0, "rgba(0,0,0,0)"); gr.addColorStop(1, "rgba(0,0,0,.94)");
-      ctx.fillStyle = gr; ctx.fillRect(0, 0, VW, VH);
-    }
-    // vignette
-    const vg = ctx.createRadialGradient(VW / 2, VH / 2, Math.min(VW, VH) * 0.35, VW / 2, VH / 2, Math.max(VW, VH) * 0.75);
-    vg.addColorStop(0, "rgba(0,0,0,0)"); vg.addColorStop(1, anyModal() ? "rgba(0,0,0,.55)" : "rgba(0,0,0,.35)");
-    ctx.fillStyle = vg; ctx.fillRect(0, 0, VW, VH);
+    for (const [id, el] of tagEls) if (!seen.has(id)) el.hidden = true;
   }
+  function clearTags() { for (const el of tagEls.values()) el.remove(); tagEls.clear(); }
 
-  function drawTile(x, y) {
-    const tl = MAP.tiles[y][x], reg = MAP.region[y][x], X = x * TILE, Y = y * TILE;
-    if (tl === "#") {
-      const below = (MAP.tiles[y + 1] || [])[x];
-      ctx.fillStyle = P("#1c1f24"); ctx.fillRect(X, Y, TILE, TILE);
-      if (below && below !== "#") { ctx.fillStyle = P("#3a3430"); ctx.fillRect(X, Y + TILE * 0.35, TILE, TILE * 0.65); ctx.fillStyle = P("#4a423c"); ctx.fillRect(X, Y + TILE * 0.35, TILE, 3); }
-      return;
-    }
-    const room = ROOMS[reg] || ROOMS.hall;
-    let col = room.floor;
-    if (room.checker && (x + y) % 2) col = "#8e877a";
-    ctx.fillStyle = P(col); ctx.fillRect(X, Y, TILE, TILE);
-    if (!room.snow && !room.checker && reg !== "cellar") { ctx.fillStyle = "rgba(0,0,0,.08)"; ctx.fillRect(X, Y + TILE - 2, TILE, 2); if (reg !== "greenhouse") ctx.fillRect(X + ((y % 2) ? 12 : 26), Y, 1.5, TILE); }
-    if (room.snow) { ctx.fillStyle = "rgba(111,147,166,.18)"; ell(ctx, X + ((x * 7) % 20) + 6, Y + ((y * 11) % 18) + 7, 5, 2); ctx.fill(); }
-    if (tl === "d") { ctx.fillStyle = P("#5a3a22"); ctx.fillRect(X + 2, Y + 2, TILE - 4, TILE - 4); ctx.fillStyle = "rgba(255,255,255,.06)"; ctx.fillRect(X + 2, Y + 2, TILE - 4, 3); }
-    if (tl === "S") {
-      ctx.fillStyle = P("#4a3a2c"); ctx.fillRect(X, Y, TILE, TILE);
-      for (let i = 0; i < 4; i++) { ctx.fillStyle = i % 2 ? P("#6a5440") : P("#574634"); ctx.fillRect(X, Y + i * 8, TILE, 8); }
-      ctx.fillStyle = "rgba(0,0,0,.25)"; ctx.fillRect(X, Y + TILE - 3, TILE, 3);
-    }
-    if (tl === "h") {
-      ctx.fillStyle = P("#2f4a2a"); ctx.fillRect(X + 2, Y + 4, TILE - 4, TILE - 6);
-      ctx.fillStyle = P("#3f6a36"); for (const [a, b] of [[8, 10], [20, 9], [14, 18], [24, 20]]) { ell(ctx, X + a, Y + b, 8, 7); ctx.fill(); }
-      ctx.fillStyle = "rgba(255,255,255,.75)"; ell(ctx, X + 12, Y + 6, 7, 3); ctx.fill(); ell(ctx, X + 23, Y + 7, 5, 2.5); ctx.fill();
-    }
-  }
-
-  function box(x, y, w, h, col, top) { ctx.fillStyle = P(col); ctx.fillRect(x, y, w, h); if (top) { ctx.fillStyle = P(top); ctx.fillRect(x, y, w, Math.min(6, h)); } }
-  function drawDecor() {
-    const T_ = TILE;
-    // study: desk, empty pedestal
-    box(6 * T_, 1.2 * T_, 3.5 * T_, 1.1 * T_, "#3b2616", "#553621");
-    box(2.2 * T_, 1.6 * T_, 1.2 * T_, 1.2 * T_, "#8a8f96", "#b5bac0");
-    ctx.fillStyle = "rgba(255,45,85,.55)"; ctx.font = "700 9px JetBrains Mono, monospace"; ctx.textAlign = "center"; ctx.fillText("?", 2.8 * T_, 2.4 * T_);
-    // library shelves
-    for (let i = 0; i < 5; i++) { box((12.3 + i * 2.3) * T_, 1.05 * T_, 2 * T_, 0.8 * T_, "#3a2418", "#4a2e1f"); for (let b = 0; b < 7; b++) { ctx.fillStyle = P(["#7a2b2b", "#2d4a6a", "#6b5a2a", "#3f6a36"][b % 4]); ctx.fillRect((12.4 + i * 2.3) * T_ + b * 8.5, 1.15 * T_, 6, 0.55 * T_); } }
-    // bedroom bed
-    box(26 * T_, 1.4 * T_, 2.4 * T_, 3 * T_, "#e8e1d0", "#ffffff"); box(26 * T_, 3.2 * T_, 2.4 * T_, 1.2 * T_, "#6a2c4a");
-    // kitchen counters + cake
-    box(33.2 * T_, 1.1 * T_, 5.6 * T_, 0.9 * T_, "#9aa3aa", "#c4ccd2"); ctx.fillStyle = P("#6b3f2a"); ell(ctx, 35 * T_, 1.5 * T_, 10, 7); ctx.fill(); ctx.fillStyle = "#ffffff"; ell(ctx, 35 * T_, 1.4 * T_, 9, 4); ctx.fill();
-    // hall: rug, fireplace, coat rack
-    box(4 * T_, 11 * T_, 19 * T_, 4 * T_, "#7a2b2b"); ctx.strokeStyle = P("#c9a227"); ctx.lineWidth = 2; ctx.strokeRect(4.3 * T_, 11.3 * T_, 18.4 * T_, 3.4 * T_);
-    box(12 * T_, 9.05 * T_, 3 * T_, 0.9 * T_, "#2a2a2a", "#555555"); ctx.fillStyle = P("#ff9a3c"); ell(ctx, 13.5 * T_, 9.6 * T_, 16 + Math.sin(G.time * 9) * 2, 7); ctx.fill();
-    // greenhouse plants
-    for (let i = 0; i < 6; i++) { ctx.fillStyle = P("#3f6a36"); ell(ctx, (29.5 + i * 1.6) * T_, 9.9 * T_, 13, 11); ctx.fill(); ctx.fillStyle = P("#7a4a2a"); ctx.fillRect((29.5 + i * 1.6) * T_ - 6, 10.2 * T_, 12, 8); }
-    // cellar barrels
-    for (let i = 0; i < 4; i++) { ctx.fillStyle = P("#5a3a22"); ell(ctx, (19.5 + i * 1.2) * T_, 23.8 * T_, 15, 12); ctx.fill(); ctx.strokeStyle = P("#2a1d17"); ctx.lineWidth = 2; ctx.stroke(); }
-    // shed workbench
-    box(29 * T_, 18.2 * T_, 5 * T_, 0.9 * T_, "#5a3a22", "#7a5a3a"); box(36 * T_, 18.2 * T_, 2.5 * T_, 2.2 * T_, "#3a3f47", "#4a5058");
-    // room labels
-    ctx.font = "700 9px JetBrains Mono, monospace"; ctx.textAlign = "left";
-    for (const [id, r] of Object.entries(ROOMS)) { ctx.fillStyle = r.snow || r.checker ? "rgba(0,0,0,.45)" : "rgba(255,255,255,.35)"; ctx.fillText(r[S.lang].toUpperCase(), r.x * T_ + 6, (r.y + r.h) * T_ - 6); }
-  }
-
-  // Main menu backdrop: interrogation room, silhouette's legs shrink on every lie-detector flash.
-  const menuFx = { t: 0, step: 0, next: 2.5, flash: 0, leg: 1, from: 1, to: 1, k: 1 };
-  function drawMenu(dt) {
-    ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+  // Main menu backdrop: interrogation room, the suspect's legs shrink on every lie-detector flash.
+  const menuFx = { t: 0, clock: 0, step: 0, next: 2.5, flash: 0, leg: 1, from: 1, to: 1, k: 1 };
+  function renderMenu3D(dt) {
     const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
-    menuFx.t += dt;
+    menuFx.t += dt; menuFx.clock += dt;
     if (!reduce && menuFx.t > menuFx.next) {
       menuFx.t = 0; menuFx.next = 4 + rnd() * 3;
       menuFx.step = (menuFx.step + 1) % 4;
@@ -1247,46 +1074,54 @@
     }
     if (menuFx.k < 1) { menuFx.k = Math.min(1, menuFx.k + dt / 0.6); const k = menuFx.k - 1, e = k * k * (2.9 * k + 1.9) + 1; menuFx.leg = menuFx.from + (menuFx.to - menuFx.from) * e; }
     menuFx.flash = Math.max(0, menuFx.flash - dt * 2.2);
+    R3.renderMenu(dt, menuFx.clock, menuFx.leg, menuFx.flash);
+  }
 
-    const bg = ctx.createRadialGradient(VW * 0.68, VH * 0.35, 20, VW * 0.68, VH * 0.35, Math.max(VW, VH) * 0.8);
-    bg.addColorStop(0, "#23262b"); bg.addColorStop(1, "#08090b");
-    ctx.fillStyle = bg; ctx.fillRect(0, 0, VW, VH);
-    const floorY = VH * 0.86;
-    ctx.fillStyle = "#101216"; ctx.fillRect(0, floorY, VW, VH - floorY);
-    // lamp cone
-    const lx = VW * 0.68;
-    const cone = ctx.createLinearGradient(0, 0, 0, floorY);
-    cone.addColorStop(0, S.art === "noir" ? "rgba(255,255,255,.18)" : "rgba(255,154,60,.22)"); cone.addColorStop(1, "rgba(255,154,60,0)");
-    ctx.fillStyle = cone; ctx.beginPath(); ctx.moveTo(lx - 20, VH * 0.12); ctx.lineTo(lx + 20, VH * 0.12); ctx.lineTo(lx + VW * 0.2, floorY); ctx.lineTo(lx - VW * 0.2, floorY); ctx.fill();
-    ctx.strokeStyle = "#000"; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(lx, 0); ctx.lineTo(lx, VH * 0.1); ctx.stroke();
-    ctx.fillStyle = "#2a2a2a"; ctx.beginPath(); ctx.moveTo(lx - 28, VH * 0.13); ctx.quadraticCurveTo(lx, VH * 0.06, lx + 28, VH * 0.13); ctx.fill();
-    // lie detector light
-    ctx.fillStyle = `rgba(255,45,85,${0.25 + menuFx.flash * 0.75})`; ell(ctx, VW * 0.9, VH * 0.2, 12, 12); ctx.fill();
-    if (menuFx.flash > 0) { const fl = ctx.createRadialGradient(VW * 0.9, VH * 0.2, 5, VW * 0.9, VH * 0.2, VW * 0.5); fl.addColorStop(0, `rgba(255,45,85,${0.45 * menuFx.flash})`); fl.addColorStop(1, "rgba(255,45,85,0)"); ctx.fillStyle = fl; ctx.fillRect(0, 0, VW, VH); }
-    // chair + silhouette
-    const s = clamp(VH / 620, 0.55, 1.4);
-    ctx.fillStyle = "#16181b"; ctx.fillRect(lx - 55 * s, floorY - 110 * s, 10 * s, 110 * s); ctx.fillRect(lx + 45 * s, floorY - 110 * s, 10 * s, 110 * s);
-    drawChar(ctx, { x: lx, y: floorY, s, leg: menuFx.leg, coat: "#000000", hat: "#000000", fill: "#040405" });
+  function playIntro(done) {
+    Sound.init();
+    closeAllModals();
+    R3.clearDynamic(); clearTags();
+    screen = "intro";
+    for (const s of SCREENS) $("scr-" + s).hidden = true;
+    $("hud").hidden = true; showTouch(false); $("subs").hidden = true;
+    Intro.play({
+      lang: S.lang,
+      detective: { coat: num(PLAYER.coat), hat: num(hatColorFor(S.hat)), hatStyle: hatStyleFor(S.hat), detective: true },
+      onDone: () => { R3.clearDynamic(); done(); },
+      voice: (f, lies, text) => Sound.voice(f, lies, text),
+      narrate: (text) => speakTTS(text, 0),
+      chime: () => { for (let i = 0; i < 4; i++) Sound.tone("sfx", "sine", i === 3 ? 392 : 523, 0, 1.4, 0.22, i * 0.7); },
+      boing: () => Sound.boing(), alarm: () => Sound.alarm(), flash,
+    });
   }
 
   // ═════════════════════════ Main loop ═════════════════════════
   let last = performance.now();
   function frame(now) {
-    const dt = Math.min(0.05, (now - last) / 1000); last = now;
+    const dt = Math.min(0.1, (now - last) / 1000); last = now;
     const pad = pollPad();
-    if (screen === "game" && G) {
-      update(dt, pad);
-      drawWorld(dt);
-    } else {
-      drawMenu(dt);
-    }
+    if (screen === "intro") Intro.update(dt);
+    else if (screen === "game" && G) { update(dt, pad); renderWorld(dt); }
+    else renderMenu3D(dt);
     hit.clear();
     requestAnimationFrame(frame);
   }
 
   // Clicking the world = interact (spec: LEFT CLICK interacts).
-  cv.addEventListener("click", () => { if (screen === "game" && G && !anyModal()) hit.add("KeyE"); });
+  // Drag = rotate the camera, wheel = zoom, a click without dragging = interact.
+  const drag = { on: false, x: 0, y: 0, moved: 0 };
+  cv.addEventListener("pointerdown", (e) => { drag.on = true; drag.x = e.clientX; drag.y = e.clientY; drag.moved = 0; });
+  window.addEventListener("pointermove", (e) => {
+    if (!drag.on || screen !== "game") return;
+    const dx = e.clientX - drag.x, dy = e.clientY - drag.y;
+    drag.x = e.clientX; drag.y = e.clientY; drag.moved += Math.abs(dx) + Math.abs(dy);
+    R3.cam.yaw -= dx * 0.006; R3.cam.pitch = clamp(R3.cam.pitch + dy * 0.004, 0.45, 1.3);
+  });
+  window.addEventListener("pointerup", () => { drag.on = false; });
+  cv.addEventListener("wheel", (e) => { if (screen !== "game") return; e.preventDefault(); R3.cam.dist = clamp(R3.cam.dist + e.deltaY * 0.01, 4.5, 14); }, { passive: false });
+  cv.addEventListener("click", () => { if (drag.moved < 6 && screen === "game" && G && !anyModal()) hit.add("KeyE"); });
 
+  R3.buildWorld(MAP, ROOMS);
   resize();
   applySettings();
   show("menu");
