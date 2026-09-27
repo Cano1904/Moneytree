@@ -247,7 +247,13 @@ namespace RePlanet
         {
             actTimer -= dt;
             string forTool = tool == "seeder" ? "grab" : tool;
-            target = FindTarget(w, me, forTool, out targetErr);
+            scanTimer -= dt;
+            if (scanTimer <= 0 || forTool != lastScanTool)
+            {
+                scanTimer = 0.1f; lastScanTool = forTool;
+                target = FindTarget(w, me, forTool, out targetErr);
+            }
+            else if (target != null && Rules.Obj(w.Cur, target.Key) == null) { target = null; targetErr = null; }
             if (target != null && targetErr == null && forTool == "grab") Hud.Prompt = "[" + InputMap.Label(GameAction.UseTool) + "] Aufheben: " + target.T.Name;
             else if (target != null && targetErr != null) Hud.Blocked = target.T.Name + ": " + targetErr;
             bool held = UseHeld();
@@ -340,8 +346,10 @@ namespace RePlanet
             return acting;
         }
 
-        float lastProgress, progressUntil;
-        string progressLabel;
+        float lastProgress, progressUntil, scanTimer, interactScan;
+        string progressLabel, lastScanTool;
+        Interaction cachedInteraction;
+        string cachedStation;
 
         // ================================================================== Fahrzeuge
         bool HandleVehicle(GameApp app, WorldState w, PlayerData me, VehicleState v, float dt)
@@ -404,6 +412,16 @@ namespace RePlanet
         {
             if (veh != null) return;
             var l = WorldGen.Get(w.CurrentPlanet);
+            interactScan -= dt;
+            if (interactScan > 0 && cachedInteraction != null && !cachedInteraction.Hold)
+            {
+                current = cachedInteraction;
+                if (current.Kind != "none" && current.Kind != "sleep" || Hud.Prompt == null) Hud.Prompt = current.Label;
+                Hud.NearStation = cachedStation;
+                if (InputMap.Down(GameAction.Interact)) RunInteraction(current);
+                return;
+            }
+            interactScan = 0.12f;
             current = null;
             // Stationen
             foreach (var kv in l.Base.Stations)
@@ -415,7 +433,7 @@ namespace RePlanet
                 string key = "[" + InputMap.Label(GameAction.Interact) + "] ";
                 switch (kv.Key)
                 {
-                    case "storage": current = new Interaction { Kind = "deposit", Label = me.Bin.Count > 0 ? key + "Einlagern (" + me.Bin.Count + " Objekte)" : "Lager – Behälter ist leer" }; break;
+                    case "storage": current = new Interaction { Kind = "deposit", Station = "storage", Label = me.Bin.Count > 0 ? key + "Einlagern (" + me.Bin.Count + " Objekte)" : "Lager – Behälter ist leer" }; break;
                     case "sell": current = new Interaction { Kind = "menu", Station = "sell", Label = key + "Verkaufen" }; break;
                     case "workshop": current = new Interaction { Kind = "menu", Station = "workshop", Label = key + "Werkstatt öffnen" }; break;
                     case "sort": current = new Interaction { Kind = "sort", Hold = true, Label = key.TrimEnd(' ', ']') + " halten] Von Hand sortieren" }; break;
@@ -486,6 +504,8 @@ namespace RePlanet
             if (current != null && Hud.Prompt == null || current != null && current.Kind != "none" && current.Kind != "sleep") Hud.Prompt = current.Label;
             else if (current != null && current.Kind == "none" && Hud.Prompt == null) Hud.Prompt = current.Label;
 
+            cachedInteraction = current;
+            cachedStation = Hud.NearStation;
             if (current == null) return;
             if (current.Hold)
             {
@@ -507,6 +527,11 @@ namespace RePlanet
                 return;
             }
             if (!InputMap.Down(GameAction.Interact)) return;
+            RunInteraction(current);
+        }
+
+        void RunInteraction(Interaction current)
+        {
             switch (current.Kind)
             {
                 case "deposit": Act(new JObj().Set("a", "deposit")); break;

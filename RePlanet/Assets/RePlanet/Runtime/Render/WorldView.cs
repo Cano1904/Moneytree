@@ -304,9 +304,54 @@ namespace RePlanet
             water.AddComponent<MeshFilter>().sharedMesh = b.Build("water");
             var mr = water.AddComponent<MeshRenderer>();
             waterMat = Mats.Unique(Mats.Water, new Color(0.25f, 0.45f, 0.38f, 0.72f));
+            try
+            {
+                waterMat.SetTexture("_BumpMap", WaveNormals());
+                waterMat.EnableKeyword("_NORMALMAP");
+                waterMat.SetFloat("_BumpScale", 0.55f);
+                waterMat.mainTextureScale = new Vector2(90f, 90f);
+            }
+            catch (Exception e) { Debug.LogWarning("[RE:PLANET] Wasser-Normalmap: " + e.Message); }
             mr.sharedMaterial = waterMat;
             mr.shadowCastingMode = ShadowCastingMode.Off;
             water.transform.localPosition = new Vector3(0, Terrain.WaterLevel(Planet), 0);
+        }
+
+        static Texture2D waveTex;
+
+        /// <summary>Kachelbare Wellen-Normalmap aus überlagerten Sinuswellen (ganzzahlige Frequenzen → nahtlos).</summary>
+        static Texture2D WaveNormals()
+        {
+            if (waveTex != null) return waveTex;
+            const int N = 256;
+            var h = new float[N * N];
+            var waves = new[] { new Vector3(1, 2, 0.0f), new Vector3(3, -1, 1.3f), new Vector3(-2, 5, 2.1f), new Vector3(7, 3, 0.7f), new Vector3(-6, -9, 3.3f), new Vector3(11, -4, 5.1f), new Vector3(-13, 7, 1.9f) };
+            for (int y = 0; y < N; y++)
+                for (int x = 0; x < N; x++)
+                {
+                    float u = x / (float)N, v = y / (float)N, sum = 0;
+                    for (int k = 0; k < waves.Length; k++)
+                    {
+                        var w = waves[k];
+                        float amp = 1f / (1f + k * 0.6f);
+                        sum += Mathf.Sin((w.x * u + w.y * v) * Mathf.PI * 2f + w.z) * amp;
+                    }
+                    h[y * N + x] = sum;
+                }
+            waveTex = new Texture2D(N, N, TextureFormat.RGBA32, true, true) { wrapMode = TextureWrapMode.Repeat, filterMode = FilterMode.Trilinear, anisoLevel = 4 };
+            var px = new Color32[N * N];
+            for (int y = 0; y < N; y++)
+                for (int x = 0; x < N; x++)
+                {
+                    float dx = h[y * N + (x + 1) % N] - h[y * N + (x + N - 1) % N];
+                    float dy = h[((y + 1) % N) * N + x] - h[((y + N - 1) % N) * N + x];
+                    var n = new Vector3(-dx * 2.2f, -dy * 2.2f, 1f).normalized;
+                    // RG = Normale, A = 1 (funktioniert mit UnpackNormal für RGB- und DXT5nm-Kodierung)
+                    px[y * N + x] = new Color32((byte)((n.x * 0.5f + 0.5f) * 255), (byte)((n.y * 0.5f + 0.5f) * 255), 255, 255);
+                }
+            waveTex.SetPixels32(px);
+            waveTex.Apply(true);
+            return waveTex;
         }
 
         // ================================================================== Gebäude aus den Kollisionsboxen
@@ -569,6 +614,7 @@ namespace RePlanet
             {
                 float t = Time.time;
                 water.transform.localPosition = new Vector3(Mathf.Sin(t * 0.1f) * 0.5f, Terrain.WaterLevel(Planet) + Mathf.Sin(t * 0.6f) * 0.05f, 0);
+                if (waterMat != null) waterMat.mainTextureOffset = new Vector2(t * 0.004f, t * 0.0025f);
             }
         }
 
