@@ -1,23 +1,55 @@
 # RE:PLANET – Fortschritt, Entscheidungen, nächste Schritte
 
+Dieses Dokument hält den Arbeitsstand fest (Masterprompt, Abschnitt 1: „Bewahre bei langen Aufgaben Fortschritt,
+Entscheidungen und nächste Schritte schriftlich im Projekt“). Geprüfte Ergebnisse stehen in `docs/TESTBERICHT.md`.
+
 ## Umsetzung in 10 Punkten
-1. **Engine-Entscheidung:** Unreal Engine 5 ist in der verfügbaren Build-Umgebung (Linux-Container ohne GPU, ohne Epic-Launcher/Editor) nicht ausführbar. Alternative: **Three.js (WebGL 2) + Node.js**. Begründung: echtes 3D, lauffähig und testbar in dieser Umgebung, als PWA installierbar, gleiche Spiellogik in Browser (Solo) und Server (Koop).
-2. **Eine Simulation, zwei Hosts:** `shared/` enthält die komplette, deterministische Spiellogik (Müll, Werkzeuge, Wirtschaft, Bauen, Missionen, Speichern). Solo läuft sie im Browser, im Koop serverautoritativ auf dem Node-Server.
-3. **Datengetrieben:** Müllarten, Materialien, Preise, Werkzeuge, Fahrzeuge, Gebäude, Planeten und Aufträge liegen als Tabellen in `shared/data/`.
-4. **Vier Planeten** (Terra, Pyra, Pelagia, Nivalis) mit je drei Bereichen, eigener Geometrie, eigenen Mechaniken (Reparatur / Sandsturm / Schwimmen + Tauchen / Eis auftauen), Sounds und Musikskalen.
-5. **Kernschleife:** entdecken → sammeln (Greifarm, Sauger, Magnet, Schneider, Kran) → sortieren → pressen → verkaufen/verwerten → Upgrades → Großprojekte → Stadt erwacht.
-6. **Online-Koop 1–4 Spieler:** WebSocket-Sitzungen mit Sitzungscode, Lobby, Einladungslink, spätem Beitritt, Reconnect-Token, Host-Verlassen mit Sicherung, Rechten für teure Käufe/Abriss, Idempotenz gegen Doppelverarbeitung.
-7. **Speichern:** versioniert, Prüfsumme, Backup-Rotation, manuelle Slots, Export/Import, entfernte Objekte als Bitset gegenüber deterministischem Ausgangszustand.
-8. **Erzählung:** Intro als Echtzeit-Zwischensequenz, angelehnt an die Handlung von WALL·E (vermüllte Erde, Konzern, Menschen fliehen auf Archen, ein einzelner Roboter arbeitet weiter, findet einen Keimling). Eigene Figuren und Namen, keine Filmfiguren.
-9. **Zugänglichkeit/Komfort:** Tastenbelegung, Controller, getrennte Lautstärken, Untertitel, UI-Skalierung, Kamerawackeln aus, Halten/Umschalten, Form+Symbol je Material, Fotomodus mit Vorher/Nachher und Hochformat.
-10. **Nachweis:** automatisierte Tests (Wirtschaft, Speichern, Netzwerk, komplette Solo-Kampagne per Bot), Playwright-Durchlauf mit echten Screenshots, Testbericht mit bestanden/fehlgeschlagen/nicht getestet.
+1. **Engine:** Unity (auf Wunsch des Auftraggebers) mit C#, Built-in Render Pipeline und klassischem Input Manager.
+   Unity ist in der Entwicklungsumgebung nicht installierbar (Netzwerkrichtlinie blockiert die Unity-Server, keine Lizenz).
+   Deshalb: vollständiges Unity-Projekt unter `RePlanet/`, die Windows-Anwendung erzeugt der Nutzer im Editor per Menü
+   „RE:PLANET/Windows-Build erstellen (64 Bit)“.
+2. **Eine Simulation für alles:** `Core/` ist reines C# ohne UnityEngine (serverautoritativ). Solo, Koop-Host und
+   dedizierter Server nutzen denselben Code; dadurch ist die Spiellogik mit .NET ohne Unity testbar.
+3. **Datengetrieben:** Materialien, Müllarten, Werkzeuge, Fahrzeuge, Gebäude, Planeten, Projekte, Aufträge, Fundstücke,
+   Kosmetik als Tabellen in `Core/Data/GameData.cs`.
+4. **Vier Planeten:** TERRA, PYRA und PELAGIA sind **ab Spielbeginn frei wählbar** und bereisbar; NIVALIS ist das
+   Finale (Sprungantrieb + die drei letzten Großprojekte). Jeder Planet hat eigene Geometrie, Mechanik
+   (Reparatur / Sandstürme mit wandernden Dünen / Schwimmen und Tauchen / Eis auftauen), Stimmung, Himmel und Musik.
+5. **Tag/Nacht und Wetter:** Tageszyklus, Wind und Stürme (mit Vorwarnung) auf allen Planeten. Nachts oder im Sturm
+   braucht MIKO einen Unterschlupf; Schlafen überspringt Nacht/Sturm. Bei leerem Akku Notabschaltung und Abschleppen
+   zum Stützpunkt (nur Zeitverlust). Notunterschlüpfe sind baubar.
+6. **Online-Koop 1–4:** TCP mit Sitzungscode und Einladung `IP:Port/CODE`, später Beitritt, Wiederverbinden per Token,
+   Host-Verlassen mit Sicherung, Gastrechte + Vertrauensmodus, Idempotenz über Anfrage-IDs, dedizierter Server.
+7. **Speichern:** versioniert, Prüfsumme, Backup-Rotation, Slots (auto + 3), Export/Import, Migration; gespeichert werden
+   nur Abweichungen vom deterministisch erzeugten Ausgangszustand.
+8. **Darstellung:** alles prozedural zur Laufzeit (keine Prefabs, keine Fremd-Assets): eigener Himmels-Shader
+   (Wolkenmassen, große Himmelskörper mit Lichtsaum, Sterne, Polarlicht), Müll per GPU-Instancing, „Stadt erwacht“,
+   nachwachsende Vegetation, Wellenwasser, animierter MIKO mit sichtbaren Upgrades.
+9. **Erzählung:** Intro als Echtzeit-Zwischensequenz nach der Handlung von WALL·E mit eigenen Figuren und Namen
+   (Konzern KONSUMA, Arche HORIZONT, Programm ZWEITE CHANCE, Roboter MIKO); Abspann mit Rückblick aus echten Spielwerten.
+10. **Audio:** Musik, Wind, Ambience und Effekte werden prozedural synthetisiert (keine Lizenzfragen); Musik je Planet
+    mit eigener Stimmung, Schichten wachsen mit dem Wiederherstellungsgrad.
 
 ## Entscheidungen
-- Keine Build-Pipeline nötig: native ES-Module + Import-Map; `three` wird vom Server aus `node_modules` ausgeliefert.
-- Audio vollständig prozedural mit WebAudio erzeugt (keine Fremd-Assets, keine Lizenzfragen).
-- Grafik aus prozeduraler Geometrie (keine Fremd-Assets).
 - Werkzeug-Upgrades sind Team-Forschung (gelten für alle Roboter der Sitzung), Kosmetik ist persönlich.
 - Credits sind eine gemeinsame Kasse; Lager/Materialien gehören zum jeweiligen Planeten-Stützpunkt.
+- Unterschlupf-Mechanik in der mittleren Härte „Notabschaltung“ (Entscheidung des Auftraggebers): kein Verlust von
+  Gegenständen, nur Zeitverlust.
+- Drei Startplaneten frei wählbar (Entscheidung des Auftraggebers), NIVALIS als gemeinsames Finale.
+- Der Himmel orientiert sich an den gelieferten Referenzbildern (farbige Wolkenmassen, große Planeten/Monde).
 
-## Stand
-Siehe `docs/TESTBERICHT.md` für den geprüften Stand.
+## Prüfwerkzeuge ohne Unity
+- `Tools/CompileCheck/{Core,Runtime,Editor}`: kompiliert die Unity-Skripte mit dotnet gegen UnityEngine-/UnityEditor-
+  Referenz-DLLs (`Tools/CompileCheck/fetch-unity-refs.sh`).
+- `Tools/ShaderCheck/check_shaders.py`: Syntax-/Typprüfung der eigenen Shader mit glslang (HLSL). Ersetzt nicht den
+  Unity-Shader-Compiler.
+- `Tools/SkyPreview/sky_preview.py`: rechnet die Himmels-Shader-Mathematik in NumPy nach (Vorschaubilder, keine Spielszenen).
+- `Tests/`: .NET-Tests für Wirtschaft, Speichern, Netzwerk, Wetter und einen Kampagnen-Bot.
+
+## Grenzen (Stand dieser Umgebung)
+- Kein Unity-Editor, kein Unity-Laufzeittest, keine echten Spiel-Screenshots, keine gebaute .exe.
+- Shader wurden nicht mit Unitys Compiler übersetzt (nur glslang-Prüfung).
+
+## Nächste Schritte
+- Projekt in Unity öffnen (Unity 6 LTS oder 2022.3 LTS), Konsole auf Fehler prüfen, Play-Test, Windows-Build erstellen.
+- Echte Screenshots und Spieltests (Controller, Koop mit mehreren Rechnern, 60-FPS-Messung auf Referenzhardware).
