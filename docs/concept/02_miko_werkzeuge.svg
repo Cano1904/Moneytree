@@ -1,0 +1,235 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- RE:PLANET – Konzeptkunst 02: MIKO-Designblatt mit Werkzeugen. Handgeschriebenes SVG, keine Spielszene. -->
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="1600" height="1000" viewBox="0 0 1600 1000">
+  <title>KONZEPTKUNST – keine Spielszene: MIKO und seine Werkzeuge</title>
+  <defs>
+    <pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse">
+      <path d="M40 0 H0 V40" fill="none" stroke="#C9D6DC" stroke-width="1"/>
+    </pattern>
+    <linearGradient id="body" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#6FF0E2"/>
+      <stop offset="0.5" stop-color="#2EC4B6"/>
+      <stop offset="1" stop-color="#17867C"/>
+    </linearGradient>
+    <linearGradient id="head" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#7AF3E6"/>
+      <stop offset="1" stop-color="#22A99C"/>
+    </linearGradient>
+    <linearGradient id="visor" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#C8FEFF"/>
+      <stop offset="0.5" stop-color="#5FE8F5"/>
+      <stop offset="1" stop-color="#1FA7C4"/>
+    </linearGradient>
+    <filter id="glow" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur stdDeviation="7" result="b"/>
+      <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+    <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="4" stdDeviation="5" flood-color="#23404A" flood-opacity="0.25"/>
+    </filter>
+  </defs>
+
+  <!-- Papier -->
+  <rect width="1600" height="1000" fill="#F2F6F5"/>
+  <rect width="1600" height="1000" fill="url(#grid)" opacity="0.6"/>
+
+  <!-- Kopfzeile -->
+  <rect x="0" y="0" width="1600" height="62" fill="#1E2B33"/>
+  <text x="32" y="40" font-family="DejaVu Sans, Arial, sans-serif" font-size="25" font-weight="bold" fill="#FFFFFF">RE:PLANET · 02 · MIKO – Designblatt und Werkzeuge</text>
+  <rect x="1060" y="14" width="512" height="34" rx="6" fill="#FF8C2E"/>
+  <text x="1316" y="38" text-anchor="middle" font-family="DejaVu Sans, Arial, sans-serif" font-size="19" font-weight="bold" fill="#1A1206">KONZEPTKUNST – keine Spielszene</text>
+
+  <!-- ===== Hauptansicht MIKO (Seitenansicht, groß) ===== -->
+  <g transform="translate(90,150)">
+    <text x="0" y="-22" font-family="DejaVu Sans, Arial, sans-serif" font-size="20" font-weight="bold" fill="#1E2B33">Seitenansicht</text>
+    <ellipse cx="270" cy="590" rx="240" ry="18" fill="#23404A" opacity="0.18"/>
+    <!-- Rückenbehälter (sichtbar, halb transparent) -->
+    <rect x="40" y="210" width="130" height="250" rx="22" fill="#1D3B45" opacity="0.9"/>
+    <rect x="52" y="330" width="40" height="34" fill="#C94F3D"/>
+    <rect x="96" y="318" width="54" height="40" fill="#E0D6BC"/>
+    <rect x="56" y="370" width="56" height="36" fill="#9AA5B1"/>
+    <rect x="116" y="366" width="38" height="42" fill="#7FD6C9"/>
+    <rect x="52" y="412" width="104" height="36" fill="#F2C14E"/>
+    <path d="M52 250 H158 M52 290 H158 M86 216 V456 M122 216 V456" stroke="#6FF0E2" stroke-width="2" opacity="0.4"/>
+    <rect x="28" y="196" width="154" height="26" rx="10" fill="#FF8C2E"/>
+    <!-- Fahrgestell -->
+    <rect x="110" y="446" width="340" height="70" rx="26" fill="#2B3138"/>
+    <rect x="130" y="468" width="300" height="12" rx="6" fill="#FF8C2E"/>
+    <!-- drei Räder -->
+    <circle cx="160" cy="540" r="52" fill="#23282E"/>
+    <circle cx="160" cy="540" r="30" fill="#4B535C"/>
+    <circle cx="160" cy="540" r="11" fill="#FF8C2E"/>
+    <circle cx="300" cy="548" r="44" fill="#23282E"/>
+    <circle cx="300" cy="548" r="25" fill="#4B535C"/>
+    <circle cx="300" cy="548" r="9" fill="#FF8C2E"/>
+    <circle cx="420" cy="540" r="52" fill="#23282E"/>
+    <circle cx="420" cy="540" r="30" fill="#4B535C"/>
+    <circle cx="420" cy="540" r="11" fill="#FF8C2E"/>
+    <!-- Körper -->
+    <rect x="150" y="250" width="290" height="210" rx="70" fill="url(#body)" filter="url(#shadow)"/>
+    <path d="M178 380 H412" stroke="#17867C" stroke-width="3"/>
+    <rect x="200" y="400" width="110" height="16" rx="8" fill="#FF8C2E"/>
+    <circle cx="370" cy="408" r="10" fill="#FFD27A"/>
+    <!-- Hals -->
+    <rect x="262" y="222" width="70" height="36" rx="10" fill="#2B3138"/>
+    <!-- Kopf mit breitem Visier -->
+    <rect x="160" y="90" width="300" height="140" rx="56" fill="url(#head)" filter="url(#shadow)"/>
+    <rect x="180" y="118" width="270" height="78" rx="38" fill="#0B1F2A"/>
+    <rect x="194" y="130" width="244" height="54" rx="27" fill="url(#visor)" filter="url(#glow)"/>
+    <rect x="210" y="138" width="130" height="10" rx="5" fill="#FFFFFF" opacity="0.7"/>
+    <rect x="446" y="126" width="26" height="52" rx="8" fill="#FF8C2E"/>
+    <!-- Antennenstummel -->
+    <rect x="300" y="68" width="8" height="26" fill="#2B3138"/>
+    <circle cx="304" cy="64" r="8" fill="#FF8C2E"/>
+    <!-- faltbarer Arm (ausgeklappt) -->
+    <circle cx="420" cy="320" r="24" fill="#FF8C2E"/>
+    <path d="M420 320 L520 380" stroke="#2B3138" stroke-width="28" stroke-linecap="round"/>
+    <path d="M420 320 L520 380" stroke="#2EC4B6" stroke-width="16" stroke-linecap="round"/>
+    <circle cx="520" cy="380" r="17" fill="#FF8C2E"/>
+    <path d="M520 380 L580 300" stroke="#2B3138" stroke-width="24" stroke-linecap="round"/>
+    <path d="M520 380 L580 300" stroke="#2EC4B6" stroke-width="12" stroke-linecap="round"/>
+    <path d="M580 300 l28 -26 M580 300 l36 6" stroke="#FF8C2E" stroke-width="11" stroke-linecap="round"/>
+    <!-- eingeklappte Armposition (gestrichelt) -->
+    <path d="M420 320 L470 400 L430 440" stroke="#2EC4B6" stroke-width="6" stroke-dasharray="10 8" fill="none" opacity="0.8"/>
+  </g>
+
+  <!-- Maßlinien / Anmerkungen -->
+  <g font-family="DejaVu Sans, Arial, sans-serif" font-size="17" fill="#1E2B33">
+    <g stroke="#1E2B33" stroke-width="1.5" fill="none">
+      <path d="M430 285 L700 190"/>
+      <path d="M180 440 L60 830"/>
+      <path d="M610 530 L760 440"/>
+      <path d="M480 695 L700 850"/>
+      <path d="M500 560 L760 640"/>
+    </g>
+    <circle cx="430" cy="285" r="5"/>
+    <circle cx="180" cy="440" r="5"/>
+    <circle cx="610" cy="530" r="5"/>
+    <circle cx="480" cy="695" r="5"/>
+    <circle cx="500" cy="560" r="5"/>
+    <text x="704" y="186" font-weight="bold">Breites, leuchtendes Visier</text>
+    <text x="704" y="208">statt Augen – Stimmung über Licht</text>
+    <text x="30" y="856" font-weight="bold">Sichtbarer Rückenbehälter</text>
+    <text x="30" y="878">zeigt die Ladung (12–65 Vol.)</text>
+    <text x="764" y="436" font-weight="bold">Faltbarer Arm</text>
+    <text x="764" y="458">Werkzeugkopf wechselbar</text>
+    <text x="704" y="862" font-weight="bold">Drei Räder</text>
+    <text x="704" y="884">stabil in Schutt und Sand</text>
+    <text x="764" y="636" font-weight="bold">Türkise Hülle, orange Akzente</text>
+    <text x="764" y="658">Grundfarben #2EC4B6 / #FF8C2E</text>
+  </g>
+
+  <!-- Farbfelder -->
+  <g transform="translate(340,900)" font-family="DejaVu Sans, Arial, sans-serif" font-size="15" fill="#1E2B33">
+    <rect width="54" height="54" rx="8" fill="#2EC4B6"/>
+    <rect x="84" width="54" height="54" rx="8" fill="#FF8C2E"/>
+    <rect x="168" width="54" height="54" rx="8" fill="#2B3138"/>
+    <rect x="252" width="54" height="54" rx="8" fill="#5FE8F5"/>
+    <text x="0" y="76">Hülle</text>
+    <text x="84" y="76">Akzent</text>
+    <text x="168" y="76">Fahrwerk</text>
+    <text x="252" y="76">Visier</text>
+  </g>
+
+  <!-- ===== Werkzeugköpfe ===== -->
+  <g font-family="DejaVu Sans, Arial, sans-serif">
+    <text x="1060" y="112" font-size="20" font-weight="bold" fill="#1E2B33">Werkzeugköpfe (Arm-Aufsätze)</text>
+
+    <!-- Karte 1: Greifarm -->
+    <g transform="translate(1060,130)">
+      <rect width="240" height="210" rx="16" fill="#FFFFFF" stroke="#B9CBD1" stroke-width="2"/>
+      <path d="M40 120 H110" stroke="#2EC4B6" stroke-width="16" stroke-linecap="round"/>
+      <circle cx="116" cy="120" r="14" fill="#FF8C2E"/>
+      <path d="M126 112 Q160 70 196 86 M126 128 Q160 170 196 154" stroke="#2B3138" stroke-width="12" stroke-linecap="round" fill="none"/>
+      <path d="M190 84 l12 14 M190 156 l12 -14" stroke="#FF8C2E" stroke-width="8" stroke-linecap="round"/>
+      <rect x="150" y="104" width="30" height="34" rx="6" fill="#C43D3D" transform="rotate(10 165 121)"/>
+      <text x="16" y="36" font-size="18" font-weight="bold" fill="#1E2B33">Greifarm</text>
+      <text x="16" y="190" font-size="14" fill="#4A5A62">Einzelne Objekte, 3–12 kg</text>
+    </g>
+    <!-- Karte 2: Sauger -->
+    <g transform="translate(1320,130)">
+      <rect width="240" height="210" rx="16" fill="#FFFFFF" stroke="#B9CBD1" stroke-width="2"/>
+      <path d="M36 120 H100" stroke="#2EC4B6" stroke-width="16" stroke-linecap="round"/>
+      <path d="M100 104 L150 84 L150 156 L100 136 Z" fill="#2B3138"/>
+      <rect x="148" y="80" width="10" height="80" rx="4" fill="#FF8C2E"/>
+      <path d="M160 92 L220 64 M160 120 L228 120 M160 148 L220 176" stroke="#5FE8F5" stroke-width="3" stroke-dasharray="6 6"/>
+      <path d="M200 96 q8 -6 14 0 q-6 8 -14 0z" fill="#F4F1E8" stroke="#9FB0B6"/>
+      <rect x="196" y="126" width="10" height="18" rx="3" fill="#6FB7E8"/>
+      <text x="16" y="36" font-size="18" font-weight="bold" fill="#1E2B33">Müllsauger</text>
+      <text x="16" y="190" font-size="14" fill="#4A5A62">Leichtes bis 1 kg im Kegel</text>
+    </g>
+    <!-- Karte 3: Magnet -->
+    <g transform="translate(1060,360)">
+      <rect width="240" height="210" rx="16" fill="#FFFFFF" stroke="#B9CBD1" stroke-width="2"/>
+      <path d="M30 120 H80" stroke="#2EC4B6" stroke-width="16" stroke-linecap="round"/>
+      <path d="M86 84 H120 A36 36 0 0 1 120 156 H86 V136 H120 A16 16 0 0 0 120 104 H86 Z" fill="#C94F3D"/>
+      <rect x="86" y="84" width="16" height="20" fill="#E8E8E8"/>
+      <rect x="86" y="136" width="16" height="20" fill="#E8E8E8"/>
+      <path d="M168 88 A50 50 0 0 1 168 152" stroke="#5FE8F5" stroke-width="4" fill="none"/>
+      <path d="M186 74 A70 70 0 0 1 186 166" stroke="#5FE8F5" stroke-width="3" fill="none" opacity="0.7"/>
+      <path d="M204 60 A90 90 0 0 1 204 180" stroke="#5FE8F5" stroke-width="2" fill="none" opacity="0.45"/>
+      <rect x="208" y="106" width="16" height="22" rx="3" fill="#9AA5B1"/>
+      <text x="16" y="36" font-size="18" font-weight="bold" fill="#1E2B33">Magnetarm</text>
+      <text x="16" y="190" font-size="14" fill="#4A5A62">Aufladen → Magnetwelle</text>
+    </g>
+    <!-- Karte 4: Schneider -->
+    <g transform="translate(1320,360)">
+      <rect width="240" height="210" rx="16" fill="#FFFFFF" stroke="#B9CBD1" stroke-width="2"/>
+      <path d="M30 120 H90" stroke="#2EC4B6" stroke-width="16" stroke-linecap="round"/>
+      <rect x="88" y="104" width="44" height="32" rx="6" fill="#2B3138"/>
+      <circle cx="160" cy="120" r="34" fill="#9AA5B1" stroke="#4B535C" stroke-width="4"/>
+      <circle cx="160" cy="120" r="8" fill="#FF8C2E"/>
+      <path d="M160 86 l6 -8 l4 10 M194 120 l8 6 l-10 4 M160 154 l-6 8 l-4 -10 M126 120 l-8 -6 l10 -4" stroke="#4B535C" stroke-width="3" fill="none"/>
+      <path d="M192 96 l16 -10 M198 108 l20 -4 M196 84 l8 -16" stroke="#FFB347" stroke-width="3" stroke-linecap="round"/>
+      <text x="16" y="36" font-size="18" font-weight="bold" fill="#1E2B33">Schneidgerät</text>
+      <text x="16" y="190" font-size="14" fill="#4A5A62">Zerlegt Wracks und Netze</text>
+    </g>
+    <!-- Karte 5: Presse -->
+    <g transform="translate(1060,590)">
+      <rect width="240" height="210" rx="16" fill="#FFFFFF" stroke="#B9CBD1" stroke-width="2"/>
+      <rect x="60" y="60" width="120" height="16" rx="4" fill="#2B3138"/>
+      <rect x="112" y="76" width="16" height="22" fill="#FF8C2E"/>
+      <rect x="70" y="98" width="100" height="14" rx="3" fill="#2EC4B6"/>
+      <path d="M120 44 V58 M112 50 l8 8 l8 -8" stroke="#FF8C2E" stroke-width="4" fill="none" stroke-linecap="round"/>
+      <rect x="74" y="116" width="92" height="46" rx="4" fill="#937556"/>
+      <rect x="80" y="122" width="22" height="10" fill="#C94F3D"/>
+      <rect x="110" y="136" width="30" height="10" fill="#4F8FBF"/>
+      <rect x="84" y="146" width="18" height="10" fill="#F2C14E"/>
+      <text x="16" y="36" font-size="18" font-weight="bold" fill="#1E2B33">Müllpresse</text>
+      <text x="16" y="190" font-size="14" fill="#4A5A62">Halbiert das Volumen</text>
+    </g>
+    <!-- Karte 6: Behälter -->
+    <g transform="translate(1320,590)">
+      <rect width="240" height="210" rx="16" fill="#FFFFFF" stroke="#B9CBD1" stroke-width="2"/>
+      <rect x="70" y="58" width="100" height="116" rx="16" fill="#1D3B45"/>
+      <rect x="62" y="50" width="116" height="16" rx="6" fill="#FF8C2E"/>
+      <rect x="80" y="120" width="30" height="22" fill="#C94F3D"/>
+      <rect x="112" y="112" width="44" height="30" fill="#E0D6BC"/>
+      <rect x="80" y="144" width="80" height="22" fill="#F2C14E"/>
+      <path d="M78 90 H162" stroke="#6FF0E2" stroke-width="2" stroke-dasharray="6 4"/>
+      <text x="176" y="94" font-size="12" fill="#4A5A62">voll</text>
+      <text x="16" y="36" font-size="18" font-weight="bold" fill="#1E2B33">Behälter</text>
+      <text x="16" y="190" font-size="14" fill="#4A5A62">12 → 65 Vol., + Anhänger</text>
+    </g>
+  </g>
+
+  <!-- Kleine Ansichten -->
+  <g transform="translate(1070,826)" font-family="DejaVu Sans, Arial, sans-serif">
+    <text x="0" y="-8" font-size="16" font-weight="bold" fill="#1E2B33">Vorderansicht</text>
+    <rect x="0" y="10" width="110" height="48" rx="20" fill="#2EC4B6"/>
+    <rect x="10" y="22" width="90" height="24" rx="12" fill="#5FE8F5"/>
+    <rect x="12" y="62" width="86" height="60" rx="22" fill="#2EC4B6"/>
+    <rect x="30" y="98" width="50" height="8" rx="4" fill="#FF8C2E"/>
+    <circle cx="20" cy="134" r="14" fill="#23282E"/>
+    <circle cx="90" cy="134" r="14" fill="#23282E"/>
+  </g>
+  <g transform="translate(1250,826)" font-family="DejaVu Sans, Arial, sans-serif">
+    <text x="0" y="-8" font-size="16" font-weight="bold" fill="#1E2B33">Rückansicht</text>
+    <rect x="14" y="10" width="82" height="112" rx="16" fill="#1D3B45"/>
+    <rect x="6" y="4" width="98" height="14" rx="6" fill="#FF8C2E"/>
+    <rect x="24" y="70" width="60" height="40" fill="#F2C14E" opacity="0.8"/>
+    <circle cx="20" cy="134" r="14" fill="#23282E"/>
+    <circle cx="90" cy="134" r="14" fill="#23282E"/>
+  </g>
+  <text x="1568" y="992" text-anchor="end" font-family="DejaVu Sans, Arial, sans-serif" font-size="14" fill="#4A5A62">Eigenes Figurendesign – keine Filmfigur nachgezeichnet</text>
+</svg>
