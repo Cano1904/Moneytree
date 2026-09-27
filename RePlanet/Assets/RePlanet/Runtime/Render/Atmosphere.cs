@@ -231,7 +231,7 @@ namespace RePlanet
                 Sun.color = pal.Sun;
                 Sun.intensity = Mathf.Lerp(0.35f, GameData.Planets.ContainsKey(planet) ? GameData.Planets[planet].SunIntensity : 1.1f, Mathf.Clamp01(elev * 2.5f)) * (1f - stormBlend * 0.55f);
             }
-            float bright = GameApp.I != null ? GameApp.I.Settings.Brightness : 1f;
+            float bright = (GameApp.I != null ? GameApp.I.Settings.Brightness : 1f) * (PhotoMode.Active ? PhotoMode.Exposure : 1f); // Fotomodus: Belichtung
             Sun.intensity *= bright;
             if (GameApp.I != null) Sun.shadows = GameApp.I.Settings.Shadows == 0 ? LightShadows.None : GameApp.I.Settings.Shadows == 1 ? LightShadows.Hard : LightShadows.Soft;
 
