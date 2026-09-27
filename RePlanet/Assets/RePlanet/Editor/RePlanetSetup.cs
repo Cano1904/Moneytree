@@ -91,6 +91,7 @@ namespace RePlanet.EditorTools
         {
             var log = new List<string>();
             int errors = 0;
+            Step("Render-Pipeline", () => EnsureBuiltinPipeline(log), log, ref errors);
             Step("Material-Vorlagen", () => EnsureMaterials(log), log, ref errors);
             Step("Szene und Build-Liste", () => EnsureScene(log, interactive), log, ref errors);
             Step("Grafik-Einstellungen", () => EnsureGraphicsSettings(log), log, ref errors);
@@ -104,6 +105,37 @@ namespace RePlanet.EditorTools
                 EditorUtility.DisplayDialog("RE:PLANET – Projekt einrichten",
                     (errors > 0 ? "Setup mit Problemen abgeschlossen (Details in der Konsole):\n\n" : "Setup abgeschlossen:\n\n") + Shorten(summary, 1800), "OK");
             return errors == 0;
+        }
+
+        /// <summary>
+        /// RE:PLANET nutzt die Built-in Render Pipeline (Standard-Shader, eigener Himmels-Shader). Wurde das Projekt aus einer
+        /// URP-/HDRP-Vorlage erstellt, bleibt sonst alles pink. Die Pipeline-Zuweisung wird deshalb entfernt
+        /// (Grafik-Einstellungen und jede Qualitätsstufe); das URP-Paket selbst bleibt installiert und stört nicht.
+        /// </summary>
+        static bool EnsureBuiltinPipeline(List<string> log)
+        {
+            int changed = 0;
+            if (GraphicsSettings.defaultRenderPipeline != null)
+            {
+                log.Add("Render-Pipeline: „" + GraphicsSettings.defaultRenderPipeline.name + "“ entfernt → Built-in Render Pipeline (für RE:PLANET nötig).");
+                GraphicsSettings.defaultRenderPipeline = null;
+                changed++;
+            }
+            int current = QualitySettings.GetQualityLevel();
+            for (int i = 0; i < QualitySettings.names.Length; i++)
+            {
+                if (QualitySettings.GetRenderPipelineAssetAt(i) == null) continue;
+                QualitySettings.SetQualityLevel(i, false);
+                QualitySettings.renderPipeline = null;
+                changed++;
+            }
+            QualitySettings.SetQualityLevel(current, false);
+            if (changed > 0)
+            {
+                log.Add("Render-Pipeline: Built-in aktiv (" + changed + " Zuweisung(en) entfernt). Falls Materialien noch pink sind, den Editor einmal neu starten.");
+                AssetDatabase.SaveAssets();
+            }
+            return true;
         }
 
         static void Step(string name, Func<bool> action, List<string> log, ref int errors)
