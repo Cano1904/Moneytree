@@ -28,6 +28,7 @@ namespace RePlanet.Core
         readonly Dictionary<string, RidCache> rids = new Dictionary<string, RidCache>();
         readonly Dictionary<int, RateLimit> rates = new Dictionary<int, RateLimit>();
         readonly Dictionary<string, double> lastInput = new Dictionary<string, double>();
+        readonly Dictionary<string, float> inputBudget = new Dictionary<string, float>();
         double clock;
         float patchTimer, posTimer;
         double hostLostAt = -1;
@@ -162,10 +163,18 @@ namespace RePlanet.Core
                 case "in":
                     {
                         double last;
-                        float dt = lastInput.TryGetValue(pid, out last) ? (float)(clock - last) : 0.1f;
+                        float elapsed = lastInput.TryGetValue(pid, out last) ? (float)(clock - last) : 0.1f;
                         lastInput[pid] = clock;
+                        // Die vom Client angegebene Zeitspanne darf die am Server tatsächlich vergangene Zeit nicht übersteigen
+                        // (Guthaben bis 1 s gleicht Netzschwankungen aus) – sonst wäre mit "dt": 1 jede Geschwindigkeit erlaubt.
+                        float budget;
+                        inputBudget.TryGetValue(pid, out budget);
+                        budget = Math.Min(1f, budget + elapsed);
+                        float claimed = m.Has("dt") ? m.Float("dt") : Math.Max(elapsed, 0.066f);
+                        float dt = M.Clamp(claimed, 0f, budget);
+                        inputBudget[pid] = budget - dt;
                         var pos = V3.FromArr(m.Floats("p"));
-                        if (!Game.Move(pid, pos, m.Float("y"), m.Bool("s"), m.Int("f"), m.Str("tool"), Math.Max(dt, m.Float("dt", 0.066f))))
+                        if (!Game.Move(pid, pos, m.Float("y"), m.Bool("s"), m.Int("f"), m.Str("tool"), dt))
                         {
                             PlayerData p;
                             if (Game.S.Players.TryGetValue(pid, out p))
