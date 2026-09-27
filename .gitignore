@@ -18,3 +18,6 @@ RePlanet/.vscode/
 
 # Claude-Arbeitsverzeichnisse (Worktrees der Hilfsagenten)
 .claude/
+
+# Spielstände des dedizierten Servers (Standardordner)
+server-saves/
