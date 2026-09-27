@@ -172,7 +172,7 @@ namespace RePlanet
                 PhotoMode.JumpToViewpoint = null;
             }
             var app = GameApp.I;
-            if (!UIRootWantsCursor())
+            if (!UIRoot.WantsCursor)
             {
                 var d = InputMap.Look(app.Settings.MouseSensitivity, app.Settings.PadSensitivity, app.Settings.InvertY);
                 photoYaw += d.x; photoPitch = Mathf.Clamp(photoPitch - d.y, -85f, 85f);
@@ -191,13 +191,6 @@ namespace RePlanet
             if (WorldView.I != null) photoPos.y = Mathf.Max(photoPos.y, Terrain.HeightAt(WorldView.I.Planet, photoPos.x, photoPos.z) + 0.3f);
             Cam.transform.position = photoPos;
             Cam.transform.rotation = rot * Quaternion.Euler(0, 0, PhotoMode.Roll);
-        }
-
-        static bool UIRootWantsCursor()
-        {
-            var p = typeof(UIRoot).GetProperty("WantsCursor", System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Static);
-            if (p == null) return false;
-            try { return (bool)p.GetValue(null, null); } catch { return false; }
         }
 
         void HandleCapture(GameApp app)

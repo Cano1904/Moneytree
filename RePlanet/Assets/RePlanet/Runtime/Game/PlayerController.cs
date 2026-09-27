@@ -21,11 +21,11 @@ namespace RePlanet
         MoverState ms;
         MotorEnv env;
         string envPlanet;
-        float envSync, sendTimer, sendAccum, actTimer, stuckTime, resetHold, statusTimer;
+        float envSync, sendTimer, sendAccum, actTimer, stuckTime, resetHold;
         string tool = "grab";
         bool toolToggled;
         float magnetCharge = -1f;
-        bool hooked, pending;
+        bool pending;
         GameClient hookedClient;
         ObjView target;
         string targetErr;

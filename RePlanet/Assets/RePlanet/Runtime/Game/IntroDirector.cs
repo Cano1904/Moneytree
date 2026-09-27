@@ -23,7 +23,7 @@ namespace RePlanet
         readonly List<Material> robotEyes = new List<Material>();
         readonly List<Transform> arks = new List<Transform>();
         RobotModel miko, mikoShip, mikoClose;
-        Transform van, sprout, cubeStack, pressCube, planetSphere, shipSpace, title;
+        Transform van, sprout, cubeStack, pressCube, planetSphere, shipSpace;
         Material vanLight;
         CameraClearFlags oldClear;
         Color oldBg;
