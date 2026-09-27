@@ -79,7 +79,7 @@ namespace RePlanet
             Profile = Profile.Load();
             Saves = new SaveStore(SaveDir);
             // Bekannte Bausteine (existieren sie nicht, wird nichts erzeugt)
-            foreach (var n in new[] { "AudioManager", "WorldView", "CameraRig", "PlayerController", "IntroDirector", "EndingDirector", "UIRoot", "ScreenPresenter" }) Register(n);
+            foreach (var n in new[] { "AudioManager", "WorldView", "CameraRig", "PlayerController", "IntroDirector", "EndingDirector", "UIRoot" }) Register(n);
             foreach (var t in Components) if (GetComponent(t) == null) gameObject.AddComponent(t);
             Mode = AppMode.Menu;
             UIState.Open(UIScreen.MainMenu);

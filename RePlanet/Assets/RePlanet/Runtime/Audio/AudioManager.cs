@@ -20,5 +20,13 @@ namespace RePlanet
         public static void Loop(string key, string clipId, bool on, Vector3? pos = null, float volume = 1f, float pitch = 1f) { }
 
         public static void Ui(string id) { Play(id, null, 1f, 1f); }
+
+        public static void PlayIntro() { }
+        public static void StopIntro() { }
+        /// <summary>Sekunden seit Intro-Start (DSP-genau), −1 wenn nicht bereit.</summary>
+        public static double IntroTime { get { return -1; } }
+        public static bool IntroReady { get { return false; } }
+        public static void PlayEnding() { }
+        public static void StopEnding() { }
     }
 }

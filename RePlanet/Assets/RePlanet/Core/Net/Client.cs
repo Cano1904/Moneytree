@@ -64,6 +64,8 @@ namespace RePlanet.Core
         public event Action<JObj> Fx;
         public event Action<string, string> SaveReceived;
         public event Action<V3> Corrected;
+        /// <summary>Der Server hat den eigenen Roboter versetzt (neue Position).</summary>
+        public event Action<V3> Teleported;
         public event Action<string> Notice;
         public event Action<string> PlanetChanged;
         public event Action<string, string> Emote;
@@ -198,8 +200,11 @@ namespace RePlanet.Core
                     PlayerData old;
                     if (W.Players.TryGetValue(kv.Key, out old) && kv.Key == Pid)
                     {
-                        // eigene Position bleibt lokal (Vorhersage) – der Server korrigiert per "corr"
-                        pd.Pos = old.Pos; pd.Yaw = old.Yaw;
+                        // Eigene Position bleibt lokal (Vorhersage). Große Abweichung = Teleport durch den Server
+                        // (Abschleppen, Reise, Aussteigen, Zurücksetzen) → Serverposition übernehmen.
+                        if (V3.DistXZ(pd.Pos, old.Pos) > 6f || (pd.Vehicle != old.Vehicle))
+                            Teleported?.Invoke(pd.Pos);
+                        else { pd.Pos = old.Pos; pd.Yaw = old.Yaw; }
                     }
                     W.Players[kv.Key] = pd;
                 }
