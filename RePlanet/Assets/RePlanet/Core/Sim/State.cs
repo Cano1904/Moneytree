@@ -182,10 +182,11 @@ namespace RePlanet.Core
             return (int)c;
         }
 
+        /// <summary>Für Projekte, Bauwerke und Reparaturen verfügbare Einheiten – Ballen zählen mit (werden bei Bedarf aufgebrochen).</summary>
         public int Available(string mat)
         {
             StorageEntry e;
-            return Storage.TryGetValue(mat, out e) ? e.U + e.S : 0;
+            return Storage.TryGetValue(mat, out e) ? e.U + e.S + e.B * GameData.BaleUnits : 0;
         }
 
         public void RecomputeDerived()

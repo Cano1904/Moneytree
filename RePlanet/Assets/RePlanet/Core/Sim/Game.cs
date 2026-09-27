@@ -445,6 +445,8 @@ namespace RePlanet.Core
                 int need = kv.Value;
                 int fromS = Math.Min(e.S, need); e.S -= fromS; need -= fromS;
                 int fromU = Math.Min(e.U, need); e.U -= fromU; need -= fromU;
+                // Rest aus Ballen (die Ballenpresse bündelt sortiertes Material automatisch); angebrochene Ballen bleiben als sortierte Einheiten
+                while (need > 0 && e.B > 0) { e.B--; int take = Math.Min(GameData.BaleUnits, need); e.S += GameData.BaleUnits - take; need -= take; }
                 if (need > 0) throw new InvalidOperationException("Materialprüfung übersprungen");
             }
             DP("storage");
