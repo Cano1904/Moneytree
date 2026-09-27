@@ -18,3 +18,6 @@ RePlanet/.vscode/
 
 # Claude-Arbeitsverzeichnisse (Worktrees der Hilfsagenten)
 .claude/
+
+# Ergebnisse des Testläufers
+test-results.txt
