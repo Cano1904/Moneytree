@@ -39,7 +39,7 @@ public static class BalanceRun
         var l = new System.Collections.Generic.List<string>();
         l.Add("Profil: " + bot.ProfileName + " (Geschwindigkeit ×" + bot.SpeedFactor + ", Umweg ×" + bot.Detour + ", +" + bot.PickupDelay + " s je Aufnahme, +" + bot.StationDelay + " s je Station)");
         l.Add("Kampagne abgeschlossen: " + (S.CampaignDone ? "ja" : "nein") + " (WorldState.CampaignDone)");
-        l.Add("Gesamtspielzeit (Bot): " + (S.PlayTime / 3600).ToString("0.00") + " h");
+        l.Add("Gesamtspielzeit: " + (S.PlayTime / 3600).ToString("0.00") + " h");
         l.Add("Erster Verkauf: " + Min(bot.FirstSale));
         l.Add("Erstes Upgrade: " + Min(bot.FirstUpgrade) + " (" + bot.FirstUpgradeId + ")");
         l.Add("Erste sichtbare Veränderung: " + Min(bot.FirstVisibleChange) + " (" + bot.FirstVisibleWhat + ")");
