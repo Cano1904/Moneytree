@@ -214,7 +214,7 @@ namespace RePlanet.Core
 
         void ApplyPos(JObj m)
         {
-            ServerTime = m.Num("t");
+            ServerTime = m.Num("st", ServerTime);
             serverTimeAt = localClock;
             W.PlayTime = ServerTime;
             var p = m.Obj("p");

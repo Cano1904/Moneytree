@@ -169,7 +169,8 @@ namespace RePlanet.Core
         /// <summary>Schnelle Positionsdaten (Spieler, Fahrzeuge, Drohnen) – werden ~15× pro Sekunde gesendet.</summary>
         public JObj PosPacket()
         {
-            var o = new JObj().Set("t", Math.Round(S.PlayTime, 2));
+            // Serverzeit unter "st": "t" ist im Netzprotokoll der Nachrichtentyp und wird von der Sitzung mit "pos" belegt.
+            var o = new JObj().Set("st", Math.Round(S.PlayTime, 2));
             var pl = new JObj();
             foreach (var p in S.Players.Values)
                 if (p.Online) pl[p.Id] = Json.Arr(Json.R(p.Pos.x), Json.R(p.Pos.y), Json.R(p.Pos.z), Json.R(p.Yaw, 3), p.Flags);
@@ -187,7 +188,8 @@ namespace RePlanet.Core
         public PlayerData Join(string pid, string name)
         {
             PlayerData p;
-            if (!S.Players.TryGetValue(pid, out p))
+            bool returning = S.Players.TryGetValue(pid, out p);
+            if (!returning)
             {
                 p = new PlayerData { Id = pid, Energy = S.MaxEnergy };
                 S.Players[pid] = p;
@@ -195,7 +197,8 @@ namespace RePlanet.Core
             p.Name = string.IsNullOrEmpty(name) ? "MIKO" : (name.Length > 20 ? name.Substring(0, 20) : name);
             p.Online = true;
             p.Vehicle = null;
-            p.Pos = SpawnPos(pid);
+            // Bekannte Spieler (geladener Spielstand, Wiederverbinden) machen dort weiter, wo sie aufgehört haben.
+            if (!returning || !CanResumeAt(p.Pos)) p.Pos = SpawnPos(pid);
             p.Energy = Math.Min(p.Energy, S.MaxEnergy);
             teleportOk.Add(pid);
             DPl(pid);
@@ -211,6 +214,16 @@ namespace RePlanet.Core
             p.Online = false;
             DPl(pid);
             Fx(new JObj().Set("k", "leave").Set("pid", pid).Set("name", p.Name));
+        }
+
+        /// <summary>Gespeicherte Position gültig und erreichbar (im Spielfeld, Bereich über offene Tore zugänglich)?</summary>
+        bool CanResumeAt(V3 pos)
+        {
+            if (!pos.IsFinite || Math.Abs(pos.x) > 149 || Math.Abs(pos.z) > 149 || pos.y < -40 || pos.y > 120) return false;
+            if (pos.x == 0 && pos.y == 0 && pos.z == 0) return false; // kein Ort gespeichert
+            int area = PlanetLayout.AreaOf(pos.z);
+            for (int g = 0; g < area; g++) if (!Rules.GateOpen(S.Cur, g)) return false;
+            return true;
         }
 
         V3 SpawnPos(string pid)
