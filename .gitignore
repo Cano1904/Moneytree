@@ -15,3 +15,6 @@ MemoryCaptures/
 RePlanet/*.csproj
 RePlanet/*.sln
 RePlanet/.vscode/
+
+# Claude-Arbeitsverzeichnisse (Worktrees der Hilfsagenten)
+.claude/
