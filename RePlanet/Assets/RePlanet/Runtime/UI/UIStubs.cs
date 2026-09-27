@@ -13,9 +13,7 @@ namespace RePlanet
         void DrawMapScreen(GameApp app) { }
         void DrawPhoto(GameApp app) { }
         void DrawTravelScreen(GameApp app) { }
-        void DrawHud(GameApp app) { }
         void DrawBuild(GameApp app) { }
-        void DrawToasts(GameApp app) { }
         void UpdateMapBuild(GameApp app) { }
         void OnMenuOpened() { }
         void SetMenuTab(string t) { menuTab = t; }
