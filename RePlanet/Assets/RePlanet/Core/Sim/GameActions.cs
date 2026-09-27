@@ -982,9 +982,10 @@ namespace RePlanet.Core
             var def = GameData.Planets[S.CurrentPlanet];
             var b = WorldGen.Get(S.CurrentPlanet).Base;
             int count = 14;
+            long mix = S.NextDyn; // fest vor der Schleife: SpawnDyn erhöht NextDyn, sonst wäre jede Lieferung sortenrein
             for (int i = 0; i < count; i++)
             {
-                string type = def.Deliveries[(int)((S.NextDyn + i * 7) % def.Deliveries.Length)];
+                string type = def.Deliveries[(int)((mix + i * 7) % def.Deliveries.Length)];
                 float ang = i * 0.449f * 6.283f / 2.8f, r = 2.5f + (i % 4) * 1.1f;
                 var pos = new V3(b.DropZone.x + M.Cos(ang) * r, b.DropZone.y, b.DropZone.z + M.Sin(ang) * r * 0.8f);
                 pos.y = Terrain.HeightAt(S.CurrentPlanet, pos.x, pos.z);

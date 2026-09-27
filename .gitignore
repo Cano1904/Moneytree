@@ -21,3 +21,6 @@ RePlanet/.vscode/
 
 # Spielstände des dedizierten Servers (Standardordner)
 server-saves/
+
+# Ergebnisse des Testläufers
+test-results.txt
