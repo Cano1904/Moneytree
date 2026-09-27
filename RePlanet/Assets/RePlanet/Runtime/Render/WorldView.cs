@@ -79,6 +79,17 @@ namespace RePlanet
             BuildMenuBackdrop();
         }
 
+        /// <summary>Planetenwahl: zeigt den gewählten Planeten mit seiner Stimmung als Hintergrund.</summary>
+        public void PreviewPlanet(string planet)
+        {
+            if (planet == null || !GameData.Planets.ContainsKey(planet) || GameApp.I == null || GameApp.I.W != null) return;
+            if (planet == Planet) return;
+            menuWorld = Game.NewWorld("Vorschau", GameData.Planets[planet].StartPlanet ? planet : "terra");
+            menuWorld.CurrentPlanet = planet;
+            menuWorld.PlayTime = 0.55f * GameData.Planets[planet].DayLength;
+            Build(planet, true);
+        }
+
         public void BuildMenuBackdrop()
         {
             menuWorld = Game.NewWorld("Menü", "terra");

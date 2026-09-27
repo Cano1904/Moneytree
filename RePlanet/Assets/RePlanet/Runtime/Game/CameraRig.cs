@@ -39,7 +39,7 @@ namespace RePlanet
             go.AddComponent<AudioListener>();
             go.AddComponent<FlareLayer>();
             // Weitere Darstellungsbausteine gehören an das Hauptobjekt
-            foreach (var t in new[] { typeof(Atmosphere), typeof(TrashRenderer), typeof(ActorsView), typeof(FxView) })
+            foreach (var t in new[] { typeof(Atmosphere), typeof(TrashRenderer), typeof(ActorsView), typeof(FxView), typeof(FloraRenderer) })
                 if (GetComponent(t) == null) gameObject.AddComponent(t);
         }
 
