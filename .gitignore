@@ -1,0 +1,17 @@
+Library/
+Temp/
+Obj/
+obj/
+bin/
+Build/
+Builds/
+Logs/
+UserSettings/
+MemoryCaptures/
+*.csproj.user
+.vs/
+*.sln.DotSettings.user
+# Unity-generierte Projektdateien im Unity-Ordner
+RePlanet/*.csproj
+RePlanet/*.sln
+RePlanet/.vscode/

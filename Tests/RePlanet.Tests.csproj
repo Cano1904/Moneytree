@@ -1,0 +1,16 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!-- Automatisierte Tests für Wirtschaft, Speichern, Netzwerk und die komplette Kampagne (ohne Unity). -->
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net8.0</TargetFramework>
+    <LangVersion>9.0</LangVersion>
+    <Nullable>disable</Nullable>
+    <ImplicitUsings>disable</ImplicitUsings>
+    <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
+    <NoWarn>CS1591;CS0168;CS0219</NoWarn>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="../RePlanet/Assets/RePlanet/Core/**/*.cs" LinkBase="Core" />
+    <Compile Include="*.cs" />
+  </ItemGroup>
+</Project>
