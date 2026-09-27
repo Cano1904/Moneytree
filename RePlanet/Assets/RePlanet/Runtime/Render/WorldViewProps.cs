@@ -284,6 +284,19 @@ namespace RePlanet
             }
         }
 
+        static Material textMat;
+        /// <summary>Material für 3D-Schrift mit Tiefentest (eigener Shader); fällt auf das Schriftmaterial zurück.</summary>
+        static Material TextMaterial(Font f)
+        {
+            if (textMat != null) return textMat;
+            var sh = Resources.Load<Shader>("RePlanetText3D") ?? Shader.Find("RePlanet/Text3D");
+            if (sh == null || !sh.isSupported) return f.material;
+            textMat = new Material(sh) { name = "RP_Text3D", mainTexture = f.material.mainTexture };
+            // Dynamische Schriften bauen ihre Textur bei neuen Zeichen neu auf
+            Font.textureRebuilt += rebuilt => { if (rebuilt == font && textMat != null) textMat.mainTexture = rebuilt.material.mainTexture; };
+            return textMat;
+        }
+
         /// <summary>3D-Schriftzug (TextMesh); gibt null zurück, falls keine Schrift verfügbar ist.</summary>
         public static TextMesh TextLabel(Transform parent, string text, Vector3 localPos, float size, Color color)
         {
@@ -300,7 +313,7 @@ namespace RePlanet
             tm.anchor = TextAnchor.MiddleCenter;
             tm.alignment = TextAlignment.Center;
             tm.color = color;
-            go.GetComponent<MeshRenderer>().sharedMaterial = f.material;
+            go.GetComponent<MeshRenderer>().sharedMaterial = TextMaterial(f);
             return tm;
         }
 

@@ -189,7 +189,8 @@ namespace RePlanet
             if (string.IsNullOrEmpty(c)) { error = "Bitte den Sitzungscode angeben."; return false; }
             EndSession(false);
             var t = new TcpClientTransport();
-            t.Connect(host, port);
+            try { t.Connect(host, port); }
+            catch (Exception e) { error = "Verbindung nicht möglich: " + e.Message; return false; }
             Client = new GameClient(t);
             Hook(Client);
             string token;
@@ -238,7 +239,7 @@ namespace RePlanet
         /// <summary>Speichert die Welt (nur Host). slot = null → aktueller Slot.</summary>
         public bool SaveNow(string slot = null, bool silent = false)
         {
-            if (Host == null) { if (!silent) Hud.Show("Die Welt gehört dem Host – nur er kann speichern.", ToastKind.Warning); return false; }
+            if (Host == null) { if (!silent) Hud.Show("Die Welt gehört dem Host – nur der Host kann speichern.", ToastKind.Warning); return false; }
             string err;
             bool ok = Saves.Save(slot ?? Slot, Host.Session.Game.S, out err);
             if (!ok) Hud.Show(err, ToastKind.Error, 6f);
@@ -410,7 +411,8 @@ namespace RePlanet
                     if (joinCode != null && Client.Token != null) { Profile.Tokens[joinCode] = Client.Token; Profile.Save(); }
                     joinCode = null;
                     OnSessionStarted?.Invoke();
-                    if (!W.EndingSeen && W.CampaignDone) { }
+                    // Abspann nachholen, falls das Spiel während des Abspanns beendet wurde
+                    if (IsHost && !W.EndingSeen && W.CampaignDone) FxToast(new JObj().Set("k", "ending"));
                 }
                 else
                 {

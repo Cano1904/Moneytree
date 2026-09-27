@@ -10,7 +10,7 @@ namespace RePlanet
     public static class Mats
     {
         static readonly Dictionary<string, Material> templates = new Dictionary<string, Material>();
-        static readonly Dictionary<long, Material> cache = new Dictionary<long, Material>();
+        static readonly Dictionary<(string, Color, Color, bool, float), Material> cache = new Dictionary<(string, Color, Color, bool, float), Material>();
 
         public const string Opaque = "RP_Opaque", Metal = "RP_Metal", Emissive = "RP_Emissive", Fade = "RP_Fade", Water = "RP_Water",
             Particle = "RP_Particle", ParticleAdd = "RP_ParticleAdd", Sky = "RP_Sky", Unlit = "RP_Unlit", UnlitTex = "RP_UnlitTex",
@@ -92,7 +92,7 @@ namespace RePlanet
         /// <summary>Material der Vorlage mit Farbe (und optional Leuchtfarbe). Wird zwischengespeichert.</summary>
         public static Material Get(string template, Color color, Color? emission = null, float gloss = -1f)
         {
-            long key = ((long)template.GetHashCode() << 32) ^ ((long)ColorKey(color) << 1) ^ (emission.HasValue ? ColorKey(emission.Value) * 7919L : 0) ^ (long)(gloss * 1000);
+            var key = (template, color, emission ?? Color.clear, emission.HasValue, gloss);
             Material m;
             if (cache.TryGetValue(key, out m) && m != null) return m;
             m = new Material(Template(template));
@@ -111,11 +111,6 @@ namespace RePlanet
         }
 
         public static Material Get(string template, uint hex) { return Get(template, C(hex)); }
-
-        static int ColorKey(Color c)
-        {
-            return ((int)(c.r * 255) << 24) ^ ((int)(c.g * 255) << 16) ^ ((int)(c.b * 255) << 8) ^ (int)(c.a * 255);
-        }
 
         /// <summary>Eigenständiges (nicht geteiltes) Material, z. B. für animierte Leuchtstärke.</summary>
         public static Material Unique(string template, Color color)
