@@ -17,7 +17,7 @@ namespace RePlanet
     {
         Transform stage;
         Action done;
-        bool playing;
+        bool playing, freeRun;
         float t, skipHold, startDelay;
         readonly Dictionary<string, Transform> shots = new Dictionary<string, Transform>();
         readonly List<Material> robotEyes = new List<Material>();
@@ -40,7 +40,7 @@ namespace RePlanet
             done = onDone;
             Build();
             playing = true;
-            t = 0; skipHold = 0; startDelay = 0;
+            t = 0; skipHold = 0; startDelay = 0; freeRun = false;
             if (CameraRig.I != null) CameraRig.I.Cinematic = true;
             var cam = Camera.main;
             if (cam != null) { oldClear = cam.clearFlags; oldBg = cam.backgroundColor; }
@@ -321,13 +321,15 @@ namespace RePlanet
         void Update()
         {
             if (!playing) return;
-            // Warten, bis der Score erzeugt ist (max. 4 s), dann synchron laufen
-            double at = AudioManager.IntroTime;
+            // Warten, bis der Score läuft (max. 10 s), dann synchron zur Musik. Kommt die Musik nicht rechtzeitig,
+            // läuft die Sequenz ohne sie weiter – ein verspäteter Start würde sonst zeitversetzt spielen.
+            double at = freeRun ? -1 : AudioManager.IntroTime;
             if (at >= 0) t = (float)at;
             else
             {
                 startDelay += Time.unscaledDeltaTime;
-                if (startDelay > 4f || !AudioManager.IntroReady && startDelay > 1.5f) t += Time.unscaledDeltaTime;
+                if (!freeRun && startDelay > 10f) { freeRun = true; AudioManager.StopIntro(); }
+                if (freeRun) t += Time.unscaledDeltaTime;
             }
             if (t >= IntroTimeline.Total + 2f) { Finish(); return; }
 
@@ -486,6 +488,13 @@ namespace RePlanet
                 GUI.Label(new Rect(r.x + 2, r.y + 2, r.width, r.height), Hud.Subtitle, st);
                 GUI.color = Color.white;
                 GUI.Label(r, Hud.Subtitle, st);
+            }
+            // Musik wird beim allerersten Start noch erzeugt
+            if (!freeRun && t <= 0f && startDelay > 0.6f)
+            {
+                var ls = new GUIStyle(GUI.skin.label) { fontSize = (int)(24 * scale), alignment = TextAnchor.MiddleCenter };
+                GUI.color = new Color(1, 1, 1, 0.5f + 0.3f * Mathf.Sin(Time.unscaledTime * 3f));
+                GUI.Label(new Rect(0, Screen.height * 0.5f - 20 * scale, Screen.width, 40 * scale), "Musik wird vorbereitet …", ls);
             }
             // Überspringen-Hinweis
             var hs = new GUIStyle(GUI.skin.label) { fontSize = (int)(20 * scale), alignment = TextAnchor.MiddleRight };

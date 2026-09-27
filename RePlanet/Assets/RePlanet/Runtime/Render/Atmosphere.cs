@@ -162,7 +162,7 @@ namespace RePlanet
             stars = go.AddComponent<ParticleSystem>();
             var main = stars.main;
             main.loop = false; main.playOnAwake = false; main.startLifetime = 1e6f; main.startSpeed = 0; main.maxParticles = 900;
-            main.simulationSpace = ParticleSystemSimulationSpace.World;
+            main.simulationSpace = ParticleSystemSimulationSpace.Local;
             var em = stars.emission; em.enabled = false;
             go.GetComponent<ParticleSystemRenderer>().sharedMaterial = Mats.Get(Mats.ParticleAdd, Color.white);
             var rng = new System.Random(3);
@@ -170,7 +170,7 @@ namespace RePlanet
             for (int i = 0; i < parts.Length; i++)
             {
                 var d = Random.onUnitSphere; d.y = Mathf.Abs(d.y) + 0.05f;
-                parts[i].position = d.normalized * 900f;
+                parts[i].position = d.normalized * 380f; // lokal um die Kamera, innerhalb der kleinsten Sichtweite (420 m)
                 parts[i].startSize = 1.5f + (float)rng.NextDouble() * 2.5f;
                 parts[i].startColor = Color.white;
                 parts[i].remainingLifetime = 1e6f; parts[i].startLifetime = 1e6f;
@@ -312,6 +312,7 @@ namespace RePlanet
             if (cam != null)
             {
                 cam.farClipPlane = Mathf.Lerp(420f, 900f, Mathf.Clamp01((view - 0.5f)));
+                if (stars != null) stars.transform.position = cam.transform.position; // Sterne wandern mit der Kamera
                 UpdateWeather(cam, planet, storm, dark);
                 UpdateLampPool(cam, dark);
             }
