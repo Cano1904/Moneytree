@@ -1,0 +1,308 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- RE:PLANET – Konzeptkunst 01: MIKO in der vermüllten Stadt. Handgeschriebenes SVG, keine Spielszene. -->
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="1600" height="900" viewBox="0 0 1600 900">
+  <title>KONZEPTKUNST – keine Spielszene: MIKO in der vermüllten Stadt</title>
+  <defs>
+    <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#2E4A78"/>
+      <stop offset="0.35" stop-color="#7A6A8E"/>
+      <stop offset="0.62" stop-color="#E49A5B"/>
+      <stop offset="0.78" stop-color="#FFD28A"/>
+      <stop offset="1" stop-color="#FFE7B8"/>
+    </linearGradient>
+    <radialGradient id="sunGlow" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="#FFF6D8" stop-opacity="1"/>
+      <stop offset="0.18" stop-color="#FFE3A0" stop-opacity="0.95"/>
+      <stop offset="0.45" stop-color="#FFC56E" stop-opacity="0.45"/>
+      <stop offset="1" stop-color="#FF9D4D" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="haze" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#FFDDA0" stop-opacity="0"/>
+      <stop offset="1" stop-color="#FFD69A" stop-opacity="0.75"/>
+    </linearGradient>
+    <linearGradient id="ground" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#8A6E52"/>
+      <stop offset="0.5" stop-color="#5E4A3A"/>
+      <stop offset="1" stop-color="#2F2721"/>
+    </linearGradient>
+    <linearGradient id="road" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#A08870"/>
+      <stop offset="1" stop-color="#4A3E36"/>
+    </linearGradient>
+    <linearGradient id="ray" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#FFF1C8" stop-opacity="0.55"/>
+      <stop offset="1" stop-color="#FFF1C8" stop-opacity="0"/>
+    </linearGradient>
+    <linearGradient id="body" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#6FF0E2"/>
+      <stop offset="0.45" stop-color="#2EC4B6"/>
+      <stop offset="1" stop-color="#17867C"/>
+    </linearGradient>
+    <linearGradient id="head" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#7AF3E6"/>
+      <stop offset="1" stop-color="#22A99C"/>
+    </linearGradient>
+    <linearGradient id="visor" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#B8FDFF"/>
+      <stop offset="0.5" stop-color="#5FE8F5"/>
+      <stop offset="1" stop-color="#1FA7C4"/>
+    </linearGradient>
+    <linearGradient id="rim" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#FFE2A6" stop-opacity="0"/>
+      <stop offset="1" stop-color="#FFE2A6" stop-opacity="0.9"/>
+    </linearGradient>
+    <filter id="glow" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur stdDeviation="6" result="b"/>
+      <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+    <filter id="soft" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="3"/>
+    </filter>
+    <filter id="blurFar" x="-5%" y="-5%" width="110%" height="110%">
+      <feGaussianBlur stdDeviation="1.4"/>
+    </filter>
+
+    <!-- Müllwürfel (gepresster Müll) -->
+    <symbol id="cube" viewBox="0 0 70 64" overflow="visible">
+      <polygon points="0,14 14,0 70,0 56,14" fill="#B79A74"/>
+      <polygon points="56,14 70,0 70,50 56,64" fill="#6E5642"/>
+      <rect x="0" y="14" width="56" height="50" fill="#937556"/>
+      <rect x="6" y="20" width="12" height="7" fill="#C94F3D" opacity="0.8"/>
+      <rect x="22" y="31" width="16" height="6" fill="#4F8FBF" opacity="0.75"/>
+      <rect x="9" y="44" width="9" height="11" fill="#E0D6BC" opacity="0.7"/>
+      <rect x="36" y="46" width="14" height="6" fill="#F2C14E" opacity="0.7"/>
+      <rect x="40" y="19" width="10" height="9" fill="#7FD6C9" opacity="0.6"/>
+      <path d="M0 28 H56 M0 40 H56 M0 52 H56" stroke="#5E4A3A" stroke-width="1.2" opacity="0.55"/>
+      <path d="M14 0 L0 14 M70 0 L56 14" stroke="#FFE2A6" stroke-width="1.5" opacity="0.6"/>
+    </symbol>
+
+    <!-- MIKO (Blick nach rechts, 3/4-Ansicht) -->
+    <symbol id="miko" viewBox="0 0 260 260" overflow="visible">
+      <ellipse cx="120" cy="238" rx="110" ry="12" fill="#1C140F" opacity="0.45"/>
+      <!-- hinteres drittes Rad -->
+      <circle cx="96" cy="216" r="20" fill="#1E2328"/>
+      <!-- Fahrgestell -->
+      <rect x="44" y="176" width="146" height="34" rx="12" fill="#2B3138"/>
+      <rect x="52" y="186" width="130" height="6" rx="3" fill="#FF8C2E"/>
+      <!-- Räder -->
+      <circle cx="70" cy="218" r="26" fill="#23282E"/>
+      <circle cx="70" cy="218" r="15" fill="#4B535C"/>
+      <circle cx="70" cy="218" r="6" fill="#FF8C2E"/>
+      <circle cx="170" cy="222" r="21" fill="#23282E"/>
+      <circle cx="170" cy="222" r="12" fill="#4B535C"/>
+      <circle cx="170" cy="222" r="5" fill="#FF8C2E"/>
+      <!-- Rückenbehälter mit Müll -->
+      <rect x="14" y="78" width="52" height="98" rx="10" fill="#1D3B45" opacity="0.92"/>
+      <rect x="20" y="118" width="16" height="14" fill="#C94F3D"/>
+      <rect x="36" y="112" width="20" height="18" fill="#E0D6BC"/>
+      <rect x="22" y="134" width="22" height="16" fill="#9AA5B1"/>
+      <rect x="44" y="132" width="14" height="18" fill="#7FD6C9"/>
+      <rect x="20" y="152" width="38" height="18" fill="#F2C14E"/>
+      <path d="M20 96 H60 M20 112 H60 M30 82 V172 M44 82 V172" stroke="#6FF0E2" stroke-width="1.5" opacity="0.35"/>
+      <rect x="10" y="72" width="60" height="12" rx="5" fill="#FF8C2E"/>
+      <!-- Körper -->
+      <rect x="58" y="96" width="120" height="88" rx="30" fill="url(#body)"/>
+      <path d="M72 150 H164" stroke="#17867C" stroke-width="2"/>
+      <rect x="76" y="158" width="46" height="8" rx="4" fill="#FF8C2E"/>
+      <circle cx="152" cy="163" r="5" fill="#FFD27A"/>
+      <!-- Hals -->
+      <rect x="104" y="86" width="30" height="16" rx="5" fill="#2B3138"/>
+      <!-- Kopf mit breitem Visier -->
+      <rect x="66" y="34" width="124" height="60" rx="24" fill="url(#head)"/>
+      <rect x="74" y="46" width="112" height="32" rx="16" fill="#0B1F2A"/>
+      <rect x="80" y="51" width="100" height="22" rx="11" fill="url(#visor)" filter="url(#glow)"/>
+      <rect x="86" y="54" width="54" height="5" rx="2.5" fill="#FFFFFF" opacity="0.65"/>
+      <rect x="180" y="52" width="12" height="20" rx="4" fill="#FF8C2E"/>
+      <!-- faltbarer Arm mit Greifer -->
+      <circle cx="170" cy="128" r="11" fill="#FF8C2E"/>
+      <path d="M170 128 L212 150" stroke="#2B3138" stroke-width="13" stroke-linecap="round"/>
+      <path d="M170 128 L212 150" stroke="#2EC4B6" stroke-width="7" stroke-linecap="round"/>
+      <circle cx="212" cy="150" r="8" fill="#FF8C2E"/>
+      <path d="M212 150 L238 128" stroke="#2B3138" stroke-width="11" stroke-linecap="round"/>
+      <path d="M212 150 L238 128" stroke="#2EC4B6" stroke-width="5" stroke-linecap="round"/>
+      <path d="M238 128 l14 -12 m-14 12 l16 4" stroke="#FF8C2E" stroke-width="5" stroke-linecap="round" fill="none"/>
+      <!-- Randlicht der Abendsonne -->
+      <path d="M66 58 Q66 34 92 34" stroke="#FFE2A6" stroke-width="3" fill="none" opacity="0.85"/>
+      <path d="M58 150 Q58 100 86 96" stroke="#FFE2A6" stroke-width="3" fill="none" opacity="0.7"/>
+    </symbol>
+
+    <!-- Hochhaus-Silhouette mit Fenstern -->
+    <pattern id="win" width="22" height="26" patternUnits="userSpaceOnUse">
+      <rect width="22" height="26" fill="none"/>
+      <rect x="5" y="6" width="10" height="12" fill="#2A2F45" opacity="0.55"/>
+    </pattern>
+  </defs>
+
+  <!-- Himmel -->
+  <rect width="1600" height="900" fill="url(#sky)"/>
+  <circle cx="470" cy="520" r="320" fill="url(#sunGlow)"/>
+  <circle cx="470" cy="520" r="58" fill="#FFF3CF"/>
+  <!-- Wolkenbänder -->
+  <g opacity="0.55" fill="#F6B784">
+    <ellipse cx="1150" cy="260" rx="260" ry="18"/>
+    <ellipse cx="1290" cy="290" rx="180" ry="12"/>
+    <ellipse cx="260" cy="330" rx="220" ry="14"/>
+    <ellipse cx="780" cy="220" rx="160" ry="10"/>
+  </g>
+  <!-- Lichtstrahlen -->
+  <g opacity="0.5">
+    <polygon points="470,520 1600,300 1600,380" fill="url(#ray)"/>
+    <polygon points="470,520 1600,470 1600,560" fill="url(#ray)"/>
+    <polygon points="470,520 1600,640 1600,700" fill="url(#ray)"/>
+    <polygon points="470,520 1300,0 1380,0" fill="url(#ray)" opacity="0.6"/>
+  </g>
+
+  <!-- ferne Skyline -->
+  <g fill="#8A7C9A" opacity="0.55" filter="url(#blurFar)">
+    <rect x="40" y="330" width="70" height="300"/>
+    <rect x="120" y="290" width="54" height="340"/>
+    <rect x="190" y="360" width="90" height="270"/>
+    <rect x="620" y="300" width="60" height="330"/>
+    <rect x="690" y="250" width="80" height="380"/>
+    <rect x="780" y="340" width="60" height="290"/>
+    <rect x="990" y="280" width="70" height="350"/>
+    <rect x="1070" y="330" width="100" height="300"/>
+    <rect x="1330" y="300" width="80" height="330"/>
+    <rect x="1420" y="250" width="60" height="380"/>
+    <rect x="1490" y="340" width="110" height="290"/>
+  </g>
+  <!-- mittlere Hochhäuser -->
+  <g fill="#5F5872">
+    <rect x="850" y="260" width="120" height="380"/>
+    <rect x="1180" y="210" width="130" height="430"/>
+    <rect x="300" y="300" width="110" height="340"/>
+  </g>
+  <g fill="url(#win)" opacity="0.9">
+    <rect x="850" y="260" width="120" height="380"/>
+    <rect x="1180" y="210" width="130" height="430"/>
+    <rect x="300" y="300" width="110" height="340"/>
+  </g>
+  <!-- Sonnenkante an den Hochhäusern -->
+  <g fill="#FFCB86" opacity="0.6">
+    <rect x="850" y="260" width="5" height="380"/>
+    <rect x="1180" y="210" width="5" height="430"/>
+  </g>
+  <!-- Leuchtreklame (erloschen) -->
+  <g transform="translate(1188,250)">
+    <rect width="112" height="34" rx="4" fill="#3D3650" stroke="#8C7A9C" stroke-width="2"/>
+    <text x="56" y="23" text-anchor="middle" font-family="DejaVu Sans, Arial, sans-serif" font-size="16" font-weight="bold" fill="#8C7A9C" letter-spacing="2">KONSUMA</text>
+  </g>
+
+  <!-- Dunst über dem Horizont -->
+  <rect x="0" y="420" width="1600" height="240" fill="url(#haze)"/>
+
+  <!-- Müllwürfel-Türme -->
+  <g>
+    <!-- Turm links -->
+    <use xlink:href="#cube" x="560" y="560" width="70" height="64"/>
+    <use xlink:href="#cube" x="566" y="498" width="70" height="64"/>
+    <use xlink:href="#cube" x="556" y="436" width="70" height="64"/>
+    <use xlink:href="#cube" x="564" y="374" width="70" height="64"/>
+    <use xlink:href="#cube" x="560" y="312" width="70" height="64"/>
+    <use xlink:href="#cube" x="626" y="560" width="70" height="64"/>
+    <use xlink:href="#cube" x="632" y="498" width="70" height="64"/>
+    <use xlink:href="#cube" x="624" y="436" width="70" height="64"/>
+    <!-- Turm Mitte -->
+    <use xlink:href="#cube" x="960" y="566" width="84" height="77"/>
+    <use xlink:href="#cube" x="968" y="490" width="84" height="77"/>
+    <use xlink:href="#cube" x="956" y="414" width="84" height="77"/>
+    <use xlink:href="#cube" x="964" y="338" width="84" height="77"/>
+    <use xlink:href="#cube" x="960" y="262" width="84" height="77"/>
+    <use xlink:href="#cube" x="968" y="186" width="84" height="77"/>
+    <use xlink:href="#cube" x="1040" y="566" width="84" height="77"/>
+    <use xlink:href="#cube" x="1046" y="490" width="84" height="77"/>
+    <use xlink:href="#cube" x="1038" y="414" width="84" height="77"/>
+    <use xlink:href="#cube" x="1044" y="338" width="84" height="77"/>
+    <!-- Turm rechts (vorn) -->
+    <use xlink:href="#cube" x="1360" y="560" width="110" height="100"/>
+    <use xlink:href="#cube" x="1370" y="462" width="110" height="100"/>
+    <use xlink:href="#cube" x="1356" y="364" width="110" height="100"/>
+    <use xlink:href="#cube" x="1366" y="266" width="110" height="100"/>
+    <use xlink:href="#cube" x="1466" y="560" width="110" height="100"/>
+    <use xlink:href="#cube" x="1474" y="462" width="110" height="100"/>
+  </g>
+
+  <!-- Müllberge am Horizont -->
+  <g fill="#6B5444">
+    <path d="M0 628 Q60 590 120 606 Q190 570 260 612 Q330 596 380 624 Z"/>
+    <path d="M700 628 Q760 600 830 610 Q900 584 950 620 Z"/>
+    <path d="M1100 628 Q1170 592 1250 606 Q1320 580 1380 616 Q1450 600 1600 612 L1600 628 Z"/>
+  </g>
+  <g fill="#8A6E52" opacity="0.8">
+    <rect x="70" y="596" width="18" height="12" transform="rotate(-12 79 602)"/>
+    <rect x="200" y="590" width="22" height="14" fill="#9AA5B1" transform="rotate(18 211 597)"/>
+    <rect x="850" y="598" width="16" height="10" fill="#C94F3D" transform="rotate(-20 858 603)"/>
+    <rect x="1260" y="592" width="24" height="12" fill="#E0D6BC" transform="rotate(8 1272 598)"/>
+  </g>
+  <!-- Boden und Straße -->
+  <path d="M0 620 L1600 620 L1600 900 L0 900 Z" fill="url(#ground)"/>
+  <path d="M520 620 L760 620 L1180 900 L-80 900 Z" fill="url(#road)" opacity="0.85"/>
+  <g stroke="#E9D9B4" stroke-width="6" opacity="0.55" stroke-linecap="round">
+    <path d="M640 640 L630 660"/>
+    <path d="M622 690 L606 725"/>
+    <path d="M590 765 L562 825"/>
+  </g>
+  <!-- Straßenlaterne (defekt) -->
+  <g>
+    <rect x="236" y="410" width="8" height="220" fill="#3A3230"/>
+    <path d="M240 414 Q240 392 270 392 L300 392" stroke="#3A3230" stroke-width="7" fill="none"/>
+    <rect x="290" y="392" width="28" height="10" rx="3" fill="#3A3230"/>
+    <path d="M296 404 L292 420 M306 404 L310 418" stroke="#5B4F4A" stroke-width="2"/>
+  </g>
+
+  <!-- verstreuter Müll im Vordergrund -->
+  <g>
+    <!-- Flaschen -->
+    <g transform="translate(250,760) rotate(-70)"><rect width="16" height="40" rx="6" fill="#5FAF8F"/><rect x="5" y="-10" width="6" height="12" fill="#5FAF8F"/></g>
+    <g transform="translate(1210,790) rotate(80)"><rect width="18" height="46" rx="7" fill="#6FB7E8" opacity="0.9"/><rect x="6" y="-10" width="6" height="12" fill="#2E5E8A"/></g>
+    <!-- Dosen -->
+    <g transform="translate(420,810) rotate(20)"><rect width="20" height="30" rx="4" fill="#C43D3D"/><rect y="4" width="20" height="4" fill="#E8E8E8"/></g>
+    <g transform="translate(1080,700) rotate(-35)"><rect width="16" height="24" rx="3" fill="#C9CED3"/></g>
+    <!-- Tüten und Papier -->
+    <path d="M320 700 q30 -30 60 -4 q14 22 -10 30 q-30 6 -50 -26 z" fill="#F4F1E8" opacity="0.85"/>
+    <path d="M1320 740 q22 -26 50 -8 q10 20 -8 26 q-26 8 -42 -18 z" fill="#F4F1E8" opacity="0.75"/>
+    <rect x="140" y="700" width="60" height="40" rx="4" fill="#B8925A" transform="rotate(-8 170 720)"/>
+    <rect x="1440" y="820" width="70" height="46" rx="4" fill="#B8925A" transform="rotate(10 1475 843)"/>
+    <!-- Einkaufswagen -->
+    <g transform="translate(1180,610)" stroke="#9FA8B0" stroke-width="4" fill="none">
+      <path d="M0 0 L20 0 L34 50 L110 50 L124 10 L26 10"/>
+      <path d="M40 22 H118 M44 36 H114 M60 10 V50 M80 10 V50 M100 10 V50"/>
+      <circle cx="44" cy="66" r="7" fill="#3A3230"/>
+      <circle cx="104" cy="66" r="7" fill="#3A3230"/>
+      <path d="M34 50 L40 60 H108 L110 50"/>
+    </g>
+  </g>
+
+  <!-- Keimling in einer alten Dose – ein Hoffnungszeichen -->
+  <g transform="translate(975,772)">
+    <rect x="-18" y="0" width="36" height="46" rx="5" fill="#8C8F92"/>
+    <rect x="-18" y="8" width="36" height="8" fill="#C43D3D" opacity="0.8"/>
+    <path d="M0 2 C0 -20 2 -34 4 -46" stroke="#4E9A3A" stroke-width="4" fill="none" stroke-linecap="round"/>
+    <path d="M3 -38 C20 -56 40 -48 42 -40 C28 -32 14 -32 3 -38 Z" fill="#7BCB4A"/>
+    <path d="M2 -28 C-14 -44 -34 -38 -36 -30 C-22 -22 -8 -22 2 -28 Z" fill="#6DBB3F"/>
+    <circle cx="4" cy="-40" r="40" fill="#FFF4C0" opacity="0.12"/>
+  </g>
+
+  <!-- MIKO -->
+  <!-- langer Schatten -->
+  <path d="M640 800 L1060 856 L1080 874 L640 824 Z" fill="#1C140F" opacity="0.25"/>
+  <use xlink:href="#miko" x="590" y="500" width="330" height="330"/>
+
+  <!-- Staubpartikel im Licht -->
+  <g fill="#FFF1C8">
+    <circle cx="560" cy="470" r="2" opacity="0.8"/>
+    <circle cx="610" cy="520" r="1.5" opacity="0.7"/>
+    <circle cx="700" cy="450" r="2.2" opacity="0.6"/>
+    <circle cx="760" cy="540" r="1.6" opacity="0.8"/>
+    <circle cx="820" cy="480" r="2" opacity="0.5"/>
+    <circle cx="880" cy="560" r="1.4" opacity="0.7"/>
+    <circle cx="520" cy="600" r="1.8" opacity="0.6"/>
+  </g>
+
+  <!-- Beschriftung -->
+  <rect x="0" y="0" width="1600" height="58" fill="#0E1420" opacity="0.55"/>
+  <text x="32" y="38" font-family="DejaVu Sans, Arial, sans-serif" font-size="24" font-weight="bold" fill="#FFFFFF" letter-spacing="1">RE:PLANET · 01 · MIKO in der vermüllten Stadt (TERRA)</text>
+  <rect x="1060" y="12" width="512" height="34" rx="6" fill="#FF8C2E"/>
+  <text x="1316" y="36" text-anchor="middle" font-family="DejaVu Sans, Arial, sans-serif" font-size="19" font-weight="bold" fill="#1A1206">KONZEPTKUNST – keine Spielszene</text>
+  <text x="1568" y="884" text-anchor="end" font-family="DejaVu Sans, Arial, sans-serif" font-size="15" fill="#FFE7B8" opacity="0.85">Stimmung: goldenes Abendlicht, Türme aus gepresstem Müll, ein Keimling als Hoffnungszeichen</text>
+</svg>
