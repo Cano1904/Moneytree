@@ -349,7 +349,7 @@ namespace RePlanet
             if (list.Count == 0) return;
             float now = Time.unscaledTime;
             float w = Mathf.Min(460f, VW * 0.4f);
-            float y = UIState.Screen == UIScreen.None && app.InGame ? toastTop : 20f;
+            float y = UIState.Screen == UIScreen.None && app.InGame ? toastTop : 86f;
             float x = VW - w - 20;
             for (int i = list.Count - 1; i >= 0; i--)
             {

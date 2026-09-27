@@ -39,7 +39,8 @@ namespace RePlanet
 
         public static void ResetFocus()
         {
-            Focus = 0; pendingActivate = -1; pendingAdjust = 0; navMoved = false;
+            Focus = 0; pendingActivate = -1; pendingAdjust = 0; navMoved = false; pendingFocusText = -1;
+            stopEditing = Editing;
             FocusChangedFrame = Time.frameCount;
         }
 
@@ -65,13 +66,17 @@ namespace RePlanet
                 if (Focus < 0) Focus = 0;
                 mouseMoved = false;
                 navMoved = false;
+                // Nicht verbrauchte Eingaben (z. B. Fokus auf nicht mehr vorhandenem Element) verfallen
+                pendingActivate = -1;
+                pendingAdjust = 0;
             }
             if (stopEditing)
             {
                 stopEditing = false;
                 GUIUtility.keyboardControl = 0;
             }
-            Editing = GUIUtility.keyboardControl != 0;
+            // Nur benannte Textfelder zählen als „Bearbeiten“ (Schieberegler o. Ä. können ebenfalls den Tastaturfokus halten)
+            Editing = GUIUtility.keyboardControl != 0 && !string.IsNullOrEmpty(GUI.GetNameOfFocusedControl());
         }
 
         /// <summary>Verarbeitet Menü-Eingaben (einmal pro Frame aus Update). active = ein Menü ist offen.</summary>

@@ -39,6 +39,7 @@ namespace RePlanet
         float guiErrorUntil;
         string confirm;          // offene Sicherheitsabfrage (Schlüssel)
         float fps, fpsAcc; int fpsFrames;
+        float textScaleUsed;
 
         static string L(string de) { return Loc.T(de); }
 
@@ -102,7 +103,7 @@ namespace RePlanet
         {
             switch (s)
             {
-                case UIScreen.None: return BuildMode.Active;
+                case UIScreen.None: return false; // Bauansicht: Maus + Mausrad/Bild↑↓/LB/RB
                 case UIScreen.Intro:
                 case UIScreen.Ending:
                 case UIScreen.Loading: return false;
@@ -338,7 +339,9 @@ namespace RePlanet
             if (app == null) return;
             UISkin.Ensure(app.Settings.HighContrast);
             GUI.depth = -1000;
-            float ts = Mathf.Clamp(app.Settings.TextScale, 0.8f, 1.6f);
+            // Textgröße erst nach dem Loslassen des Reglers übernehmen (sonst springt das Layout unter der Maus)
+            if (!Input.GetMouseButton(0) || textScaleUsed <= 0f) textScaleUsed = app.Settings.TextScale;
+            float ts = Mathf.Clamp(textScaleUsed, 0.8f, 1.6f);
             scale = Mathf.Max(0.3f, Screen.height / 1080f * ts);
             GUI.matrix = Matrix4x4.TRS(Vector3.zero, Quaternion.identity, new Vector3(scale, scale, 1f));
             VW = Screen.width / scale; VH = Screen.height / scale;
@@ -443,8 +446,9 @@ namespace RePlanet
             UISkin.Rect(new Rect(r.x + 20, r.y + 60, r.width - 40, 2), new Color(UISkin.Accent.r, UISkin.Accent.g, UISkin.Accent.b, 0.6f));
             if (closeButton)
             {
-                var br = new Rect(r.xMax - 150, r.y + 14, 130, 38);
-                if (UINav.Button(br, "‹ " + L("Zurück"), true, UISkin.ButtonSmall)) Back();
+                // Nicht im Fokus-Ring (sonst stünde der Fokus zuerst auf „Zurück“) – per Esc/B erreichbar
+                var br = new Rect(r.xMax - 196, r.y + 14, 176, 38);
+                if (GUI.Button(br, "‹ " + L("Zurück") + (InputMap.UsingPad ? " (B)" : " (Esc)"), UISkin.ButtonSmall)) Back();
             }
             return new Rect(r.x + 24, r.y + 74, r.width - 48, r.height - 90);
         }
