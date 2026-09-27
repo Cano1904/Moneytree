@@ -19,7 +19,23 @@ public class CampaignBot
     const string Pid = "bot";
     readonly PlayerData P;
     const float Dt = 0.25f;
-    const float Detour = 1.3f;
+
+    // ------------------------------------------------------------ Verhaltensprofil
+    /// <summary>Anteil der Höchstgeschwindigkeit, der im Mittel erreicht wird.</summary>
+    public float SpeedFactor = 1f;
+    /// <summary>Umwegfaktor gegenüber der Luftlinie (Straßen, Hindernisse).</summary>
+    public float Detour = 1.3f;
+    /// <summary>Zusätzliche Sekunden je Sammelaktion (Zielen, Anfahren).</summary>
+    public float PickupDelay;
+    /// <summary>Zusätzliche Sekunden je Stationsbesuch (Menüs lesen, entscheiden).</summary>
+    public float StationDelay;
+    public string ProfileName = "Bot (optimal)";
+
+    /// <summary>Annahmen für einen zügig spielenden Menschen (Schätzung, keine Messung).</summary>
+    public static CampaignBot Human()
+    {
+        return new CampaignBot { SpeedFactor = 0.8f, Detour = 1.5f, PickupDelay = 2f, StationDelay = 6f, ProfileName = "Mensch-Modell (geschätzt)" };
+    }
 
     // ------------------------------------------------------------ Messwerte
     public double FirstSale = -1, FirstUpgrade = -1, FirstVisibleChange = -1, FirstAreaClean = -1;
@@ -112,6 +128,10 @@ public class CampaignBot
 
     bool Act(JObj a) { return ActR(a).Ok; }
 
+    static readonly HashSet<string> PickupActs = new HashSet<string> { "grab", "vacuum", "magnet" };
+    static readonly HashSet<string> StationActs = new HashSet<string> { "sell", "sellbin", "deposit", "dispose", "buytech", "buyveh", "buyship", "buymat", "build", "delivery", "project", "travel", "contract", "shelter", "sortm" };
+    string lastStation; double lastStationT = -100;
+
     ActResult ActR(JObj a)
     {
         Actions++;
@@ -119,6 +139,14 @@ public class CampaignBot
         var r = G.Apply(Pid, a, true);
         SwAct.Stop();
         if (!r.Ok) { Rejections++; lastErr = r.Err; }
+        string kind = a.Str("a");
+        if (r.Ok && PickupDelay > 0 && PickupActs.Contains(kind)) Wait(PickupDelay);
+        if (StationDelay > 0 && StationActs.Contains(kind) && (kind != lastStation || T - lastStationT > 15))
+        {
+            lastStation = kind;
+            Wait(StationDelay);
+            lastStationT = T;
+        }
         return r;
     }
 
@@ -138,6 +166,7 @@ public class CampaignBot
     /// <summary>Fährt in Schritten zum Ziel. Nachts/bei Sturm wird unterwegs ein Unterschlupf aufgesucht (außer im Fahrzeug).</summary>
     void MoveTo(V3 target, float stop, bool shelterCheck = true)
     {
+        if (Environment.GetEnvironmentVariable("BOTTRACE") != null && V3.DistXZ(P.Pos, target) > 30) Console.WriteLine("  M " + Clock(T) + " " + P.Pos + " -> " + target + " " + new System.Diagnostics.StackTrace().GetFrame(1).GetMethod().Name);
         int guard = 0;
         while (true)
         {
@@ -147,7 +176,7 @@ public class CampaignBot
             float speed = v != null ? v.Def.Speed : Motor.WalkSpeed;
             float d = V3.DistXZ(P.Pos, target);
             if (d <= stop) break;
-            float step = Math.Min(speed * Dt / Detour, d - stop + 0.01f);
+            float step = Math.Min(speed * SpeedFactor * Dt / Detour, d - stop + 0.01f);
             float dx = (target.x - P.Pos.x) / d, dz = (target.z - P.Pos.z) / d;
             var np = new V3(P.Pos.x + dx * step, 0, P.Pos.z + dz * step);
             np.y = YFor(np, target);
@@ -278,6 +307,8 @@ public class CampaignBot
         BaseChores();
     }
 
+    /// <summary>Verkauft, was über die Reserve (Projektmaterial + Grundstock) hinausgeht – Ballen zuerst (bester Preis).
+    /// aggressive: alles verkaufen. Geht nur zum Terminal, wenn es wirklich etwas zu verkaufen gibt.</summary>
     void SellSurplus(bool aggressive)
     {
         var res = Reserve();
@@ -286,21 +317,18 @@ public class CampaignBot
         {
             var md = GameData.Materials[kv.Key];
             if (md.Price <= 0) continue;
-            int reserve = aggressive ? 0 : (res.ContainsKey(kv.Key) ? res[kv.Key] : 0);
             var e = kv.Value;
-            int total = e.U + e.S + e.B * GameData.BaleUnits;
-            if (total <= reserve && !aggressive) continue;
-            if (total == 0) continue;
-            if (!moved) { MoveTo(Station("sell"), 3f); moved = true; }
-            if (e.B > 0 && e.U + e.S >= reserve) Act(new JObj().Set("a", "sell").Set("m", kv.Key).Set("g", 2).Set("n", e.B));
-            int extra = e.U + e.S - reserve;
-            if (extra > 0)
-            {
-                int fromS = Math.Min(e.S, extra);
-                if (fromS > 0) Act(new JObj().Set("a", "sell").Set("m", kv.Key).Set("g", 1).Set("n", fromS));
-                extra -= fromS;
-                if (extra > 0 && e.U >= extra) Act(new JObj().Set("a", "sell").Set("m", kv.Key).Set("g", 0).Set("n", extra));
-            }
+            int reserve = aggressive ? 0 : (res.ContainsKey(kv.Key) ? res[kv.Key] : 0);
+            int excess = e.U + e.S + e.B * GameData.BaleUnits - reserve;
+            if (excess <= 0) continue;
+            int nb = Math.Min(e.B, excess / GameData.BaleUnits); excess -= nb * GameData.BaleUnits;
+            int ns = Math.Min(e.S, excess); excess -= ns;
+            int nu = Math.Min(e.U, excess);
+            if (nb + ns + nu == 0) continue;
+            if (!moved) { ExitVehicle(); MoveTo(Station("sell"), 3f); moved = true; }
+            if (nb > 0) Act(new JObj().Set("a", "sell").Set("m", kv.Key).Set("g", 2).Set("n", nb));
+            if (ns > 0) Act(new JObj().Set("a", "sell").Set("m", kv.Key).Set("g", 1).Set("n", ns));
+            if (nu > 0) Act(new JObj().Set("a", "sell").Set("m", kv.Key).Set("g", 0).Set("n", nu));
         }
     }
 
@@ -469,6 +497,7 @@ public class CampaignBot
 
     void Process(ObjView o)
     {
+        if (Environment.GetEnvironmentVariable("BOTTRACE") != null) Console.WriteLine("P " + Clock(T) + " " + o.Key + " " + o.T.Id + " d=" + V3.DistXZ(P.Pos, o.Pos).ToString("0") + " a" + o.Area + " cr " + S.Credits + " bin " + Item.Volume(P.Bin) + "/" + S.BinCapacity + " E " + P.Energy.ToString("0") + " pos " + P.Pos + " -> " + o.Pos);
         var t = o.T;
         if (t.Crane && S.OwnedVehicles.Contains("crane")) { CraneHaul(o); return; }
         ExitVehicle();
