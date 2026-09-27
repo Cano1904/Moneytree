@@ -133,6 +133,7 @@ public static class WeatherTests
         // Während der Abschaltung: keine Bewegung, kein Schlafen
         Assert.False(g.Move(p.Id, new V3(spot.x + 1, spot.y, spot.z), 0, false, 0, "grab", 0.2f), "Bewegung abgelehnt");
         Assert.False(g.Apply(p.Id, TestKit.A("sleep"), true).Ok, "Schlafen abgelehnt");
+        Assert.False(g.Apply(p.Id, TestKit.A("press"), true).Ok, "Werkzeug-/Weltaktionen abgelehnt");
         long credits = g.S.Credits; int bin = p.Bin.Count;
         fx = Run(g, 10f, 0.25f, () => p.TowTimer <= 0);
         Assert.True(Has(fx, "towed"), "Ereignis Abschleppen");

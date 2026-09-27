@@ -56,6 +56,9 @@ namespace RePlanet.Core
             if (a == null) return ActResult.Fail("Ungültige Aktion.");
             if (!S.Players.TryGetValue(pid, out p) || !p.Online) return ActResult.Fail("Spieler nicht verbunden.");
             string kind = a.Str("a", "");
+            // Während der Notabschaltung (Abschleppdrohne unterwegs) sind nur Einstellungen/Verwaltung möglich
+            if (p.TowTimer > 0 && kind != "trust" && kind != "cosm" && kind != "endingSeen" && kind != "introSeen" && kind != "wake")
+                return ActResult.Fail("MIKO ist abgeschaltet – die Abschleppdrohne ist unterwegs.");
             try
             {
                 switch (kind)

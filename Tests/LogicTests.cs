@@ -62,4 +62,23 @@ public static class LogicTests
         Assert.True(rl.Ok, "Lagerhalle aus Ballen: " + rl.Err);
         Assert.Equal(10, m.U + m.S + m.B * GameData.BaleUnits, "10 Metall verbraucht, Rest bleibt");
     }
+    [Test]
+    public static void Viele_kleine_Bewegungspakete_ergeben_keinen_Geschwindigkeitsvorteil()
+    {
+        var g = new Game(Game.NewWorld("Tempo", "terra"));
+        var p = g.Join("p", "P");
+        var start = p.Pos;
+        // 150 Pakete pro Sekunde mit je 1,2 m Schritt (entspräche 180 m/s) über 2 s
+        int accepted = 0;
+        for (int i = 1; i <= 300; i++)
+        {
+            var target = new V3(p.Pos.x, p.Pos.y, p.Pos.z + 1.2f);
+            if (g.Move("p", target, 0, false, 0, "grab", 1f / 150f)) accepted++;
+        }
+        float moved = V3.DistXZ(start, p.Pos);
+        // Erlaubt: 2 s × 14 m/s + Vorrat (14 m + 3 m) + Toleranz – weit unter 360 m
+        Assert.True(moved < 2f * 14f + 17f + 5f, "Strecke begrenzt (" + moved.ToString("0.0") + " m, " + accepted + " Pakete angenommen)");
+        // Normale Bewegung mit echter Zeit bleibt möglich
+        Assert.True(g.Move("p", new V3(p.Pos.x, p.Pos.y, p.Pos.z + 0.5f), 0, false, 0, "grab", 0.1f), "Normale Bewegung angenommen");
+    }
 }

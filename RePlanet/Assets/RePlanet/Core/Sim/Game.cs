@@ -53,6 +53,8 @@ namespace RePlanet.Core
         readonly Dictionary<string, double> lastAct = new Dictionary<string, double>();
         readonly Dictionary<string, Dictionary<string, double>> helpers = new Dictionary<string, Dictionary<string, double>>();
         readonly HashSet<string> teleportOk = new HashSet<string>();
+        /// <summary>Bewegungsguthaben je Spieler in Metern (wächst mit der Zeit, begrenzter Vorrat für Netzschwankungen).</summary>
+        readonly Dictionary<string, float> moveBudget = new Dictionary<string, float>();
         readonly HashSet<string> announcedEco = new HashSet<string>();
         readonly float[] lastClean = new float[3];
         float missionTimer, saveTimer, regenTimer, weatherSync;
@@ -243,13 +245,19 @@ namespace RePlanet.Core
             PlayerData p;
             if (!S.Players.TryGetValue(pid, out p) || !p.Online) return false;
             if (!pos.IsFinite || Math.Abs(pos.x) > 160 || Math.Abs(pos.z) > 160 || pos.y < -40 || pos.y > 120) return false;
-            realDt = M.Clamp(realDt, 0.01f, 1.0f);
+            realDt = M.Clamp(realDt, 0f, 1.0f);
             VehicleState veh = null;
             if (p.Vehicle != null) S.Cur.Vehicles.TryGetValue(p.Vehicle, out veh);
             float limit = veh != null ? veh.Def.Speed * 1.3f : 10f;
             float dist = V3.DistXZ(pos, p.Pos);
             bool tele = teleportOk.Remove(pid);
-            if (!tele && dist > limit * realDt * 1.4f + 1.2f) return false;
+            // Guthaben statt Kulanz je Paket: viele kleine Pakete ergeben so keinen Geschwindigkeitsvorteil.
+            // Vorrat = 1 s Höchstgeschwindigkeit + 3 m (gebündelt eintreffende Pakete, Korrekturen).
+            float cap = limit * 1.4f + 3f, budget;
+            if (!moveBudget.TryGetValue(pid, out budget)) budget = cap;
+            budget = Math.Min(cap, budget + limit * 1.4f * realDt);
+            if (!tele && dist > budget + 0.3f) { moveBudget[pid] = budget; return false; }
+            moveBudget[pid] = tele ? cap : budget - dist; // Toleranz wird ebenfalls verrechnet (kann leicht negativ werden)
             if (!tele && veh == null)
             {
                 // Energieverbrauch fürs Fahren

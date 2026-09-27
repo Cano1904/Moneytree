@@ -10,7 +10,7 @@ Zusätzlich kompiliert `Tools/CompileCheck/Runtime` die Unity-Schicht gegen den 
 
 ### Ergebnis des Testlaufs
 
-`Gesamt: 39 bestanden, 0 fehlgeschlagen` (Release, Gesamtdauer ≈ 4 s; der längste Test ist die komplette Kampagne mit ≈ 1 s).
+`Gesamt: 40 bestanden, 0 fehlgeschlagen` (Release, Gesamtdauer ≈ 4 s; der längste Test ist die komplette Kampagne mit ≈ 1 s).
 
 | Bereich | Prüfung | Ergebnis |
 |---|---|---|
@@ -35,12 +35,13 @@ Zusätzlich kompiliert `Tools/CompileCheck/Runtime` die Unity-Schicht gegen den 
 | | Geschwindigkeitsbetrug mit gefälschtem `dt` wird korrigiert; ehrliche, gebündelt ankommende Pakete nicht | BESTANDEN (nach Korrektur, s. u.) |
 | Wetter (`WeatherTests`, 8) | Nacht nach `(0,8−0,3)·Tageslänge` auf allen Planeten, Zyklus, Dunkelheit | BESTANDEN |
 | | Ohne Unterschlupf sinkt nachts die Energie (≈ 0,55/s), am Stützpunkt/im Fahrzeug nicht | BESTANDEN |
-| | Akku leer nachts → Notabschaltung, Zähler, keine Bewegung/kein Schlaf, nach 6 s Abschleppen zum Ladeplatz mit 40 % Energie, solo ist danach Morgen, nichts verloren; im Koop läuft die Nacht weiter | BESTANDEN |
+| | Akku leer nachts → Notabschaltung, Zähler, keine Bewegung/kein Schlaf/keine Werkzeugaktionen, nach 6 s Abschleppen zum Ladeplatz mit 40 % Energie, solo ist danach Morgen, nichts verloren; im Koop läuft die Nacht weiter | BESTANDEN |
 | | `sleep` tagsüber, draußen, im Fahrzeug abgelehnt; im Unterschlupf nachts → Morgen, voller Akku, Speicherpunkt | BESTANDEN |
 | | Koop: Morgen erst, wenn alle (Online-)Spieler schlafen; Verlassen des Unterschlupfs weckt | BESTANDEN |
 | | Notunterschlupf: nicht am Stützpunkt, 80 Credits, Mindestabstand 12 m (auch zu vorhandenen), max. 8, nicht im Wasser, schlafen darin, gespeichert | BESTANDEN |
 | | Sturm PYRA: Warnung 30 s vorher, Sturm, Ende nach Dauer, Dünen-Set wechselt (auch `MotorEnv`), Schlafen überspringt Sturm; TERRA-Stürme ohne Dünenwechsel | BESTANDEN |
-| Regression (`LogicTests`, 2) | Schrottlieferungen sind gemischt | BESTANDEN (nach Korrektur) |
+| Regression (`LogicTests`, 3) | Schrottlieferungen sind gemischt | BESTANDEN (nach Korrektur) |
+| | Viele kleine Bewegungspakete (150/s à 1,2 m) ergeben keinen Geschwindigkeitsvorteil | BESTANDEN (nach Korrektur) |
 | | Gepresste Ballen zählen für Projekte/Bauten | BESTANDEN (nach Korrektur) |
 | Kampagne (`CampaignTests`, 1) | Bot spielt die ganze Kampagne TERRA → PYRA → PELAGIA → Sprungantrieb → NIVALIS bis `WorldState.CampaignDone`; alle 12 Projekte fertig, Reihenfolge, Kampagnen-Kosmetik; Echtzeitlimit 120 s | BESTANDEN |
 
@@ -59,6 +60,9 @@ ausdrücklich (Schrittzahl ≥ 95 % von Spielzeit/0,25 s, > 3 000 gesammelte Obj
 3. **Geschwindigkeitsbetrug über gefälschtes `dt`** (`Session`, Eingabe `in`): Das Client-`dt` wurde ungeprüft
    als Zeitbasis genommen (`dt: 1` → ~15 m je Paket, gemessen 112 m in 2 s). Jetzt höchstens die am Server
    vergangene Zeit (Guthaben bis 1 s für Netzschwankungen).
+   Ergänzend ersetzt ein **Bewegungsguthaben je Spieler** (1 s Höchstgeschwindigkeit + 3 m Vorrat) die frühere
+   Kulanz von 1,2 m *je Paket*, mit der viele kleine Pakete schneller gewesen wären (Test: 300 Pakete à 1,2 m in 2 s
+   ergeben höchstens ≈ 45 m statt 360 m).
 4. **Lieferungen waren sortenrein** (`ActDelivery`): Der Sortenindex hing an `S.NextDyn`, das beim Erzeugen
    hochzählt – jede TERRA-Lieferung bestand aus 14 gleichen Teilen (z. B. 14 Fernseher à 5 kg, mit dem Start-Greifarm
    nicht hebbar). Da eine neue Lieferung erst nach dem Abräumen möglich ist, führte das im Bot zu einer Sackgasse.
@@ -121,10 +125,6 @@ gekürzt; ein Spieltest mit Menschen sollte entscheiden. Größte Zeitblöcke im
   Geldquelle – Designentscheidung offen (nicht geändert).
 * Eine Lieferung kann Teile enthalten, die das aktuelle Werkzeug nicht heben kann (TERRA: Fernseher 5 kg bei 3 kg
   Greifarm); solange sie liegen, ist keine neue Lieferung möglich. Mit dem Fix (gemischte Lieferungen) keine Sackgasse mehr.
-* Die Bewegungsprüfung erlaubt zusätzlich 1,2 m Kulanz **je Paket**; bei maximaler Nachrichtenrate (150/s) bliebe
-  damit ein Geschwindigkeitsvorteil möglich. Nicht behoben (größerer Umbau der Prüfung nötig).
-* Aktionen (z. B. Greifen) sind während der Notabschaltung (Abschleppen, 6 s) serverseitig nicht gesperrt;
-  nur Bewegung und Schlafen. Geringe Auswirkung, nicht geändert.
 * Schlafen beendet einen Sturm sofort, auch tagsüber (vom Bot 64×/Kampagne genutzt) – so implementiert, als
   Designfrage notiert.
 * Der Bot bewegt sich geradlinig ohne Kollision mit Gebäuden/Dünen (Umwegfaktor statt Wegfindung); Boot und Rover
