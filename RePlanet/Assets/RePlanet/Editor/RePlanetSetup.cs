@@ -24,11 +24,35 @@ namespace RePlanet.EditorTools
     [InitializeOnLoad]
     public static class RePlanetSetup
     {
-        public const string Root = "Assets/RePlanet";
-        public const string ResourcesDir = Root + "/Resources";
-        public const string ScenesDir = Root + "/Scenes";
-        public const string ScenePath = ScenesDir + "/Main.unity";
-        public const string WaterNormalPath = ResourcesDir + "/RP_WaterNormal.png";
+        static string root;
+        /// <summary>
+        /// Projektordner von RE:PLANET (normalerweise „Assets/RePlanet“). Wird über die Lage dieser Editor-Assembly
+        /// ermittelt, damit das Setup auch funktioniert, wenn der Ordner an eine andere Stelle kopiert wurde.
+        /// </summary>
+        public static string Root
+        {
+            get
+            {
+                if (root != null) return root;
+                root = "Assets/RePlanet";
+                try
+                {
+                    foreach (var guid in AssetDatabase.FindAssets("RePlanet.Editor t:AssemblyDefinitionAsset"))
+                    {
+                        var path = AssetDatabase.GUIDToAssetPath(guid).Replace('\\', '/');
+                        if (!path.EndsWith("/Editor/RePlanet.Editor.asmdef")) continue;
+                        root = path.Substring(0, path.Length - "/Editor/RePlanet.Editor.asmdef".Length);
+                        break;
+                    }
+                }
+                catch (Exception) { }
+                return root;
+            }
+        }
+        public static string ResourcesDir { get { return Root + "/Resources"; } }
+        public static string ScenesDir { get { return Root + "/Scenes"; } }
+        public static string ScenePath { get { return ScenesDir + "/Main.unity"; } }
+        public static string WaterNormalPath { get { return ResourcesDir + "/RP_WaterNormal.png"; } }
         public const string CompanyName = "RE PLANET Projekt";
         public const string ProductName = "RE PLANET";
         const string SessionKey = "RePlanet.SetupDone";

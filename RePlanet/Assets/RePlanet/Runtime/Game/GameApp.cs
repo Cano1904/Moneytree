@@ -16,11 +16,11 @@ namespace RePlanet
     {
         public static GameApp I { get; private set; }
 
-        public Settings Settings;
-        public Profile Profile;
-        public SaveStore Saves;
-        public HostServer Host;
-        public GameClient Client;
+        [NonSerialized] public Settings Settings;
+        [NonSerialized] public Profile Profile;
+        [NonSerialized] public SaveStore Saves;
+        [NonSerialized] public HostServer Host;
+        [NonSerialized] public GameClient Client;
         public string Slot = "auto";
         public AppMode Mode = AppMode.Menu;
         public string LoadingText = "";
