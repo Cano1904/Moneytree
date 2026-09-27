@@ -354,7 +354,7 @@ namespace RePlanet.Core
             var o = new float[n];
             var rng = new Rng(seed);
             var bp = new Svf(); float bpc = SvfC(slapF, rate);
-            var lp = new OnePole(); float la = Pole(240f, rate);
+            var lp = new OnePole(); float la = Pole(380f, rate);
             double p1 = 0, p2 = 0;
             for (int i = 0; i < n; i++)
             {
@@ -363,8 +363,8 @@ namespace RePlanet.Core
                 p1 += f0 * bend / rate; p2 += f0 * 1.59f * bend / rate;
                 float body = (float)Math.Sin(p1 * TwoPi) * (float)Math.Exp(-t / decay) + 0.3f * (float)Math.Sin(p2 * TwoPi) * (float)Math.Exp(-t / (decay * 0.4f));
                 float w = rng.Next() * 2 - 1;
-                float slap = bp.BandC(w, bpc, 1.1f) * (float)Math.Exp(-t / 0.012f) * 1.2f;
-                float thump = lp.LpA(w, la) * (float)Math.Exp(-t / 0.05f) * 3f;
+                float slap = bp.BandC(w, bpc, 1.1f) * (float)Math.Exp(-t / 0.014f) * 1.8f;
+                float thump = lp.LpA(w, la) * (float)Math.Exp(-t / 0.04f) * 2.4f;
                 o[i] = FastTanh(body * 1.5f) * 0.9f + slap + thump;
             }
             for (int i = 0; i < 24 && i < n; i++) o[i] *= i / 24f;
@@ -857,8 +857,8 @@ namespace RePlanet.Core
             {
                 switch (char.ToUpperInvariant(c))
                 {
-                    case 'L': return Get("L", () => Taiko(Rate, 46f, 0.6f, 560f, seed + 1));
-                    case 'M': return Get("M", () => Taiko(Rate, 84f, 0.3f, 950f, seed + 2));
+                    case 'L': return Get("L", () => Taiko(Rate, 57f, 0.55f, 620f, seed + 1));
+                    case 'M': return Get("M", () => Taiko(Rate, 96f, 0.28f, 1050f, seed + 2));
                     case 'S': return Get("S", () => Taiko(Rate, 190f, 0.09f, 2300f, seed + 3));
                     case 'T': { int r = TimpSemi(bar); return TimpS(r); }
                     case 'A': return Get("A", () => Anvil(Rate, 610f, seed + 4));
@@ -1039,7 +1039,7 @@ namespace RePlanet.Core
             // ------------------------------------------------------------ Standardbesetzung
             public void DefStrings(float bright, float gain, float lo, float attack = 0.5f)
             {
-                var sp = new Spec { Kind = 0, Saws = 4, Detune = 0.0065f, Attack = attack, Release = 1.0f, Glide = 0.07f, CutLo = 600f + 700f * bright, CutHi = 1700f + 3200f * bright, VibDepth = 0.003f, VibRate = 5.3f, VibDelay = 0.5f, Accent = 0.1f };
+                var sp = new Spec { Kind = 0, Saws = 4, Detune = 0.0065f, Attack = attack, Release = 1.0f, Glide = 0.07f, CutLo = 700f + 900f * bright, CutHi = 2300f + 4300f * bright, VibDepth = 0.003f, VibRate = 5.3f, VibDelay = 0.5f, Accent = 0.1f };
                 for (int v = 0; v < 4; v++) Line("str" + v, "pad", sp, gain, lo, 1f, 0f, 1f);
                 var cel = sp.Clone(); cel.CutLo = 380f; cel.CutHi = 1500f + 600f * bright; cel.VibDepth = 0.0022f;
                 Line("strB", "pad", cel, gain * 1.25f, lo, 1f, 0f, 1f);
@@ -1062,7 +1062,7 @@ namespace RePlanet.Core
             public void DefSub(float gain, float lo)
             {
                 var sp = new Spec { Kind = 4, Saws = 1, Attack = 0.6f, Release = 1.1f, Glide = 0.1f, CutPitch = 1.8f, VibDepth = 0f, Accent = 0.15f };
-                Line("sub", "bass", sp, gain, lo, 1f, 0f, 1f);
+                Line("sub", "bass", sp, gain * 1.35f, lo, 1f, 0f, 1f);
             }
 
             public void Sub(int b0, int b1) { for (int b = b0; b < b1; b++) Note("sub", T(b), BarLen + 0.06f, Bs[b], 1f); }
@@ -1248,7 +1248,7 @@ namespace RePlanet.Core
             /// <summary>Großer Einschlag: Boom, Crash, große Taiko, Rückwärts-Becken davor und optional ein Braam des Taktakkords.</summary>
             public void Impact(float t, int bar, bool braam, float size)
             {
-                Hit("perc", t, Kit('B', bar), 0.9f * size);
+                Hit("perc", t, Kit('B', bar), 0.55f * size);
                 Hit("perc", t, Get("crash", () => Crash(Rate, seed + 11)), 0.28f * size);
                 Hit("perc", t, Kit('L', bar), 0.9f * size);
                 float rl = Math.Min(2.5f, Beat * 2f);
@@ -1266,7 +1266,7 @@ namespace RePlanet.Core
 
             public void Wind(int style, float level, Func<float, float> env = null)
             {
-                WindInto(S["wind"], Rate, Loop, style, 0f, level, seed ^ 0x5157, env);
+                WindInto(S["wind"], Rate, Loop, style, 0f, level * 2.2f, seed ^ 0x5157, env);
             }
 
             // ------------------------------------------------------------ Abschluss
@@ -1582,7 +1582,7 @@ namespace RePlanet.Core
             a.TimpRoll(a.T(10, 1), a.T(11), -12, 0.15f, 0.85f);
             a.RiserTo(a.T(11), a.BarLen, 0.22f);
             a.Impact(a.T(11), 11, false, 0.6f);
-            a.Wind(2, 0.4f);
+            a.Wind(2, 0.6f);
             return a;
         }
 
@@ -1602,7 +1602,7 @@ namespace RePlanet.Core
             a.DefStrings(0.9f, 0.16f, 0.22f, 0.8f); a.Strings(0, 10); a.StringsHigh(6, 9);
             a.DefSub(0.3f, 0.35f); a.Sub(0, 10);
             a.PianoMel(0, "31:2 r:2 | 27:1.5 24:2.5 | r:1 31:1 27:2 | 26:4 | 24:2 31:2 | 32:2 27:2", 0.42f);
-            a.DefChoir("co", 'o', 0.3f, 0.25f, 0.55f, 1.6f); a.Choir("co", 2, 10);
+            a.DefChoir("co", 'o', 0.24f, 0.25f, 0.55f, 1.6f); a.Choir("co", 2, 10);
             a.DefChoir("ca", 'a', 0.26f, 0.75f, 0.95f); a.Choir("ca", 6, 10);
             a.DefHorns(0.11f, 0.45f, 0.8f, 0.6f); a.Horns(4, 10);
             a.Mel("hm", 6, "17:2 20:1 17:1 | 19:2 23:2 | 24:3 27:1 | 26:2 22:2", 0, 1f);
