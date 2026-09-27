@@ -1,0 +1,269 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- RE:PLANET – Konzeptkunst 04: ein Stadtviertel vorher/nachher. Handgeschriebenes SVG, keine Spielszene. -->
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="1600" height="900" viewBox="0 0 1600 900">
+  <title>KONZEPTKUNST – keine Spielszene: Wohnviertel vorher und nachher</title>
+  <defs>
+    <linearGradient id="skyBefore" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#6E6252"/>
+      <stop offset="0.6" stop-color="#B89A72"/>
+      <stop offset="1" stop-color="#D6BC92"/>
+    </linearGradient>
+    <linearGradient id="skyAfter" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#2C4E86"/>
+      <stop offset="0.5" stop-color="#8A7BB0"/>
+      <stop offset="0.8" stop-color="#F3B37A"/>
+      <stop offset="1" stop-color="#FFD9A0"/>
+    </linearGradient>
+    <linearGradient id="groundBefore" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#8C7A62"/>
+      <stop offset="1" stop-color="#4E4236"/>
+    </linearGradient>
+    <linearGradient id="groundAfter" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#7FA05A"/>
+      <stop offset="1" stop-color="#3F5E34"/>
+    </linearGradient>
+    <radialGradient id="lampGlow" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="#FFE3A0" stop-opacity="0.9"/>
+      <stop offset="0.4" stop-color="#FFC66E" stop-opacity="0.35"/>
+      <stop offset="1" stop-color="#FFC66E" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="winGlow" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="#FFD58A" stop-opacity="0.5"/>
+      <stop offset="1" stop-color="#FFD58A" stop-opacity="0"/>
+    </radialGradient>
+    <clipPath id="panel"><rect x="0" y="0" width="780" height="770" rx="18"/></clipPath>
+
+    <!-- Häuserzeile (ohne Fenster). Koordinaten in einem 780×770-Feld -->
+    <symbol id="houses" viewBox="0 0 780 770" overflow="visible">
+      <polygon points="30,300 130,230 230,300" fill="#7A5A4A"/>
+      <rect x="40" y="300" width="180" height="230" fill="#C9A98A"/>
+      <rect x="250" y="220" width="170" height="310" fill="#A8B0B6"/>
+      <rect x="244" y="206" width="182" height="18" fill="#6E7680"/>
+      <polygon points="450,310 545,250 640,310" fill="#6E5446"/>
+      <rect x="460" y="310" width="170" height="220" fill="#D8C6A0"/>
+      <rect x="660" y="260" width="120" height="270" fill="#9C8E80"/>
+      <!-- Türen -->
+      <rect x="112" y="470" width="36" height="60" fill="#5A4034"/>
+      <rect x="318" y="470" width="36" height="60" fill="#4A5058"/>
+      <rect x="528" y="470" width="36" height="60" fill="#5A4034"/>
+    </symbol>
+    <!-- Fensterpositionen; die Füllfarbe kommt vom &lt;use&gt;-Element -->
+    <symbol id="windows" viewBox="0 0 780 770" overflow="visible">
+      <rect x="62" y="330" width="34" height="40"/><rect x="164" y="330" width="34" height="40"/>
+      <rect x="62" y="400" width="34" height="40"/><rect x="164" y="400" width="34" height="40"/>
+      <rect x="270" y="245" width="30" height="36"/><rect x="320" y="245" width="30" height="36"/><rect x="370" y="245" width="30" height="36"/>
+      <rect x="270" y="305" width="30" height="36"/><rect x="320" y="305" width="30" height="36"/><rect x="370" y="305" width="30" height="36"/>
+      <rect x="270" y="365" width="30" height="36"/><rect x="320" y="365" width="30" height="36"/><rect x="370" y="365" width="30" height="36"/>
+      <rect x="480" y="340" width="34" height="40"/><rect x="578" y="340" width="34" height="40"/>
+      <rect x="480" y="405" width="34" height="40"/><rect x="578" y="405" width="34" height="40"/>
+      <rect x="680" y="290" width="30" height="36"/><rect x="730" y="290" width="30" height="36"/>
+      <rect x="680" y="350" width="30" height="36"/><rect x="730" y="350" width="30" height="36"/>
+      <rect x="680" y="410" width="30" height="36"/><rect x="730" y="410" width="30" height="36"/>
+    </symbol>
+    <!-- Müllwürfel -->
+    <symbol id="cube" viewBox="0 0 70 64" overflow="visible">
+      <polygon points="0,14 14,0 70,0 56,14" fill="#B79A74"/>
+      <polygon points="56,14 70,0 70,50 56,64" fill="#6E5642"/>
+      <rect x="0" y="14" width="56" height="50" fill="#937556"/>
+      <rect x="6" y="20" width="12" height="7" fill="#C94F3D" opacity="0.8"/>
+      <rect x="22" y="31" width="16" height="6" fill="#4F8FBF" opacity="0.75"/>
+      <rect x="36" y="46" width="14" height="6" fill="#F2C14E" opacity="0.7"/>
+    </symbol>
+    <!-- MIKO klein -->
+    <symbol id="miko" viewBox="0 0 120 120" overflow="visible">
+      <ellipse cx="60" cy="112" rx="50" ry="6" fill="#1C140F" opacity="0.35"/>
+      <rect x="6" y="36" width="26" height="46" rx="6" fill="#1D3B45"/>
+      <rect x="4" y="32" width="30" height="7" rx="3" fill="#FF8C2E"/>
+      <rect x="10" y="60" width="18" height="16" fill="#F2C14E"/>
+      <rect x="20" y="82" width="76" height="18" rx="7" fill="#2B3138"/>
+      <circle cx="34" cy="102" r="11" fill="#23282E"/><circle cx="34" cy="102" r="4" fill="#FF8C2E"/>
+      <circle cx="84" cy="104" r="9" fill="#23282E"/><circle cx="84" cy="104" r="3.5" fill="#FF8C2E"/>
+      <rect x="28" y="44" width="62" height="42" rx="15" fill="#2EC4B6"/>
+      <rect x="36" y="72" width="22" height="4" rx="2" fill="#FF8C2E"/>
+      <rect x="32" y="10" width="62" height="30" rx="12" fill="#3FD6C8"/>
+      <rect x="38" y="17" width="52" height="15" rx="7" fill="#0B1F2A"/>
+      <rect x="41" y="19" width="46" height="11" rx="5" fill="#8FF6FF"/>
+      <path d="M84 62 L104 72 L114 60" stroke="#2EC4B6" stroke-width="5" fill="none" stroke-linecap="round"/>
+      <circle cx="84" cy="62" r="5" fill="#FF8C2E"/>
+    </symbol>
+  </defs>
+
+  <rect width="1600" height="900" fill="#141A24"/>
+
+  <!-- =============== VORHER =============== -->
+  <g transform="translate(15,80)">
+    <g clip-path="url(#panel)">
+      <rect width="780" height="770" fill="url(#skyBefore)"/>
+      <!-- Dunst-Sonne -->
+      <circle cx="600" cy="150" r="60" fill="#E9D2A4" opacity="0.6"/>
+      <!-- ferne Müllwürfel-Türme -->
+      <use xlink:href="#cube" x="130" y="484" width="50" height="46"/>
+      <use xlink:href="#cube" x="132" y="438" width="50" height="46"/>
+      <use xlink:href="#cube" x="128" y="392" width="50" height="46"/>
+      <use xlink:href="#cube" x="130" y="346" width="50" height="46"/>
+      <use xlink:href="#cube" x="134" y="300" width="50" height="46"/>
+      <use xlink:href="#cube" x="128" y="254" width="50" height="46"/>
+      <use xlink:href="#cube" x="131" y="208" width="50" height="46"/>
+      <use xlink:href="#cube" x="176" y="484" width="50" height="46"/>
+      <use xlink:href="#cube" x="178" y="438" width="50" height="46"/>
+      <use xlink:href="#cube" x="174" y="392" width="50" height="46"/>
+      <use xlink:href="#cube" x="176" y="346" width="50" height="46"/>
+      <use xlink:href="#cube" x="425" y="484" width="50" height="46"/>
+      <use xlink:href="#cube" x="428" y="438" width="50" height="46"/>
+      <use xlink:href="#cube" x="424" y="392" width="50" height="46"/>
+      <use xlink:href="#cube" x="427" y="346" width="50" height="46"/>
+      <use xlink:href="#cube" x="425" y="300" width="50" height="46"/>
+      <use xlink:href="#cube" x="429" y="254" width="50" height="46"/>
+      <use xlink:href="#cube" x="426" y="208" width="50" height="46"/>
+      <use xlink:href="#cube" x="424" y="162" width="50" height="46"/>
+      <use xlink:href="#houses" x="0" y="0" width="780" height="770"/>
+      <use xlink:href="#windows" x="0" y="0" width="780" height="770" fill="#3A3A3E"/>
+      <!-- zerbrochene Fenster -->
+      <path d="M270 305 l30 36 M320 365 l30 36 M350 365 l-12 14" stroke="#8C8F92" stroke-width="2"/>
+      <!-- Straße -->
+      <rect x="0" y="530" width="780" height="240" fill="url(#groundBefore)"/>
+      <rect x="0" y="600" width="780" height="90" fill="#6A5C4E"/>
+      <!-- toter Baum -->
+      <path d="M680 600 L682 520 L660 480 M682 520 L706 470 M682 540 L700 520" stroke="#4A3A30" stroke-width="8" fill="none" stroke-linecap="round"/>
+      <!-- kaputte Laterne -->
+      <rect x="236" y="430" width="7" height="170" fill="#3A3230" transform="rotate(8 240 600)"/>
+      <rect x="254" y="428" width="26" height="9" rx="3" fill="#3A3230" transform="rotate(8 240 600)"/>
+      <!-- trockener Brunnen -->
+      <ellipse cx="420" cy="590" rx="80" ry="18" fill="#7E7466"/>
+      <ellipse cx="420" cy="584" rx="66" ry="12" fill="#5E554A"/>
+      <!-- Müllberge -->
+      <path d="M0 560 Q60 520 120 540 Q170 500 230 550 L230 600 L0 600 Z" fill="#7A6250"/>
+      <path d="M520 600 Q560 540 620 555 Q660 530 720 570 L740 600 Z" fill="#7A6250"/>
+      <g>
+        <rect x="30" y="540" width="26" height="18" fill="#C94F3D" transform="rotate(-15 43 549)"/>
+        <rect x="80" y="528" width="30" height="20" fill="#E0D6BC" transform="rotate(10 95 538)"/>
+        <rect x="140" y="534" width="22" height="30" rx="4" fill="#5FAF8F" transform="rotate(60 151 549)"/>
+        <rect x="180" y="540" width="34" height="22" fill="#B8925A"/>
+        <rect x="560" y="560" width="24" height="16" fill="#9AA5B1"/>
+        <rect x="600" y="548" width="30" height="20" fill="#F2C14E" transform="rotate(12 615 558)"/>
+        <rect x="650" y="556" width="20" height="28" rx="4" fill="#6FB7E8" transform="rotate(-50 660 570)"/>
+      </g>
+      <!-- Autowrack -->
+      <g transform="translate(300,610)">
+        <rect x="0" y="20" width="170" height="44" rx="10" fill="#8A5A44"/>
+        <path d="M30 20 L55 -8 H120 L145 20 Z" fill="#7A4E3A"/>
+        <path d="M60 -2 H90 V18 H48 Z M96 -2 H116 L134 18 H96 Z" fill="#3A3230"/>
+        <circle cx="38" cy="66" r="16" fill="#2A2420"/>
+        <circle cx="132" cy="66" r="16" fill="#2A2420"/>
+      </g>
+      <use xlink:href="#cube" x="40" y="640" width="70" height="64"/>
+      <use xlink:href="#cube" x="610" y="650" width="80" height="73"/>
+      <g fill="#F4F1E8" opacity="0.8">
+        <path d="M200 700 q20 -18 40 -4 q8 14 -8 20 q-20 4 -32 -16z"/>
+        <path d="M520 720 q20 -18 40 -4 q8 14 -8 20 q-20 4 -32 -16z"/>
+      </g>
+    </g>
+    <rect width="780" height="770" rx="18" fill="none" stroke="#E0C99E" stroke-width="3"/>
+    <rect x="20" y="20" width="160" height="46" rx="10" fill="#1E1812" opacity="0.8"/>
+    <text x="100" y="52" text-anchor="middle" font-family="DejaVu Sans, Arial, sans-serif" font-size="26" font-weight="bold" fill="#E0C99E" letter-spacing="3">VORHER</text>
+    <text x="760" y="752" text-anchor="end" font-family="DejaVu Sans, Arial, sans-serif" font-size="15" fill="#FFF3DC">Zugang frei · Müll überall · Lichter aus</text>
+  </g>
+
+  <!-- =============== NACHHER =============== -->
+  <g transform="translate(805,80)">
+    <g clip-path="url(#panel)">
+      <rect width="780" height="770" fill="url(#skyAfter)"/>
+      <circle cx="600" cy="170" r="140" fill="#FFE0A6" opacity="0.25"/>
+      <circle cx="600" cy="170" r="46" fill="#FFF1C8"/>
+      <!-- Feuerwerk über dem Projektplatz -->
+      <g stroke-linecap="round" stroke-width="3">
+        <g transform="translate(180,110)" stroke="#FFD27A">
+          <path d="M0 -40 V-16 M0 16 V40 M-40 0 H-16 M16 0 H40 M-28 -28 L-12 -12 M12 12 L28 28 M28 -28 L12 -12 M-12 12 L-28 28"/>
+        </g>
+        <g transform="translate(330,70)" stroke="#7DF9FF">
+          <path d="M0 -28 V-10 M0 10 V28 M-28 0 H-10 M10 0 H28 M-20 -20 L-8 -8 M8 8 L20 20 M20 -20 L8 -8 M-8 8 L-20 20"/>
+        </g>
+        <g transform="translate(420,140)" stroke="#FF8FB0">
+          <path d="M0 -22 V-8 M0 8 V22 M-22 0 H-8 M8 0 H22 M-16 -16 L-6 -6 M6 6 L16 16 M16 -16 L6 -6 M-6 6 L-16 16"/>
+        </g>
+      </g>
+      <use xlink:href="#houses" x="0" y="0" width="780" height="770"/>
+      <!-- warmes Licht hinter den Fenstern -->
+      <g>
+        <ellipse cx="130" cy="385" rx="110" ry="80" fill="url(#winGlow)"/>
+        <ellipse cx="335" cy="310" rx="110" ry="110" fill="url(#winGlow)"/>
+        <ellipse cx="545" cy="390" rx="110" ry="80" fill="url(#winGlow)"/>
+        <ellipse cx="720" cy="360" rx="80" ry="100" fill="url(#winGlow)"/>
+      </g>
+      <use xlink:href="#windows" x="0" y="0" width="780" height="770" fill="#FFD27A"/>
+      <!-- Solardach -->
+      <rect x="252" y="196" width="166" height="12" fill="#2B3F73"/>
+      <!-- Wiese und Straße -->
+      <rect x="0" y="530" width="780" height="240" fill="url(#groundAfter)"/>
+      <rect x="0" y="600" width="780" height="90" fill="#8E8478"/>
+      <g stroke="#F2EAD8" stroke-width="5" opacity="0.7"><path d="M40 645 H90 M160 645 H210 M280 645 H330 M400 645 H450 M520 645 H570 M640 645 H690"/></g>
+      <!-- Bäume -->
+      <g>
+        <rect x="676" y="500" width="10" height="100" fill="#5A4030"/>
+        <circle cx="680" cy="490" r="46" fill="#4E9A3A"/>
+        <circle cx="650" cy="510" r="30" fill="#5DAE44"/>
+        <circle cx="708" cy="512" r="30" fill="#468A34"/>
+        <circle cx="690" cy="470" r="8" fill="#FF8FB0"/><circle cx="662" cy="500" r="6" fill="#FFD23F"/>
+        <rect x="18" y="510" width="8" height="90" fill="#5A4030"/>
+        <circle cx="22" cy="500" r="36" fill="#5DAE44"/>
+      </g>
+      <!-- Laternen an -->
+      <g>
+        <circle cx="266" cy="440" r="70" fill="url(#lampGlow)"/>
+        <rect x="236" y="436" width="7" height="164" fill="#3A3230"/>
+        <path d="M240 440 Q240 426 260 426 L272 426" stroke="#3A3230" stroke-width="6" fill="none"/>
+        <rect x="256" y="426" width="22" height="10" rx="3" fill="#FFE8A8"/>
+        <circle cx="610" cy="444" r="70" fill="url(#lampGlow)"/>
+        <rect x="580" y="440" width="7" height="160" fill="#3A3230"/>
+        <path d="M584 444 Q584 430 604 430 L616 430" stroke="#3A3230" stroke-width="6" fill="none"/>
+        <rect x="600" y="430" width="22" height="10" rx="3" fill="#FFE8A8"/>
+      </g>
+      <!-- laufender Brunnen -->
+      <ellipse cx="420" cy="590" rx="80" ry="18" fill="#B8B0A2"/>
+      <ellipse cx="420" cy="584" rx="66" ry="12" fill="#4FA7D9"/>
+      <rect x="415" y="540" width="10" height="44" fill="#B8B0A2"/>
+      <path d="M420 540 Q390 530 380 580 M420 540 Q450 530 460 580 M420 540 V520" stroke="#BFE9F0" stroke-width="4" fill="none" stroke-linecap="round"/>
+      <!-- Blumenbeete -->
+      <g>
+        <rect x="60" y="570" width="140" height="24" rx="8" fill="#5A4030"/>
+        <circle cx="80" cy="566" r="8" fill="#FF6FA8"/><circle cx="104" cy="562" r="8" fill="#FFD23F"/><circle cx="128" cy="566" r="8" fill="#B48CE0"/>
+        <circle cx="152" cy="562" r="8" fill="#FF7F66"/><circle cx="176" cy="566" r="8" fill="#FFD23F"/>
+      </g>
+      <!-- Bushaltestelle Linie 7 -->
+      <g transform="translate(500,520)">
+        <rect x="0" y="0" width="6" height="80" fill="#3A3230"/>
+        <circle cx="3" cy="-8" r="16" fill="#FFD23F" stroke="#3A3230" stroke-width="3"/>
+        <text x="3" y="-2" text-anchor="middle" font-family="DejaVu Sans, Arial, sans-serif" font-size="16" font-weight="bold" fill="#1E1812">7</text>
+      </g>
+      <!-- Parkbank -->
+      <g transform="translate(90,690)">
+        <rect x="0" y="0" width="100" height="10" rx="3" fill="#8C6B4A"/>
+        <rect x="0" y="-18" width="100" height="8" rx="3" fill="#8C6B4A"/>
+        <rect x="8" y="10" width="6" height="18" fill="#3A3230"/><rect x="86" y="10" width="6" height="18" fill="#3A3230"/>
+      </g>
+      <!-- MIKO -->
+      <use xlink:href="#miko" x="250" y="640" width="120" height="120"/>
+      <!-- Keimling-Setzlinge -->
+      <g fill="#6DBB3F">
+        <path d="M40 740 q-12 -16 -2 -26 q10 10 2 26z"/><path d="M46 740 q10 -18 22 -12 q-6 14 -22 12z"/>
+        <path d="M210 740 q-12 -16 -2 -26 q10 10 2 26z"/><path d="M216 740 q10 -18 22 -12 q-6 14 -22 12z"/>
+      </g>
+    </g>
+    <rect width="780" height="770" rx="18" fill="none" stroke="#7DF9FF" stroke-width="3"/>
+    <rect x="20" y="20" width="180" height="46" rx="10" fill="#0E1C2A" opacity="0.8"/>
+    <text x="110" y="52" text-anchor="middle" font-family="DejaVu Sans, Arial, sans-serif" font-size="26" font-weight="bold" fill="#7DF9FF" letter-spacing="3">NACHHER</text>
+    <text x="760" y="752" text-anchor="end" font-family="DejaVu Sans, Arial, sans-serif" font-size="15" fill="#FFFFFF">Projekt fertig · Stadt erwacht · Ökologie wächst</text>
+  </g>
+
+  <!-- Pfeil -->
+  <g transform="translate(800,470)">
+    <circle r="30" fill="#FF8C2E"/>
+    <path d="M-12 -12 L6 0 L-12 12" stroke="#1A1206" stroke-width="6" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+  </g>
+
+  <!-- Kopfzeile -->
+  <rect x="0" y="0" width="1600" height="62" fill="#0B0F16"/>
+  <text x="32" y="40" font-family="DejaVu Sans, Arial, sans-serif" font-size="24" font-weight="bold" fill="#FFFFFF">RE:PLANET · 04 · Wohnviertel (TERRA) – vorher / nachher</text>
+  <rect x="1060" y="14" width="512" height="34" rx="6" fill="#FF8C2E"/>
+  <text x="1316" y="38" text-anchor="middle" font-family="DejaVu Sans, Arial, sans-serif" font-size="19" font-weight="bold" fill="#1A1206">KONZEPTKUNST – keine Spielszene</text>
+</svg>
