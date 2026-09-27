@@ -93,9 +93,13 @@ namespace RePlanet
 
             // ---------------------------------------------------- Unten: Werkzeugleiste und Hinweise
             float barY = VH - 96f;
-            if (!Hud.InVehicle) DrawToolbar(app, w, me, barY);
-            else DrawVehicleHud(app, w, me, barY);
-            DrawPrompts(app, barY - 12f);
+            if (BuildMode.Active) { }
+            else
+            {
+                if (!Hud.InVehicle) DrawToolbar(app, w, me, barY);
+                else DrawVehicleHud(app, w, me, barY);
+                DrawPrompts(app, barY - 12f);
+            }
 
             // Untertitel
             if (s.Subtitles && !string.IsNullOrEmpty(Hud.Subtitle) && Time.unscaledTime < Hud.SubtitleUntil)

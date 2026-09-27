@@ -92,6 +92,7 @@ namespace RePlanet
             if (!PhotoMode.Active && UIState.Screen == UIScreen.Photo) UIState.Open(UIScreen.None);
 
             PruneToasts();
+            UpdateBuildInput(app);
             UpdateSettingsApply(app);
             UpdateMapBuild(app);
             UpdateCursor(app);
@@ -233,6 +234,7 @@ namespace RePlanet
             {
                 case UIScreen.Photo:
                     if (Input.GetKeyDown(KeyCode.H) || Input.GetKeyDown(KeyCode.JoystickButton3)) { photoPanel = !photoPanel; AudioManager.Ui("ui_click"); return; }
+                    if (Input.GetKeyDown(KeyCode.F12) || (!photoPanel && (Input.GetKeyDown(KeyCode.Space) || Input.GetKeyDown(KeyCode.JoystickButton0)))) { PhotoMode.RequestCapture = true; return; }
                     if (InputMap.Down(GameAction.Pause) || InputMap.Down(GameAction.Photo) || back) { ExitPhoto(); AudioManager.Ui("ui_back"); }
                     return;
                 case UIScreen.Menu:
@@ -358,7 +360,8 @@ namespace RePlanet
             }
             try
             {
-                if (screen != UIScreen.Intro && screen != UIScreen.Ending && screen != UIScreen.Loading) DrawToasts(app);
+                bool photoClean = screen == UIScreen.Photo && PhotoMode.HideHud && !photoPanel;
+                if (screen != UIScreen.Intro && screen != UIScreen.Ending && screen != UIScreen.Loading && !photoClean) DrawToasts(app);
                 if (guiError != null && Time.unscaledTime < guiErrorUntil)
                 {
                     var r = new Rect(20, VH - 70, Mathf.Min(900, VW - 40), 50);
