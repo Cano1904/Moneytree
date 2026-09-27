@@ -1,0 +1,132 @@
+using System.Collections.Generic;
+using UnityEngine;
+
+namespace RePlanet
+{
+    public enum ToastKind { Info, Success, Warning, Error, Story }
+
+    public class Toast
+    {
+        public string Text;
+        public ToastKind Kind;
+        public float Created, Duration;
+    }
+
+    /// <summary>
+    /// Gemeinsamer Zustand zwischen Spiellogik-Darstellung (PlayerController/WorldView) und Oberfläche (UIRoot).
+    /// Gameplay schreibt, UI liest. So bleiben beide Seiten unabhängig voneinander.
+    /// </summary>
+    public static class Hud
+    {
+        /// <summary>Aktuelle Interaktion, z. B. „[E] Aufheben: Glasflasche“.</summary>
+        public static string Prompt;
+        /// <summary>Warum die aktuelle Aktion nicht geht (konkreter Grund).</summary>
+        public static string Blocked;
+        /// <summary>Fortschritt 0..1 einer laufenden Aktion (Schneiden, Tauen …), sonst −1.</summary>
+        public static float Progress = -1f;
+        public static string ProgressLabel;
+        /// <summary>Aufladung des Magneten 0..1, sonst −1.</summary>
+        public static float MagnetCharge = -1f;
+        /// <summary>Station in Reichweite (sell, workshop, storage, sort, trader, disposal, contracts, ship, garage, build) oder null.</summary>
+        public static string NearStation;
+        public static bool InVehicle;
+        public static string VehicleId;
+        /// <summary>Fahrzeug steckt fest → Hinweis auf Zurücksetzen.</summary>
+        public static bool VehicleStuck;
+        /// <summary>Richtung/Entfernung zum nächsten Unterschlupf (für Nacht- und Sturmwarnung).</summary>
+        public static Vector3 ShelterPos;
+        public static float ShelterDist = -1f;
+        /// <summary>Kompassrichtung der Kamera (Grad), für die Kartenanzeige.</summary>
+        public static float CameraYaw;
+        public static bool Swimming, Diving;
+
+        public static readonly List<Toast> Toasts = new List<Toast>();
+        public static string Subtitle;
+        public static float SubtitleUntil;
+        public static string SubtitleSpeaker;
+
+        public static void Show(string text, ToastKind kind = ToastKind.Info, float duration = 3.5f)
+        {
+            if (string.IsNullOrEmpty(text)) return;
+            // Gleiche Meldung nicht stapeln
+            foreach (var t in Toasts)
+                if (t.Text == text && Time.unscaledTime - t.Created < t.Duration) { t.Created = Time.unscaledTime; return; }
+            Toasts.Add(new Toast { Text = text, Kind = kind, Created = Time.unscaledTime, Duration = duration });
+            if (Toasts.Count > 6) Toasts.RemoveAt(0);
+        }
+
+        public static void Say(string text, float duration, string speaker = null)
+        {
+            Subtitle = text;
+            SubtitleSpeaker = speaker;
+            SubtitleUntil = Time.unscaledTime + duration;
+        }
+
+        public static void ClearTransient()
+        {
+            Prompt = null; Blocked = null; Progress = -1f; ProgressLabel = null; MagnetCharge = -1f; NearStation = null; VehicleStuck = false;
+        }
+    }
+
+    public enum UIScreen
+    {
+        None, MainMenu, NewGame, PlanetSelect, Saves, Settings, Coop, Pause, Menu, Map, Photo, Loading, Intro, Ending, Message, Travel, Credits
+    }
+
+    /// <summary>Welcher Bildschirm offen ist. Gameplay-Eingaben werden gesperrt, solange ein blockierender Bildschirm offen ist.</summary>
+    public static class UIState
+    {
+        public static UIScreen Screen = UIScreen.None;
+        /// <summary>Reiter im Spielmenü: inventory, missions, map, workshop, storage, archive, robot, coop.</summary>
+        public static string MenuTab = "inventory";
+        /// <summary>Stationskontext beim Öffnen (z. B. „sell“ öffnet direkt den Lager/Verkauf-Reiter).</summary>
+        public static string Station;
+        public static string MessageTitle, MessageText;
+        public static UIScreen ReturnTo = UIScreen.MainMenu;
+
+        public static bool BlocksGameplay
+        {
+            get { return Screen != UIScreen.None && Screen != UIScreen.Photo; }
+        }
+
+        public static void Open(UIScreen s) { Screen = s; }
+
+        public static void Message(string title, string text, UIScreen returnTo)
+        {
+            MessageTitle = title; MessageText = text; ReturnTo = returnTo; Screen = UIScreen.Message;
+        }
+    }
+
+    /// <summary>Fotomodus: UI setzt die Werte, CameraRig setzt sie um.</summary>
+    public static class PhotoMode
+    {
+        public static bool Active;
+        public static bool HideHud = true;
+        public static float Fov = 55f;
+        public static float Roll;
+        /// <summary>Hochformat-Ausschnitt 9:16 für kurze Videos.</summary>
+        public static bool Portrait;
+        /// <summary>Zeigt den Ausgangszustand (Müll vor dem Aufräumen) für Vorher-nachher-Bilder.</summary>
+        public static bool ShowBefore;
+        public static bool RequestCapture;
+        public static string LastSavedPath;
+        public static float Exposure = 1f;
+        /// <summary>Aussichtspunkt, zu dem gesprungen werden soll (Spot-Id) – wird von CameraRig abgearbeitet.</summary>
+        public static string JumpToViewpoint;
+    }
+
+    /// <summary>Bauansicht: UI wählt Gebäude/Drehung, WorldView zeigt die Vorschau und prüft die Platzierung.</summary>
+    public static class BuildMode
+    {
+        public static bool Active;
+        public static string Type;
+        public static int Rot;
+        /// <summary>Id eines Gebäudes, das umgesetzt wird (−1 = neu bauen).</summary>
+        public static int MoveId = -1;
+        public static int Gx, Gz;
+        public static bool HasCursor, Valid;
+        public static string Reason;
+        public static int HoverBuildingId = -1;
+        public static bool RequestPlace, RequestDemolish;
+    }
+}

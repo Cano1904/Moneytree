@@ -1,0 +1,20 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!-- Kompiliert die Editor-Skripte (Setup, Build) gegen UnityEditor.dll. -->
+  <PropertyGroup>
+    <TargetFramework>netstandard2.1</TargetFramework>
+    <LangVersion>9.0</LangVersion>
+    <Nullable>disable</Nullable>
+    <AssemblyName>RePlanet.EditorCheck</AssemblyName>
+    <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
+    <NoWarn>CS1591;CS0618</NoWarn>
+    <UnityRefDir Condition="'$(UNITY_REF_DIR)' == ''">/opt/unityref</UnityRefDir>
+    <UnityRefDir Condition="'$(UNITY_REF_DIR)' != ''">$(UNITY_REF_DIR)</UnityRefDir>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="../../../RePlanet/Assets/RePlanet/Editor/**/*.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <Reference Include="$(UnityRefDir)/sdk/lib/UnityEditor.dll" Private="false" />
+    <Reference Include="$(UnityRefDir)/sdk/lib/UnityEngine.dll" Private="false" />
+  </ItemGroup>
+</Project>

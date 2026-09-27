@@ -112,6 +112,13 @@ namespace RePlanet.Core
         public string[] Deliveries;
         public int[] MusicScale;
         public float MusicRoot;
+        /// <summary>Alle diese Projekte müssen abgeschlossen sein (Finale-Planet).</summary>
+        public string[] UnlockProjects = new string[0];
+        public bool StartPlanet;
+        public string Mood;
+        // Tag/Nacht und Wetter
+        public float DayLength = 840f, StormEvery = 420f, StormDuration = 75f, WindBase = 0.15f;
+        public string StormName = "Sturm", ShelterName = "Unterschlupf";
     }
 
     public class MissionDef

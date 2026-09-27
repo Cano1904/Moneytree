@@ -55,7 +55,8 @@ namespace RePlanet.Core
         readonly HashSet<string> teleportOk = new HashSet<string>();
         readonly HashSet<string> announcedEco = new HashSet<string>();
         readonly float[] lastClean = new float[3];
-        float missionTimer, saveTimer, regenTimer;
+        float missionTimer, saveTimer, regenTimer, weatherSync;
+        bool wasNight;
         EnergyInfo energy;
         bool energyDirty = true;
 
@@ -68,10 +69,15 @@ namespace RePlanet.Core
             EvaluateMissions();
         }
 
-        public static WorldState NewWorld(string name)
+        public static WorldState NewWorld(string name, string startPlanet = "terra")
         {
+            if (startPlanet == null || !GameData.Planets.ContainsKey(startPlanet) || !GameData.Planets[startPlanet].StartPlanet) startPlanet = "terra";
             var w = new WorldState { WorldName = string.IsNullOrEmpty(name) ? "Neue Welt" : name, Created = DateTime.UtcNow.ToString("yyyy-MM-dd HH:mm") };
-            w.Planet("terra").Visited = true;
+            w.Unlocked.Clear();
+            foreach (var pd in GameData.Planets.Values) if (pd.StartPlanet) w.Unlocked.Add(pd.Id);
+            w.CurrentPlanet = startPlanet;
+            w.StartPlanet = startPlanet;
+            w.Planet(startPlanet).Visited = true;
             foreach (var c in GameData.Cosmetics.Values) if (c.Default) w.CosmeticUnlocks.Add(c.Id);
             return w;
         }
@@ -88,6 +94,7 @@ namespace RePlanet.Core
             announcedEco.Clear();
             var l = WorldGen.Get(ps.Id);
             foreach (var e in l.Eco) if (Rules.EcoGrowth(S, ps, e.Id) >= 1f) announcedEco.Add(e.Id);
+            wasNight = Rules.IsNight(S, ps.Id);
             if (announce) Fx(new JObj().Set("k", "arrive").Set("planet", ps.Id));
         }
 
@@ -239,6 +246,8 @@ namespace RePlanet.Core
                 S.AddStat("moved", (long)Math.Round(dist * 100)); // Zentimeter
             }
             if (dist > 0.05f) p.LastMoveTime = Now;
+            if (p.TowTimer > 0 && !tele) return false; // abgeschaltet – wartet auf Abschleppdrohne
+            if (p.Sleeping && dist > 0.6f) { p.Sleeping = false; DPl(pid); }
             p.Pos = pos;
             p.Yaw = yaw;
             p.Flags = flags;
@@ -470,44 +479,99 @@ namespace RePlanet.Core
             UpdateMachines(dt);
             UpdateDrones(dt);
 
-            // Energie laden
-            regenTimer += dt;
-            if (regenTimer >= 0.25f)
+            // Wetter: Wind, Sturmwarnung und Stürme auf allen Planeten
+            ps.StormTimer += dt;
+            if (!ps.StormActive)
             {
-                float rt = regenTimer; regenTimer = 0;
-                var charge = WorldGen.Get(ps.Id).Base.Stations["charge"];
-                var store = WorldGen.Get(ps.Id).Base.Stations["storage"];
-                bool fast = Rules.CountOf(ps, "ladestation") > 0;
+                if (!ps.StormWarn && ps.StormTimer > pdef.StormEvery - 30f)
+                {
+                    ps.StormWarn = true; DP("weather");
+                    Fx(new JObj().Set("k", "stormwarn").Set("name", pdef.StormName));
+                }
+                if (ps.StormTimer > pdef.StormEvery)
+                {
+                    ps.StormActive = true; ps.StormWarn = false; ps.StormTimer = 0; DP("weather");
+                    Fx(new JObj().Set("k", "storm").Set("on", true).Set("name", pdef.StormName));
+                }
+            }
+            else if (ps.StormTimer > pdef.StormDuration)
+            {
+                EndStorm(ps, pdef);
+            }
+            weatherSync += dt;
+            if (weatherSync > 5f) { weatherSync = 0; DP("weather"); }
+
+            // Nacht und Sturm: Unterschlupf suchen, Energie laden, Notabschaltung
+            bool night = Rules.IsNight(S, ps.Id);
+            if (night != wasNight)
+            {
+                wasNight = night;
+                Fx(new JObj().Set("k", night ? "nightfall" : "daybreak"));
+            }
+            regenTimer += dt;
+            bool slow = regenTimer >= 0.25f;
+            float rt = regenTimer;
+            if (slow) regenTimer = 0;
+            var charge = WorldGen.Get(ps.Id).Base.Stations["charge"];
+            var store = WorldGen.Get(ps.Id).Base.Stations["storage"];
+            bool fast = Rules.CountOf(ps, "ladestation") > 0;
+            int online = 0, sleepers = 0;
+            foreach (var p in S.Players.Values)
+            {
+                if (!p.Online) continue;
+                online++;
+                if (p.TowTimer > 0)
+                {
+                    p.TowTimer -= dt;
+                    if (p.TowTimer <= 0) Tow(p);
+                    continue;
+                }
+                if (!slow) { if (p.Sleeping) sleepers++; continue; }
+                int kind = Rules.ShelterKind(S, ps, p.Pos);
+                if (kind != p.ShelterKind)
+                {
+                    if (kind == 2) { S.AddStat("shelterVisits", 1); DW("stats"); }
+                    p.ShelterKind = kind; DPl(p.Id);
+                }
+                bool exposed = (night || ps.StormActive) && kind == 0 && p.Vehicle == null;
+                if (exposed != p.Exposed) { p.Exposed = exposed; DPl(p.Id); }
+                if (p.Sleeping && kind == 0) { p.Sleeping = false; DPl(p.Id); }
+                float max = S.MaxEnergy;
+                if (exposed)
+                {
+                    float drain = ((night ? 0.55f : 0f) + (ps.StormActive ? 0.9f : 0f)) * EnergyFactor();
+                    p.Energy = Math.Max(0, p.Energy - drain * rt);
+                    DPl(p.Id);
+                    if (p.Energy <= 0.01f) Shutdown(p);
+                    continue;
+                }
+                float rate = 0;
+                if (V3.DistXZ(p.Pos, charge) < 6f || V3.DistXZ(p.Pos, store) < 6f) rate = 16f * (fast ? 3f : 1f);
+                else if (p.Sleeping) rate = 3f;
+                else if (!night && Now - p.LastMoveTime > 2.0) rate = pdef.Cold ? 0.3f : 0.6f;
+                if (p.Energy > max) { p.Energy = max; DPl(p.Id); }
+                else if (rate > 0 && p.Energy < max)
+                {
+                    p.Energy = Math.Min(max, p.Energy + rate * rt);
+                    DPl(p.Id);
+                }
+                if (p.Sleeping) sleepers++;
+            }
+            // Alle schlafen geschützt → Nacht bzw. Sturm überspringen
+            if (online > 0 && sleepers == online && (night || ps.StormActive))
+            {
+                if (night) { ps.DayOffset += Rules.SecondsUntilMorning(S, ps.Id); DP("weather"); }
+                if (ps.StormActive) EndStorm(ps, pdef);
                 foreach (var p in S.Players.Values)
                 {
                     if (!p.Online) continue;
-                    float max = S.MaxEnergy;
-                    if (p.Energy >= max) { if (p.Energy > max) { p.Energy = max; DPl(p.Id); } continue; }
-                    float rate = 0;
-                    if (V3.DistXZ(p.Pos, charge) < 6f || V3.DistXZ(p.Pos, store) < 6f) rate = 16f * (fast ? 3f : 1f);
-                    else if (Now - p.LastMoveTime > 2.0) rate = pdef.Cold ? 0.3f : 0.6f;
-                    if (rate > 0)
-                    {
-                        p.Energy = Math.Min(max, p.Energy + rate * rt);
-                        DPl(p.Id);
-                    }
+                    p.Sleeping = false;
+                    p.Energy = S.MaxEnergy;
+                    DPl(p.Id);
                 }
-            }
-
-            // Sandstürme (PYRA)
-            if (pdef.Storms)
-            {
-                ps.StormTimer += dt;
-                if (!ps.StormActive && ps.StormTimer > 170f)
-                {
-                    ps.StormActive = true; ps.StormTimer = 0; DP("weather");
-                    Fx(new JObj().Set("k", "storm").Set("on", true));
-                }
-                else if (ps.StormActive && ps.StormTimer > 40f)
-                {
-                    ps.StormActive = false; ps.StormTimer = 0; ps.StormCount++; DP("weather");
-                    Fx(new JObj().Set("k", "storm").Set("on", false));
-                }
+                wasNight = Rules.IsNight(S, ps.Id);
+                Fx(new JObj().Set("k", "morning"));
+                SaveReason = "Nach dem Schlafen";
             }
 
             // Wachstum
@@ -531,6 +595,41 @@ namespace RePlanet.Core
             if (missionTimer > 0.5f) { missionTimer = 0; EvaluateMissions(); }
             saveTimer += dt;
             if (saveTimer > 120f) { saveTimer = 0; if (SaveReason == null) SaveReason = "auto"; }
+        }
+
+        void EndStorm(PlanetState ps, PlanetDef pdef)
+        {
+            ps.StormActive = false; ps.StormWarn = false; ps.StormTimer = 0; ps.StormCount++;
+            DP("weather");
+            Fx(new JObj().Set("k", "storm").Set("on", false).Set("name", pdef.StormName).Set("dunes", pdef.Storms));
+        }
+
+        /// <summary>Energie leer bei Nacht/Sturm ohne Unterschlupf: MIKO schaltet ab, eine Drohne schleppt es zum Stützpunkt.</summary>
+        void Shutdown(PlayerData p)
+        {
+            if (p.TowTimer > 0) return;
+            ExitVehicle(p);
+            p.Sleeping = false;
+            p.TowTimer = 6f;
+            DPl(p.Id);
+            S.AddStat("shutdowns", 1); DW("stats");
+            Fx(new JObj().Set("k", "shutdown").Set("pid", p.Id).Set("name", p.Name));
+        }
+
+        void Tow(PlayerData p)
+        {
+            var ps = S.Cur;
+            p.TowTimer = -1f;
+            p.Pos = WorldGen.Get(ps.Id).Base.Stations["charge"];
+            p.Energy = S.MaxEnergy * 0.4f;
+            p.Exposed = false;
+            teleportOk.Add(p.Id);
+            // Zeitverlust: Allein im Spiel vergeht die Nacht während des Abschleppens
+            int online = 0;
+            foreach (var q in S.Players.Values) if (q.Online) online++;
+            if (online == 1 && Rules.IsNight(S, ps.Id)) { ps.DayOffset += Rules.SecondsUntilMorning(S, ps.Id); DP("weather"); }
+            DPl(p.Id);
+            Fx(new JObj().Set("k", "towed").Set("pid", p.Id).Set("pos", p.Pos.ToJson(1)));
         }
 
         void UpdateMachines(float dt)
@@ -767,6 +866,7 @@ namespace RePlanet.Core
                 case "sell_bales": return S.Stat("balesSold");
                 case "oil": return S.Stat("oil");
                 case "thaw": return S.Stat("thawed");
+                case "shelter_visit": return S.Stat("shelterVisits");
             }
             return 0;
         }
@@ -780,7 +880,7 @@ namespace RePlanet.Core
                 case "zone":
                     {
                         var parts = m.Param.Split(':');
-                        var ps = S.Planet(parts[0]);
+                        var ps = S.Planet(parts[0] == "start" ? S.StartPlanet : parts[0]);
                         return Rules.ZoneCleared(ps, int.Parse(parts[1])) ? 1 : 0;
                     }
                 case "repair": return S.Planet(m.Param).Repaired.Count;

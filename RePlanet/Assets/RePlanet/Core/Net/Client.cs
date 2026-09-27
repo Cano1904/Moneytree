@@ -327,7 +327,7 @@ namespace RePlanet.Core
             tcp = null;
         }
 
-        public void Update(float dt) { Hub.Update(dt); }
+        public void Update(float dt, bool simulate = true) { Hub.Update(dt, simulate); }
 
         public void Shutdown(string reason)
         {

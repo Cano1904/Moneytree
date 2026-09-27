@@ -41,8 +41,8 @@ namespace RePlanet.Core
         public static readonly List<string> LoreOrder = new List<string>();
         public static readonly Dictionary<string, CosmeticDef> Cosmetics = new Dictionary<string, CosmeticDef>();
         public static readonly List<string> CosmeticOrder = new List<string>();
-        public static readonly int[] ShipLevelCost = { 0, 2500, 7000, 14000 };
-        public static readonly string[] ShipLevelName = { "Transportschiff (Grundausstattung)", "Sprungantrieb I", "Sprungantrieb II", "Sprungantrieb III" };
+        public static readonly int[] ShipLevelCost = { 0, 9000 };
+        public static readonly string[] ShipLevelName = { "Transportschiff (TERRA, PYRA, PELAGIA)", "Sprungantrieb (NIVALIS)" };
 
         static GameData()
         {
@@ -295,7 +295,9 @@ namespace RePlanet.Core
                 EcoAction = "plant", EcoName = "Setzling pflanzen", RepairName = "Straßenlaterne reparieren", Music = "terra",
                 MusicScale = new[] { 0, 2, 4, 7, 9 }, MusicRoot = 220f,
                 Deliveries = new[] { "zeitung", "karton", "glasflasche", "plastikflasche", "dose", "toaster", "gartengeraet", "fernseher" },
-                UnlockHint = "Von Anfang an verfügbar."
+                UnlockHint = "Von Anfang an verfügbar.", StartPlanet = true,
+                Mood = "Goldene Melancholie: verlassene Straßen im Abendlicht, warme Hoffnung.",
+                DayLength = 840f, StormEvery = 480f, StormDuration = 70f, WindBase = 0.12f, StormName = "Staubsturm", ShelterName = "Unterstand"
             };
             terra.Spawns[0] = S("zeitung", 34, "karton", 20, "glasflasche", 30, "plastikflasche", 34, "tuete", 26, "dose", 30, "toaster", 6, "blumentopf", 10, "farbeimer", 4, "batterie", 6, "fernseher", 4);
             terra.Spawns[1] = S("zeitung", 24, "karton", 30, "glasflasche", 34, "plastikflasche", 36, "tuete", 30, "dose", 34, "toaster", 10, "mikrowelle", 10, "kuehlschrank", 6, "einkaufswagen", 8, "autowrack", 4, "fernseher", 10, "farbeimer", 6, "batterie", 10);
@@ -306,7 +308,9 @@ namespace RePlanet.Core
 
             var pyra = new PlanetDef
             {
-                Id = "pyra", Name = "PYRA", Subtitle = "Die rostrote Industriewelt", Order = 1, Seed = 22877, ShipLevelRequired = 1, UnlockProject = "terra_p2",
+                Id = "pyra", Name = "PYRA", Subtitle = "Die rostrote Industriewelt", Order = 1, Seed = 22877, StartPlanet = true,
+                Mood = "Rau und dramatisch: Hitze, Rost, heulender Wüstenwind und stampfende Maschinen.",
+                DayLength = 780f, StormEvery = 360f, StormDuration = 80f, WindBase = 0.25f, StormName = "Sandsturm", ShelterName = "Felsnische",
                 Description = "Roter Wüstensand, verlassene Fabriken, Schrottschluchten und gigantische Förderanlagen.",
                 SkyTop = 0xC26A48, SkyHorizon = 0xF0A56B, Fog = 0xD9875A, Ground = 0xB4583A, Ground2 = 0x8E3F2A, Accent = 0xFF7A3D, Sun = 0xFFC99A,
                 FogDensity = 0.012f, SunIntensity = 1.15f, Storms = true,
@@ -315,7 +319,7 @@ namespace RePlanet.Core
                 EcoAction = "plant", EcoName = "Staubbinder-Kaktus pflanzen", RepairName = "Förderknoten reparieren", Music = "pyra",
                 MusicScale = new[] { 0, 3, 5, 7, 10 }, MusicRoot = 196f,
                 Deliveries = new[] { "schrauben", "zahnrad", "kupferkabel", "maschinenteil", "rohrstueck", "stahlstueck" },
-                UnlockHint = "Sprungantrieb I und das Projekt „Wasserkreislauf“ auf TERRA."
+                UnlockHint = "Von Anfang an verfügbar."
             };
             pyra.Spawns[0] = S("schrauben", 40, "zahnrad", 26, "kupferkabel", 20, "rohrstueck", 20, "maschinenteil", 12, "stahltraeger", 8, "dose", 20, "gefahrstofffass", 6, "motorblock", 5);
             pyra.Spawns[1] = S("schrauben", 36, "zahnrad", 26, "kupferkabel", 26, "rohrstueck", 26, "maschinenteil", 20, "stahltraeger", 14, "motorblock", 8, "fahrzeugwrack", 4, "gefahrstofffass", 10);
@@ -326,7 +330,9 @@ namespace RePlanet.Core
 
             var pel = new PlanetDef
             {
-                Id = "pelagia", Name = "PELAGIA", Subtitle = "Der vermüllte Ozeanplanet", Order = 2, Seed = 33419, ShipLevelRequired = 2, UnlockProject = "pyra_p2",
+                Id = "pelagia", Name = "PELAGIA", Subtitle = "Der vermüllte Ozeanplanet", Order = 2, Seed = 33419, StartPlanet = true,
+                Mood = "Weit und atmend: Meeresrauschen, Möwenwind, schwebende Weite – und dunkle Tiefe.",
+                DayLength = 960f, StormEvery = 420f, StormDuration = 75f, WindBase = 0.2f, StormName = "Seesturm", ShelterName = "Bootshaus",
                 Description = "Türkisfarbene Lagunen, Inselstädte, überflutete Straßen und schwimmende Müllinseln.",
                 SkyTop = 0x4FA7D9, SkyHorizon = 0xBFE9F0, Fog = 0x9ED8E0, Ground = 0xD8C9A0, Ground2 = 0x6FA65A, Accent = 0x2FD1C5, Sun = 0xFFF4DA,
                 FogDensity = 0.008f, SunIntensity = 1.25f, Water = true, WaterLevel = 0f,
@@ -335,7 +341,7 @@ namespace RePlanet.Core
                 EcoAction = "reef", EcoName = "Riffmodul setzen", RepairName = "Leuchtboje reparieren", Music = "pelagia",
                 MusicScale = new[] { 0, 2, 4, 6, 7, 9, 11 }, MusicRoot = 246.94f,
                 Deliveries = new[] { "kanister", "treibgut", "boje", "netzstueck", "elektroschrott", "anker" },
-                UnlockHint = "Sprungantrieb II und das Projekt „Energieversorgung“ auf PYRA."
+                UnlockHint = "Von Anfang an verfügbar."
             };
             pel.Spawns[0] = S("kanister", 24, "treibgut", 40, "treibtuete", 30, "boje", 10, "geisternetz", 8, "oelteppich", 6, "anker", 8, "elektroschrott", 14, "schiffsteil", 8, "glasflasche", 16);
             pel.Spawns[1] = S("kanister", 26, "treibgut", 40, "treibtuete", 34, "boje", 12, "geisternetz", 12, "oelteppich", 8, "elektroschrott", 22, "schiffsteil", 12, "anker", 6, "glasflasche", 14);
@@ -346,7 +352,10 @@ namespace RePlanet.Core
 
             var niv = new PlanetDef
             {
-                Id = "nivalis", Name = "NIVALIS", Subtitle = "Die eingefrorene Zukunft", Order = 3, Seed = 44753, ShipLevelRequired = 3, UnlockProject = "pelagia_p2",
+                Id = "nivalis", Name = "NIVALIS", Subtitle = "Die eingefrorene Zukunft", Order = 3, Seed = 44753, ShipLevelRequired = 1,
+                UnlockProjects = new[] { "terra_p3", "pyra_p3", "pelagia_p3" },
+                Mood = "Eisig und erhaben: Polarlicht, klirrende Stille, Schneestürme – das Finale.",
+                DayLength = 720f, StormEvery = 330f, StormDuration = 85f, WindBase = 0.22f, StormName = "Schneesturm", ShelterName = "Iglu-Station",
                 Description = "Blaue Eislandschaften, stillgelegte Forschungsstädte, Raumhäfen und Polarlichter.",
                 SkyTop = 0x0E1B3D, SkyHorizon = 0x3C6E9E, Fog = 0x9DB8D6, Ground = 0xDCE8F2, Ground2 = 0xB5CDE3, Accent = 0x7DF9FF, Sun = 0xCFE3FF,
                 FogDensity = 0.011f, SunIntensity = 0.85f, Cold = true, Aurora = true,
@@ -355,7 +364,7 @@ namespace RePlanet.Core
                 EcoAction = "lichen", EcoName = "Flechtenkultur ansiedeln", RepairName = "Wärmeknoten reparieren", Music = "nivalis",
                 MusicScale = new[] { 0, 2, 3, 7, 8 }, MusicRoot = 174.61f,
                 Deliveries = new[] { "akku", "platinenstapel", "kabeltrommel", "solarbruch", "drohnenwrack", "seltenmetall" },
-                UnlockHint = "Sprungantrieb III und das Projekt „Filterstationen“ auf PELAGIA."
+                UnlockHint = "Finale: Großprojekte auf TERRA, PYRA und PELAGIA abschließen und den Sprungantrieb einbauen."
             };
             niv.Spawns[0] = S("akku", 30, "platinenstapel", 30, "kabeltrommel", 16, "solarbruch", 16, "drohnenwrack", 18, "eismaschine", 6, "serverrack", 4, "seltenmetall", 8);
             niv.Spawns[1] = S("akku", 30, "platinenstapel", 40, "kabeltrommel", 20, "solarbruch", 14, "drohnenwrack", 16, "eismaschine", 8, "serverrack", 12, "seltenmetall", 12);
@@ -387,14 +396,14 @@ namespace RePlanet.Core
             var tg = P("terra_p3", "terra", 2, "Zentrales Gewächshaus", "Das große Gewächshaus mit den versiegelten Samen wiederaufbauen. GROSSPROJEKT", 1600, "glas:70,metall:60,elektronik:24,kunststoff:30", 30f, "greenhouse", "terra_p2");
             tg.Great = true; tg.EnergyBonus = 4;
 
-            P("pyra_p1", "pyra", 0, "Handelsposten reaktivieren", "Der alte Schrottmarkt kauft wieder an: +15 % auf Verkäufe auf PYRA.", 900, "stahl:50,kupfer:15", 18f, "trade");
-            P("pyra_p2", "pyra", 1, "Energieversorgung", "Windturbinen und Kupferleitungen: +15 Energie auf PYRA, Recycling-Generator baubar.", 2200, "stahl:90,kupfer:40,elektronik:15", 24f, "power", "pyra_p1").EnergyBonus = 15;
-            var pg = P("pyra_p3", "pyra", 2, "Recyclingwerk", "Die Gießerei wird zum Recyclingwerk: +20 % auf Ballen überall. GROSSPROJEKT", 5000, "stahl:180,kupfer:70,elektronik:35,metall:30", 32f, "recycling", "pyra_p2");
+            P("pyra_p1", "pyra", 0, "Handelsposten reaktivieren", "Der alte Schrottmarkt kauft wieder an: +15 % auf Verkäufe auf PYRA.", 350, "stahl:35,kupfer:10,metall:10", 16f, "trade");
+            P("pyra_p2", "pyra", 1, "Energieversorgung", "Windturbinen und Kupferleitungen: +15 Energie auf PYRA, Recycling-Generator baubar.", 1000, "stahl:70,kupfer:30,elektronik:12", 22f, "power", "pyra_p1").EnergyBonus = 15;
+            var pg = P("pyra_p3", "pyra", 2, "Recyclingwerk", "Die Gießerei wird zum Recyclingwerk: +20 % auf Ballen überall. GROSSPROJEKT", 2400, "stahl:140,kupfer:55,elektronik:28,metall:20", 30f, "recycling", "pyra_p2");
             pg.Great = true; pg.EnergyBonus = 10;
 
-            P("pelagia_p1", "pelagia", 0, "Hafenbecken und Kaimauer", "Hafenbecken säubern und die Kaimauer abdichten.", 1800, "kunststoff:50,stahl:40", 20f, "harbor");
-            P("pelagia_p2", "pelagia", 1, "Filterstationen", "Drei Filterstationen reinigen das Küstenwasser.", 3600, "netz:50,elektronik:30,stahl:40", 24f, "filters", "pelagia_p1").EnergyBonus = 5;
-            var peg = P("pelagia_p3", "pelagia", 2, "Wasserreinigung und Riff", "Die Lagune wird gereinigt, das Riff kann wieder wachsen. GROSSPROJEKT", 7000, "kunststoff:90,netz:70,elektronik:45,stahl:60", 34f, "reef", "pelagia_p2");
+            P("pelagia_p1", "pelagia", 0, "Hafenbecken und Kaimauer", "Hafenbecken säubern und die Kaimauer abdichten.", 400, "kunststoff:40,stahl:25", 18f, "harbor");
+            P("pelagia_p2", "pelagia", 1, "Filterstationen", "Drei Filterstationen reinigen das Küstenwasser.", 1200, "netz:40,elektronik:20,stahl:30", 22f, "filters", "pelagia_p1").EnergyBonus = 5;
+            var peg = P("pelagia_p3", "pelagia", 2, "Wasserreinigung und Riff", "Die Lagune wird gereinigt, das Riff kann wieder wachsen. GROSSPROJEKT", 2800, "kunststoff:70,netz:55,elektronik:35,stahl:45", 32f, "reef", "pelagia_p2");
             peg.Great = true; peg.EnergyBonus = 8;
 
             P("nivalis_p1", "nivalis", 0, "Laborheizung", "Die Kuppellabore werden wieder warm.", 3200, "elektronik:40,metall:30,akku:20", 20f, "heat");
@@ -416,9 +425,10 @@ namespace RePlanet.Core
         static void DefineMissions()
         {
             // Tutorial – spielbare erste Mission
-            Mi("tut_move", "terra", "tutorial", "Aufwachen", "Fahre ein Stück durch das Wohnviertel.", "move", null, 8, 0);
+            Mi("tut_move", "terra", "tutorial", "Aufwachen", "Fahre ein Stück vom Stützpunkt weg.", "move", null, 8, 0);
+            Mi("tut_shelter", "terra", "tutorial", "Ein Dach über dem Kopf", "Nachts und bei Stürmen brauchst du einen Unterschlupf. Finde einen (Symbol auf der Karte) oder baue einen Notunterschlupf.", "shelter_visit", null, 1, 30, null, "tut_sell");
             Mi("tut_collect", "terra", "tutorial", "Erste Handgriffe", "Sammle 5 Müllobjekte mit dem Greifarm auf.", "collect_any", null, 5, 10, null, "tut_move");
-            Mi("tut_zone", "terra", "tutorial", "Der Spielplatz", "Räume den Spielplatz neben dem Stützpunkt komplett auf.", "zone", "terra:0", 1, 25, null, "tut_collect");
+            Mi("tut_zone", "terra", "tutorial", "Der erste Lichtpunkt", "Räume den Lichtpunkt westlich des Stützpunkts komplett auf – dann geht dort das Licht an.", "zone", "start:0", 1, 25, null, "tut_collect");
             Mi("tut_sell", "terra", "tutorial", "Erster Verkauf", "Bringe deine Ladung zum Stützpunkt und verkaufe sie am Verkaufsterminal.", "sell_any", null, 1, 15, null, "tut_zone");
             Mi("tut_upgrade", "terra", "tutorial", "Besser werden", "Kaufe in der Werkstatt dein erstes Upgrade.", "buy_tech", null, 1, 20, "stern", "tut_sell");
             Mi("tut_sort", "terra", "tutorial", "Sortieren lohnt sich", "Lagere Müll ein und sortiere 10 Einheiten am Sortiertisch.", "sort", null, 10, 25, null, "tut_upgrade");

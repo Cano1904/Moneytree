@@ -245,6 +245,13 @@ namespace RePlanet.Core
                 var s = MakeSpot(c, "lore", loreIds[i], GameData.Lore[loreIds[i]].Title, loreAreas[Math.Min(i, 3)], false);
                 c.L.LoreSpots.Add(s);
             }
+            n = 0;
+            for (int a = 0; a < 3; a++)
+                for (int i = 0; i < 3; i++)
+                {
+                    var s = MakeSpot(c, "shelter", c.P + "_h" + n, def.ShelterName, a, false);
+                    c.L.Shelters.Add(s); n++;
+                }
             float gy = Terrain.HeightAt(c.P, 18, -92);
             c.L.Viewpoints.Add(new Spot { Id = c.P + "_vp0", Kind = "view", Name = "Aussichtspunkt Stützpunkt", Area = 0, Pos = new V3(18, gy + 6f, -92), Yaw = 0.25f });
             float vy = Terrain.HeightAt(c.P, -30, 64);

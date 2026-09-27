@@ -273,11 +273,12 @@ namespace RePlanet.Core
             connPid.Clear(); pidConn.Clear();
         }
 
-        public void Update(float dt)
+        /// <summary>simulate = false: Nachrichten und Patches laufen weiter, die Welt steht still (Pause im Solo-Spiel).</summary>
+        public void Update(float dt, bool simulate = true)
         {
             if (Closed) return;
             clock += dt;
-            Game.Tick(dt);
+            if (simulate) Game.Tick(dt);
             patchTimer += dt;
             posTimer += dt;
             if (patchTimer >= 1f / 30f)
@@ -360,7 +361,7 @@ namespace RePlanet.Core
             connSession.Remove(conn);
         }
 
-        public void Update(float dt)
+        public void Update(float dt, bool simulate = true)
         {
             clock += dt;
             foreach (var t in transports)
@@ -395,7 +396,7 @@ namespace RePlanet.Core
                 if (clock - kv.Value > 15) { pendingSince.Remove(kv.Key); CloseConn(kv.Key); }
             foreach (var s in new List<Session>(sessions.Values))
             {
-                s.Update(dt);
+                s.Update(dt, simulate);
                 if (s.Closed) { sessions.Remove(s.Code); Log?.Invoke("Sitzung " + s.Code + " beendet: " + s.CloseReason); }
             }
         }

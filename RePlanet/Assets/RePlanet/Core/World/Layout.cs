@@ -97,6 +97,7 @@ namespace RePlanet.Core
         public List<Spot> Eco = new List<Spot>();
         public List<Spot> LoreSpots = new List<Spot>();
         public List<Spot> Viewpoints = new List<Spot>();
+        public List<Spot> Shelters = new List<Spot>();
         public V3[] ProjectSites = new V3[3];
         public List<Mound> Mounds = new List<Mound>();
         public BaseLayout Base = new BaseLayout();
@@ -115,6 +116,7 @@ namespace RePlanet.Core
             foreach (var s in Eco) if (s.Id == id) return s;
             foreach (var s in LoreSpots) if (s.Id == id) return s;
             foreach (var s in Viewpoints) if (s.Id == id) return s;
+            foreach (var s in Shelters) if (s.Id == id) return s;
             return null;
         }
 

@@ -386,13 +386,101 @@ namespace RePlanet.Core
         public static bool PlanetUnlockable(WorldState s, string planet)
         {
             var pd = GameData.Planets[planet];
+            if (pd.StartPlanet) return true;
             if (s.ShipLevel < pd.ShipLevelRequired) return false;
             if (pd.UnlockProject != null)
             {
                 var pr = GameData.Projects[pd.UnlockProject];
                 if (!s.Planet(pr.Planet).Projects[pr.Id].Done) return false;
             }
+            foreach (var up in pd.UnlockProjects)
+            {
+                var pr = GameData.Projects[up];
+                if (!s.Planet(pr.Planet).Projects[pr.Id].Done) return false;
+            }
             return true;
+        }
+
+        // ------------------------------------------------------------ Tag/Nacht, Wind, Unterschlupf
+        public const float NightStart = 0.8f, NightEnd = 0.22f, Morning = 0.26f;
+
+        /// <summary>Tageszeit 0..1 (0 = Mitternacht, 0,5 = Mittag). Deterministisch aus Spielzeit und Schlaf-Versatz.</summary>
+        public static float DayPhase(WorldState s, string planet)
+        {
+            var def = GameData.Planets[planet];
+            double off = s.Planets.ContainsKey(planet) ? s.Planets[planet].DayOffset : 0;
+            double x = (s.PlayTime + off) / def.DayLength + 0.3;
+            return (float)(x - Math.Floor(x));
+        }
+
+        public static bool IsNight(float phase) { return phase >= NightStart || phase < NightEnd; }
+        public static bool IsNight(WorldState s, string planet) { return IsNight(DayPhase(s, planet)); }
+
+        /// <summary>0 = heller Tag, 1 = tiefe Nacht (weiche Dämmerung).</summary>
+        public static float Darkness(float phase)
+        {
+            float d = Math.Abs(phase - 0.5f) * 2f; // 0 mittags, 1 mitternachts
+            return M.Smooth(M.InvLerp(0.5f, 0.66f, d));
+        }
+
+        public static float SecondsUntilMorning(WorldState s, string planet)
+        {
+            float ph = DayPhase(s, planet);
+            float d = Morning - ph;
+            if (d < 0) d += 1f;
+            return d * GameData.Planets[planet].DayLength;
+        }
+
+        /// <summary>Windstärke 0..1 und Richtung (Bogenmaß). Böen deterministisch aus der Spielzeit; Stürme verstärken stark.</summary>
+        public static float Wind(WorldState s, string planet, out float dirX, out float dirZ)
+        {
+            var def = GameData.Planets[planet];
+            var ps = s.Planet(planet);
+            float t = (float)s.PlayTime;
+            float dir = 0.7f + 0.6f * M.Sin(t * 0.013f + def.Seed) + (ps.StormActive ? 0.3f * M.Sin(t * 0.07f) : 0f);
+            dirX = M.Sin(dir); dirZ = M.Cos(dir);
+            float gust = 0.5f + 0.5f * M.Sin(t * 0.9f + def.Seed * 0.1f) * M.Sin(t * 0.37f + 1.3f);
+            float w = def.WindBase * (0.6f + 0.8f * gust);
+            if (IsNight(s, planet)) w *= 1.25f;
+            if (ps.StormWarn) w = Math.Max(w, 0.35f + 0.1f * gust);
+            if (ps.StormActive) w = 0.75f + 0.25f * gust;
+            return M.Clamp01(w);
+        }
+
+        /// <summary>0 = ungeschützt, 1 = Stützpunkt, 2 = Unterschlupf im Gelände (vorhanden oder selbst gebaut).</summary>
+        public static int ShelterKind(WorldState s, PlanetState ps, V3 pos)
+        {
+            var l = WorldGen.Get(ps.Id);
+            var b = l.Base;
+            if (V3.DistXZ(pos, b.Stations["storage"]) < 8f || V3.DistXZ(pos, b.Stations["garage"]) < 7f || V3.DistXZ(pos, b.Stations["charge"]) < 5f) return 1;
+            foreach (var sh in l.Shelters) if (V3.DistXZ(pos, sh.Pos) < 3.6f && Math.Abs(pos.y - sh.Pos.y) < 3f) return 2;
+            foreach (var sh in ps.Shelters) if (V3.DistXZ(pos, sh) < 3.6f && Math.Abs(pos.y - sh.y) < 3f) return 2;
+            return 0;
+        }
+
+        public static bool NearestShelter(WorldState s, PlanetState ps, V3 pos, out V3 at, out float dist)
+        {
+            var l = WorldGen.Get(ps.Id);
+            at = l.Base.Stations["storage"];
+            dist = V3.DistXZ(pos, at);
+            foreach (var sh in l.Shelters) { float d = V3.DistXZ(pos, sh.Pos); if (d < dist) { dist = d; at = sh.Pos; } }
+            foreach (var sh in ps.Shelters) { float d = V3.DistXZ(pos, sh); if (d < dist) { dist = d; at = sh; } }
+            return true;
+        }
+
+        public const int ShelterCost = 80;
+        public const int MaxShelters = 8;
+
+        public static string CanBuildShelter(WorldState s, PlanetState ps, V3 pos)
+        {
+            var l = WorldGen.Get(ps.Id);
+            if (l.Base.InBase(pos.x, pos.z)) return "Am Stützpunkt gibt es schon ein Dach.";
+            if (ps.Shelters.Count >= MaxShelters) return "Höchstens " + MaxShelters + " Notunterschlüpfe pro Planet.";
+            if (Terrain.HeightAt(ps.Id, pos.x, pos.z) < Terrain.WaterLevel(ps.Id) - 0.3f) return "Nicht im Wasser baubar.";
+            if (l.BlockedStatic(pos.x, pos.z, 1.8f)) return "Kein Platz – freie Fläche suchen.";
+            foreach (var sh in l.Shelters) if (V3.DistXZ(pos, sh.Pos) < 12f) return "Hier in der Nähe gibt es schon einen Unterschlupf.";
+            foreach (var sh in ps.Shelters) if (V3.DistXZ(pos, sh) < 12f) return "Hier in der Nähe gibt es schon einen Unterschlupf.";
+            return null;
         }
 
         /// <summary>Aktuelles Hauptziel als kurzer Text für das HUD.</summary>
@@ -420,12 +508,18 @@ namespace RePlanet.Core
                 var why = ProjectCheck(s, pid);
                 return "Projekt „" + pd.Name + "“ starten" + (why != null ? " – " + why : " (am Projektplatz).");
             }
-            // Planet fertig → nächster Planet
+            // Planet fertig → andere Startplaneten, dann das Finale
+            foreach (var pl in GameData.PlanetOrder)
+            {
+                var pd = GameData.Planets[pl];
+                if (!pd.StartPlanet || pl == ps.Id) continue;
+                if (!s.Planet(pl).Projects[GameData.ProjectId(pl, 2)].Done) return "Mit dem Transportschiff nach " + pd.Name + " reisen: " + pd.Subtitle + ".";
+            }
             foreach (var pl in GameData.PlanetOrder)
             {
                 if (s.Unlocked.Contains(pl)) continue;
                 var pd = GameData.Planets[pl];
-                if (s.ShipLevel < pd.ShipLevelRequired) return "Transportschiff aufrüsten: " + GameData.ShipLevelName[pd.ShipLevelRequired] + " (" + GameData.ShipLevelCost[pd.ShipLevelRequired] + " Credits) für " + pd.Name + ".";
+                if (s.ShipLevel < pd.ShipLevelRequired) return "Finale: Transportschiff aufrüsten – " + GameData.ShipLevelName[pd.ShipLevelRequired] + " (" + GameData.ShipLevelCost[pd.ShipLevelRequired] + " Credits) für " + pd.Name + ".";
                 return pd.UnlockHint;
             }
             if (!s.CampaignDone)

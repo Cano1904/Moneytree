@@ -1,0 +1,20 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!-- Kompiliert Core + Unity-Runtime-Skripte gegen die UnityEngine-Referenz-Assemblies (C# 9 wie in Unity). -->
+  <PropertyGroup>
+    <TargetFramework>netstandard2.1</TargetFramework>
+    <LangVersion>9.0</LangVersion>
+    <Nullable>disable</Nullable>
+    <AssemblyName>RePlanet.RuntimeCheck</AssemblyName>
+    <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
+    <NoWarn>CS1591;CS0414;CS0649</NoWarn>
+    <UnityRefDir Condition="'$(UNITY_REF_DIR)' == ''">/opt/unityref</UnityRefDir>
+    <UnityRefDir Condition="'$(UNITY_REF_DIR)' != ''">$(UNITY_REF_DIR)</UnityRefDir>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="../../../RePlanet/Assets/RePlanet/Core/**/*.cs" />
+    <Compile Include="../../../RePlanet/Assets/RePlanet/Runtime/**/*.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <Reference Include="$(UnityRefDir)/mods/lib/netstandard2.0/*.dll" Private="false" />
+  </ItemGroup>
+</Project>

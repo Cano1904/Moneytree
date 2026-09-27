@@ -104,6 +104,9 @@ namespace RePlanet.Core
                     case "endingSeen": S.EndingSeen = true; DW("flags"); return ActResult.OK();
                     case "introSeen": S.IntroSeen = true; DW("flags"); return ActResult.OK();
                     case "respawn": return ActRespawn(p);
+                    case "sleep": return ActSleep(p);
+                    case "wake": p.Sleeping = false; DPl(p.Id); return ActResult.OK();
+                    case "shelter": return ActBuildShelter(p);
                 }
             }
             catch (Exception e)
@@ -1020,6 +1023,37 @@ namespace RePlanet.Core
                 if (i == 0) p.Color = id; else if (i == 1) p.Accent = id; else if (i == 2) p.Sticker = id; else p.Attach = id;
             }
             DPl(p.Id);
+            return ActResult.OK();
+        }
+
+        ActResult ActSleep(PlayerData p)
+        {
+            if (p.TowTimer > 0) return ActResult.Fail("MIKO ist abgeschaltet.");
+            if (p.Vehicle != null) return ActResult.Fail("Zum Schlafen erst aussteigen.");
+            int kind = Rules.ShelterKind(S, S.Cur, p.Pos);
+            if (kind == 0) return ActResult.Fail("Hier ist kein Unterschlupf. Suche einen " + GameData.Planets[S.CurrentPlanet].ShelterName + ", fahre zum Stützpunkt oder baue einen Notunterschlupf (" + Rules.ShelterCost + " Credits).");
+            bool night = Rules.IsNight(S, S.CurrentPlanet);
+            if (!night && !S.Cur.StormActive) return ActResult.Fail("MIKO ist nicht müde – Schlafen geht nachts oder während eines Sturms.");
+            p.Sleeping = true;
+            p.ShelterKind = kind;
+            DPl(p.Id);
+            int online = 0, sleeping = 0;
+            foreach (var q in S.Players.Values) if (q.Online) { online++; if (q.Sleeping) sleeping++; }
+            Fx(new JObj().Set("k", "sleep").Set("pid", p.Id).Set("n", sleeping).Set("of", online));
+            return ActResult.OK(new JObj().Set("sleeping", sleeping).Set("online", online));
+        }
+
+        ActResult ActBuildShelter(PlayerData p)
+        {
+            if (p.Vehicle != null) return ActResult.Fail("Zum Bauen erst aussteigen.");
+            var err = Rules.CanBuildShelter(S, S.Cur, p.Pos);
+            if (err != null) return ActResult.Fail(err);
+            if (!Spend(Rules.ShelterCost)) return ActResult.Fail("Es fehlen " + (Rules.ShelterCost - S.Credits) + " Credits für den Notunterschlupf.");
+            var pos = new V3(p.Pos.x, Terrain.HeightAt(S.CurrentPlanet, p.Pos.x, p.Pos.z), p.Pos.z);
+            S.Cur.Shelters.Add(pos);
+            DP("shelters");
+            S.AddStat("shelterVisits", 1); DW("stats");
+            Fx(new JObj().Set("k", "sheltered").Set("pos", pos.ToJson(1)));
             return ActResult.OK();
         }
 

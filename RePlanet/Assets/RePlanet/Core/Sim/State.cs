@@ -143,7 +143,9 @@ namespace RePlanet.Core
         public Dictionary<string, VehicleState> Vehicles = new Dictionary<string, VehicleState>();
         public int StormCount;
         public float StormTimer;
-        public bool StormActive;
+        public bool StormActive, StormWarn;
+        public double DayOffset;
+        public List<V3> Shelters = new List<V3>(); // selbst gebaute Notunterschlüpfe
         public int ContractIdx;
         public bool Visited;
 
@@ -199,7 +201,7 @@ namespace RePlanet.Core
         }
 
         // ------------------------------------------------------------ Serialisierung (Teile)
-        public static readonly string[] Parts = { "rm", "thaw", "dyn", "storage", "buildings", "projects", "repairs", "eco", "views", "vehicles", "weather", "misc" };
+        public static readonly string[] Parts = { "rm", "thaw", "dyn", "storage", "buildings", "projects", "repairs", "eco", "views", "vehicles", "weather", "misc", "shelters" };
 
         public object PartToJson(string part)
         {
@@ -230,7 +232,8 @@ namespace RePlanet.Core
                 case "eco": { var o = new JObj(); foreach (var kv in Eco) o[kv.Key] = Math.Round(kv.Value, 1); return o; }
                 case "views": return new List<object>(Views);
                 case "vehicles": { var l = new List<object>(); foreach (var v in Vehicles.Values) l.Add(v.ToJson(true)); return l; }
-                case "weather": return new JObj().Set("sc", StormCount).Set("st", Json.R(StormTimer, 1)).Set("sa", StormActive);
+                case "weather": return new JObj().Set("sc", StormCount).Set("st", Json.R(StormTimer, 1)).Set("sa", StormActive).Set("sw", StormWarn).Set("do", Math.Round(DayOffset, 2));
+                case "shelters": { var l = new List<object>(); foreach (var v in Shelters) l.Add(v.ToJson(1)); return l; }
                 case "misc": return new JObj().Set("ci", ContractIdx).Set("vis", Visited);
             }
             return null;
@@ -293,7 +296,15 @@ namespace RePlanet.Core
                     break;
                 case "weather":
                     var wo = v as JObj;
-                    if (wo != null) { StormCount = wo.Int("sc"); StormTimer = wo.Float("st"); StormActive = wo.Bool("sa"); }
+                    if (wo != null) { StormCount = wo.Int("sc"); StormTimer = wo.Float("st"); StormActive = wo.Bool("sa"); StormWarn = wo.Bool("sw"); DayOffset = wo.Num("do"); }
+                    break;
+                case "shelters":
+                    Shelters.Clear();
+                    foreach (var o in (v as List<object>) ?? new List<object>())
+                    {
+                        var a = o as List<object>;
+                        if (a != null && a.Count >= 3) Shelters.Add(new V3((float)Json.ToDouble(a[0], 0), (float)Json.ToDouble(a[1], 0), (float)Json.ToDouble(a[2], 0)));
+                    }
                     break;
                 case "misc":
                     var mo = v as JObj;
@@ -344,19 +355,23 @@ namespace RePlanet.Core
         public string Color = "c_tuerkis", Accent = "a_orange", Sticker = "s_none", Attach = "x_none";
         public int Flags;            // Laufzeit: Animation/Werkzeug für andere Clients
         public string Tool = "grab"; // Laufzeit
+        public bool Sleeping, Exposed; // Laufzeit: schläft im Unterschlupf / ist Nacht oder Sturm ausgesetzt
+        public float TowTimer = -1f;   // Laufzeit: > 0 = Notabschaltung, Abschleppdrohne unterwegs
+        public int ShelterKind;        // Laufzeit: 0 draußen, 1 Stützpunkt, 2 Unterschlupf im Gelände
 
         public JObj ToJson(bool forSave)
         {
             var o = new JObj().Set("id", Id).Set("n", Name).Set("bin", Item.ListToJson(Bin)).Set("e", Json.R(Energy, 1)).Set("p", Pos.ToJson()).Set("y", Json.R(Yaw, 3))
                 .Set("cos", Json.Arr(Color, Accent, Sticker, Attach));
-            if (!forSave) { o["v"] = Vehicle; o["on"] = Online; o["tool"] = Tool; }
+            if (!forSave) { o["v"] = Vehicle; o["on"] = Online; o["tool"] = Tool; o["sl"] = Sleeping; o["ex"] = Exposed; o["tow"] = Json.R(TowTimer, 1); o["sk"] = ShelterKind; }
             return o;
         }
 
         public static PlayerData FromJson(JObj o)
         {
             if (o == null || o.Str("id") == null) return null;
-            var p = new PlayerData { Id = o.Str("id"), Name = o.Str("n", "MIKO"), Bin = Item.ListFromJson(o.Arr("bin")), Energy = o.Float("e", 100), Pos = V3.FromArr(o.Floats("p")), Yaw = o.Float("y"), Vehicle = o.Str("v"), Online = o.Bool("on"), Tool = o.Str("tool", "grab") };
+            var p = new PlayerData { Id = o.Str("id"), Name = o.Str("n", "MIKO"), Bin = Item.ListFromJson(o.Arr("bin")), Energy = o.Float("e", 100), Pos = V3.FromArr(o.Floats("p")), Yaw = o.Float("y"), Vehicle = o.Str("v"), Online = o.Bool("on"), Tool = o.Str("tool", "grab"),
+                Sleeping = o.Bool("sl"), Exposed = o.Bool("ex"), TowTimer = o.Float("tow", -1f), ShelterKind = o.Int("sk") };
             var cos = o.Strs("cos");
             if (cos.Count == 4) { p.Color = cos[0]; p.Accent = cos[1]; p.Sticker = cos[2]; p.Attach = cos[3]; }
             return p;
@@ -379,7 +394,7 @@ namespace RePlanet.Core
         public string CurrentPlanet = "terra";
         public long Credits = GameData.StartCredits;
         public int ShipLevel;
-        public HashSet<string> Unlocked = new HashSet<string> { "terra" };
+        public HashSet<string> Unlocked = new HashSet<string> { "terra", "pyra", "pelagia" };
         public Dictionary<string, int> Tech = new Dictionary<string, int>();
         public HashSet<string> OwnedVehicles = new HashSet<string>();
         public Dictionary<string, PlanetState> Planets = new Dictionary<string, PlanetState>();
@@ -392,6 +407,7 @@ namespace RePlanet.Core
         public double PlayTime;
         public long NextDyn = 1;
         public string WorldName = "Neue Welt";
+        public string StartPlanet = "terra";
         public string Created = "";
 
         public PlanetState Planet(string id)
@@ -430,7 +446,7 @@ namespace RePlanet.Core
                 case "lore": return new List<object>(Lore);
                 case "cosm": return new List<object>(CosmeticUnlocks);
                 case "stats": { var o = new JObj(); foreach (var kv in Stats) o[kv.Key] = kv.Value; return o; }
-                case "flags": return new JObj().Set("cd", CampaignDone).Set("es", EndingSeen).Set("tg", TrustGuests).Set("is", IntroSeen).Set("pt", Math.Round(PlayTime, 2)).Set("nd", NextDyn).Set("wn", WorldName).Set("cr", Created);
+                case "flags": return new JObj().Set("cd", CampaignDone).Set("es", EndingSeen).Set("tg", TrustGuests).Set("is", IntroSeen).Set("pt", Math.Round(PlayTime, 2)).Set("nd", NextDyn).Set("wn", WorldName).Set("cr", Created).Set("sp", StartPlanet);
             }
             return null;
         }
@@ -444,7 +460,7 @@ namespace RePlanet.Core
                 case "unlocked":
                     Unlocked.Clear();
                     foreach (var o in (v as List<object>) ?? new List<object>()) if (o is string && GameData.Planets.ContainsKey((string)o)) Unlocked.Add((string)o);
-                    Unlocked.Add("terra");
+                    foreach (var pd in GameData.Planets.Values) if (pd.StartPlanet) Unlocked.Add(pd.Id);
                     break;
                 case "tech":
                     Tech.Clear();
@@ -479,6 +495,7 @@ namespace RePlanet.Core
                     {
                         CampaignDone = fo.Bool("cd"); EndingSeen = fo.Bool("es"); TrustGuests = fo.Bool("tg"); IntroSeen = fo.Bool("is");
                         PlayTime = fo.Num("pt"); NextDyn = Math.Max(1, fo.Long("nd", 1)); WorldName = fo.Str("wn", "Welt"); Created = fo.Str("cr", "");
+                        StartPlanet = fo.Str("sp", "terra"); if (!GameData.Planets.ContainsKey(StartPlanet)) StartPlanet = "terra";
                     }
                     break;
             }
