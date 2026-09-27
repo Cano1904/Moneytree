@@ -184,11 +184,11 @@ namespace RePlanet.Core
         static void DefineTech()
         {
             Tc("bin", "Müllbehälter", "Behälter", "Mehr Volumen im sichtbaren Rückenbehälter.", "Kapazität",
-                L(0, 12, "12 Vol."), L(90, 20, "20 Vol."), L(320, 30, "30 Vol."), L(900, 45, "45 Vol."), L(2200, 65, "65 Vol."));
+                L(0, 12, "12 Vol."), L(180, 20, "20 Vol."), L(320, 30, "30 Vol."), L(900, 45, "45 Vol."), L(2200, 65, "65 Vol."));
             Tc("grab", "Greifarm", "Werkzeug", "Hebt einzelne Objekte. Stärke = maximale Masse.", "Tragkraft",
                 L(0, 3, "3 kg"), L(250, 6, "6 kg"), L(900, 12, "12 kg"));
             Tc("vacuum", "Müllsauger", "Werkzeug", "Saugt leichte Objekte (bis 1 kg) im Kegel vor MIKO ein.", "Saugrate",
-                L(0, 0, "nicht vorhanden"), L(110, 3, "3 Obj./s, 4 m"), L(600, 5, "5 Obj./s, 6 m"), L(1600, 8, "8 Obj./s, 8 m"));
+                L(0, 0, "nicht vorhanden"), L(200, 3, "3 Obj./s, 4 m"), L(600, 5, "5 Obj./s, 6 m"), L(1600, 8, "8 Obj./s, 8 m"));
             Tc("magnet", "Magnetarm", "Werkzeug", "Zieht Metall an. Aufladen + Loslassen = Magnetwelle.", "Wellen-Reichweite",
                 L(0, 0, "nicht vorhanden"), L(420, 7, "7 m, 6 Teile"), L(1400, 11, "11 m, 12 Teile"), L(3400, 15, "15 m, 20 Teile"));
             Tc("cutter", "Schneidgerät", "Werkzeug", "Zerlegt große Objekte und Netze in tragbare Teile.", "Schnitttempo",

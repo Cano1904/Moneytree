@@ -5,9 +5,13 @@ using RePlanet.Core;
 /// <summary>Kampagnen-Bot mit Balancing-Auswertung: <c>dotnet run -c Release -- balance</c>.</summary>
 public static class BalanceRun
 {
-    public static int Run()
+    public static int Run() { return Run(false); }
+
+    public static int Run(bool human)
     {
-        var bot = new CampaignBot { RealTimeLimit = 280 };
+        var bot = human ? CampaignBot.Human() : new CampaignBot();
+        bot.RealTimeLimit = 280;
+        Console.WriteLine("Profil: " + bot.ProfileName);
         try { bot.Run(); }
         catch (Exception e)
         {
@@ -33,8 +37,9 @@ public static class BalanceRun
     {
         var S = bot.G.S;
         var l = new System.Collections.Generic.List<string>();
+        l.Add("Profil: " + bot.ProfileName + " (Geschwindigkeit ×" + bot.SpeedFactor + ", Umweg ×" + bot.Detour + ", +" + bot.PickupDelay + " s je Aufnahme, +" + bot.StationDelay + " s je Station)");
         l.Add("Kampagne abgeschlossen: " + (S.CampaignDone ? "ja" : "nein") + " (WorldState.CampaignDone)");
-        l.Add("Gesamtspielzeit (Bot): " + (S.PlayTime / 3600).ToString("0.00") + " h");
+        l.Add("Gesamtspielzeit: " + (S.PlayTime / 3600).ToString("0.00") + " h");
         l.Add("Erster Verkauf: " + Min(bot.FirstSale));
         l.Add("Erstes Upgrade: " + Min(bot.FirstUpgrade) + " (" + bot.FirstUpgradeId + ")");
         l.Add("Erste sichtbare Veränderung: " + Min(bot.FirstVisibleChange) + " (" + bot.FirstVisibleWhat + ")");

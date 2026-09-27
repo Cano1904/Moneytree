@@ -2,7 +2,12 @@ using System;
 using System.Linq;
 using RePlanet.Core;
 
-/// <summary>Die komplette Kampagne ist solo abschließbar (Kampagnen-Bot über die echte Spiellogik, mit Zeitlimit).</summary>
+/// <summary>
+/// Die komplette Kampagne ist solo abschließbar (Kampagnen-Bot über die echte Spiellogik, mit Zeitlimit).
+/// Der Test ist schnell (≈1–2 s), weil die Simulation ohne Darstellung läuft: ~7 h Spielzeit entsprechen
+/// ~100 000 Aufrufen von Game.Tick(0,25 s) à wenige Mikrosekunden. Jede Spielsekunde wird simuliert
+/// (keine Abkürzung); das prüfen die Zusatzbedingungen unten (Schrittzahl ≈ Spielzeit / 0,25 s, gesammelte Objekte).
+/// </summary>
 public static class CampaignTests
 {
     [Test]
@@ -23,6 +28,10 @@ public static class CampaignTests
         Assert.Equal("terra,pyra,pelagia,nivalis", string.Join(",", order), "Reisereihenfolge");
         Assert.True(S.Credits >= 0, "Guthaben nie negativ");
         Assert.True(bot.Sleeps > 0, "Nächte/Stürme im Unterschlupf verbracht");
+        Assert.True(S.PlayTime > 3 * 3600, "Mehrere Stunden Spielzeit simuliert (" + (S.PlayTime / 3600).ToString("0.0") + " h)");
+        Assert.True(bot.Steps >= S.PlayTime / 0.25 * 0.95, "Jede Spielsekunde über Game.Tick simuliert (" + bot.Steps + " Schritte)");
+        Assert.True(S.Stat("collected") > 3000, "Tausende Objekte über Game.Apply eingesammelt (" + S.Stat("collected") + ")");
+        Assert.True(bot.CraneHauls >= 3, "Tor-Wracks mit dem Kran geborgen");
         Console.WriteLine("           Kampagne: " + (S.PlayTime / 3600).ToString("0.00") + " h Spielzeit (Bot), " + bot.Real.Elapsed.TotalSeconds.ToString("0.0") + " s Echtzeit, Notabschaltungen " + bot.Shutdowns);
     }
 }
