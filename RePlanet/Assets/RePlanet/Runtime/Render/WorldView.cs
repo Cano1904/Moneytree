@@ -72,7 +72,7 @@ namespace RePlanet
             if (GameApp.I != null)
             {
                 GameApp.I.OnPlanetChanged += p => { if (GameApp.I.InGame || GameApp.I.Mode == AppMode.Loading) Build(p); };
-                GameApp.I.OnSessionStarted += () => { if (GameApp.I.W != null) Build(GameApp.I.W.CurrentPlanet, true); };
+                GameApp.I.OnSessionStarted += () => { if (GameApp.I.W != null) Build(GameApp.I.W.CurrentPlanet); };
                 GameApp.I.OnSessionEnded += () => BuildMenuBackdrop();
                 GameApp.I.OnFx += OnFx;
             }

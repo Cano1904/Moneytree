@@ -41,6 +41,7 @@ Shader "RePlanet/Sky"
         _AuroraStrength ("Polarlicht", Float) = 0.0
         _Exposure ("Belichtung", Float) = 1.0
         _SkyTime ("Zeit", Float) = 0.0
+        _Detail ("Detailstufe (0 niedrig, 1 hoch)", Float) = 1.0
     }
 
     SubShader
@@ -69,7 +70,7 @@ Shader "RePlanet/Sky"
             float4 _P1Dir, _P1ColorA, _P1ColorB, _P1Rim, _P1Params;
             float4 _P2Dir, _P2ColorA, _P2ColorB, _P2Rim, _P2Params;
             float4 _AuroraA, _AuroraB;
-            float _AuroraStrength, _Exposure, _SkyTime;
+            float _AuroraStrength, _Exposure, _SkyTime, _Detail;
 
             struct appdata
             {
@@ -139,6 +140,21 @@ Shader "RePlanet/Sky"
                     a *= 0.5;
                 }
                 return v;
+            }
+
+            // Bauschige Wolkenmassen: großräumige Verteilung + verwirbeltes Detail + „Billow“-Ränder
+            float cloudField(float3 p)
+            {
+                float q = fbm3(p * 0.45);
+                float c = fbm5(p * 1.1 + float3(q * 2.2, q * 1.4, q));
+                float billow = 1.0 - abs(noise3(p * 2.6) * 2.0 - 1.0);
+                return c * 0.8 + billow * 0.25 + q * 0.2;
+            }
+
+            float cloudFieldLow(float3 p)
+            {
+                float q = noise3(p * 0.45);
+                return fbm3(p * 1.1 + q) * 0.9 + q * 0.3;
             }
 
             // Himmelskörper mit Tag-/Nachtseite, Oberflächenmuster und Atmosphärensaum
@@ -219,12 +235,15 @@ Shader "RePlanet/Sky"
                 // Polarlicht
                 if (_AuroraStrength > 0.001 && h > 0.0)
                 {
-                    float wave = fbm3(float3(d.x * 3.0, d.z * 3.0, t * 0.05)) * 3.0;
-                    float center = 0.32 + 0.1 * sin(d.x * 4.0 + wave + t * 0.2);
-                    float curtain = exp(-pow((h - center) * 7.0, 2.0));
-                    float rays = 0.55 + 0.45 * sin(d.x * 60.0 + d.z * 25.0 + wave * 6.0 + t * 0.8);
-                    float3 ac = lerp(_AuroraA.rgb, _AuroraB.rgb, saturate((h - center) * 5.0 + 0.5));
-                    col += ac * curtain * rays * _AuroraStrength * 1.4;
+                    float wave = fbm3(float3(d.x * 2.2, d.z * 2.2, t * 0.04)) * 3.0;
+                    float center = 0.28 + 0.08 * sin(d.x * 3.0 + wave + t * 0.15);
+                    float below = exp(-pow((h - center) * 16.0, 2.0));
+                    float above = exp(-pow((h - center) * 3.5, 2.0));
+                    float curtain = h < center ? below : above;
+                    float rays = pow(0.5 + 0.5 * sin(d.x * 70.0 + d.z * 31.0 + wave * 7.0 + t * 0.6), 3.0);
+                    rays = rays * 0.75 + 0.25 * fbm3(float3(d.x * 20.0, h * 3.0, t * 0.1));
+                    float3 ac = lerp(_AuroraA.rgb, _AuroraB.rgb, saturate((h - center) * 4.0));
+                    col += ac * curtain * rays * _AuroraStrength * 0.9;
                 }
 
                 // Himmelskörper (hinter den Wolken)
@@ -238,24 +257,34 @@ Shader "RePlanet/Sky"
                 float glow = pow(saturate(sd), 10.0) * 0.45 + pow(saturate(sd), 90.0) * 0.8;
                 col += _SunColor.rgb * (glow + disc * _SunIntensity) * step(-0.02, h + 0.02);
 
-                // Wolkenfelder (Domain-Warping, windgetrieben)
-                if (h > 0.0)
+                // Wolkenschicht auf einer gekrümmten Schale (kein Verschmieren am Horizont), windgetrieben,
+                // mit einfacher Selbstverschattung zur Sonne hin (volumetrischer Eindruck)
+                if (h > -0.02)
                 {
-                    float2 cuv = d.xz / (h + 0.12) * _CloudScale;
-                    float2 wind = normalize(_CloudWind.xz + 0.0001) * t * _CloudSpeed;
-                    float3 p = float3(cuv + wind, t * 0.004);
-                    float q = fbm3(p * 0.6);
-                    float c = fbm5(p + float3(q * 1.6, q * 1.2, 0.0));
+                    const float R = 8.0;
+                    const float Hc = 1.0;
+                    float hh = max(h, 0.0);
+                    float tt = -R * hh + sqrt(R * R * hh * hh + 2.0 * R * Hc + Hc * Hc);
+                    float3 p = d * tt * _CloudScale;
+                    float2 wdir = normalize(_CloudWind.xz + 0.0001);
+                    p.xz += wdir * t * _CloudSpeed;
+                    p.y += t * 0.004;
+                    float c;
+                    if (_Detail > 0.5) c = cloudField(p); else c = cloudFieldLow(p);
                     float cover = saturate(_CloudCover);
-                    float dens = saturate((c - (1.0 - cover) * 0.75) * _CloudDensity);
-                    dens *= saturate(h * 7.0);
+                    float dens = saturate((c - (1.0 - cover) * 0.85) * _CloudDensity);
+                    dens *= saturate(h * 8.0 + 0.08);
+                    float3 toSun = normalize(float3(sunDir.x, 0.0, sunDir.z) + 0.0001);
+                    float cs = c;
+                    if (_Detail > 0.5) cs = cloudField(p + toSun * 0.35);
+                    float lightAmt = saturate(0.55 + (c - cs) * 3.2);
                     float towardSun = pow(saturate(dot(d, sunDir) * 0.5 + 0.5), 3.0);
-                    float shade = saturate(c * 1.4 - 0.25);
-                    float3 cc = lerp(_CloudShadow.rgb, _CloudLight.rgb, shade);
-                    cc += _SunColor.rgb * towardSun * 0.35 * (1.0 - dens * 0.5);
-                    // Silberrand: dünne Wolkenränder leuchten gegen die Sonne
-                    cc += _SunColor.rgb * pow(saturate(1.0 - dens), 2.0) * towardSun * 0.4;
-                    col = lerp(col, cc, dens * 0.95);
+                    float shade = saturate(c * 1.3 - 0.2);
+                    float3 cc = lerp(_CloudShadow.rgb, _CloudLight.rgb, saturate(lightAmt * 0.75 + shade * 0.35));
+                    cc += _SunColor.rgb * towardSun * 0.3 * lightAmt;
+                    // Silberrand: dünne Ränder leuchten gegen die Sonne
+                    cc += _SunColor.rgb * pow(saturate(1.0 - dens), 2.0) * towardSun * 0.45;
+                    col = lerp(col, cc, dens * 0.96);
                 }
 
                 // Dunstband über dem Horizont

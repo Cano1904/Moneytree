@@ -26,6 +26,7 @@ namespace RePlanet
         void Awake()
         {
             I = this;
+            DisableSceneLeftovers();
             var go = new GameObject("MainCamera");
             go.tag = "MainCamera";
             go.transform.SetParent(transform, false);
@@ -40,6 +41,21 @@ namespace RePlanet
             // Weitere Darstellungsbausteine gehören an das Hauptobjekt
             foreach (var t in new[] { typeof(Atmosphere), typeof(TrashRenderer), typeof(ActorsView), typeof(FxView) })
                 if (GetComponent(t) == null) gameObject.AddComponent(t);
+        }
+
+        /// <summary>Kameras, Listener und Richtungslichter aus einer Beispielszene würden doppelt rendern/beleuchten.</summary>
+        void DisableSceneLeftovers()
+        {
+            try
+            {
+                foreach (var c in Resources.FindObjectsOfTypeAll<Camera>())
+                    if (c != null && c.gameObject.scene.IsValid() && c.hideFlags == HideFlags.None && c.transform.root != transform.root) c.gameObject.SetActive(false);
+                foreach (var l in Resources.FindObjectsOfTypeAll<AudioListener>())
+                    if (l != null && l.gameObject.scene.IsValid() && l.hideFlags == HideFlags.None && l.transform.root != transform.root) l.enabled = false;
+                foreach (var l in Resources.FindObjectsOfTypeAll<Light>())
+                    if (l != null && l.type == LightType.Directional && l.gameObject.scene.IsValid() && l.hideFlags == HideFlags.None && l.transform.root != transform.root) l.gameObject.SetActive(false);
+            }
+            catch (Exception e) { Debug.LogWarning("[RE:PLANET] Szenenobjekte: " + e.Message); }
         }
 
         public void Shake(float amount)

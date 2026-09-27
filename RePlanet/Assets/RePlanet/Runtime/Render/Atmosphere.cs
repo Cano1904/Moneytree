@@ -63,11 +63,11 @@ namespace RePlanet
         {
             // TERRA: goldene Melancholie, großer blasser Mond
             { "terra", new PlanetSky {
-                Day = Pal(0x5E8FC8, 0xF4C98E, 0xEFC49A, 0x6B5E4E, 0xFFE3C0, 0x8E7A86, 0xE58A55, 0x6B4A8A, 0xFFE2B0, 0xE6C29A, 0.45f, 0.08f, 0.55f),
+                Day = Pal(0x4F86CC, 0xF6C488, 0xEFC49A, 0x6B5E4E, 0xFFE8C8, 0x8E7A86, 0xE58A55, 0x6B4A8A, 0xFFE2B0, 0xE6C29A, 0.3f, 0.1f, 0.45f),
                 Dusk = Pal(0x3B3566, 0xFF8A4A, 0xF09A6A, 0x4A3A36, 0xFFB078, 0x5A3A52, 0xFF7A45, 0x55306E, 0xFF9A55, 0xD9885E, 0.55f, 0.22f, 0.65f),
                 Night = Pal(0x060A1C, 0x1E1A33, 0x2A2440, 0x0E0C12, 0x3A3650, 0x12101C, 0x5A3C7A, 0x1A2A5A, 0x9DB6FF, 0x1C1A2C, 0.35f, 0.45f, 0.45f),
                 Storm = Pal(0x6E6258, 0xB09070, 0xA88A6E, 0x5A4C40, 0xB89C80, 0x5A4A40, 0x8A6A50, 0x4A3A30, 0xE0C090, 0xA48A70, 0.95f, 0.05f, 0.9f),
-                P1 = Body(new Vector3(0.45f, 0.32f, 0.83f), 9f, 0xC8D0E0, 0x8C96AE, 0x9EC8FF, 0.15f, 1.7f, 1f),
+                P1 = Body(new Vector3(0.45f, 0.38f, 0.8f), 12f, 0xC8D0E0, 0x8C96AE, 0x9EC8FF, 0.15f, 1.7f, 1f),
                 P2 = Body(new Vector3(-0.62f, 0.22f, 0.55f), 2.6f, 0xE8C8A8, 0xB08868, 0xFFD8A8, 0f, 4.2f, 0.6f),
                 SunAzimuth = 200f, FogDay = 0.007f, FogStorm = 0.028f } },
             // PYRA: orange Nebelwolken, dunkles Dunstband, dunkler Riesenplanet mit Lichtsaum
@@ -76,26 +76,26 @@ namespace RePlanet
                 Dusk = Pal(0x3A1426, 0xFF6A2E, 0x1E3438, 0x3A1812, 0xFF7A3A, 0x4A1418, 0xFF5A2A, 0x4A1040, 0xFF8A45, 0x7A3A30, 0.78f, 0.45f, 0.75f),
                 Night = Pal(0x0C0508, 0x3A140C, 0x1A2224, 0x120806, 0x4A2014, 0x14080A, 0xC0502A, 0x3A0C2A, 0xFFB080, 0x2A140E, 0.6f, 0.6f, 0.6f),
                 Storm = Pal(0x8A4A2A, 0xC8784A, 0xB0663E, 0x6A3420, 0xD08A5A, 0x6A3420, 0xC0602E, 0x5A2418, 0xFFB070, 0xB06A44, 1f, 0.1f, 1f),
-                P1 = Body(new Vector3(-0.72f, 0.42f, 0.55f), 15f, 0x2A3048, 0x485070, 0xFFC890, 0.35f, 2.3f, 1.3f),
+                P1 = Body(new Vector3(-0.45f, 0.42f, 0.79f), 17f, 0x2A3048, 0x485070, 0xFFC890, 0.35f, 2.3f, 1.3f),
                 P2 = Body(new Vector3(0.55f, 0.55f, 0.62f), 3.5f, 0xC06A4A, 0x7A3A2A, 0xFF9A6A, 0f, 7.1f, 0.5f),
                 SunAzimuth = 160f, CloudScale = 0.7f, CloudDensity = 2.8f, FogDay = 0.009f, FogStorm = 0.05f } },
             // PELAGIA: pastell-rosa, heller Mond, weiche Wolken
             { "pelagia", new PlanetSky {
-                Day = Pal(0xD29AB6, 0xFFE0D6, 0xF4D2D2, 0x5A7A8A, 0xFFF4F4, 0xC896AE, 0xFF9AC8, 0x8A6AC8, 0xFFF0DA, 0xEAC8CC, 0.35f, 0.12f, 0.6f),
+                Day = Pal(0xD08AB0, 0xFFDCD0, 0xF4D2D2, 0x5A7A8A, 0xFFF4F4, 0xC896AE, 0xFF9AC8, 0x8A6AC8, 0xFFF0DA, 0xEAC8CC, 0.22f, 0.14f, 0.5f),
                 Dusk = Pal(0x6A4A8A, 0xFFA890, 0xE890A0, 0x3A4A5A, 0xFFC0B0, 0x7A5070, 0xFF7AA8, 0x5A3A9A, 0xFFB08A, 0xC08898, 0.45f, 0.3f, 0.65f),
                 Night = Pal(0x0A0818, 0x2A1A3A, 0x2E2240, 0x0A1018, 0x40304E, 0x100C1A, 0xA05AC8, 0x2A3A8A, 0xC8C8FF, 0x1E1830, 0.35f, 0.5f, 0.45f),
                 Storm = Pal(0x4A5460, 0x8A9AA4, 0x7A8A94, 0x2A3A44, 0xA0B0B8, 0x3A4650, 0x6A7A8A, 0x2A3440, 0xC8D8E0, 0x6E7E88, 0.98f, 0.05f, 0.85f),
-                P1 = Body(new Vector3(-0.3f, 0.36f, 0.88f), 11f, 0xE8DCE0, 0xB8A4AE, 0xFFF0F4, 0.05f, 3.9f, 0.9f),
-                P2 = Body(new Vector3(0.7f, 0.5f, -0.3f), 2f, 0xFFFFFF, 0xC0C8D8, 0xE0E8FF, 0f, 8.8f, 0.4f),
+                P1 = Body(new Vector3(-0.3f, 0.4f, 0.86f), 14f, 0xE8DCE0, 0xB8A4AE, 0xFFF0F4, 0.05f, 3.9f, 0.9f),
+                P2 = Body(new Vector3(0.62f, 0.5f, 0.6f), 3.5f, 0xFFFFFF, 0xC0C8D8, 0xE0E8FF, 0f, 8.8f, 0.4f),
                 SunAzimuth = 240f, CloudScale = 1.1f, CloudDensity = 2.0f, FogDay = 0.006f, FogStorm = 0.035f } },
             // NIVALIS: eisige Dämmerung, zwei Monde, Polarlicht
             { "nivalis", new PlanetSky {
-                Day = Pal(0x1C2A5A, 0xE8B090, 0xC8B4B8, 0xB8C8D8, 0xF0D0C0, 0x46465E, 0x6A8AFF, 0x2A2A6A, 0xFFE0C8, 0xA8B4C8, 0.5f, 0.25f, 0.55f),
-                Dusk = Pal(0x141A40, 0xE07A4A, 0x9A7A8A, 0x8A96A8, 0xE89A70, 0x302A46, 0x8A6AFF, 0x2A1A5A, 0xFF9A6A, 0x6A6A84, 0.55f, 0.4f, 0.6f),
+                Day = Pal(0x1C2A5A, 0xE8B090, 0xC8B4B8, 0xB8C8D8, 0xF0D0C0, 0x46465E, 0x6A8AFF, 0x2A2A6A, 0xFFE0C8, 0xA8B4C8, 0.32f, 0.3f, 0.5f),
+                Dusk = Pal(0x141A40, 0xE07A4A, 0x9A7A8A, 0x8A96A8, 0xE89A70, 0x302A46, 0x8A6AFF, 0x2A1A5A, 0xFF9A6A, 0x6A6A84, 0.4f, 0.4f, 0.6f),
                 Night = Pal(0x030612, 0x0E1A30, 0x142440, 0x2A3444, 0x2A3450, 0x080C16, 0x3A6AC8, 0x1A0C3A, 0xB8D0FF, 0x101A2C, 0.3f, 0.55f, 0.4f),
                 Storm = Pal(0x8A98AA, 0xC8D4E0, 0xD0DAE4, 0x9AA8B8, 0xE8F0F8, 0x7A8698, 0x9AAAC8, 0x5A6A8A, 0xE8F0FF, 0xC0CCD8, 1f, 0.05f, 1f),
-                P1 = Body(new Vector3(0.5f, 0.3f, 0.8f), 7.5f, 0x9AA4B8, 0x5A6478, 0xFFC8A0, 0.1f, 6.2f, 1.1f),
-                P2 = Body(new Vector3(0.3f, 0.26f, 0.9f), 5f, 0xB8A898, 0x786858, 0xFFB890, 0.2f, 9.4f, 0.9f),
+                P1 = Body(new Vector3(0.55f, 0.34f, 0.76f), 10f, 0x9AA4B8, 0x5A6478, 0xFFC8A0, 0.1f, 6.2f, 1.1f),
+                P2 = Body(new Vector3(0.22f, 0.3f, 0.93f), 6.5f, 0xB8A898, 0x786858, 0xFFB890, 0.2f, 9.4f, 0.9f),
                 SunAzimuth = 20f, Aurora = 1f, CloudDensity = 2.2f, FogDay = 0.009f, FogStorm = 0.06f } },
         };
 
@@ -285,6 +285,7 @@ namespace RePlanet
                 sky.SetFloat("_AuroraStrength", ps.Aurora * dark * (1f - stormBlend));
                 sky.SetFloat("_Exposure", (1f + lightning * 1.5f) * bright);
                 sky.SetFloat("_SkyTime", t);
+                sky.SetFloat("_Detail", GameApp.I == null || GameApp.I.Settings.Quality >= 2 ? 1f : 0f);
             }
             else
             {
