@@ -46,10 +46,17 @@ Entscheidungen und nächste Schritte schriftlich im Projekt“). Geprüfte Ergeb
 - `Tools/SkyPreview/sky_preview.py`: rechnet die Himmels-Shader-Mathematik in NumPy nach (Vorschaubilder, keine Spielszenen).
 - `Tests/`: .NET-Tests für Wirtschaft, Speichern, Netzwerk, Wetter und einen Kampagnen-Bot.
 
+## Stand
+Alle Bereiche umgesetzt (Spiellogik, Koop, Speichern, Darstellung, Oberfläche, Audio, Editor-Setup, Server, Doku,
+Konzeptkunst). Prüfungen: 40/40 .NET-Tests, Kompilierprüfungen Core/Runtime/Editor ohne Fehler und Warnungen,
+Shader-Prüfung OK, Server-Rauchtest 17/17.
+
 ## Grenzen (Stand dieser Umgebung)
 - Kein Unity-Editor, kein Unity-Laufzeittest, keine echten Spiel-Screenshots, keine gebaute .exe.
 - Shader wurden nicht mit Unitys Compiler übersetzt (nur glslang-Prüfung).
 
 ## Nächste Schritte
 - Projekt in Unity öffnen (Unity 6 LTS oder 2022.3 LTS), Konsole auf Fehler prüfen, Play-Test, Windows-Build erstellen.
+- Die von Unity beim ersten Öffnen erzeugten `.meta`-Dateien und Resources-Materialien committen.
+- Offene Designfragen: Schrottlieferungen kostenlos/unbegrenzt; Schlafen beendet Stürme auch tagsüber (siehe `docs/TESTBERICHT.md`).
 - Echte Screenshots und Spieltests (Controller, Koop mit mehreren Rechnern, 60-FPS-Messung auf Referenzhardware).
