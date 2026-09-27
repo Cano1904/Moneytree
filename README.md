@@ -16,7 +16,8 @@ prozedural im Projekt erzeugt – es gibt keine Fremd-Assets.
 
 | Bereich | Wie geprüft | Ergebnis |
 | --- | --- | --- |
-| Spiellogik, Wirtschaft, Speichern (reines C#, `Core/`) | automatisierte .NET-Tests in `Tests/` (`cd Tests && dotnet run`) | läuft ohne Unity |
+| Spiellogik, Wirtschaft, Speichern, Tag/Nacht/Wetter, komplette Solo-Kampagne per Bot (reines C#, `Core/`) | 40 automatisierte .NET-Tests in `Tests/` (`cd Tests && dotnet run`), Details in `docs/TESTBERICHT.md` | 40/40 bestanden |
+| Koop-Logik (4 TCP-Clients, gleichzeitiges Greifen, doppelte Aktionen, Gastrechte, später Beitritt, Wiederverbinden, Host-Verlassen, Betrugsversuche) | `Tests/NetTests.cs` über Loopback-TCP | bestanden (kein Test über echte Internetverbindungen) |
 | Koop-Netzwerk über TCP (Sitzung erstellen, Beitritt per Code, Sichtbarkeit, Speichern auf dem Server) | Rauchtest `Server/SmokeTest` gegen den dedizierten Server | läuft ohne Unity |
 | Unity-Skripte (`Runtime/`, `Editor/`) | kompiliert gegen Unity-Referenz-Assemblies (`Tools/CompileCheck`) | kompiliert fehlerfrei |
 | Spiel in Unity (Darstellung, Eingabe, Klang, Oberfläche) | **nicht getestet** | Unity war in der Entwicklungsumgebung nicht verfügbar |

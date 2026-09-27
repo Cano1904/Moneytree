@@ -118,6 +118,7 @@ namespace RePlanet
             RenderSettings.fogMode = FogMode.ExponentialSquared;
             RenderSettings.ambientMode = UnityEngine.Rendering.AmbientMode.Trilight;
             BuildWeather();
+            BuildReflections();
             BuildStars();
             for (int i = 0; i < 6; i++)
             {
@@ -315,10 +316,49 @@ namespace RePlanet
                 if (stars != null) stars.transform.position = cam.transform.position; // Sterne wandern mit der Kamera
                 UpdateWeather(cam, planet, storm, dark);
                 UpdateLampPool(cam, dark);
+                UpdateReflections(cam);
             }
         }
 
         float stormBlend;
+
+        // ------------------------------------------------------------ Reflexionen
+        // Die Szene ist leer (keine gebackene Beleuchtung), daher gäbe es ohne eigene Sonde keine Umgebungsreflexion
+        // für Metall und Wasser. Eine kleine Echtzeit-Sonde rendert nur den (animierten) Himmel und folgt der Kamera.
+        ReflectionProbe probe;
+        float probeTimer;
+
+        void BuildReflections()
+        {
+            try
+            {
+                QualitySettings.realtimeReflectionProbes = true;
+                var go = new GameObject("SkyReflection");
+                go.transform.SetParent(transform, false);
+                probe = go.AddComponent<ReflectionProbe>();
+                probe.mode = UnityEngine.Rendering.ReflectionProbeMode.Realtime;
+                probe.refreshMode = UnityEngine.Rendering.ReflectionProbeRefreshMode.ViaScripting;
+                probe.timeSlicingMode = UnityEngine.Rendering.ReflectionProbeTimeSlicingMode.IndividualFaces;
+                probe.clearFlags = UnityEngine.Rendering.ReflectionProbeClearFlags.Skybox;
+                probe.cullingMask = 0; // nur Himmel
+                probe.resolution = 64;
+                probe.hdr = true;
+                probe.size = new Vector3(2000f, 2000f, 2000f);
+                probe.importance = 0;
+                probe.RenderProbe();
+            }
+            catch (System.Exception e) { Debug.LogWarning("[RE:PLANET] Reflexionssonde: " + e.Message); probe = null; }
+        }
+
+        void UpdateReflections(Camera cam)
+        {
+            if (probe == null) return;
+            probe.transform.position = cam.transform.position;
+            probeTimer -= Time.unscaledDeltaTime;
+            if (probeTimer > 0) return;
+            probeTimer = 1.5f; // Himmel ändert sich langsam; Neuberechnung verteilt über mehrere Bilder
+            probe.RenderProbe();
+        }
 
         void SetBody(string p, SkyBody b, float storm, float dark)
         {

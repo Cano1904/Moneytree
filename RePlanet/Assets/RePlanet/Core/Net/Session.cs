@@ -223,7 +223,7 @@ namespace RePlanet.Core
                 if (graceful || !Dedicated)
                 {
                     FlushSave("Host verlässt die Sitzung");
-                    End("Der Host hat die Sitzung beendet. Der Spielstand wurde beim Host gesichert.");
+                    End(Dedicated ? "Der Host hat die Sitzung beendet. Der Spielstand wurde auf dem Server gesichert." : "Der Host hat die Sitzung beendet. Der Spielstand wurde beim Host gesichert.");
                 }
                 else
                 {
