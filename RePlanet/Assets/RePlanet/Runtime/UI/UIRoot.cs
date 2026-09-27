@@ -91,6 +91,7 @@ namespace RePlanet
             if (BuildMode.Active && UIState.Screen != UIScreen.None) BuildMode.Active = false;
             if (!PhotoMode.Active && UIState.Screen == UIScreen.Photo) UIState.Open(UIScreen.None);
 
+            UpdateSettingsApply(app);
             UpdateMapBuild(app);
             UpdateCursor(app);
         }
@@ -143,7 +144,8 @@ namespace RePlanet
                 case UIScreen.Saves: RefreshSaves(); break;
                 case UIScreen.NewGame: OnNewGameOpened(); break;
                 case UIScreen.PlanetSelect: planetPreviewed = null; break;
-                case UIScreen.Coop: coopError = null; break;
+                case UIScreen.Coop: coopError = null; joinInit = false; RefreshSaves(); break;
+                case UIScreen.Settings: pendingRes = -1; pendingWindow = -1; portText = null; resList = null; captureMsg = null; capturing = null; break;
                 case UIScreen.Map: mapZoom = Mathf.Max(mapZoom, 1f); break;
             }
         }
