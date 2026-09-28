@@ -173,9 +173,7 @@ namespace RePlanet
             go.AddComponent<MeshFilter>().sharedMesh = mesh;
             var mr = go.AddComponent<MeshRenderer>();
             terrainTex = new Texture2D(TexSize, TexSize, TextureFormat.RGBA32, true) { wrapMode = TextureWrapMode.Clamp, filterMode = FilterMode.Trilinear, anisoLevel = 4 };
-            terrainMat = Mats.Unique(Mats.Opaque, Color.white);
-            terrainMat.mainTexture = terrainTex;
-            terrainMat.SetFloat("_Glossiness", Planet == "nivalis" ? 0.35f : 0.08f);
+            terrainMat = TerrainLook.CreateTerrain(Planet, terrainTex); // eigener Gelände-Shader (Rückfall: Standard)
             mr.sharedMaterial = terrainMat;
             mr.shadowCastingMode = ShadowCastingMode.Off;
             mr.receiveShadows = true;
@@ -303,15 +301,8 @@ namespace RePlanet
             b.Quad(new Vector3(-400, 0, -400), new Vector3(-400, 0, 400), new Vector3(400, 0, 400), new Vector3(400, 0, -400), Vector3.up);
             water.AddComponent<MeshFilter>().sharedMesh = b.Build("water");
             var mr = water.AddComponent<MeshRenderer>();
-            waterMat = Mats.Unique(Mats.Water, new Color(0.25f, 0.45f, 0.38f, 0.72f));
-            try
-            {
-                waterMat.SetTexture("_BumpMap", WaveNormals());
-                waterMat.EnableKeyword("_NORMALMAP");
-                waterMat.SetFloat("_BumpScale", 0.55f);
-                waterMat.mainTextureScale = new Vector2(90f, 90f);
-            }
-            catch (Exception e) { Debug.LogWarning("[RE:PLANET] Wasser-Normalmap: " + e.Message); }
+            // eigener Wasser-Shader (Tiefenfarbe, Schaum, Fresnel, Himmelsreflexion); Rückfall: Standard mit Wellen-Normalmap
+            waterMat = TerrainLook.CreateWater(Planet, WaveNormals);
             mr.sharedMaterial = waterMat;
             mr.shadowCastingMode = ShadowCastingMode.Off;
             water.transform.localPosition = new Vector3(0, Terrain.WaterLevel(Planet), 0);
@@ -614,7 +605,7 @@ namespace RePlanet
             {
                 float t = Time.time;
                 water.transform.localPosition = new Vector3(Mathf.Sin(t * 0.1f) * 0.5f, Terrain.WaterLevel(Planet) + Mathf.Sin(t * 0.6f) * 0.05f, 0);
-                if (waterMat != null) waterMat.mainTextureOffset = new Vector2(t * 0.004f, t * 0.0025f);
+                TerrainLook.AnimateWater(waterMat, t);
             }
         }
 
@@ -703,7 +694,7 @@ namespace RePlanet
                 if (ps.Projects.ContainsKey("pelagia_p2") && ps.Projects["pelagia_p2"].Done) q += 0.35f;
                 if (ps.Projects.ContainsKey("pelagia_p3") && ps.Projects["pelagia_p3"].Done) q += 0.35f;
                 if (before) q = 0;
-                waterMat.color = Color.Lerp(new Color(0.3f, 0.42f, 0.33f, 0.8f), new Color(0.12f, 0.72f, 0.78f, 0.62f), q);
+                TerrainLook.SetWaterClarity(waterMat, Planet, q);
             }
             foreach (var ps2 in fountains)
             {

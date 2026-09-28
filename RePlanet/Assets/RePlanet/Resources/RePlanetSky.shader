@@ -42,6 +42,9 @@ Shader "RePlanet/Sky"
         _Exposure ("Belichtung", Float) = 1.0
         _SkyTime ("Zeit", Float) = 0.0
         _Detail ("Detailstufe (0 niedrig, 1 hoch)", Float) = 1.0
+        _BankStrength ("Wolkenbank am Horizont", Float) = 0.8
+        _BankHeight ("Höhe der Wolkentürme", Float) = 1.0
+        _SunGlow ("Sonnenhof (Mie)", Float) = 1.0
     }
 
     SubShader
@@ -71,6 +74,7 @@ Shader "RePlanet/Sky"
             float4 _P2Dir, _P2ColorA, _P2ColorB, _P2Rim, _P2Params;
             float4 _AuroraA, _AuroraB;
             float _AuroraStrength, _Exposure, _SkyTime, _Detail;
+            float _BankStrength, _BankHeight, _SunGlow;
 
             struct appdata
             {
@@ -157,6 +161,24 @@ Shader "RePlanet/Sky"
                 return fbm3(p * 1.1 + q) * 0.9 + q * 0.3;
             }
 
+            // Wolkenbank am Horizont: aufgetürmte Kumulusmassen rund um den Horizont (auch bei flachem Blick sichtbar).
+            // Rückgabe: x Dichte, y Licht (0 Unterseite/abgewandt … 1 beleuchtete Kuppe)
+            float2 cloudBank(float3 d, float t)
+            {
+                float h = d.y;
+                float2 az = normalize(d.xz + 0.0001);
+                float2 drift = _CloudWind.xz * t * _CloudSpeed * 0.15;
+                float top = 0.05 + 0.2 * _BankHeight * saturate(fbm3(float3(az.x * 2.3 + drift.x, 0.7, az.y * 2.3 + drift.y)) * 2.0 - 0.45);
+                float hn = saturate(h / top);
+                float3 p = float3(az.x * 5.0 + drift.x, h * 16.0, az.y * 5.0 + drift.y) * _CloudScale;
+                float n = _Detail > 0.5 ? fbm5(p) : fbm3(p);
+                float shape = n + (1.0 - hn) * 0.42 - hn * hn * 0.25;
+                float dens = saturate((shape - 0.62) * 5.0) * saturate(1.0 - hn * 0.98) * saturate(h * 60.0 + 1.0);
+                float n2 = _Detail > 0.5 ? fbm3(p + float3(0.0, 0.9, 0.0)) : n * 0.9;
+                float lightAmt = saturate(0.35 + (n - n2) * 2.5 + hn * 0.55);
+                return float2(dens * _BankStrength, lightAmt);
+            }
+
             // Himmelskörper mit Tag-/Nachtseite, Oberflächenmuster und Atmosphärensaum
             void body(float3 d, float4 dirRad, float4 colA, float4 colB, float4 rim, float4 prm, float3 sunDir, inout float3 col)
             {
@@ -209,6 +231,10 @@ Shader "RePlanet/Sky"
                 float up = saturate(h);
                 float3 col = lerp(_HorizonColor.rgb, _ZenithColor.rgb, pow(up, 0.5));
                 if (h < 0.0) col = lerp(_HorizonColor.rgb, _GroundColor.rgb, saturate(-h * 5.0));
+                // Streulicht: der Himmel wird zur Sonne hin heller und wärmer (breiter Mie-Hof, am Horizont stärker)
+                float sdot = dot(d, sunDir);
+                float mie = pow(saturate(sdot), 5.0) * (0.35 + 0.65 * (1.0 - up)) + pow(saturate(sdot), 40.0) * 0.6;
+                col += _SunColor.rgb * mie * 0.35 * _SunGlow;
 
                 // Nebelschleier (weiträumig, farbig)
                 float neb = fbm5(d * 2.3 + float3(0.0, t * 0.003, 0.0));
@@ -273,22 +299,37 @@ Shader "RePlanet/Sky"
                     if (_Detail > 0.5) c = cloudField(p); else c = cloudFieldLow(p);
                     float cover = saturate(_CloudCover);
                     float dens = saturate((c - (1.0 - cover) * 0.85) * _CloudDensity);
-                    dens *= saturate(h * 8.0 + 0.08);
+                    dens *= saturate(h * 14.0 + 0.15);
                     float3 toSun = normalize(float3(sunDir.x, 0.0, sunDir.z) + 0.0001);
                     float cs = c;
                     if (_Detail > 0.5) cs = cloudField(p + toSun * 0.35);
-                    float lightAmt = saturate(0.55 + (c - cs) * 3.2);
+                    float lightAmt = saturate(0.5 + (c - cs) * 4.0);
                     float towardSun = pow(saturate(dot(d, sunDir) * 0.5 + 0.5), 3.0);
                     float shade = saturate(c * 1.3 - 0.2);
-                    float3 cc = lerp(_CloudShadow.rgb, _CloudLight.rgb, saturate(lightAmt * 0.75 + shade * 0.35));
+                    // dicke Wolkenkerne dunkler (Unterseite), dünne Ränder hell – kräftiger Hell-Dunkel-Kontrast wie gemalt
+                    float thick = saturate((c - (1.0 - cover) * 0.85) * _CloudDensity * 0.5);
+                    float3 cc = lerp(_CloudShadow.rgb, _CloudLight.rgb, saturate(lightAmt * 0.8 + shade * 0.25 - thick * 0.35 + 0.15));
                     cc += _SunColor.rgb * towardSun * 0.3 * lightAmt;
                     // Silberrand: dünne Ränder leuchten gegen die Sonne
                     cc += _SunColor.rgb * pow(saturate(1.0 - dens), 2.0) * towardSun * 0.45;
                     col = lerp(col, cc, dens * 0.96);
                 }
 
+                // Wolkenbank am Horizont (vor der Wolkenschicht, hinter dem Dunst)
+                if (_BankStrength > 0.001 && h > -0.03 && h < 0.3)
+                {
+                    float2 bank = cloudBank(d, t);
+                    float towardSunB = pow(saturate(dot(d, sunDir) * 0.5 + 0.5), 4.0);
+                    float3 bc = lerp(_CloudShadow.rgb, _CloudLight.rgb, bank.y);
+                    bc += _SunColor.rgb * towardSunB * (0.25 + bank.y * 0.45);
+                    bc += _SunColor.rgb * pow(saturate(1.0 - bank.x), 3.0) * towardSunB * 0.6;
+                    // ferne Türme verschwimmen im Horizontdunst
+                    bc = lerp(bc, _HazeColor.rgb, saturate(0.45 - h * 2.0) * _HazeStrength);
+                    col = lerp(col, bc, saturate(bank.x) * 0.95);
+                }
+
                 // Dunstband über dem Horizont
-                float haze = exp(-abs(h) * 9.0) * _HazeStrength;
+                float haze = exp(-abs(h) * 14.0) * _HazeStrength;
                 col = lerp(col, _HazeColor.rgb, saturate(haze));
 
                 col *= _Exposure;
