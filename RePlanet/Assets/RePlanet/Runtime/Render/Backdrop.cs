@@ -150,6 +150,9 @@ namespace RePlanet
 
         Material[] junk;      // Palette der Müllmassen
         Material dark, steel, glowRed, windowDark, snow, ice;
+        /// <summary>Ferne Lichtpunkte (Fenster, Laternen) – nachts hell, am Tag kaum sichtbar; Warnleuchten blinken.</summary>
+        Material farLights, blinkRed;
+        static readonly Color FarWarm = new Color(1f, 0.72f, 0.42f), WarnRed = new Color(1f, 0.18f, 0.1f);
 
         void BuildRing()
         {
@@ -171,7 +174,11 @@ namespace RePlanet
             }
             dark = Opq(new Color(0.2f, 0.19f, 0.19f));
             steel = Met(new Color(0.5f, 0.5f, 0.52f));
-            glowRed = Glow(new Color(1f, 0.2f, 0.12f), 3f);
+            blinkRed = Mats.Unique(Mats.Emissive, WarnRed);
+            Mats.SetEmission(blinkRed, WarnRed * 3f);
+            glowRed = blinkRed;
+            farLights = Mats.Unique(Mats.Emissive, FarWarm);
+            Mats.SetEmission(farLights, FarWarm * 0.1f);
             windowDark = Opq(new Color(0.12f, 0.13f, 0.15f), 0.7f);
             snow = Opq(new Color(0.93f, 0.96f, 1f), 0.25f);
             ice = Opq(new Color(0.72f, 0.85f, 0.95f), 0.85f);
@@ -252,6 +259,7 @@ namespace RePlanet
                     for (int i = 0; i < 6; i++) { var at = spot(180f, 340f, 12f); if (!float.IsNaN(at.x)) BuriedDome(SectorAt(at.x, at.z), at, rng, rng.Range(9f, 18f)); }
                     break;
             }
+            BuildFarSilhouettes(rng);
             var ringGo = new GameObject("Backdrop");
             ringGo.transform.SetParent(root, false);
             int verts = 0;
@@ -266,6 +274,78 @@ namespace RePlanet
         }
 
         Material J(Rng rng) { return junk[rng.Range(0, junk.Length)]; }
+
+        /// <summary>
+        /// Tiefenstaffelung: eine zweite, ferne Silhouettenreihe (430–620 m) aus einfachen Körpern – Hochhäuser,
+        /// Schornsteine, Tafelberge, Schiffe, Eisgipfel je Planet – mit Lichtpunkten und blinkenden Warnleuchten.
+        /// Wenige Ecken je Körper; der Höhennebel der Nachbearbeitung staffelt sie farbig nach hinten.
+        /// </summary>
+        void BuildFarSilhouettes(Rng rng)
+        {
+            var far1 = Opq(planet == "pyra" ? new Color(0.36f, 0.2f, 0.16f) : planet == "nivalis" ? new Color(0.62f, 0.68f, 0.78f) : planet == "pelagia" ? new Color(0.36f, 0.4f, 0.44f) : new Color(0.4f, 0.39f, 0.38f));
+            var far2 = Opq(planet == "pyra" ? new Color(0.28f, 0.16f, 0.13f) : planet == "nivalis" ? new Color(0.5f, 0.56f, 0.68f) : planet == "pelagia" ? new Color(0.3f, 0.33f, 0.37f) : new Color(0.33f, 0.32f, 0.32f));
+            int n = planet == "pelagia" ? 14 : 34;
+            for (int i = 0; i < n; i++)
+            {
+                float a = (i + rng.Range(0.1f, 0.9f)) / n * Mathf.PI * 2f;
+                float d = rng.Range(440f, 610f);
+                var at = new Vector3(Mathf.Cos(a) * d, 0, Mathf.Sin(a) * d);
+                at.y = FarHeight(at.x, at.z) - 2f;
+                var mb = SectorAt(at.x, at.z);
+                var m = rng.Chance(0.5f) ? far1 : far2;
+                var yaw = Quaternion.Euler(0, rng.Range(0f, 90f), 0);
+                var old = mb.M;
+                mb.M = Matrix4x4.TRS(at, yaw, Vector3.one);
+                switch (planet)
+                {
+                    case "terra":
+                        {
+                            // Hochhausgruppe mit Rücksprüngen, Antennen und Lichtpunkten
+                            int towers = rng.Range(1, 4);
+                            for (int t = 0; t < towers; t++)
+                            {
+                                float w = rng.Range(14f, 32f), h = rng.Range(45f, 150f);
+                                var off = new Vector3(rng.Range(-25f, 25f), 0, rng.Range(-25f, 25f));
+                                mb.For(m).Box(off + new Vector3(0, h * 0.5f, 0), new Vector3(w, h, w * rng.Range(0.7f, 1.2f)));
+                                if (rng.Chance(0.6f)) mb.For(m).Box(off + new Vector3(0, h + h * 0.08f, 0), new Vector3(w * 0.6f, h * 0.16f, w * 0.6f));
+                                if (rng.Chance(0.5f)) { mb.For(steel).Box(off + new Vector3(0, h * 1.16f + 6f, 0), new Vector3(0.6f, 12f, 0.6f)); mb.For(blinkRed).Box(off + new Vector3(0, h * 1.16f + 12.5f, 0), Vector3.one * 1.2f); }
+                                for (int k = rng.Range(4, 12); k > 0; k--)
+                                    mb.For(farLights).Box(off + new Vector3(rng.Range(-w * 0.4f, w * 0.4f), rng.Range(4f, h - 4f), -w * 0.5f - 0.2f), new Vector3(1.6f, 1.2f, 0.3f));
+                            }
+                            break;
+                        }
+                    case "pyra":
+                        {
+                            float r = rng.Range(20f, 45f), h = rng.Range(25f, 60f);
+                            mb.For(m).Cylinder(Vector3.zero, r, h, 9, true, r * 0.8f);
+                            if (rng.Chance(0.4f)) { float sh = rng.Range(40f, 80f); mb.For(far2).Cylinder(new Vector3(r * 0.5f, h, 0), 2.2f, sh, 8, true, 1.7f); mb.For(blinkRed).Box(new Vector3(r * 0.5f, h + sh + 1f, 0), Vector3.one * 1.4f); }
+                            for (int k = rng.Range(0, 4); k > 0; k--) mb.For(farLights).Box(new Vector3(rng.Range(-r * 0.6f, r * 0.6f), h + 0.5f, rng.Range(-r * 0.6f, r * 0.6f)), Vector3.one * 1.3f);
+                            break;
+                        }
+                    case "pelagia":
+                        {
+                            // ferne Frachter/Wracks und Bohrinseln am Horizont mit Positionslichtern
+                            float len = rng.Range(60f, 140f);
+                            mb.For(m).Box(new Vector3(0, 3f, 0), new Vector3(len, 10f, len * 0.16f));
+                            mb.For(far2).Box(new Vector3(-len * 0.35f, 13f, 0), new Vector3(len * 0.14f, 12f, len * 0.13f));
+                            for (int k = rng.Range(2, 6); k > 0; k--) mb.For(far1).Box(new Vector3(rng.Range(-len * 0.3f, len * 0.4f), 9.5f, 0), new Vector3(len * 0.08f, 5f, len * 0.13f));
+                            mb.For(steel).Box(new Vector3(-len * 0.35f, 24f, 0), new Vector3(0.5f, 12f, 0.5f));
+                            mb.For(blinkRed).Box(new Vector3(-len * 0.35f, 30.5f, 0), Vector3.one * 1.3f);
+                            for (int k = rng.Range(3, 8); k > 0; k--) mb.For(farLights).Box(new Vector3(rng.Range(-len * 0.45f, len * 0.45f), rng.Range(5f, 18f), -len * 0.08f - 0.2f), new Vector3(1.4f, 1f, 0.3f));
+                            break;
+                        }
+                    default:
+                        {
+                            float r = rng.Range(25f, 55f), h = rng.Range(60f, 150f);
+                            mb.For(Opq(new Color(0.78f, 0.84f, 0.92f))).Cylinder(Vector3.zero, r, h, 7, true, 0f);
+                            mb.For(m).Cylinder(new Vector3(r * 0.5f, 0, r * 0.2f), r * 0.6f, h * 0.6f, 6, true, 0f);
+                            if (rng.Chance(0.35f)) { mb.For(steel).Box(new Vector3(-r * 0.8f, 20f, 0), new Vector3(0.8f, 40f, 0.8f)); mb.For(blinkRed).Box(new Vector3(-r * 0.8f, 41f, 0), Vector3.one * 1.4f); }
+                            break;
+                        }
+                }
+                mb.M = old;
+            }
+        }
 
         /// <summary>Turm aus gepressten Müllwürfeln (WALL·E-Skyline): 2×2 Würfel je Lage, leicht versetzt und verbeult.</summary>
         void CubeTower(MultiBuilder mb, Vector3 at, Rng rng, float height)
@@ -326,6 +406,15 @@ namespace RePlanet
                 mb.For(wall).Box(new Vector3(0, common * 0.5f, u), new Vector3(w + 0.2f, common, 0.6f));
             }
             if (rng.Chance(0.5f)) { mb.For(steel).Cylinder(new Vector3(hw * 0.3f, h, -hw * 0.3f), 0.25f, rng.Range(5f, 10f), 5); mb.For(glowRed).Sphere(new Vector3(hw * 0.3f, h + 8f, -hw * 0.3f), 0.5f, 6, 4); }
+            // vereinzelt erleuchtete Fenster (Lichtpunkte in der Nacht)
+            for (int k = rng.Range(3, 11); k > 0; k--)
+            {
+                float y = 3f + Mathf.FloorToInt(rng.Range(0f, Mathf.Max(1f, (common - 5f) / 3.2f))) * 3.2f + 0.9f;
+                int face = rng.Range(0, 4);
+                float u = rng.Range(-hw + 1f, hw - 1f);
+                var p = face == 0 ? new Vector3(u, y, hw + 0.08f) : face == 1 ? new Vector3(u, y, -hw - 0.08f) : face == 2 ? new Vector3(hw + 0.08f, y, u) : new Vector3(-hw - 0.08f, y, u);
+                mb.For(farLights).Box(p, face < 2 ? new Vector3(1.4f, 1.0f, 0.06f) : new Vector3(0.06f, 1.0f, 1.4f));
+            }
             mb.M = old;
             // Müll am Fuß
             mb.For(J(rng)).Blob(at + new Vector3(rng.Range(-3f, 3f), -0.5f, rng.Range(-3f, 3f)), w * 0.9f, w * 0.35f, 12, 3, rng.Range(0, 999), 0.3f);
@@ -1198,6 +1287,12 @@ namespace RePlanet
         {
             if (cam == null) return;
             for (int a = 0; a < 3; a++) density[a] = Mathf.MoveTowards(density[a], targetDensity[a], dt * 0.25f);
+            // Lichtpunkte in der Ferne: nachts warm, Warnleuchten blinken (1,6-s-Takt)
+            var wv = WorldView.I;
+            var world = wv != null ? wv.World : null;
+            float dark = world != null ? Rules.Darkness(Rules.DayPhase(world, planet)) : 0f;
+            if (farLights != null) Mats.SetEmission(farLights, FarWarm * Mathf.Lerp(0.08f, 2.4f, dark));
+            if (blinkRed != null) Mats.SetEmission(blinkRed, WarnRed * (Mathf.Repeat(Time.time, 1.6f) < 0.8f ? Mathf.Lerp(1.5f, 4f, dark) : 0.25f));
             var st = GameApp.I != null ? GameApp.I.Settings : null;
             int quality = st != null ? st.Quality : 2;
             float view = st != null ? st.ViewDistance : 1f;
