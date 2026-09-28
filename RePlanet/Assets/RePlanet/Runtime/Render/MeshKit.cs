@@ -494,6 +494,10 @@ namespace RePlanet
             return mb;
         }
 
+        /// <summary>Ecken aller Blöcke zusammen (Statistik).</summary>
+        public int VertexCount { get { int n = 0; foreach (var kv in chunks) n += kv.Value.VertexCount; return n; } }
+        public int ChunkCount { get { return chunks.Count; } }
+
         public GameObject Build(string name, Transform parent, bool shadows)
         {
             var go = new GameObject(name);
@@ -516,6 +520,8 @@ namespace RePlanet
         public const int Main = 0, Dark = 1, Metal = 2, Light = 3, Signal = 4;
         public const int TrashSlots = 5;
 
+        static readonly HashSet<Mesh> shared = new HashSet<Mesh>();
+
         public static Mesh Get(string key, System.Action<MeshBuilder> build)
         {
             Mesh m;
@@ -524,8 +530,12 @@ namespace RePlanet
             build(b);
             m = b.Build(key);
             cache[key] = m;
+            shared.Add(m);
             return m;
         }
+
+        /// <summary>Gehört das Mesh zum gemeinsamen Zwischenspeicher (darf beim Abbau einer Welt nicht zerstört werden)?</summary>
+        public static bool IsShared(Mesh m) { return m != null && shared.Contains(m); }
 
         public static Mesh Cube { get { return Get("cube", b => b.Box(Vector3.zero, Vector3.one)); } }
         public static Mesh Cylinder { get { return Get("cyl", b => b.Cylinder(new Vector3(0, -0.5f, 0), 0.5f, 1f, 16)); } }

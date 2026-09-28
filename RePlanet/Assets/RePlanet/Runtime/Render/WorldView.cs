@@ -131,7 +131,13 @@ namespace RePlanet
 
         void Clear()
         {
-            if (Root != null) Destroy(Root.gameObject);
+            if (Root != null)
+            {
+                // Eigene (nicht geteilte) Meshes freigeben – sonst wächst der Speicher bei jedem Planetenwechsel
+                foreach (var mf in Root.GetComponentsInChildren<MeshFilter>(true))
+                    if (mf.sharedMesh != null && !MeshKit.IsShared(mf.sharedMesh)) Destroy(mf.sharedMesh);
+                Destroy(Root.gameObject);
+            }
             Root = null;
             projectSwitches.Clear(); windowMats.Clear(); lampMats.Clear();
             foreach (var l in lampPositions) l.Clear();
@@ -381,174 +387,9 @@ namespace RePlanet
             return m;
         }
 
-        void BuildBoxes()
-        {
-            var mb = new MultiBuilder();
-            var rng = new Rng(Def.Seed + 77);
-            foreach (var bx in Layout.Colliders)
-            {
-                if (bx.Gate >= 0 || bx.Kind == "terminal" || bx.Kind == "gateblock") continue;
-                if (bx.DuneSet >= 0) { BuildDune(bx); continue; }
-                var col = Mats.C(bx.Color == 0 ? 0x999999u : bx.Color);
-                col *= 0.9f + rng.Next() * 0.2f; col.a = 1;
-                var wall = Mats.Get(Mats.Opaque, Quantize(col));
-                var dark = Mats.Get(Mats.Opaque, Quantize(col * 0.62f));
-                int area = Mathf.Clamp(bx.Area < 0 ? PlanetLayout.AreaOf(bx.Cz) : bx.Area, 0, 2);
-                var win = WindowMat(area);
-                float y0 = bx.Y0, h = bx.H;
-                var c = new Vector3(bx.Cx, y0 + h * 0.5f, bx.Cz);
-                var s = new Vector3(bx.Hx * 2, h, bx.Hz * 2);
-                switch (bx.Kind)
-                {
-                    case "house":
-                    case "serverhall":
-                    case "tower":
-                    case "cityedge":
-                    case "areawall" when Planet == "terra":
-                        {
-                            mb.For(wall).Box(c, s);
-                            bool ruin = rng.Chance(0.3f) && bx.Kind != "serverhall";
-                            if (!ruin) mb.For(dark).Box(new Vector3(c.x, y0 + h + 0.2f, c.z), new Vector3(s.x + 0.4f, 0.4f, s.z + 0.4f));
-                            else mb.For(dark).BoxRot(new Vector3(c.x + s.x * 0.2f, y0 + h, c.z), new Vector3(s.x * 0.5f, 1.2f, s.z * 0.6f), new Vector3(0, 0, 18));
-                            Windows(mb.For(win), bx, rng, bx.Kind == "serverhall" ? 1.6f : 3f);
-                            break;
-                        }
-                    case "mall":
-                        {
-                            mb.For(wall).Box(c, s);
-                            mb.For(Mats.Get(Mats.Opaque, new Color(0.85f, 0.3f, 0.2f))).Box(new Vector3(c.x, y0 + h - 1.2f, c.z), new Vector3(s.x + 0.2f, 1.4f, s.z + 0.2f));
-                            Windows(mb.For(win), bx, rng, 4.5f);
-                            break;
-                        }
-                    case "areawall":
-                    case "cliff":
-                    case "icewall":
-                    case "seawall":
-                        {
-                            if (Planet == "pyra" || bx.Kind == "cliff")
-                            {
-                                var rock = Mats.Get(Mats.Opaque, Quantize(Mats.C(0x8E3F2A) * (0.85f + rng.Next() * 0.2f)));
-                                int k = Mathf.Max(2, (int)(Mathf.Max(s.x, s.z) / 7f));
-                                for (int i = 0; i < k; i++)
-                                {
-                                    float f = (i + 0.5f) / k;
-                                    var p = s.x > s.z ? new Vector3(c.x - s.x * 0.5f + f * s.x, c.y, c.z) : new Vector3(c.x, c.y, c.z - s.z * 0.5f + f * s.z);
-                                    float hh = h * (0.7f + rng.Next() * 0.4f);
-                                    mb.For(rock).BoxRot(new Vector3(p.x, y0 + hh * 0.5f, p.z), new Vector3((s.x > s.z ? s.x / k : s.x) * 1.3f, hh, (s.x > s.z ? s.z : s.z / k) * 1.3f), new Vector3(rng.Range(-6f, 6f), rng.Range(-20f, 20f), rng.Range(-6f, 6f)));
-                                }
-                            }
-                            else if (Planet == "nivalis" || bx.Kind == "icewall")
-                            {
-                                var ice = Mats.Get(Mats.Opaque, new Color(0.75f, 0.88f, 0.97f), null, 0.85f);
-                                mb.For(ice).Box(c, s);
-                                mb.For(Mats.Get(Mats.Opaque, Color.white)).Box(new Vector3(c.x, y0 + h + 0.3f, c.z), new Vector3(s.x + 0.5f, 0.6f, s.z + 0.5f));
-                            }
-                            else
-                            {
-                                var conc = Mats.Get(Mats.Opaque, new Color(0.58f, 0.62f, 0.62f));
-                                mb.For(conc).Box(c, s);
-                                mb.For(Mats.Get(Mats.Opaque, new Color(0.9f, 0.35f, 0.25f))).Box(new Vector3(c.x, y0 + h + 0.4f, c.z), new Vector3(s.x, 0.2f, s.z * 0.2f));
-                            }
-                            break;
-                        }
-                    case "core":
-                    case "garage":
-                        break; // Stützpunkt wird separat aufgebaut
-                    case "pavilion":
-                        for (int i = 0; i < 4; i++) mb.For(dark).Box(new Vector3(c.x + (i % 2 == 0 ? -1 : 1) * (bx.Hx - 0.2f), y0 + h * 0.5f, c.z + (i < 2 ? -1 : 1) * (bx.Hz - 0.2f)), new Vector3(0.3f, h, 0.3f));
-                        mb.For(wall).Box(new Vector3(c.x, y0 + h, c.z), new Vector3(s.x + 0.6f, 0.3f, s.z + 0.6f));
-                        break;
-                    case "greenhouse":
-                        BuildGreenhouse(bx);
-                        break;
-                    case "shed":
-                    case "hall":
-                    case "warehouse":
-                        mb.For(wall).Box(c, s);
-                        mb.For(dark).BoxRot(new Vector3(c.x, y0 + h + 0.3f, c.z), new Vector3(s.x + 0.5f, 0.5f, s.z * 0.55f), new Vector3(8, 0, 0));
-                        mb.For(dark).BoxRot(new Vector3(c.x, y0 + h + 0.3f, c.z), new Vector3(s.x + 0.5f, 0.5f, s.z * 0.55f), new Vector3(-8, 0, 0));
-                        mb.For(dark).Box(new Vector3(c.x, y0 + 1.6f, c.z + bx.Hz + 0.01f), new Vector3(Mathf.Min(4f, s.x * 0.5f), 3.2f, 0.1f));
-                        if (bx.Kind == "hall") Windows(mb.For(win), bx, rng, 5f);
-                        break;
-                    case "furnace":
-                    case "silo":
-                        {
-                            float r = Mathf.Min(bx.Hx, bx.Hz);
-                            mb.For(wall).Cylinder(new Vector3(c.x, y0, c.z), r, h, 16, true, bx.Kind == "furnace" ? r * 0.6f : r);
-                            mb.For(dark).Torus(new Vector3(c.x, y0 + h * 0.3f, c.z), r, 0.25f, 16, 4);
-                            if (bx.Kind == "furnace") mb.For(dark).Cylinder(new Vector3(c.x, y0 + h, c.z), r * 0.3f, h * 0.4f, 10);
-                            break;
-                        }
-                    case "foundry":
-                        mb.For(wall).Box(c, s);
-                        for (int i = 0; i < 3; i++) mb.For(dark).Cylinder(new Vector3(c.x - bx.Hx * 0.6f + i * bx.Hx * 0.6f, y0 + h, c.z), 1.2f, 14f, 10);
-                        break;
-                    case "stilt":
-                        {
-                            float g = Mathf.Max(Terrain.HeightAt(Planet, bx.Cx, bx.Cz), Terrain.WaterLevel(Planet));
-                            for (int i = 0; i < 4; i++) mb.For(Mats.Get(Mats.Opaque, new Color(0.45f, 0.33f, 0.22f))).Box(new Vector3(bx.Cx + (i % 2 == 0 ? -1 : 1) * (bx.Hx - 0.3f), y0 + 1.2f, bx.Cz + (i < 2 ? -1 : 1) * (bx.Hz - 0.3f)), new Vector3(0.3f, 3f, 0.3f));
-                            mb.For(wall).Box(new Vector3(c.x, g + 1.5f + (h - 2f) * 0.5f, c.z), new Vector3(s.x, h - 2f, s.z));
-                            mb.For(dark).BoxRot(new Vector3(c.x, g + h + 0.2f, c.z), new Vector3(s.x + 0.8f, 0.3f, s.z * 0.6f), new Vector3(15, 0, 0));
-                            mb.For(dark).BoxRot(new Vector3(c.x, g + h + 0.2f, c.z), new Vector3(s.x + 0.8f, 0.3f, s.z * 0.6f), new Vector3(-15, 0, 0));
-                            break;
-                        }
-                    case "ruin":
-                        mb.For(Mats.Get(Mats.Opaque, new Color(0.45f, 0.55f, 0.5f))).BoxRot(c, s, new Vector3(rng.Range(-8f, 8f), rng.Range(0f, 90f), rng.Range(-8f, 8f)));
-                        break;
-                    case "dome":
-                        {
-                            float r = Mathf.Min(bx.Hx, bx.Hz);
-                            mb.For(Mats.Get(Mats.Opaque, new Color(0.8f, 0.87f, 0.93f), null, 0.9f)).Sphere(new Vector3(c.x, y0 + 0.5f, c.z), r, 18, 10, 0.75f);
-                            mb.For(dark).Cylinder(new Vector3(c.x, y0, c.z), r * 1.02f, 1.2f, 18);
-                            mb.For(win).Box(new Vector3(c.x, y0 + 1.8f, c.z + r * 0.95f), new Vector3(2.4f, 2.4f, 0.2f));
-                            break;
-                        }
-                    case "hangar":
-                        mb.For(wall).Box(new Vector3(c.x, y0 + h * 0.3f, c.z), new Vector3(s.x, h * 0.6f, s.z));
-                        mb.For(dark).CylinderX(new Vector3(c.x, y0 + h * 0.6f, c.z), Mathf.Min(bx.Hz, h * 0.5f), s.x, 16);
-                        break;
-                    case "launchtower":
-                        for (int i = 0; i < 4; i++) mb.For(Mats.Get(Mats.Metal, new Color(0.7f, 0.72f, 0.75f))).Box(new Vector3(c.x + (i % 2 == 0 ? -3 : 3), y0 + h * 0.5f, c.z + (i < 2 ? -3 : 3)), new Vector3(0.8f, h, 0.8f));
-                        for (int k = 1; k < 6; k++) mb.For(Mats.Get(Mats.Metal, new Color(0.7f, 0.72f, 0.75f))).Box(new Vector3(c.x, y0 + k * h / 6f, c.z), new Vector3(6.8f, 0.4f, 6.8f));
-                        mb.For(Mats.Get(Mats.Opaque, new Color(0.92f, 0.94f, 0.96f))).Cylinder(new Vector3(c.x, y0, c.z + 7), 2.2f, h * 0.9f, 14, true, 0.6f);
-                        break;
-                    default:
-                        mb.For(wall).Box(c, s);
-                        break;
-                }
-            }
-            mb.Build("Buildings", Root, true);
-        }
-
         static Color Quantize(Color c)
         {
             return new Color(Mathf.Round(c.r * 24) / 24f, Mathf.Round(c.g * 24) / 24f, Mathf.Round(c.b * 24) / 24f, 1f);
-        }
-
-        void Windows(MeshBuilder b, Box bx, Rng rng, float spacing)
-        {
-            float y0 = Mathf.Max(bx.Y0, Terrain.HeightAt(Planet, bx.Cx, bx.Cz)) + 2f;
-            float top = bx.Y0 + bx.H - 1.2f;
-            for (int face = 0; face < 4; face++)
-            {
-                float len = face < 2 ? bx.Hx * 2 : bx.Hz * 2;
-                int cols = Mathf.Max(1, (int)(len / spacing));
-                for (float y = y0; y < top; y += 3f)
-                    for (int i = 0; i < cols; i++)
-                    {
-                        if (rng.Chance(0.18f)) continue;
-                        float u = -len * 0.5f + (i + 0.5f) * len / cols;
-                        Vector3 p; Vector3 sz;
-                        switch (face)
-                        {
-                            case 0: p = new Vector3(bx.Cx + u, y, bx.Cz + bx.Hz + 0.03f); sz = new Vector3(1.2f, 1.4f, 0.06f); break;
-                            case 1: p = new Vector3(bx.Cx + u, y, bx.Cz - bx.Hz - 0.03f); sz = new Vector3(1.2f, 1.4f, 0.06f); break;
-                            case 2: p = new Vector3(bx.Cx + bx.Hx + 0.03f, y, bx.Cz + u); sz = new Vector3(0.06f, 1.4f, 1.2f); break;
-                            default: p = new Vector3(bx.Cx - bx.Hx - 0.03f, y, bx.Cz + u); sz = new Vector3(0.06f, 1.4f, 1.2f); break;
-                        }
-                        b.Box(p, sz);
-                    }
-            }
         }
 
         void BuildDune(Box bx)

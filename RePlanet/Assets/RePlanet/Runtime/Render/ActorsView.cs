@@ -360,6 +360,8 @@ namespace RePlanet
             var sb = new System.Text.StringBuilder();
             foreach (var b in ps.Buildings) sb.Append(b.Id).Append(b.Type).Append(b.Gx).Append(',').Append(b.Gz).Append(',').Append(b.Rot).Append(';');
             string sig = sb.ToString();
+            // Wurde die Welt neu aufgebaut, sind die Anlagen mit ihr verschwunden → neu erzeugen
+            foreach (var g in buildings.Values) if (g == null) { buildingSig = ""; break; }
             if (sig != buildingSig)
             {
                 buildingSig = sig;
