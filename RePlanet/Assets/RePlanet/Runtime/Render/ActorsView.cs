@@ -154,7 +154,7 @@ namespace RePlanet
                 towDrone = new GameObject("TowDrone");
                 towDrone.transform.SetParent(root, false);
                 var mf = towDrone.AddComponent<MeshFilter>(); mf.sharedMesh = MeshKit.Trash("drone");
-                towDrone.AddComponent<MeshRenderer>().sharedMaterial = Mats.Get(Mats.Opaque, new Color(1f, 0.55f, 0.2f));
+                towDrone.AddComponent<MeshRenderer>().sharedMaterials = DroneMats(new Color(1f, 0.55f, 0.2f));
                 towDrone.transform.localScale = Vector3.one * 3f;
             }
             towDrone.SetActive(true);
@@ -167,7 +167,7 @@ namespace RePlanet
             Transform t;
             if (!trailers.TryGetValue(pid, out t) || t == null)
             {
-                var mb = new MultiBuilder();
+                var mb = new MultiBuilder { UsePalette = true };
                 var body = Mats.Get(Mats.Opaque, new Color(0.9f, 0.55f, 0.2f));
                 var dark = Mats.Get(Mats.Opaque, new Color(0.2f, 0.2f, 0.22f));
                 mb.For(body).Box(new Vector3(0, 0.45f, 0), new Vector3(1.0f, 0.4f, 1.2f));
@@ -187,7 +187,7 @@ namespace RePlanet
         // ------------------------------------------------------------ Fahrzeuge
         GameObject BuildVehicle(string id)
         {
-            var mb = new MultiBuilder();
+            var mb = new MultiBuilder { UsePalette = true };
             var dark = Mats.Get(Mats.Opaque, new Color(0.2f, 0.21f, 0.23f));
             var orange = Mats.Get(Mats.Opaque, new Color(1f, 0.55f, 0.18f));
             var teal = Mats.Get(Mats.Opaque, new Color(0.18f, 0.7f, 0.66f));
@@ -206,7 +206,7 @@ namespace RePlanet
                         var boomPivot = new GameObject("Boom").transform;
                         boomPivot.SetParent(go.transform, false);
                         boomPivot.localPosition = new Vector3(0.6f, 2.2f, -0.8f);
-                        var bb = new MultiBuilder();
+                        var bb = new MultiBuilder { UsePalette = true };
                         bb.For(orange).Box(new Vector3(0, 0, 3.5f), new Vector3(0.5f, 0.6f, 7f));
                         bb.For(dark).Box(new Vector3(0, -0.2f, 7f), new Vector3(0.3f, 0.3f, 0.3f));
                         var boom = bb.Build("BoomMesh", boomPivot).transform;
@@ -223,7 +223,7 @@ namespace RePlanet
                         break;
                     }
                 case "boat":
-                    mb.For(Mats.Get(Mats.Opaque, new Color(0.92f, 0.92f, 0.9f))).Lathe(new Vector3(0, -0.4f, 0), new[] { new Vector2(0, 0), new Vector2(1.2f, 0.2f), new Vector2(1.6f, 1.0f) }, 8);
+                    mb.For(Mats.Get(Mats.Opaque, new Color(0.92f, 0.92f, 0.9f))).Lathe(new Vector3(0, -0.4f, 0), new[] { new Vector2(0, 0), new Vector2(1.2f, 0.2f), new Vector2(1.6f, 1.0f) }, 8, true);
                     mb.For(orange).Box(new Vector3(0, 0.9f, -0.8f), new Vector3(1.6f, 1.2f, 1.6f));
                     mb.For(glass).Box(new Vector3(0, 1.1f, 0.02f), new Vector3(1.4f, 0.6f, 0.05f));
                     mb.For(dark).Box(new Vector3(0, 0.7f, 1.8f), new Vector3(2.6f, 0.08f, 0.08f));
@@ -310,7 +310,17 @@ namespace RePlanet
         void DrawCarried(DynObj d, Vector3 at, Quaternion rot)
         {
             var t = d.Def;
-            Graphics.DrawMesh(MeshKit.Trash(t.Shape), Matrix4x4.TRS(at, rot, Vector3.one * (t.Crane ? t.Size : 1f)), TrashRenderer.MaterialFor(t), 0);
+            TrashRenderer.DrawTrash(t, Matrix4x4.TRS(at, rot, Vector3.one * (t.Crane ? t.Size : 1f)));
+        }
+
+        /// <summary>Materialien für das mehrteilige Drohnen-Mesh (Rumpf in Wunschfarbe, Nebenteile wie beim Müll).</summary>
+        static Material[] DroneMats(Color body)
+        {
+            var mesh = MeshKit.Trash("drone");
+            var arr = new Material[Mathf.Max(1, mesh.subMeshCount)];
+            arr[0] = Mats.Get(Mats.Opaque, body);
+            for (int i = 1; i < arr.Length; i++) arr[i] = i == MeshKit.Signal ? Mats.Get(Mats.Emissive, new Color(0.4f, 1f, 1f), new Color(0.6f, 2f, 2f)) : TrashRenderer.SlotMaterial(i);
+            return arr;
         }
 
         void UpdateDrones(GameClient client, float dt)
@@ -321,7 +331,7 @@ namespace RePlanet
                 var go = new GameObject("Drohne");
                 go.transform.SetParent(root, false);
                 go.AddComponent<MeshFilter>().sharedMesh = MeshKit.Trash("drone");
-                go.AddComponent<MeshRenderer>().sharedMaterial = Mats.Get(Mats.Opaque, new Color(0.35f, 0.65f, 0.9f));
+                go.AddComponent<MeshRenderer>().sharedMaterials = DroneMats(new Color(0.35f, 0.65f, 0.9f));
                 go.transform.localScale = Vector3.one * 1.6f;
                 var light = new GameObject("Licht");
                 light.transform.SetParent(go.transform, false);
@@ -350,6 +360,8 @@ namespace RePlanet
             var sb = new System.Text.StringBuilder();
             foreach (var b in ps.Buildings) sb.Append(b.Id).Append(b.Type).Append(b.Gx).Append(',').Append(b.Gz).Append(',').Append(b.Rot).Append(';');
             string sig = sb.ToString();
+            // Wurde die Welt neu aufgebaut, sind die Anlagen mit ihr verschwunden → neu erzeugen
+            foreach (var g in buildings.Values) if (g == null) { buildingSig = ""; break; }
             if (sig != buildingSig)
             {
                 buildingSig = sig;
@@ -384,7 +396,7 @@ namespace RePlanet
             var gy = Terrain.HeightAt(GameApp.I != null && GameApp.I.W != null ? GameApp.I.W.CurrentPlanet : "terra", c.x, c.z);
             var col = Mats.Get(Mats.Opaque, Mats.C(def.Color == 0 ? 0x888888u : def.Color));
             var dark = Mats.Get(Mats.Opaque, new Color(0.22f, 0.23f, 0.25f));
-            var mb = new MultiBuilder();
+            var mb = new MultiBuilder { UsePalette = true };
             mb.M = Matrix4x4.TRS(new Vector3(c.x, gy, c.z), Quaternion.Euler(0, b.Rot * 90, 0), Vector3.one);
             float lw = b.Rot % 2 == 0 ? w : h, lh = b.Rot % 2 == 0 ? h : w; // lokale Maße
             Transform anim = null;

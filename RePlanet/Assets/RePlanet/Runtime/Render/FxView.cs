@@ -15,7 +15,7 @@ namespace RePlanet
 
         class Ghost
         {
-            public Mesh Mesh; public Material Mat;
+            public Mesh Mesh; public Material Mat; public TrashType Type;
             public Vector3 From; public string TargetPid; public Vector3 TargetFallback;
             public float T, Delay, Duration, Scale; public Quaternion Rot;
         }
@@ -102,7 +102,7 @@ namespace RePlanet
             if (type == null || !GameData.Trash.TryGetValue(type, out t)) return;
             ghosts.Add(new Ghost
             {
-                Mesh = MeshKit.Trash(t.Shape), Mat = TrashRenderer.MaterialFor(t), From = from, TargetPid = pid, TargetFallback = from + Vector3.up,
+                Mesh = MeshKit.Trash(t.Shape), Mat = TrashRenderer.MaterialFor(t), Type = t, From = from, TargetPid = pid, TargetFallback = from + Vector3.up,
                 Delay = delay, Duration = duration, Scale = Mathf.Min(1f, t.Size), Rot = Quaternion.Euler(0, Random.Range(0, 360), 0)
             });
         }
@@ -260,13 +260,13 @@ namespace RePlanet
             for (int i = ghosts.Count - 1; i >= 0; i--)
             {
                 var g = ghosts[i];
-                if (g.Delay > 0) { g.Delay -= dt; Graphics.DrawMesh(g.Mesh, Matrix4x4.TRS(g.From, g.Rot, Vector3.one * g.Scale), g.Mat, 0); continue; }
+                if (g.Delay > 0) { g.Delay -= dt; TrashRenderer.DrawTrash(g.Type, Matrix4x4.TRS(g.From, g.Rot, Vector3.one * g.Scale)); continue; }
                 g.T += dt / g.Duration;
                 var target = g.TargetPid != null ? RobotBin(g.TargetPid, g.TargetFallback) : g.TargetFallback;
                 float t = Mathf.Clamp01(g.T);
                 var p = Vector3.Lerp(g.From, target, t * t) + Vector3.up * Mathf.Sin(t * Mathf.PI) * 1.2f;
                 float s = g.Scale * Mathf.Lerp(1f, 0.25f, t);
-                Graphics.DrawMesh(g.Mesh, Matrix4x4.TRS(p, g.Rot * Quaternion.Euler(t * 360, t * 180, 0), Vector3.one * s), g.Mat, 0);
+                TrashRenderer.DrawTrash(g.Type, Matrix4x4.TRS(p, g.Rot * Quaternion.Euler(t * 360, t * 180, 0), Vector3.one * s));
                 if (g.T >= 1f) ghosts.RemoveAt(i);
             }
             for (int i = arcs.Count - 1; i >= 0; i--)
