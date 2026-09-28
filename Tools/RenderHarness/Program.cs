@@ -73,13 +73,15 @@ public static class Program
         }
     }
 
-    public static void Main(string[] args)
+    public static int Main(string[] args)
     {
+        // Laufzeitprüfung (Intro, Spiel auf allen Planeten, Abspann): dotnet run -- run [intro|game|ending|all]
+        if (args.Length > 0 && args[0] == "run") return Checks.Main(args.Length > 1 ? args[1] : "all");
         if (args.Length > 0 && args[0] == "check")
         {
             Console.WriteLine("Primitive:");
             CheckPrimitives();
-            return;
+            return 0;
         }
         string planet = args.Length > 0 ? args[0] : "terra";
         string outDir = args.Length > 1 ? args[1] : ".";
@@ -199,6 +201,7 @@ public static class Program
             Render(Path.Combine(outDir, $"{planet}_{state}_{vi}_{v.name}.ppm"), v.pos, v.target, extra, planet);
             vi++;
         }
+        return 0;
     }
 
     static List<(string name, Vector3 pos, Vector3 target)> Views(string planet)

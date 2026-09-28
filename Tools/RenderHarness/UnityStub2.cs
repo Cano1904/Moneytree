@@ -8,7 +8,7 @@ namespace UnityEngine
 {
     using UnityEngine.Rendering;
 
-    public class DefaultExecutionOrderAttribute : Attribute { public DefaultExecutionOrderAttribute(int o) { } }
+    public class DefaultExecutionOrderAttribute : Attribute { public readonly int order; public DefaultExecutionOrderAttribute(int o) { order = o; } }
     public enum RuntimeInitializeLoadType { AfterSceneLoad, BeforeSceneLoad }
     public class RuntimeInitializeOnLoadMethodAttribute : Attribute { public RuntimeInitializeOnLoadMethodAttribute(RuntimeInitializeLoadType t) { } public RuntimeInitializeOnLoadMethodAttribute() { } }
     public class SerializeField : Attribute { }

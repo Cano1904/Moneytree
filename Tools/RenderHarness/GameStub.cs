@@ -7,7 +7,9 @@ public static class Harness
 {
     public static void OnAdd(UnityEngine.Component c)
     {
+        // [RequireComponent] wie in Unity
         if (c is UnityEngine.ParticleSystem) c.gameObject.AddComponent<UnityEngine.ParticleSystemRenderer>();
+        if (c is UnityEngine.TextMesh && c.gameObject.GetComponent<UnityEngine.MeshRenderer>() == null) c.gameObject.AddComponent<UnityEngine.MeshRenderer>();
     }
 }
 
