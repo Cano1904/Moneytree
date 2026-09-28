@@ -33,7 +33,9 @@ namespace RePlanet
         // ================================================================== Zustand
         Transform stage;
         Action done;
-        bool playing, freeRun, animError;
+        bool playing, freeRun;
+        /// <summary>Einstellungen, deren Animation einmal fehlschlug – nur diese bleiben danach stehen, die übrigen laufen weiter.</summary>
+        readonly HashSet<string> animFailed = new HashSet<string>();
         float t, skipHold, startDelay;
         string activeShot;
         float detail = 1f;
@@ -83,7 +85,7 @@ namespace RePlanet
         public void Play(Action onDone)
         {
             done = onDone;
-            t = 0; skipHold = 0; startDelay = 0; freeRun = false; animError = false;
+            t = 0; skipHold = 0; startDelay = 0; freeRun = false; animFailed.Clear();
             activeShot = null;
             fired.Clear();
             var cam = Camera.main;
@@ -91,7 +93,7 @@ namespace RePlanet
             oldFog = RenderSettings.fog;
             oldFogMode = RenderSettings.fogMode;
             try { Build(); }
-            catch (Exception e) { Debug.LogWarning("[Intro] Bühnenbau: " + e.Message); }
+            catch (Exception e) { LogError("Bühnenbau", e); }
             playing = true;
             if (CameraRig.I != null) CameraRig.I.Cinematic = true;
             Narrator.Begin(Narrator.IntroCues());
@@ -115,7 +117,7 @@ namespace RePlanet
             Hud.Subtitle = null;
             var d = done; done = null;
             try { d?.Invoke(); }
-            catch (Exception e) { Debug.LogWarning("[Intro] Abschluss: " + e.Message); }
+            catch (Exception e) { LogError("Abschluss", e); }
         }
 
         void Cleanup()
@@ -146,7 +148,7 @@ namespace RePlanet
         {
             if (!playing) return;
             try { Step(); }
-            catch (Exception e) { Debug.LogWarning("[Intro] " + e.Message); Finish(); }
+            catch (Exception e) { LogError("Ablauf", e); Finish(); }
         }
 
         void Step()
@@ -176,15 +178,19 @@ namespace RePlanet
             string line = subs ? Narrator.SubtitleAt(t) : null;
             if (line != null) Hud.Say(line, 0.3f); else Hud.Subtitle = null;
 
-            if (!animError)
+            if (!animFailed.Contains(cur.Id))
             {
                 try { AnimateShot(cur.Id, local, k); }
-                catch (Exception e) { animError = true; Debug.LogWarning("[Intro] Animation " + cur.Id + ": " + e.Message); }
+                catch (Exception e) { animFailed.Add(cur.Id); LogError("Animation " + cur.Id, e); }
             }
             ApplyCamera();
             ApplyLook();
             UpdateSuns();
-            foreach (var g in glows) g.Refresh();
+            for (int i = glows.Count - 1; i >= 0; i--)
+            {
+                try { glows[i].Refresh(); }
+                catch (Exception e) { LogError("Leuchtpunkte", e); glows.RemoveAt(i); }
+            }
         }
 
         void Enter(string id)
@@ -492,8 +498,8 @@ namespace RePlanet
             var app = GameApp.I;
             int q = app != null && app.Settings != null ? app.Settings.Quality : 2;
             detail = q <= 0 ? 0.45f : q == 1 ? 0.7f : 1f;
-            MakeTextures();
-            MakeMaterials();
+            Safe("Texturen", MakeTextures);
+            Safe("Materialien", MakeMaterials);
             Safe("Skyline", BuildSkyline);
             Safe("Megastore", BuildMegastore);
             Safe("Archen", BuildArks);
@@ -504,10 +510,17 @@ namespace RePlanet
             camSpace = stage;
         }
 
+        /// <summary>Jeder Bauabschnitt für sich: ein Fehler lässt höchstens diese Einstellung unvollständig, nie die anderen.</summary>
         static void Safe(string what, Action a)
         {
             try { a(); }
-            catch (Exception e) { Debug.LogWarning("[Intro] " + what + ": " + e.Message); }
+            catch (Exception e) { LogError(what, e); }
+        }
+
+        /// <summary>Fehler mit vollständigem Stacktrace melden (Konsole/Player.log), gekennzeichnet als Intro-Fehler.</summary>
+        static void LogError(string what, Exception e)
+        {
+            Debug.LogException(new Exception("[Intro] " + what + ": " + e.Message, e));
         }
 
         Material TexMat(string template, Texture2D tex, Color color, string name)

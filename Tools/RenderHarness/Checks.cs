@@ -181,7 +181,7 @@ public static class Checks
         var shotsField = typeof(IntroDirector).GetField("shots", BF);
         var activeField = typeof(IntroDirector).GetField("activeShot", BF);
         var playingField = typeof(IntroDirector).GetField("playing", BF);
-        var animErr = typeof(IntroDirector).GetField("animError", BF);
+        var animErr = typeof(IntroDirector).GetField("animFailed", BF);
 
         // Bühnenaufbau in allen Qualitätsstufen (andere Detailstufe → andere Anzahlen, Zufallsindizes)
         foreach (int q in new[] { 0, 1, 3, 2 })
@@ -219,7 +219,7 @@ public static class Checks
                 var a = (string)activeField.GetValue(intro);
                 if (a != last && a != null) { last = a; }
             });
-            if ((bool)animErr.GetValue(intro)) Fail("Intro: Animationsfehler (animError gesetzt)");
+            if (((HashSet<string>)animErr.GetValue(intro)).Count > 0) Fail("Intro: Animationsfehler in " + string.Join(", ", (HashSet<string>)animErr.GetValue(intro)));
             if ((bool)playingField.GetValue(intro)) Fail("Intro läuft nach 102 s noch");
             if (app.Mode != AppMode.Menu) Fail("Intro endet nicht im Menü: " + app.Mode);
             if (GameObject.Find("IntroStage") != null) Fail("Intro-Bühne nach dem Ende nicht abgebaut");
