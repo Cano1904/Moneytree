@@ -44,6 +44,8 @@ Entscheidungen und nächste Schritte schriftlich im Projekt“). Geprüfte Ergeb
 - `Tools/ShaderCheck/check_shaders.py`: Syntax-/Typprüfung der eigenen Shader mit glslang (HLSL). Ersetzt nicht den
   Unity-Shader-Compiler.
 - `Tools/SkyPreview/sky_preview.py`: rechnet die Himmels-Shader-Mathematik in NumPy nach (Vorschaubilder, keine Spielszenen).
+- `Tools/RenderHarness`: baut die Welt aller Planeten mit dem echten Render-Code gegen einen UnityEngine-Ersatz,
+  zählt Draws/Ecken/Instanzen und prüft die Dreieckswicklung (`cd Tools/RenderHarness && dotnet run`).
 - `Tests/`: .NET-Tests für Wirtschaft, Speichern, Netzwerk, Wetter und einen Kampagnen-Bot.
 
 ## Stand
