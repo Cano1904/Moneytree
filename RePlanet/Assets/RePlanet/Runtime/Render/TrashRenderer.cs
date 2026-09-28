@@ -64,24 +64,67 @@ namespace RePlanet
         }
 
         static readonly Dictionary<string, Material[]> matCache = new Dictionary<string, Material[]>();
+        static readonly Dictionary<string, Mesh> meshCache = new Dictionary<string, Mesh>();
 
-        /// <summary>Materialien je Untermesh der Form eines Müll-Typs (Index 0 = Grundfarbe).</summary>
+        /// <summary>
+        /// Mesh eines Müll-Typs: die Form aus MeshKit, deren schlichte deckende Teile (Grundfarbe, dunkle Teile, Etiketten,
+        /// Signalfarbe) über die Farbpalette in einem Untermesh zusammengefasst sind. Metall- und Glasteile bleiben eigene
+        /// Untermeshes. Dadurch braucht ein Typ meist nur ein bis zwei Draw-Calls statt bis zu fünf.
+        /// </summary>
+        public static Mesh MeshFor(TrashType t)
+        {
+            Mesh mesh;
+            if (meshCache.TryGetValue(t.Id, out mesh) && mesh != null) return mesh;
+            BuildTypeMesh(t);
+            return meshCache[t.Id];
+        }
+
+        /// <summary>Materialien je Untermesh von <see cref="MeshFor"/>.</summary>
         public static Material[] MaterialsFor(TrashType t)
         {
             Material[] arr;
-            if (matCache.TryGetValue(t.Id, out arr) && arr[0] != null) return arr;
-            var mesh = MeshKit.Trash(t.Shape);
-            arr = new Material[Mathf.Max(1, mesh.subMeshCount)];
-            arr[0] = MaterialFor(t);
-            for (int i = 1; i < arr.Length; i++) arr[i] = SlotMaterial(i);
-            matCache[t.Id] = arr;
-            return arr;
+            if (matCache.TryGetValue(t.Id, out arr) && arr != null && arr.Length > 0 && arr[0] != null) return arr;
+            BuildTypeMesh(t);
+            return matCache[t.Id];
+        }
+
+        static void BuildTypeMesh(TrashType t)
+        {
+            var src = MeshKit.Trash(t.Shape);
+            var verts = new List<Vector3>(); var norms = new List<Vector3>();
+            src.GetVertices(verts); src.GetNormals(norms);
+            var uvs = new List<Vector2>(new Vector2[verts.Count]);
+            var groups = new List<KeyValuePair<Material, List<int>>>();
+            var tris = new List<int>();
+            for (int s = 0; s < src.subMeshCount; s++)
+            {
+                src.GetTriangles(tris, s);
+                if (tris.Count == 0) continue;
+                var m = s == 0 ? MaterialFor(t) : SlotMaterial(s);
+                Material target; Vector2 uv;
+                if (Palette.Route(m, out target, out uv)) foreach (var i in tris) uvs[i] = uv;
+                else target = m;
+                List<int> g = null;
+                foreach (var kv in groups) if (kv.Key == target) g = kv.Value;
+                if (g == null) { g = new List<int>(); groups.Add(new KeyValuePair<Material, List<int>>(target, g)); }
+                g.AddRange(tris);
+            }
+            Palette.Flush();
+            var mesh = new Mesh { name = "trashtype_" + t.Id };
+            mesh.SetVertices(verts); mesh.SetNormals(norms); mesh.SetUVs(0, uvs);
+            mesh.subMeshCount = Mathf.Max(1, groups.Count);
+            var mats = new Material[mesh.subMeshCount];
+            for (int i = 0; i < groups.Count; i++) { mesh.SetTriangles(groups[i].Value, i, false); mats[i] = groups[i].Key; }
+            if (groups.Count == 0) mats[0] = MaterialFor(t);
+            mesh.RecalculateBounds();
+            meshCache[t.Id] = mesh;
+            matCache[t.Id] = mats;
         }
 
         /// <summary>Zeichnet ein einzelnes Müllobjekt mit allen Teilen (getragene Last, fliegende Objekte).</summary>
         public static void DrawTrash(TrashType t, Matrix4x4 m, Material overrideAll = null)
         {
-            var mesh = MeshKit.Trash(t.Shape);
+            var mesh = MeshFor(t);
             var mats = MaterialsFor(t);
             for (int s = 0; s < mesh.subMeshCount; s++)
             {
@@ -94,7 +137,7 @@ namespace RePlanet
         {
             Batch b;
             if (batches.TryGetValue(t.Id, out b)) return b;
-            b = new Batch { Mesh = MeshKit.Trash(t.Shape), Mats = MaterialsFor(t) };
+            b = new Batch { Mesh = MeshFor(t), Mats = MaterialsFor(t) };
             batches[t.Id] = b;
             return b;
         }
@@ -169,7 +212,7 @@ namespace RePlanet
             if (HighlightKey != null && visible.TryGetValue(HighlightKey, out h))
             {
                 var m = MatrixFor(h) * Matrix4x4.Scale(Vector3.one * 1.12f);
-                var mesh = MeshKit.Trash(h.T.Shape);
+                var mesh = MeshFor(h.T);
                 var hm = HighlightBlocked ? highlightBad : highlightMat;
                 for (int s = 0; s < mesh.subMeshCount; s++)
                     if (mesh.GetIndexCount(s) > 0) Graphics.DrawMesh(mesh, m, hm, 0, null, s, null, ShadowCastingMode.Off, false);
@@ -196,8 +239,7 @@ namespace RePlanet
                 for (int s = 0; s < subs; s++)
                 {
                     if (mesh.GetIndexCount(s) == 0) continue;
-                    // Kleine Nebenteile (Etiketten, Schrauben) werfen keine eigenen Schatten
-                    Graphics.DrawMeshInstanced(mesh, s, mats[Mathf.Min(s, mats.Length - 1)], chunk, null, s == 0 || s == MeshKit.Dark ? sh : ShadowCastingMode.Off, true);
+                    Graphics.DrawMeshInstanced(mesh, s, mats[Mathf.Min(s, mats.Length - 1)], chunk, null, sh, true);
                 }
             }
         }

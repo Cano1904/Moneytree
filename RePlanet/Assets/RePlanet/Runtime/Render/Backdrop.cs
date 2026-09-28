@@ -802,7 +802,40 @@ namespace RePlanet
 
         static Mesh LitterMesh(string name)
         {
-            return MeshKit.Get("litter_" + name, b =>
+            return MeshKit.Get("litter_" + name, b => LitterGeom(b, name));
+        }
+
+        /// <summary>
+        /// Müll-Grüppchen: mehrere verschiedene Kleinteile (Dosen, Flaschen, Tüten …) in einem Mesh, jedes mit seiner
+        /// Farbe über die Farbpalette – ein Draw-Call zeichnet so viele Teile unterschiedlicher Art und Farbe.
+        /// </summary>
+        int AddClusterKind(List<Spec> specs, float sum, int variant, int pieces, float radius, float tilt)
+        {
+            var dust = new Color(0.44f, 0.41f, 0.37f);
+            var mesh = MeshKit.Get("litterclu_" + planet + "_" + variant + "_" + pieces + "_" + radius, b =>
+            {
+                var r = new Rng(def.Seed + 7100 + variant * 31 + pieces);
+                for (int k = 0; k < pieces; k++)
+                {
+                    float x = r.Next() * sum; int si = specs.Count - 1;
+                    for (int i = 0; i < specs.Count; i++) { x -= specs[i].Weight; if (x <= 0) { si = i; break; } }
+                    var sp = specs[si];
+                    var col = Color.Lerp(sp.Col, dust, 0.35f) * 0.88f;
+                    Material target; Vector2 uv;
+                    if (!Palette.Route(Opq(col), out target, out uv)) uv = Vector2.zero;
+                    b.FixedUV = uv;
+                    float a = r.Range(0f, 6.283f), rr = k == 0 ? 0f : Mathf.Sqrt(r.Next()) * radius;
+                    b.M = Matrix4x4.TRS(new Vector3(Mathf.Cos(a) * rr, 0, Mathf.Sin(a) * rr), Quaternion.Euler(r.Range(-tilt, tilt), r.Range(0f, 360f), r.Range(-tilt, tilt)), Vector3.one * sp.Scale * r.Range(0.8f, 1.3f));
+                    LitterGeom(b, sp.Mesh);
+                }
+                b.FixedUV = null; b.M = Matrix4x4.identity;
+            });
+            kinds.Add(new Kind { Mesh = mesh, Mat = Palette.Matte, Heap = false });
+            return kinds.Count - 1;
+        }
+
+        static void LitterGeom(MeshBuilder b, string name)
+        {
             {
                 switch (name)
                 {
@@ -883,7 +916,7 @@ namespace RePlanet
                         break;
                     default: b.Box(new Vector3(0, 0.1f, 0), Vector3.one * 0.2f); break;
                 }
-            });
+            }
         }
 
         int AddKind(Spec s, bool heap)
@@ -983,13 +1016,22 @@ namespace RePlanet
             }
             var tmp = new List<KeyValuePair<float, Matrix4x4>>[cells.Length][];
             var ground = GroundSpecs(); var heaps = HeapSpecs();
-            var gIdx = new int[ground.Count]; float gSum = 0;
-            for (int i = 0; i < ground.Count; i++) { gIdx[i] = AddKind(ground[i], false); gSum += ground[i].Weight; }
+            float gSum = 0;
+            foreach (var g in ground) gSum += g.Weight;
+            // Streumüll als Grüppchen (8 Varianten mit je 3–6 Teilen)
+            const int ClusterVariants = 8;
+            var gIdx = new int[ClusterVariants];
+            for (int i = 0; i < ClusterVariants; i++) gIdx[i] = AddClusterKind(ground, gSum, i, 3 + i % 4, 0.9f, 7f);
             var hIdx = new int[heaps.Count]; float hSum = 0;
             for (int i = 0; i < heaps.Count; i++) { hIdx[i] = AddKind(heaps[i], true); hSum += heaps[i].Weight; }
             List<Spec> floats = planet == "pelagia" ? FloatSpecs() : null;
             int[] fIdx = null; float fSum = 0;
-            if (floats != null) { fIdx = new int[floats.Count]; for (int i = 0; i < floats.Count; i++) { fIdx[i] = AddKind(floats[i], false); fSum += floats[i].Weight; } }
+            if (floats != null)
+            {
+                foreach (var f in floats) fSum += f.Weight;
+                fIdx = new int[4];
+                for (int i = 0; i < 4; i++) fIdx[i] = AddClusterKind(floats, fSum, 20 + i, 5 + i, 1.4f, 10f);
+            }
             for (int c = 0; c < cells.Length; c++)
             {
                 tmp[c] = new List<KeyValuePair<float, Matrix4x4>>[kinds.Count];
@@ -1010,7 +1052,8 @@ namespace RePlanet
             };
 
             // 1) Streumüll am Boden
-            int target = planet == "pelagia" ? 9000 : planet == "nivalis" ? 10000 : 14000;
+            // Anzahl der Grüppchen (je ~4,5 Teile): insgesamt etwa 15 000–23 000 Kleinteile
+            int target = planet == "pelagia" ? 3400 : planet == "nivalis" ? 3800 : 5200;
             int placedGround = 0;
             for (int i = 0; i < target * 6 && placedGround < target; i++)
             {
@@ -1029,8 +1072,7 @@ namespace RePlanet
                 if (planet == "pelagia" && h < 0.35f) continue;
                 if (Mathf.Abs(Terrain.HeightAt(planet, x + 0.6f, z) - h) > 0.5f) continue;
                 if (NearTrash(x, z, 1.1f)) continue;
-                int s = pick(ground, gSum);
-                add(gIdx[s], new Vector3(x, h, z), rng.Range(0f, 360f), ground[s].Scale * rng.Range(0.8f, 1.3f), 6f);
+                add(gIdx[rng.Range(0, gIdx.Length)], new Vector3(x, h, z), rng.Range(0f, 360f), rng.Range(0.85f, 1.2f), 4f);
                 placedGround++;
             }
 
@@ -1069,8 +1111,7 @@ namespace RePlanet
                             float a = rng.Range(0f, 6.28f), r = rng.Range(0.9f, 2.2f);
                             float lx = x + Mathf.Cos(a) * r, lz = z + Mathf.Sin(a) * r;
                             if (Blocked(lx, lz, 0.2f) || RoadInset(lx, lz) > 1.2f || NearTrash(lx, lz, 1f)) continue;
-                            int g = pick(ground, gSum);
-                            add(gIdx[g], new Vector3(lx, Terrain.HeightAt(planet, lx, lz), lz), rng.Range(0f, 360f), ground[g].Scale * rng.Range(0.8f, 1.2f), 6f);
+                            add(gIdx[rng.Range(0, gIdx.Length)], new Vector3(lx, Terrain.HeightAt(planet, lx, lz), lz), rng.Range(0f, 360f), rng.Range(0.8f, 1.1f), 4f);
                         }
                     }
                 }
@@ -1101,14 +1142,13 @@ namespace RePlanet
                     if (Terrain.HeightAt(planet, cx, cz) > -1.2f || KeepOut(cx, cz)) continue;
                     if (Mathf.Abs(cx - 62f) < 12f && Mathf.Abs(cz + 100f) < 12f) continue; // Bootsanleger freihalten
                     float r = rng.Range(3f, 8f);
-                    int n = (int)(r * r * 1.6f);
+                    int n = (int)(r * r * 0.35f);
                     for (int k = 0; k < n; k++)
                     {
                         float a = rng.Range(0f, 6.28f), rr = Mathf.Sqrt(rng.Next()) * r;
                         float x = cx + Mathf.Cos(a) * rr * 1.4f, z = cz + Mathf.Sin(a) * rr;
                         if (Terrain.HeightAt(planet, x, z) > -0.6f || Blocked(x, z, 0.3f) || NearTrash(x, z, 1.4f)) continue;
-                        int s = pick(floats, fSum);
-                        add(fIdx[s], new Vector3(x, 0.02f, z), rng.Range(0f, 360f), floats[s].Scale * rng.Range(0.8f, 1.3f), 10f);
+                        add(fIdx[rng.Range(0, fIdx.Length)], new Vector3(x, 0.02f, z), rng.Range(0f, 360f), rng.Range(0.8f, 1.2f), 6f);
                         floatCount++;
                     }
                 }
@@ -1147,6 +1187,7 @@ namespace RePlanet
                 cells[c] = cell;
             }
             TotalInstances = total;
+            Palette.Flush();
             trashHash = null;
             Debug.Log("[RE:PLANET] Hintergrund " + planet + ": " + total + " Deko-Instanzen (Boden " + placedGround + ", Haufen " + heapCount + ", Dach " + roofCount + ", treibend " + floatCount + "), Ring " + RingVertices + " Ecken.");
         }

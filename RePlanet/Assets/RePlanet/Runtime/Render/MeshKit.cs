@@ -494,6 +494,9 @@ namespace RePlanet
             return target != m;
         }
 
+        /// <summary>Das matte Paletten-Material (für eigene Meshes mit Paletten-UVs).</summary>
+        public static Material Matte { get { Init(); return matte; } }
+
         /// <summary>Überträgt neu vergebene Farben auf die Grafikkarte.</summary>
         public static void Flush()
         {
