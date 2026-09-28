@@ -647,6 +647,8 @@ namespace RePlanet
         public bool UsePalette;
         /// <summary>Bodenhöhe des gerade gebauten Objekts (Schmutz am Wandfuß); NaN = ohne.</summary>
         public float GroundY = float.NaN;
+        /// <summary>Höhe (m), bis zu der der Bodenschmutz reicht.</summary>
+        public float GrimeHeight = 2.2f;
         int partCounter;
 
         public MeshBuilder For(Material m)
@@ -662,6 +664,7 @@ namespace RePlanet
             b.Surf = Mats.SurfOf(m);
             b.PartRand = MeshBuilder.Hash01(partCounter++, 7, parts.Count * 31 + 5);
             b.GroundY = GroundY;
+            b.GrimeHeight = GrimeHeight;
             return b;
         }
 

@@ -109,6 +109,9 @@ namespace RePlanet
             return SurfKind.Generic;
         }
 
+        /// <summary>Oberflächenklasse eines eigenständigen Materials festlegen (z. B. MIKOs Lack).</summary>
+        public static void SetSurf(Material m, int kind) { if (m != null) surfOf[m] = kind; }
+
         /// <summary>
         /// Schlichtes Material mit Oberflächenklasse (Putz, Beton, Ziegel, Wellblech, Lack, Asphalt …). Wird wie
         /// <see cref="Get(string, Color, Color?, float)"/> über die Farbpalette zusammengefasst; die Klasse bestimmt das Detail im Shader.
