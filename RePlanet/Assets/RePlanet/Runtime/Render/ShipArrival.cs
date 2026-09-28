@@ -476,7 +476,9 @@ namespace RePlanet
 
             if (withCamera && AllowCinematic && CameraRig.I != null && CameraRig.I.Cam != null && UIState.Screen == UIScreen.None && !PhotoMode.Active && !CameraRig.I.Cinematic)
             {
-                var me = PlayerController.I != null ? PlayerController.I.RenderPos : new Vector3(b.Spawn.x, b.Spawn.y, b.Spawn.z);
+                var spawn = new Vector3(b.Spawn.x, b.Spawn.y, b.Spawn.z);
+                var me = PlayerController.I != null ? PlayerController.I.RenderPos : spawn;
+                if ((me - pad).sqrMagnitude > 70f * 70f) me = spawn; // Position noch nicht übernommen → Startpunkt
                 var away = me - pad; away.y = 0f;
                 if (away.sqrMagnitude < 4f) away = -fwd;
                 away.Normalize();
