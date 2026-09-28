@@ -162,13 +162,16 @@ die ökologischen Aktionen des Bereichs möglich. Großprojekte schalten Kosmeti
 **Intro (ca. 100 s Echtzeit-Zwischensequenz, überspringbar).** Die Handlung folgt der Grundidee von WALL·E – mit eigenen
 Figuren, Namen und Bildern:
 
-1. *Erde, im Jahr 2100. Die Menschen hatten alles. Und sie warfen alles weg.* – Skyline mit Türmen aus Müllwürfeln.
-2. *Der Konzern KONSUMA versprach: „Alles. Sofort. Immer neu.“ Bis der Müll höher war als die Hochhäuser.* – Megastore.
-3. *Die Menschen stiegen in die großen Archen. „Nur für fünf Jahre“, hieß es. Auf vier Welten blieben Recyclingroboter zurück.*
-4. *Aus fünf Jahren wurden fünfzig. Einer nach dem anderen gaben die Roboter auf.*
-5. *Nur einer arbeitete weiter. MIKO. Jeden Morgen. Würfel für Würfel.* – MIKOs Zuhause in einem rostigen Lieferwagen.
-6. *Eines Tages fand MIKO etwas, das es seit Jahrzehnten nicht mehr gab: einen Keimling.*
-7. *Ein altes Signal erwachte: PROGRAMM ZWEITE CHANCE. Wenn das Leben zurückkehrt, kehren auch wir zurück.*
+1. *Es gab einmal eine Welt, die alles hatte. Und alles, was sie hatte, warf sie fort.* – Skyline aus Müllwürfel-Türmen.
+2. *KONSUMA versprach uns das Glück: „Alles. Sofort. Immer neu.“ … bis der Müll unsere Städte überragte.* – Megastore.
+3. *Dann bauten wir Archen. „Nur für fünf Jahre“, sagten sie. Zurück blieben die Maschinen – auf vier Welten.* – Start der Archen.
+4. *Aus fünf Jahren wurden fünfzig. Eine Maschine nach der anderen verstummte.* – Roboterreihen schalten ab.
+5. *Nur eine nicht. MIKO. Jeden Morgen. Würfel für Würfel.* – MIKOs Zuhause in einem rostigen Lieferwagen.
+6. *Bis MIKO etwas fand, das längst verloren war: einen Keimling.*
+7. *Ein altes Signal erwachte: PROGRAMM ZWEITE CHANCE. Wenn das Leben zurückkehrt … kehren auch wir zurück.*
+
+Erzählerstimme: optional über Sprachaufnahmen in `Resources/Voice/` (Skript, Zeiten und Regie: `docs/SPRECHERTEXT.md`);
+ohne Aufnahmen laufen Untertitel.
 
 **Im Spiel** erzählen die Fundstücke vom Konsumrausch (KONSUMA-Werbetafeln, Schichtpläne mit „Recycling-Anteil 0 %“),
 vom Aufbruch zur **Arche HORIZONT** und von Menschen, die es besser wussten. Auf NIVALIS stehen die Server des
