@@ -45,6 +45,23 @@ namespace RePlanet
             return Mats.Get(Mats.Opaque, new Color(Mathf.Round(c.r * 20) / 20f, Mathf.Round(c.g * 20) / 20f, Mathf.Round(c.b * 20) / 20f, 1f), null, gloss);
         }
         static Material MetalMat(Color c) { return Mats.Get(Mats.Metal, new Color(Mathf.Round(c.r * 20) / 20f, Mathf.Round(c.g * 20) / 20f, Mathf.Round(c.b * 20) / 20f, 1f)); }
+        /// <summary>Schlichte Farbe mit Oberflächenklasse (Putz, Beton, Ziegel …, siehe <see cref="SurfKind"/>).</summary>
+        static Material SMat(int kind, Color c, float gloss = -1f) { return Mats.Surface(kind, Q(c), gloss); }
+
+        static readonly Color[] BrickCols = { new Color(0.6f, 0.3f, 0.22f), new Color(0.66f, 0.36f, 0.25f), new Color(0.5f, 0.26f, 0.2f), new Color(0.72f, 0.55f, 0.4f), new Color(0.55f, 0.35f, 0.3f) };
+        static readonly int[] ShopIcons = { SurfaceLook.Icon.Bag, SurfaceLook.Icon.Coin, SurfaceLook.Icon.Star, SurfaceLook.Icon.Drop, SurfaceLook.Icon.Leaf, SurfaceLook.Icon.House, SurfaceLook.Icon.Board };
+
+        /// <summary>Aufgemaltes (nicht leuchtendes) Piktogramm als Schildfläche auf einer Fassade.</summary>
+        void PaintedIcon(MultiBuilder mb, Facade f, float u, float y, float d, float size, int icon)
+        {
+            var b = mb.For(SurfaceLook.PaintedIconMaterial());
+            b.UVRect = SurfaceLook.IconRect(icon);
+            float h = size * 0.5f;
+            var c = f.P(u, y, d);
+            var r = f.T; var up = Vector3.up;
+            // Blick auf die Fassade von außen: rechts = T
+            b.Quad(c - r * h - up * h, c + r * h - up * h, c + r * h + up * h, c - r * h + up * h, f.N);
+        }
 
         static readonly Color[] SignCols = { new Color(0.85f, 0.25f, 0.2f), new Color(0.2f, 0.45f, 0.75f), new Color(0.95f, 0.72f, 0.2f), new Color(0.25f, 0.6f, 0.4f) };
         static readonly Color[] ContainerCols = { new Color(0.62f, 0.22f, 0.17f), new Color(0.2f, 0.4f, 0.62f), new Color(0.25f, 0.5f, 0.35f), new Color(0.85f, 0.5f, 0.18f), new Color(0.82f, 0.82f, 0.78f), new Color(0.55f, 0.35f, 0.25f) };
@@ -68,15 +85,15 @@ namespace RePlanet
 
         void InitBuildingMats()
         {
-            trimMat = Mat(new Color(0.86f, 0.84f, 0.78f));
-            trimDarkMat = Mat(new Color(0.42f, 0.39f, 0.35f));
-            darkMat = Mat(new Color(0.16f, 0.16f, 0.17f));
-            roofMat = Mat(new Color(0.3f, 0.29f, 0.29f));
-            woodMat = Mat(new Color(0.46f, 0.33f, 0.22f));
+            trimMat = SMat(SurfKind.Concrete, new Color(0.86f, 0.84f, 0.78f));
+            trimDarkMat = SMat(SurfKind.Concrete, new Color(0.42f, 0.39f, 0.35f));
+            darkMat = SMat(SurfKind.Paint, new Color(0.16f, 0.16f, 0.17f));
+            roofMat = SMat(SurfKind.Asphalt, new Color(0.3f, 0.29f, 0.29f));
+            woodMat = SMat(SurfKind.Wood, new Color(0.46f, 0.33f, 0.22f));
             acMat = MetalMat(new Color(0.74f, 0.76f, 0.78f));
             railMat = MetalMat(new Color(0.3f, 0.31f, 0.33f));
-            rubbleMat = Mat(new Color(0.5f, 0.48f, 0.45f));
-            plinthMat = Mat(new Color(0.4f, 0.39f, 0.37f));
+            rubbleMat = SMat(SurfKind.Stone, new Color(0.5f, 0.48f, 0.45f));
+            plinthMat = SMat(SurfKind.Concrete, new Color(0.4f, 0.39f, 0.37f));
             glassDark = Mat(new Color(0.08f, 0.09f, 0.11f), 0.85f);
             signLight = Mat(new Color(0.95f, 0.93f, 0.85f));
         }
@@ -181,7 +198,10 @@ namespace RePlanet
         {
             float gy = Terrain.HeightAt(Planet, bx.Cx, bx.Cz);
             float top = bx.Y0 + bx.H;
-            var wall = Mat(col);
+            mb.GroundY = gy;
+            // Fassade: Putz (meist), Klinker oder Sichtbeton (Kaufhäuser)
+            int wallKind = mall ? SurfKind.Concrete : rng.Chance(0.3f) ? SurfKind.Brick : SurfKind.Plaster;
+            var wall = SMat(wallKind, wallKind == SurfKind.Brick ? BrickCols[rng.Range(0, BrickCols.Length)] : col);
             var trim = rng.Chance(0.5f) ? trimMat : trimDarkMat;
             var win = WindowMat(area);
             int style = rng.Range(0, 4);
@@ -198,7 +218,7 @@ namespace RePlanet
             float sw = bx.Hx * 2f / 3f;
             System.Func<float, float> wallTop = x => slice[Mathf.Clamp(Mathf.FloorToInt((x - (bx.Cx - bx.Hx)) / sw), 0, 2)];
             float minTop = Mathf.Min(slice[0], Mathf.Min(slice[1], slice[2]));
-            if (!ruin) mb.For(wall).Box(new Vector3(bx.Cx, (bx.Y0 + top) * 0.5f, bx.Cz), new Vector3(bx.Hx * 2, top - bx.Y0, bx.Hz * 2));
+            if (!ruin) mb.For(wall).BevelBox(new Vector3(bx.Cx, (bx.Y0 + top) * 0.5f, bx.Cz), new Vector3(bx.Hx * 2, top - bx.Y0, bx.Hz * 2), 0.12f);
             else
                 for (int i = 0; i < 3; i++)
                 {
@@ -265,7 +285,7 @@ namespace RePlanet
                             if (i == doorCol) { Door(mb, fc, u, gy); continue; }
                         }
                         bool balc = balconies && fl > 0 && (f < 2) && i % 2 == 0 && y + 3f < wallTop(wp.x);
-                        Window(mb, fc, u, y + (balc ? 0.1f : 0.95f), winW, balc ? 2.2f : winH, rng, win, trim, shutters ? shutterMat : null);
+                        Window(mb, fc, u, y + (balc ? 0.1f : 0.95f), winW, balc ? 2.2f : winH, rng, win, trim, shutters ? shutterMat : null, style >= 2 && !mall);
                         if (balc) Balcony(mb, fc, u, y, rng);
                     }
                 }
@@ -343,11 +363,13 @@ namespace RePlanet
                 }
         }
 
-        void Window(MultiBuilder mb, Facade f, float u, float yb, float w, float h, Rng rng, Material win, Material trim, Material shutter)
+        void Window(MultiBuilder mb, Facade f, float u, float yb, float w, float h, Rng rng, Material win, Material trim, Material shutter, bool lintel = false)
         {
             float r = rng.Next();
             var glass = r < 0.1f ? woodMat : r < 0.2f ? glassDark : win;
+            FBox(mb.For(trim), f, u, yb + h * 0.5f, 0.012f, w + 0.22f, h + 0.2f, 0.03f);   // Fasche (Umrahmung)
             FBox(mb.For(glass == woodMat ? glassDark : glass), f, u, yb + h * 0.5f, 0.02f, w, h, 0.06f);
+            if (lintel && w <= 2f) FBox(mb.For(trim), f, u, yb + h + 0.14f, 0.05f, w + 0.34f, 0.16f, 0.1f); // Sturz mit Gesims
             if (glass == woodMat) // vernagelt
             {
                 FBox(mb.For(woodMat), f, u, yb + h * 0.35f, 0.07f, w + 0.2f, 0.18f, 0.04f, 18f);
@@ -374,7 +396,10 @@ namespace RePlanet
 
         void Door(MultiBuilder mb, Facade f, float u, float gy)
         {
+            FBox(mb.For(trimDarkMat), f, u, gy + 1.2f, 0.012f, 1.45f, 2.5f, 0.03f);  // Zarge
             FBox(mb.For(darkMat), f, u, gy + 1.15f, 0.03f, 1.2f, 2.3f, 0.08f);
+            FBox(mb.For(WindowMat(0)), f, u, gy + 1.75f, 0.075f, 0.7f, 0.6f, 0.02f);   // Glaseinsatz
+            FBox(mb.For(acMat), f, u + 0.42f, gy + 1.05f, 0.085f, 0.16f, 0.04f, 0.05f);  // Griff
             FBox(mb.For(trimMat), f, u, gy + 2.4f, 0.06f, 1.5f, 0.16f, 0.14f);
             FBox(mb.For(trimMat), f, u, gy + 2.7f, 0.45f, 1.8f, 0.1f, 0.9f);           // Vordach
             FBox(mb.For(plinthMat), f, u, gy + 0.1f, 0.35f, 1.6f, 0.2f, 0.7f);         // Stufe
@@ -398,9 +423,11 @@ namespace RePlanet
             }
             FBox(mb.For(plinthMat), f, 0, gy + 0.18f, 0.08f, w + 0.2f, 0.36f, 0.14f);
             FBox(mb.For(sign), f, 0, gy + 3.0f, 0.12f, w * 0.9f, 0.8f, 0.2f);
-            int letters = Mathf.Clamp((int)(w * 0.8f), 3, 9);
-            for (int k = 0; k < letters; k++)
-                if (!rng.Chance(0.15f)) FBox(mb.For(signLight), f, -w * 0.4f + (k + 0.5f) * w * 0.8f / letters, gy + 3.0f + (rng.Chance(0.1f) ? -0.15f : 0f), 0.23f, w * 0.5f / letters, 0.45f, 0.03f, rng.Chance(0.1f) ? 15f : 0f);
+            // Ladenzeichen als aufgemaltes Piktogramm statt Schriftzug, daneben verblasste Zierstreifen
+            int shopIcon = ShopIcons[rng.Range(0, ShopIcons.Length)];
+            PaintedIcon(mb, f, 0, gy + 3.0f, 0.225f, 0.72f, shopIcon);
+            for (int k = -1; k <= 1; k += 2)
+                if (w > 3f) FBox(mb.For(signLight), f, k * w * 0.3f, gy + 3.0f, 0.22f, w * 0.22f, 0.08f, 0.02f);
             if (!mall && rng.Chance(0.7f)) // Markise mit Streifen
             {
                 var aw = Mat(SignCols[rng.Range(0, SignCols.Length)]);
@@ -415,8 +442,9 @@ namespace RePlanet
         {
             float gy = Terrain.HeightAt(Planet, bx.Cx, bx.Cz);
             float top = bx.Y0 + bx.H;
-            var wall = Mat(col);
-            var fin = Mat(new Color(0.85f, 0.88f, 0.92f));
+            mb.GroundY = gy;
+            var wall = SMat(SurfKind.Cladding, col, 0.4f);
+            var fin = SMat(SurfKind.Paint, new Color(0.85f, 0.88f, 0.92f), 0.45f);
             var win = WindowMat(area);
             var snowM = Mat(new Color(0.94f, 0.97f, 1f), 0.3f);
             mb.For(wall).Box(new Vector3(bx.Cx, (bx.Y0 + top) * 0.5f, bx.Cz), new Vector3(bx.Hx * 2, top - bx.Y0, bx.Hz * 2));
@@ -458,7 +486,8 @@ namespace RePlanet
         {
             float gy = Terrain.HeightAt(Planet, bx.Cx, bx.Cz);
             float top = bx.Y0 + bx.H;
-            var wall = Mat(col);
+            mb.GroundY = gy;
+            var wall = SMat(SurfKind.Concrete, col);
             var c = new Vector3(bx.Cx, 0, bx.Cz);
             float r = Mathf.Min(bx.Hx, bx.Hz);
             if (top - gy < 8f) { ServerHall(mb, bx, rng, area, col); return; }
@@ -505,12 +534,12 @@ namespace RePlanet
         {
             float y0 = bx.Y0, h = bx.H;
             var c = new Vector3(bx.Cx, y0 + h * 0.5f, bx.Cz);
-            var post = Mat(new Color(0.9f, 0.9f, 0.88f));
+            var post = SMat(SurfKind.Paint, new Color(0.9f, 0.9f, 0.88f));
             for (int i = 0; i < 4; i++) mb.For(post).Cylinder(new Vector3(c.x + (i % 2 == 0 ? -1 : 1) * (bx.Hx - 0.25f), y0, c.z + (i < 2 ? -1 : 1) * (bx.Hz - 0.25f)), 0.16f, h, 8);
             mb.For(post).Box(new Vector3(c.x, y0 + h, c.z), new Vector3(bx.Hx * 2 + 0.3f, 0.25f, bx.Hz * 2 + 0.3f));
             var o = mb.M;
             mb.M = Matrix4x4.TRS(new Vector3(c.x, y0 + h + 0.12f, c.z), Quaternion.identity, Vector3.one);
-            mb.For(Mat(new Color(0.35f, 0.55f, 0.5f))).Cylinder(Vector3.zero, Mathf.Max(bx.Hx, bx.Hz) * 1.45f, 1.8f, 8, true, 0.15f);
+            mb.For(SMat(SurfKind.Cladding, new Color(0.35f, 0.55f, 0.5f))).Cylinder(Vector3.zero, Mathf.Max(bx.Hx, bx.Hz) * 1.45f, 1.8f, 8, true, 0.15f);
             mb.M = o;
             mb.For(woodMat).Box(new Vector3(c.x, y0 + 0.9f, c.z - bx.Hz + 0.5f), new Vector3(bx.Hx * 1.4f, 0.1f, 0.5f));
         }
@@ -521,11 +550,12 @@ namespace RePlanet
         {
             float gy = Terrain.HeightAt(Planet, bx.Cx, bx.Cz);
             float top = bx.Y0 + bx.H;
-            var wall = Mat(col);
-            var rib = Mat(col);
+            mb.GroundY = gy;
+            var wall = SMat(SurfKind.Cladding, col, 0.35f);
+            var rib = wall;
             var roofC = Planet == "pelagia" ? RoofCols[rng.Range(0, RoofCols.Length)] : Planet == "pyra" ? new Color(0.36f, 0.22f, 0.16f) : new Color(0.32f, 0.33f, 0.34f);
-            var roof = Mat(roofC);
-            var rust = Mat(new Color(0.4f, 0.22f, 0.14f));
+            var roof = SMat(SurfKind.Cladding, roofC, 0.35f);
+            var rust = SMat(SurfKind.Paint, new Color(0.4f, 0.22f, 0.14f), 0.15f);
             var win = WindowMat(area);
             bool alongX = bx.Hx >= bx.Hz;
             mb.For(wall).Box(new Vector3(bx.Cx, (bx.Y0 + top) * 0.5f, bx.Cz), new Vector3(bx.Hx * 2, top - bx.Y0, bx.Hz * 2));
@@ -573,10 +603,13 @@ namespace RePlanet
                     // Firmenschild
                     if (wh > 5.5f)
                     {
-                        var sign = Mat(SignCols[rng.Range(0, SignCols.Length)]);
-                        FBox(mb.For(sign), fc, 0, gy + dh + 1.3f, 0.08f, Mathf.Min(fc.Len * 0.7f, 8f), 1.1f, 0.12f);
-                        int n = rng.Range(4, 8);
-                        for (int k = 0; k < n; k++) FBox(mb.For(signLight), fc, -Mathf.Min(fc.Len * 0.7f, 8f) * 0.4f + (k + 0.5f) * Mathf.Min(fc.Len * 0.7f, 8f) * 0.8f / n, gy + dh + 1.3f, 0.15f, 0.5f, 0.6f, 0.03f);
+                        var sign = SMat(SurfKind.Paint, SignCols[rng.Range(0, SignCols.Length)]);
+                        float sw2 = Mathf.Min(fc.Len * 0.7f, 8f);
+                        FBox(mb.For(sign), fc, 0, gy + dh + 1.3f, 0.08f, sw2, 1.1f, 0.12f);
+                        int[] hallIcons = { SurfaceLook.Icon.Gear, SurfaceLook.Icon.Crate, SurfaceLook.Icon.Bolt, SurfaceLook.Icon.Recycle, SurfaceLook.Icon.Drop };
+                        PaintedIcon(mb, fc, -sw2 * 0.3f, gy + dh + 1.3f, 0.145f, 0.9f, hallIcons[rng.Range(0, hallIcons.Length)]);
+                        FBox(mb.For(signLight), fc, sw2 * 0.12f, gy + dh + 1.45f, 0.145f, sw2 * 0.5f, 0.12f, 0.02f);
+                        FBox(mb.For(signLight), fc, sw2 * 0.05f, gy + dh + 1.15f, 0.145f, sw2 * 0.36f, 0.12f, 0.02f);
                     }
                 }
                 else if (wh > 4.5f && fc.Len > 5f)
@@ -627,9 +660,10 @@ namespace RePlanet
             float h = bx.Y0 + bx.H - gy, y0 = bx.Y0;
             float r = Mathf.Min(bx.Hx, bx.Hz);
             var c = new Vector3(bx.Cx, 0, bx.Cz);
-            var wall = Mat(col);
-            var rust = Mat(new Color(0.42f, 0.24f, 0.16f));
             bool furnace = bx.Kind == "furnace";
+            mb.GroundY = gy;
+            var wall = SMat(furnace ? SurfKind.Paint : SurfKind.Concrete, col, 0.3f);
+            var rust = SMat(SurfKind.Paint, new Color(0.42f, 0.24f, 0.16f), 0.15f);
             if (furnace)
             {
                 mb.For(wall).Cylinder(c + Vector3.up * y0, r, gy - y0 + h * 0.55f, 16, true, r * 0.85f);
@@ -674,14 +708,14 @@ namespace RePlanet
         void Quay(MultiBuilder mb, Box bx, Rng rng, int area, bool outer)
         {
             float top = bx.Y0 + bx.H;
-            var coreM = Mat(new Color(0.46f, 0.48f, 0.47f));
-            var blockA = Mat(new Color(0.62f, 0.63f, 0.6f));
-            var blockB = Mat(new Color(0.53f, 0.55f, 0.53f));
-            var cap = Mat(new Color(0.74f, 0.73f, 0.68f));
+            var coreM = SMat(SurfKind.Concrete, new Color(0.46f, 0.48f, 0.47f));
+            var blockA = SMat(SurfKind.Stone, new Color(0.62f, 0.63f, 0.6f));
+            var blockB = SMat(SurfKind.Stone, new Color(0.53f, 0.55f, 0.53f));
+            var cap = SMat(SurfKind.Concrete, new Color(0.74f, 0.73f, 0.68f));
             var algae = Mat(new Color(0.22f, 0.3f, 0.22f));
-            var rust = Mat(new Color(0.45f, 0.25f, 0.16f));
+            var rust = SMat(SurfKind.Paint, new Color(0.45f, 0.25f, 0.16f), 0.15f);
             var rail = MetalMat(new Color(0.85f, 0.75f, 0.3f));
-            var tire = Mat(new Color(0.11f, 0.11f, 0.12f));
+            var tire = SMat(SurfKind.Rubber, new Color(0.11f, 0.11f, 0.12f));
             mb.For(coreM).Box(new Vector3(bx.Cx, (bx.Y0 + top) * 0.5f, bx.Cz), new Vector3(bx.Hx * 2 - 0.2f, top - bx.Y0, bx.Hz * 2 - 0.2f));
             bool alongX = bx.Hx > bx.Hz;
             float water = Terrain.WaterLevel(Planet);
@@ -825,7 +859,7 @@ namespace RePlanet
 
         void Container(MultiBuilder mb, Vector3 c, float yaw, Rng rng)
         {
-            var colM = Mat(ContainerCols[rng.Range(0, ContainerCols.Length)]);
+            var colM = SMat(SurfKind.Cladding, ContainerCols[rng.Range(0, ContainerCols.Length)], 0.35f);
             var o = mb.M;
             mb.M = Matrix4x4.TRS(c, Quaternion.Euler(0, yaw, 0), Vector3.one);
             mb.For(colM).Box(Vector3.zero, new Vector3(2.4f, 2.55f, 6f));
@@ -846,11 +880,12 @@ namespace RePlanet
         {
             float g = Mathf.Max(Terrain.HeightAt(Planet, bx.Cx, bx.Cz), Terrain.WaterLevel(Planet));
             float y0 = bx.Y0, h = bx.H;
-            var pole = Mat(new Color(0.4f, 0.3f, 0.2f));
-            var plank = Mat(new Color(0.55f, 0.42f, 0.28f));
-            var wall = Mat(col);
-            var siding = trimDarkMat;
-            var roof = Mat(RoofCols[rng.Range(0, RoofCols.Length)]);
+            mb.GroundY = g;
+            var pole = SMat(SurfKind.Wood, new Color(0.4f, 0.3f, 0.2f));
+            var plank = SMat(SurfKind.Wood, new Color(0.55f, 0.42f, 0.28f));
+            var wall = SMat(SurfKind.Wood, col);
+            var siding = SMat(SurfKind.Wood, new Color(0.42f, 0.39f, 0.35f));
+            var roof = SMat(SurfKind.Cladding, RoofCols[rng.Range(0, RoofCols.Length)], 0.35f);
             float deck = g + 1.4f;
             float wallTop = g + h - 0.6f;
             for (int i = 0; i < 4; i++)
@@ -974,8 +1009,8 @@ namespace RePlanet
         /// <summary>Felswand mit Gesteinsschichten, eingeklemmtem Schrott und Geröll (PYRA).</summary>
         void RockWall(ChunkBuilder cb, Box bx, Rng rng)
         {
-            var rocks = new[] { Mat(new Color(0.56f, 0.25f, 0.17f)), Mat(new Color(0.64f, 0.3f, 0.2f)), Mat(new Color(0.5f, 0.22f, 0.15f)) };
-            var strata = Mat(new Color(0.74f, 0.42f, 0.28f));
+            var rocks = new[] { SMat(SurfKind.Stone, new Color(0.56f, 0.25f, 0.17f)), SMat(SurfKind.Stone, new Color(0.64f, 0.3f, 0.2f)), SMat(SurfKind.Stone, new Color(0.5f, 0.22f, 0.15f)) };
+            var strata = SMat(SurfKind.Stone, new Color(0.74f, 0.42f, 0.28f));
             var scrap = Mat(new Color(0.4f, 0.36f, 0.33f));
             bool alongX = bx.Hx > bx.Hz;
             float len = alongX ? bx.Hx * 2 : bx.Hz * 2, depth = alongX ? bx.Hz * 2 : bx.Hx * 2;
@@ -1006,7 +1041,8 @@ namespace RePlanet
             float r = Mathf.Min(bx.Hx, bx.Hz);
             float gy = Terrain.HeightAt(Planet, bx.Cx, bx.Cz);
             var c = new Vector3(bx.Cx, bx.Y0 + 0.5f, bx.Cz);
-            var shell = Mats.Get(Mats.Opaque, new Color(0.8f, 0.87f, 0.93f), null, 0.9f);
+            mb.GroundY = gy;
+            var shell = SMat(SurfKind.Paint, new Color(0.8f, 0.87f, 0.93f), 0.7f);
             var snowM = Mat(new Color(0.95f, 0.97f, 1f), 0.3f);
             mb.For(shell).Sphere(c, r, 20, 12, 0.75f);
             mb.For(darkMat).Cylinder(new Vector3(c.x, bx.Y0, c.z), r * 1.02f, 1.2f, 20);
@@ -1046,8 +1082,9 @@ namespace RePlanet
         {
             float gy = Terrain.HeightAt(Planet, bx.Cx, bx.Cz);
             float y0 = bx.Y0, h = bx.H;
-            var wall = Mat(col);
-            var roof = Mat(new Color(0.55f, 0.6f, 0.66f));
+            mb.GroundY = gy;
+            var wall = SMat(SurfKind.Concrete, col);
+            var roof = SMat(SurfKind.Cladding, new Color(0.55f, 0.6f, 0.66f), 0.4f);
             var snowM = Mat(new Color(0.95f, 0.97f, 1f), 0.3f);
             var c = new Vector3(bx.Cx, 0, bx.Cz);
             float s = h * 0.6f;

@@ -118,6 +118,19 @@ namespace RePlanet
             return signMat;
         }
 
+        static Material paintedMat;
+
+        /// <summary>Nicht leuchtende Variante (aufgemalte, verblasste Ladenzeichen an Fassaden).</summary>
+        public static Material PaintedIconMaterial()
+        {
+            if (paintedMat != null) return paintedMat;
+            paintedMat = Mats.Unique(Mats.Opaque, new Color(0.85f, 0.83f, 0.8f));
+            paintedMat.name = "RP_Piktogramme_Farbe";
+            try { paintedMat.mainTexture = IconAtlas(); paintedMat.SetFloat("_Glossiness", 0.25f); }
+            catch (Exception e) { Debug.LogWarning("[RE:PLANET] Piktogramme: " + e.Message); }
+            return paintedMat;
+        }
+
         // ------------------------------------------------------------------ 2D-Abstandsfunktionen
         static float Len(float x, float y) { return Mathf.Sqrt(x * x + y * y); }
         static float Circle(float x, float y, float cx, float cy, float r) { return Len(x - cx, y - cy) - r; }
