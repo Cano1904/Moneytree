@@ -90,41 +90,42 @@ namespace RePlanet
             { "terra", new PlanetSky {
                 Day = Pal(0x1F8FA8, 0xF7C77E, 0xF2D4A0, 0x6B5E4E, 0xFFF0D0, 0x3E6A7A, 0xFFB060, 0x2AA0A8, 0xFFE2A8, 0xD8C49A, 0.34f, 0.12f, 0.42f),
                 Dusk = Pal(0x243A6E, 0xFF8A40, 0xF4A060, 0x4A3A36, 0xFFB070, 0x3A4A70, 0xFF7A45, 0x2A6A8A, 0xFF9A50, 0xD08A5E, 0.4f, 0.25f, 0.6f),
-                Night = Pal(0x04101E, 0x16263A, 0x1E2E44, 0x0E0C12, 0x2E4058, 0x0C1420, 0x4A6A9A, 0x1A3A5A, 0x9DC6FF, 0x16202E, 0.4f, 0.45f, 0.4f),
-                Storm = Pal(0x6E6258, 0xB09070, 0xA88A6E, 0x5A4C40, 0xB89C80, 0x5A4A40, 0x8A6A50, 0x4A3A30, 0xE0C090, 0xA48A70, 0.95f, 0.05f, 0.9f),
+                Night = Pal(0x0A0E2C, 0x2A2C5C, 0x363866, 0x15121E, 0x46507E, 0x10122C, 0x6A5AB8, 0x2A4A90, 0xB8C8FF, 0x1E2246, 0.35f, 0.55f, 0.45f),
+                Storm = Pal(0x8A6A48, 0xD0A070, 0xC89A68, 0x6A5038, 0xE0B888, 0x6A4E36, 0xB07A48, 0x5A3E28, 0xFFD8A0, 0xB88E62, 0.95f, 0.05f, 0.9f),
                 P1 = Body(new Vector3(0.45f, 0.2f, 0.8f), 13f, 0xC8D0E0, 0x8C96AE, 0x9EC8FF, 0.15f, 1.7f, 1f),
                 P2 = Body(new Vector3(-0.62f, 0.16f, 0.55f), 3f, 0xE8C8A8, 0xB08868, 0xFFD8A8, 0f, 4.2f, 0.6f),
-                SunAzimuth = 200f, CloudDensity = 4f, FogDay = 0.007f, FogStorm = 0.028f,
+                SunAzimuth = 200f, CloudDensity = 4f, FogDay = 0.007f, FogStorm = 0.022f, Aurora = 0.12f,
                 GradeShadow = Mats.C(0x1E7A8C), GradeHighlight = Mats.C(0xFFC878), Saturation = 1.22f, Bank = 0.85f } },
             // PYRA: orange-rote Wolkenmassen, dunkles Dunstband, dunkler Riesenplanet mit Lichtsaum
             { "pyra", new PlanetSky {
                 Day = Pal(0x8A2412, 0xFF8A3A, 0x3A4A48, 0x5A2A1E, 0xFFB070, 0x6A1A10, 0xFF6A2A, 0x7A1A2A, 0xFFC080, 0xA8583A, 0.42f, 0.3f, 0.55f),
                 Dusk = Pal(0x3A1026, 0xFF5A20, 0x1E3438, 0x3A1812, 0xFF7A3A, 0x4A1018, 0xFF4A20, 0x4A1040, 0xFF8040, 0x7A3A30, 0.46f, 0.45f, 0.65f),
-                Night = Pal(0x0C0508, 0x3A140C, 0x1A2224, 0x120806, 0x4A2014, 0x14080A, 0xC0502A, 0x3A0C2A, 0xFFB080, 0x2A140E, 0.6f, 0.6f, 0.6f),
-                Storm = Pal(0x8A4A2A, 0xC8784A, 0xB0663E, 0x6A3420, 0xD08A5A, 0x6A3420, 0xC0602E, 0x5A2418, 0xFFB070, 0xB06A44, 1f, 0.1f, 1f),
+                Night = Pal(0x140818, 0x4A1A22, 0x2A2032, 0x160A0A, 0x5A2A2A, 0x180A14, 0xC0502A, 0x4A1448, 0xFFB890, 0x301622, 0.55f, 0.65f, 0.6f),
+                Storm = Pal(0x9A4E2A, 0xE08A4A, 0xC8703E, 0x7A3A20, 0xE89A60, 0x7A3A22, 0xD06A30, 0x6A2A18, 0xFFC080, 0xC8763E, 1f, 0.1f, 1f),
                 P1 = Body(new Vector3(-0.45f, 0.22f, 0.79f), 18f, 0x2A3048, 0x485070, 0xFFC890, 0.35f, 2.3f, 1.3f),
                 P2 = Body(new Vector3(0.55f, 0.3f, 0.62f), 3.5f, 0xC06A4A, 0x7A3A2A, 0xFF9A6A, 0f, 7.1f, 0.5f),
-                SunAzimuth = 160f, CloudScale = 0.7f, CloudDensity = 4.2f, FogDay = 0.009f, FogStorm = 0.05f,
+                SunAzimuth = 160f, CloudScale = 0.7f, CloudDensity = 4.2f, FogDay = 0.009f, FogStorm = 0.036f,
                 GradeShadow = Mats.C(0x5A1E48), GradeHighlight = Mats.C(0xFFA050), Saturation = 1.1f, Contrast = 1.2f, Bank = 1f, BankHeight = 1.2f } },
             // PELAGIA: türkiser Zenit, rosa Horizont, heller Mond, weiche Wolkentürme über dem Meer
             { "pelagia", new PlanetSky {
                 Day = Pal(0x1FA8B8, 0xFFC2CE, 0xFFD6DC, 0x4A7A88, 0xFFE4EC, 0x3E8A9E, 0xFF8AC0, 0x3ABCC0, 0xFFF0DA, 0xE6C4CC, 0.32f, 0.14f, 0.4f),
                 Dusk = Pal(0x3A4A8A, 0xFF9A90, 0xF090A8, 0x3A4A5A, 0xFFC0B0, 0x6A4A80, 0xFF7AA8, 0x3A7AB0, 0xFFB08A, 0xC08898, 0.38f, 0.3f, 0.6f),
-                Night = Pal(0x0A0818, 0x2A1A3A, 0x2E2240, 0x0A1018, 0x40304E, 0x100C1A, 0xA05AC8, 0x2A3A8A, 0xC8C8FF, 0x1E1830, 0.35f, 0.5f, 0.45f),
-                Storm = Pal(0x4A5460, 0x8A9AA4, 0x7A8A94, 0x2A3A44, 0xA0B0B8, 0x3A4650, 0x6A7A8A, 0x2A3440, 0xC8D8E0, 0x6E7E88, 0.98f, 0.05f, 0.85f),
+                Night = Pal(0x120A32, 0x3C2860, 0x3E2E62, 0x0E1420, 0x56467A, 0x160E2A, 0xB06AE0, 0x2E4AB0, 0xD0D0FF, 0x261E48, 0.35f, 0.6f, 0.45f),
+                Storm = Pal(0x2A5A6E, 0x6AAAB4, 0x78B8BE, 0x1E4250, 0xA8D8DC, 0x284A5A, 0x4A9AA8, 0x1E4A5A, 0xD8F4F0, 0x5A9CA6, 0.98f, 0.08f, 0.85f),
                 P1 = Body(new Vector3(-0.3f, 0.2f, 0.86f), 15f, 0xE8DCE0, 0xB8A4AE, 0xFFF0F4, 0.05f, 3.9f, 0.9f),
                 P2 = Body(new Vector3(0.62f, 0.28f, 0.6f), 3.5f, 0xFFFFFF, 0xC0C8D8, 0xE0E8FF, 0f, 8.8f, 0.4f),
-                SunAzimuth = 240f, CloudScale = 1.1f, CloudDensity = 3.6f, FogDay = 0.006f, FogStorm = 0.035f,
+                SunAzimuth = 240f, CloudScale = 1.1f, CloudDensity = 3.6f, FogDay = 0.006f, FogStorm = 0.024f, Aurora = 0.35f,
+                AuroraA = new Color(0.3f, 1f, 0.8f), AuroraB = new Color(0.9f, 0.4f, 1f),
                 GradeShadow = Mats.C(0x1E8A98), GradeHighlight = Mats.C(0xFFC0D0), Bank = 0.9f } },
             // NIVALIS: blau-violetter Himmel, zwei Monde, Polarlicht (nachts kräftig, am Tag als Schleier)
             { "nivalis", new PlanetSky {
                 Day = Pal(0x18206A, 0xA088E8, 0xB8B0E8, 0xB8C8D8, 0xECE4FF, 0x3A2E7A, 0x6A8AFF, 0x8A3ACC, 0xFFE8D8, 0xA8B0D8, 0.33f, 0.35f, 0.42f),
                 Dusk = Pal(0x121640, 0xE07A6A, 0x9A7AB0, 0x8A96A8, 0xE89A90, 0x302A66, 0x8A6AFF, 0x3A1A7A, 0xFF9A7A, 0x6A6A94, 0.38f, 0.45f, 0.55f),
-                Night = Pal(0x030612, 0x0E1A30, 0x142440, 0x2A3444, 0x2A3450, 0x080C16, 0x3A6AC8, 0x1A0C3A, 0xB8D0FF, 0x101A2C, 0.3f, 0.55f, 0.4f),
-                Storm = Pal(0x8A98AA, 0xC8D4E0, 0xD0DAE4, 0x9AA8B8, 0xE8F0F8, 0x7A8698, 0x9AAAC8, 0x5A6A8A, 0xE8F0FF, 0xC0CCD8, 1f, 0.05f, 1f),
+                Night = Pal(0x080A26, 0x1E2A58, 0x243466, 0x34405A, 0x34406E, 0x0C1024, 0x4A7ADC, 0x2A1450, 0xC0D8FF, 0x18224A, 0.3f, 0.6f, 0.4f),
+                Storm = Pal(0x8290C0, 0xC8D2F0, 0xD0D8F4, 0x9AA6C8, 0xEEF2FF, 0x7A84B0, 0xA0A8E0, 0x6A70A8, 0xEEF2FF, 0xB8C2E6, 1f, 0.05f, 1f),
                 P1 = Body(new Vector3(0.55f, 0.16f, 0.76f), 11f, 0x9AA4B8, 0x5A6478, 0xFFC8A0, 0.1f, 6.2f, 1.1f),
                 P2 = Body(new Vector3(0.22f, 0.26f, 0.93f), 6.5f, 0xB8A898, 0x786858, 0xFFB890, 0.2f, 9.4f, 0.9f),
-                SunAzimuth = 20f, Aurora = 1f, CloudDensity = 3.8f, FogDay = 0.009f, FogStorm = 0.06f,
+                SunAzimuth = 20f, Aurora = 1f, CloudDensity = 3.8f, FogDay = 0.009f, FogStorm = 0.04f,
                 GradeShadow = Mats.C(0x4A38A8), GradeHighlight = Mats.C(0xC8DCFF), Saturation = 1.15f, Bank = 0.7f } },
         };
 
@@ -154,12 +155,19 @@ namespace RePlanet
             BuildWeather();
             BuildReflections();
             BuildStars();
+            // Echte Lampenlichter in Kameranähe: Spots nach unten (runde, warme Lichtinseln). Pro Pixel gerechnet –
+            // als Ecken-Licht entstanden auf dem groben Geländeraster elliptische Flecken.
+            QualitySettings.pixelLightCount = Mathf.Max(QualitySettings.pixelLightCount, 6);
             for (int i = 0; i < 6; i++)
             {
                 var l = new GameObject("LampLight" + i).AddComponent<Light>();
                 l.transform.SetParent(transform, false);
-                l.type = LightType.Point; l.range = 14f; l.intensity = 0f; l.color = new Color(1f, 0.8f, 0.5f);
+                l.type = LightType.Spot; l.spotAngle = 118f; l.innerSpotAngle = 50f; l.range = 13f; l.intensity = 0f;
+                l.color = new Color(1f, 0.76f, 0.48f);
                 l.shadows = LightShadows.None;
+                l.renderMode = i < 4 ? LightRenderMode.ForcePixel : LightRenderMode.Auto;
+                l.transform.rotation = Quaternion.Euler(90f, 0f, 0f);
+                l.enabled = false;
                 lampPool.Add(l);
             }
         }
@@ -256,8 +264,8 @@ namespace RePlanet
             {
                 // Nachts leuchtet der große Himmelskörper als Mondlicht
                 Sun.transform.rotation = Quaternion.LookRotation(-ps.P1.Dir);
-                Sun.color = Color.Lerp(new Color(0.55f, 0.65f, 1f), pal.Sun, 0.2f);
-                Sun.intensity = 0.28f * (1f - stormBlend * 0.5f);
+                Sun.color = Color.Lerp(new Color(0.6f, 0.68f, 1f), pal.Sun, 0.25f);
+                Sun.intensity = 0.42f * (1f - stormBlend * 0.5f);
             }
             else
             {
@@ -358,8 +366,9 @@ namespace RePlanet
             // Umgebungslicht aus dem Himmel: Zenit (mit Wolkenlicht aufgehellt) von oben, Horizontdunst von der Seite,
             // Boden + warmes Sonnen-Rückstrahlen von unten – farbige Schatten statt grauer
             float day = 1f - dark;
-            RenderSettings.ambientSkyColor = Color.Lerp(pal.Zenith, pal.CloudLight, 0.3f) * Mathf.Lerp(1.0f, 0.55f, dark) * bright + Color.white * lightning * 0.5f;
-            RenderSettings.ambientEquatorColor = Color.Lerp(pal.Horizon, pal.Haze, 0.3f) * Mathf.Lerp(0.8f, 0.35f, dark) * bright;
+            var nightFloor = new Color(0.07f, 0.075f, 0.13f) * dark;
+            RenderSettings.ambientSkyColor = Max(Color.Lerp(pal.Zenith, pal.CloudLight, 0.3f) * Mathf.Lerp(1.0f, 0.62f, dark), nightFloor) * bright + Color.white * lightning * 0.5f;
+            RenderSettings.ambientEquatorColor = Max(Color.Lerp(pal.Horizon, pal.Haze, 0.3f) * Mathf.Lerp(0.8f, 0.42f, dark), nightFloor * 0.8f) * bright;
             RenderSettings.ambientGroundColor = (pal.Ground * 0.55f + pal.Sun * 0.12f * day * (1f - stormBlend)) * bright;
             if (cam != null)
             {
@@ -372,6 +381,8 @@ namespace RePlanet
         }
 
         float stormBlend;
+
+        static Color Max(Color a, Color b) { return new Color(Mathf.Max(a.r, b.r), Mathf.Max(a.g, b.g), Mathf.Max(a.b, b.b), 1f); }
 
         /// <summary>Bildlook für die Nachbearbeitung aus Palette, Tageszeit und Wetter.</summary>
         void UpdateLook(PlanetSky ps, Palette pal, Vector3 sunDir, float elev, float dark, float duskAmt, float fogBase)
@@ -389,17 +400,19 @@ namespace RePlanet
             L.FogLinear = Underwater ? 0.8f : 0.35f + stormBlend * 0.6f;
             L.FogSunScatter = Underwater ? 0f : (0.35f + duskAmt * 0.5f) * (1f - dark) * (1f - stormBlend * 0.6f);
             L.FogMax = 1f;
-            L.Exposure = Mathf.Lerp(0.85f, 1.05f, dark); // ACES hebt Mitteltöne an → etwas unter 1
+            L.Exposure = Mathf.Lerp(0.85f, 1.12f, dark); // ACES hebt Mitteltöne an → etwas unter 1; nachts etwas heller (lesbar)
             L.Contrast = Mathf.Lerp(ps.Contrast, 1.05f, stormBlend * 0.7f);
-            L.Saturation = Mathf.Lerp(ps.Saturation, 1.0f, stormBlend * 0.6f) * Mathf.Lerp(1f, 0.92f, dark);
-            L.Vibrance = 0.45f;
-            L.SplitAmount = Mathf.Lerp(0.3f, 0.42f, dark) * (1f - stormBlend * 0.4f);
-            L.ShadowTint = Color.Lerp(ps.GradeShadow, pal.Zenith, dark * 0.5f);
+            L.Saturation = Mathf.Lerp(ps.Saturation, 1.08f, stormBlend * 0.5f) * Mathf.Lerp(1f, 1.02f, dark);
+            L.Vibrance = Mathf.Lerp(0.45f, 0.55f, Mathf.Max(dark, stormBlend));
+            L.SplitAmount = Mathf.Lerp(0.3f, 0.26f, dark) * (1f - stormBlend * 0.3f);
+            // nachts Schatten Richtung Violett statt Türkis-Blau, Lichter bleiben warm (Lampen, Fenster)
+            L.ShadowTint = Color.Lerp(ps.GradeShadow, Color.Lerp(pal.Zenith, new Color(0.35f, 0.25f, 0.6f), 0.5f), dark * 0.6f);
             L.HighlightTint = Color.Lerp(ps.GradeHighlight, pal.Sun, duskAmt * 0.5f);
             L.VignetteColor = Color.Lerp(new Color(0.2f, 0.18f, 0.26f), ps.GradeShadow * 0.5f, 0.5f);
             L.Vignette = 0.5f;
-            L.Bloom = Mathf.Lerp(0.2f, 0.32f, Mathf.Max(duskAmt, dark));
-            L.BloomThreshold = Mathf.Lerp(0.95f, 0.7f, dark);
+            L.Bloom = Mathf.Lerp(0.2f, 0.34f, Mathf.Max(duskAmt, dark));
+            L.BloomThreshold = Mathf.Lerp(0.95f, 0.75f, dark);
+            if (dark > 0.3f) L.HighlightTint = Color.Lerp(L.HighlightTint, new Color(1f, 0.82f, 0.6f), dark * 0.5f);
             L.ShaftStrength = elev > -0.02f && !Underwater ? (0.3f + duskAmt * 0.45f) * (1f - stormBlend * 0.85f) * (1f - dark) : 0f;
             L.ShaftThreshold = Mathf.Lerp(0.55f, 0.35f, duskAmt);
             if (Underwater)
@@ -503,17 +516,21 @@ namespace RePlanet
         void UpdateLampPool(Camera cam, float dark)
         {
             if (WorldView.I == null) return;
-            if (dark < 0.2f) { foreach (var l in lampPool) l.intensity = 0; return; }
+            if (dark < 0.2f) { foreach (var l in lampPool) { l.intensity = 0; l.enabled = false; } return; }
             WorldView.I.CollectLitLamps(cam.transform.position, 60f, litLamps);
             litLamps.Sort((a, b) => (a - cam.transform.position).sqrMagnitude.CompareTo((b - cam.transform.position).sqrMagnitude));
             for (int i = 0; i < lampPool.Count; i++)
             {
+                var l = lampPool[i];
                 if (i < litLamps.Count)
                 {
-                    lampPool[i].transform.position = litLamps[i] + Vector3.down * 0.4f;
-                    lampPool[i].intensity = 1.6f * dark;
+                    l.transform.position = litLamps[i] + Vector3.down * 0.25f;
+                    // weich einblenden, damit beim Wechsel der nächsten Lampen nichts springt
+                    float d = Vector3.Distance(litLamps[i], cam.transform.position);
+                    l.intensity = 2.6f * dark * Mathf.Clamp01((60f - d) / 15f);
+                    l.enabled = l.intensity > 0.01f;
                 }
-                else lampPool[i].intensity = 0;
+                else { l.intensity = 0; l.enabled = false; }
             }
         }
     }
