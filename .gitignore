@@ -28,3 +28,7 @@ test-results.txt
 # graphify: maschinenspezifische Zwischendateien
 graphify-out/cache/
 graphify-out/manifest.json
+
+# Ausgaben der Render-Prüfumgebung
+Tools/RenderHarness/*.ppm
+Tools/RenderHarness/out/
