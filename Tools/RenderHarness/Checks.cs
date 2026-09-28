@@ -373,8 +373,11 @@ public static class Checks
     static readonly List<string> liveInside = new List<string>();
     static int menusOpened;
 
+    static readonly List<(Vector3 cam, Vector3 target)> camSamples = new List<(Vector3, Vector3)>();
+
     static void CameraSurvey(GameApp app, string planet)
     {
+        camSamples.Clear();
         if (liveInside.Count > 0) { Fail("Kamera im Spiel " + liveInside.Count + "× in Hindernis/Gelände, z. B. " + liveInside[0]); liveInside.Clear(); }
         var rig = CameraRig.I; var pc = PlayerController.I; var wv = WorldView.I;
         if (rig == null || pc == null || wv == null) return;
@@ -396,6 +399,7 @@ public static class Checks
             {
                 float ox = side == 0 ? b.Hx + 0.85f : side == 1 ? -b.Hx - 0.85f : 0f, oz = side == 2 ? b.Hz + 0.85f : side == 3 ? -b.Hz - 0.85f : 0f;
                 float px = b.Cx + ox, pz = b.Cz + oz;
+                if (Math.Abs(px) > 149f || Math.Abs(pz) > 149f) continue; // dort kann MIKO nicht hin (Weltgrenze)
                 float gy = RePlanet.Core.Terrain.HeightAt(planet, px, pz);
                 float water = RePlanet.Core.Terrain.WaterLevel(planet);
                 if (water > -50f && gy < water - 0.6f) gy = water - 0.35f; // schwimmt
@@ -409,6 +413,7 @@ public static class Checks
                         var wanted = target - rot * Vector3.forward * 6.5f;
                         var pos = (Vector3)collide.Invoke(rig, new object[] { target, wanted });
                         tested++;
+                        camSamples.Add((pos, target));
                         if (InsideBox(env, l, pos, 0.15f, tmp, out hb)) { inside++; if (example == null) example = $"{k0(hb)} Ziel {target} Kamera {pos}"; }
                         float g2 = RePlanet.Core.Terrain.HeightAt(planet, pos.x, pos.z);
                         if (pos.y < g2 + 0.2f) below++;
@@ -423,11 +428,141 @@ public static class Checks
                     }
             }
         }
+        DecorSurvey(planet);
+        {
+            var decoF = typeof(CameraRig).GetField("deco", BF);
+            var ensure = typeof(CameraRig).GetMethod("EnsureDeco", BF);
+            decoF.SetValue(rig, null);
+            var sw = System.Diagnostics.Stopwatch.StartNew();
+            ensure.Invoke(rig, new object[] { wv });
+            long mainMs = sw.ElapsedMilliseconds;
+            for (int i = 0; i < 2000 && decoF.GetValue(rig) == null; i++) { System.Threading.Thread.Sleep(5); ensure.Invoke(rig, new object[] { wv }); }
+            var dg = decoF.GetValue(rig);
+            if (dg == null) { Fail("Deko-Raster der Kamera wird nicht fertig"); return; }
+            var tl = (List<float>)dg.GetType().GetField("t", BF).GetValue(dg);
+            var cl = (System.Collections.IDictionary)dg.GetType().GetField("cells", BF).GetValue(dg);
+            long refs = 0; foreach (System.Collections.DictionaryEntry e in cl) refs += ((List<int>)e.Value).Count;
+            Info($"Deko-Raster der Kamera: {tl.Count / 11} Dreiecke, {cl.Count} Zellen, {refs} Einträge, Hauptthread {mainMs} ms, fertig nach {sw.ElapsedMilliseconds} ms, ≈ {(tl.Count * 4 + refs * 4 + cl.Count * 48) / 1048576} MB");
+        }
         Info($"Kamera-Stichproben {planet}: {tested} Stellungen, {inside} in Wänden, {below} unter Gelände, {behindWall} mit verdeckter Sicht, {tooClose} näher als 0,9 m");
         if (inside > 0) Fail($"Kamera {inside}× in Wand/Gebäude ({planet}), z. B. {example}");
         if (below > 0) Fail($"Kamera {below}× unter dem Gelände ({planet})");
         if (behindWall > 0) Fail($"Sicht Kamera→MIKO {behindWall}× durch Wand verdeckt ({planet}), z. B. {exampleSight}");
     }
+    // ------------------------------------------------------------------ Kamera gegen die tatsächlich gezeichnete Geometrie
+    /// <summary>
+    /// Prüft die Kamerastellungen der Stichprobe gegen alle Dreiecke der Welt (statische Meshes + ein Bild Instanz-Draws:
+    /// Hintergrund, Müll, Pflanzen, Figuren) – findet Deko, die über die Kollisionsboxen hinausragt.
+    /// </summary>
+    static void DecorSurvey(string planet)
+    {
+        var tris = new List<(Vector3 a, Vector3 b, Vector3 c, string name)>();
+        void AddMesh(Mesh m, Matrix4x4 mx, string name, int sub = -1)
+        {
+            if (m == null || m.V.Count == 0) return;
+            var w = new Vector3[m.V.Count];
+            for (int i = 0; i < w.Length; i++) w[i] = mx.MultiplyPoint3x4(m.V[i]);
+            for (int s = 0; s < m.subMeshCount; s++)
+            {
+                if (sub >= 0 && s != sub) continue;
+                var t = m.T[s];
+                for (int k = 0; k + 2 < t.Count; k += 3)
+                {
+                    var a = w[t[k]]; if (Math.Abs(a.x) > 170 || Math.Abs(a.z) > 170) continue;
+                    tris.Add((a, w[t[k + 1]], w[t[k + 2]], name));
+                }
+            }
+        }
+        var wv = WorldView.I;
+        foreach (var mf in wv.Root.gameObject.GetComponentsInChildren<MeshFilter>(false))
+        {
+            var mr = mf.GetComponent<MeshRenderer>();
+            if (mr == null || mf.sharedMesh == null) continue;
+            string n = mf.sharedMesh.name ?? "";
+            if (n.StartsWith("terrain") || n == "water") continue;
+            AddMesh(mf.sharedMesh, mf.transform.localToWorldMatrix, Path(mf.transform));
+        }
+        foreach (var mf in ActorsView.I != null ? ActorsView.I.gameObject.GetComponentsInChildren<MeshFilter>(false) : new MeshFilter[0])
+            if (mf.sharedMesh != null && !mf.transform.IsChildOf(CameraRig.I.transform.Find("MainCamera") ?? mf.transform.root)) AddMesh(mf.sharedMesh, mf.transform.localToWorldMatrix, "Figur/Anlage " + Path(mf.transform));
+        Graphics.Calls.Clear(); Graphics.Record = true;
+        Frame(1f / 30f);
+        Graphics.Record = false;
+        foreach (var c in Graphics.Calls)
+            for (int k = 0; k < c.Count; k++)
+            {
+                var p = c.M[k].GetPosition();
+                if (Math.Abs(p.x) > 175 || Math.Abs(p.z) > 175) continue;
+                AddMesh(c.Mesh, c.M[k], "Instanz " + c.Mesh.name, c.Sub);
+            }
+        Graphics.Calls.Clear();
+        // Raster 2 m
+        var grid = new Dictionary<(int, int), List<int>>();
+        for (int i = 0; i < tris.Count; i++)
+        {
+            var (a, b, c, _) = tris[i];
+            int x0 = (int)Math.Floor(Math.Min(a.x, Math.Min(b.x, c.x)) / 2f), x1 = (int)Math.Floor(Math.Max(a.x, Math.Max(b.x, c.x)) / 2f);
+            int z0 = (int)Math.Floor(Math.Min(a.z, Math.Min(b.z, c.z)) / 2f), z1 = (int)Math.Floor(Math.Max(a.z, Math.Max(b.z, c.z)) / 2f);
+            if ((x1 - x0) * (z1 - z0) > 400) continue; // riesige Flächen (Himmel, Boden) auslassen
+            for (int gx = x0; gx <= x1; gx++) for (int gz = z0; gz <= z1; gz++)
+                { if (!grid.TryGetValue((gx, gz), out var l)) grid[(gx, gz)] = l = new List<int>(); l.Add(i); }
+        }
+        var hits = new Dictionary<string, int>();
+        int clipped = 0, targetInside = 0; string ex = null;
+        foreach (var (cam, target) in camSamples)
+        {
+            {
+                // MIKO selbst steckt in gezeichneter Geometrie (Deko ragt über die Kollisionsbox hinaus) – kein Kamerafehler
+                float bt = float.MaxValue;
+                int tx = (int)Math.Floor(target.x / 2f), tz = (int)Math.Floor(target.z / 2f);
+                for (int dx = -1; dx <= 1; dx++) for (int dz = -1; dz <= 1; dz++)
+                        if (grid.TryGetValue((tx + dx, tz + dz), out var tl)) foreach (var i in tl) if (tris[i].name.Contains("/Buildings")) bt = Math.Min(bt, PointTri(target, tris[i].a, tris[i].b, tris[i].c));
+                if (bt < 0.25f) { targetInside++; continue; }
+            }
+            float best = float.MaxValue; string what = null;
+            int gx = (int)Math.Floor(cam.x / 2f), gz = (int)Math.Floor(cam.z / 2f);
+            for (int dx = -1; dx <= 1; dx++) for (int dz = -1; dz <= 1; dz++)
+                {
+                    if (!grid.TryGetValue((gx + dx, gz + dz), out var l)) continue;
+                    foreach (var i in l) { float d = PointTri(cam, tris[i].a, tris[i].b, tris[i].c); if (d < best) { best = d; what = tris[i].name; } }
+                }
+            if (best < 0.14f)
+            {
+                clipped++;
+                string key = Group(what);
+                hits.TryGetValue(key, out var n); hits[key] = n + 1;
+                if (ex == null) ex = $"Kamera {cam} (MIKO {target}) {best:0.00} m vor {what}";
+            }
+        }
+        Info($"Deko-Prüfung {planet}: {tris.Count} Dreiecke, {camSamples.Count} Kamerastellungen, {clipped} näher als die Nahebene an gezeichneter Geometrie; {targetInside} Stellungen, in denen MIKOs Kopfpunkt selbst in Gebäude-Deko steckt (übersprungen)");
+        foreach (var kv in hits.OrderByDescending(k => k.Value).Take(12)) Info($"    {kv.Value,5}× {kv.Key}");
+        if (ex != null) Info("    z. B. " + ex);
+        decorClips[planet] = clipped;
+    }
+    public static readonly Dictionary<string, int> decorClips = new Dictionary<string, int>();
+
+    static string Group(string n) { if (n == null) return "?"; var parts = n.Split('/'); return parts.Length > 2 ? parts[0] + "/" + parts[1] + "/" + parts[2] : n; }
+    static string Path(Transform t) { var l = new List<string>(); while (t != null && l.Count < 6) { l.Insert(0, t.gameObject.name); t = t.parent; } return string.Join("/", l); }
+
+    static float PointTri(Vector3 p, Vector3 a, Vector3 b, Vector3 c)
+    {
+        // Ericson, Real-Time Collision Detection: nächster Punkt auf Dreieck
+        var ab = b - a; var ac = c - a; var ap = p - a;
+        float d1 = Vector3.Dot(ab, ap), d2 = Vector3.Dot(ac, ap);
+        if (d1 <= 0 && d2 <= 0) return (p - a).magnitude;
+        var bp = p - b; float d3 = Vector3.Dot(ab, bp), d4 = Vector3.Dot(ac, bp);
+        if (d3 >= 0 && d4 <= d3) return (p - b).magnitude;
+        float vc = d1 * d4 - d3 * d2;
+        if (vc <= 0 && d1 >= 0 && d3 <= 0) { float v = d1 / (d1 - d3); return (p - (a + ab * v)).magnitude; }
+        var cp = p - c; float d5 = Vector3.Dot(ab, cp), d6 = Vector3.Dot(ac, cp);
+        if (d6 >= 0 && d5 <= d6) return (p - c).magnitude;
+        float vb = d5 * d2 - d1 * d6;
+        if (vb <= 0 && d2 >= 0 && d6 <= 0) { float w = d2 / (d2 - d6); return (p - (a + ac * w)).magnitude; }
+        float va = d3 * d6 - d5 * d4;
+        if (va <= 0 && (d4 - d3) >= 0 && (d5 - d6) >= 0) { float w = (d4 - d3) / ((d4 - d3) + (d5 - d6)); return (p - (b + (c - b) * w)).magnitude; }
+        float denom = 1f / (va + vb + vc); float vv = vb * denom, ww = vc * denom;
+        return (p - (a + ab * vv + ac * ww)).magnitude;
+    }
+
     static string k0(Box b) => $"{b.Kind} ({b.Cx:0.0}, {b.Cz:0.0}) {b.Hx * 2:0.0}×{b.Hz * 2:0.0}×{b.H:0.0}";
 
     // ================================================================== Abspann
