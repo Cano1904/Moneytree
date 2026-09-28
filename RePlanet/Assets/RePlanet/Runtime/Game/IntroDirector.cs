@@ -1066,8 +1066,8 @@ namespace RePlanet
                 Billboard(fg, r, TR(new Vector3(x, H(x, z) - 1f, z), new Vector3(0f, 14f, 3.5f)), "KONSUMA", "ALLES. SOFORT. IMMER NEU.", 0.95f, 24f, red, white, 0.05f);
                 // umgestürzte Tafel im Vordergrund
                 x = 24f; z = 26f;
-                BlockText(fg, white, "KONSUMA", TR(new Vector3(x, H(x, z) + 0.9f, z), new Vector3(-64f, -22f, 7f)), 0.38f, 0.14f, 0.12f, r);
-                fg.Box(red, TR(new Vector3(x, H(x, z) + 0.6f, z) + Quaternion.Euler(-64f, -22f, 7f) * new Vector3(0f, 0.2f, 0.25f), new Vector3(-64f, -22f, 7f)), new Vector3(17.5f, 5.8f, 0.3f));
+                BlockText(fg, white, "KONSUMA", TR(new Vector3(x, H(x, z) + 0.9f, z), new Vector3(62f, -22f, 7f)), 0.38f, 0.14f, 0.12f, r);
+                fg.Box(red, TR(new Vector3(x, H(x, z) + 0.9f, z) + Quaternion.Euler(62f, -22f, 7f) * new Vector3(0f, 0f, 0.24f), new Vector3(62f, -22f, 7f)), new Vector3(17.5f, 5.8f, 0.3f));
             }
             {
                 // Überführung einer alten Stadtautobahn, abgebrochen
@@ -2435,6 +2435,11 @@ namespace RePlanet
             sg.Build("Rumpf", ship, owned);
             mikoShip = RobotModel.Create(ship, "MIKO_Schiff");
             mikoShip.transform.localPosition = new Vector3(0f, 3.88f, -2.2f);
+            // Aufhelllicht (Cockpit-/Planetenschein), damit MIKO im Gegenlicht nicht absäuft
+            var fill = new GameObject("Aufhelllicht").AddComponent<Light>();
+            fill.transform.SetParent(ship, false);
+            fill.transform.localPosition = new Vector3(3f, 7f, 3f);
+            fill.type = LightType.Point; fill.range = 16f; fill.intensity = 1.3f; fill.color = new Color(0.62f, 0.72f, 1f);
             var eng = NewGlows(s, matSoftAdd);
             eng.Add(new Vector3(0f, 0f, -14.4f), 7f, new Color(0.6f, 0.85f, 1f, 0.9f), ship);
             trailGlow = eng.Add(new Vector3(0f, 0f, -16f), 26f, new Color(0.45f, 0.7f, 1f, 0.35f), ship);
@@ -2462,11 +2467,12 @@ namespace RePlanet
             var toPlanet = planetC.normalized;
             float angR = Mathf.Asin(Mathf.Clamp01(planetR / planetC.magnitude));
             float limbElev = Mathf.Atan2(planetC.y, planetC.z) * Mathf.Rad2Deg + angR * Mathf.Rad2Deg;
-            float rise = Mathf.Lerp(-3.2f, 2.6f, M.Smooth(Mathf.Clamp01((lt - 0.5f) / 6f)));
+            float rise = Mathf.Lerp(-3.8f, 2.4f, M.Smooth(Mathf.Clamp01((lt - 1f) / 7f))); // bricht bei ≈ 92 s über den Rand
             var sd = Quaternion.Euler(-(limbElev + rise), 9f, 0f) * Vector3.forward;
             float sep = Vector3.Angle(sd, toPlanet) * Mathf.Deg2Rad;
             float vis = Mathf.Clamp01((sep - angR + 0.004f) / 0.03f);
-            SetLook(0.5f, 0f, 0f, Color.black, new Color(0.03f, 0.035f, 0.05f), new Color(0.035f, 0.03f, 0.035f), new Color(0.01f, 0.01f, 0.015f),
+            // Umgebungslicht: schwarzer Himmel, von unten etwas warmes Planetenlicht
+            SetLook(0.5f, 0f, 0f, Color.black, new Color(0.03f, 0.035f, 0.05f), new Color(0.05f, 0.045f, 0.05f), new Color(0.075f, 0.06f, 0.045f),
                 shipShot.TransformDirection(sd), new Color(1f, 0.9f, 0.78f), 2.2f, 9500f, 0.3f);
             look.Space = true;
             if (sunSpace != null) { sunSpace.Dir = shipShot.TransformDirection(sd); sunSpace.Vis = 1f; }
