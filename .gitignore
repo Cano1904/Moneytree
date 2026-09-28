@@ -24,3 +24,7 @@ server-saves/
 
 # Ergebnisse des Testläufers
 test-results.txt
+
+# graphify: maschinenspezifische Zwischendateien
+graphify-out/cache/
+graphify-out/manifest.json
