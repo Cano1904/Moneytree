@@ -1,16 +1,20 @@
 <Project Sdk="Microsoft.NET.Sdk">
+  <!-- Prüfumgebung: Core + fast die ganze Unity-Laufzeitschicht gegen einen UnityEngine-Ersatz (UnityStub.cs).
+       Ersetzt werden nur Teile mit Engine-Abhängigkeiten ohne Prüfwert: Oberfläche (UIRoot), Klang (AudioManager),
+       eigene Shader (PostFX, TerrainLook) – siehe GameStub.cs. -->
   <PropertyGroup>
     <OutputType>Exe</OutputType>
     <TargetFramework>net8.0</TargetFramework>
     <LangVersion>9.0</LangVersion>
     <Nullable>disable</Nullable>
     <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
-    <NoWarn>CS0067;CS0649;CS0414;CS0169;CS0660;CS0661</NoWarn>
+    <NoWarn>CS0067;CS0649;CS0414;CS0169;CS0660;CS0661;CS0162;CS0219;CS0168;CS0108;CS0114</NoWarn>
     <Src>$(MSBuildThisFileDirectory)../../RePlanet/Assets/RePlanet</Src>
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="$(Src)/Core/**/*.cs" />
-    <Compile Include="$(Src)/Runtime/Render/MeshKit.cs;$(Src)/Runtime/Render/Backdrop.cs;$(Src)/Runtime/Render/WorldView.cs;$(Src)/Runtime/Render/WorldViewProps.cs;$(Src)/Runtime/Render/WorldViewBuildings.cs;$(Src)/Runtime/Render/WorldViewBase.cs;$(Src)/Runtime/Render/WorldViewPropsDetail.cs;$(Src)/Runtime/Render/Mats.cs;$(Src)/Runtime/Render/TrashRenderer.cs;$(Src)/Runtime/Render/FloraRenderer.cs" />
-    <Compile Include="UnityStub.cs;GameStub.cs;Program.cs" />
+    <Compile Include="$(Src)/Runtime/Game/*.cs;$(Src)/Runtime/Render/*.cs;$(Src)/Runtime/Audio/Narrator.cs"
+             Exclude="$(Src)/Runtime/Render/PostFX.cs;$(Src)/Runtime/Render/TerrainLook.cs" />
+    <Compile Include="UnityStub.cs;UnityStub2.cs;GameStub.cs;Program.cs;Checks.cs" />
   </ItemGroup>
 </Project>

@@ -85,8 +85,8 @@ public static class Program
         string outDir = args.Length > 1 ? args[1] : ".";
         string state = args.Length > 2 ? args[2] : "dirty";
         Directory.CreateDirectory(outDir);
-        var app = new GameObject("App").AddComponent<GameApp>();
-        GameApp.I = null; // Menüpfad: WorldView nutzt die Vorschauwelt
+        var app = (GameApp)null;
+        // Menüpfad: WorldView nutzt die Vorschauwelt (GameApp.I bleibt null)
         var cam = new GameObject("Cam").AddComponent<Camera>();
         Camera.main = cam;
         var wvGo = new GameObject("World");

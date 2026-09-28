@@ -1,26 +1,7 @@
+// Ersatz für Laufzeit-Bausteine, deren Prüfung ohne echte Engine nichts bringt (Oberfläche, Klang, eigene Shader).
 using System;
 using RePlanet.Core;
 using UnityEngine;
-
-namespace RePlanet
-{
-    public enum AppMode { Menu, Loading, Game, PlanetSelect, Ending }
-    public enum ToastKind { Info, Error }
-    public static class Hud { public static void Show(string s, ToastKind k, float t) { Console.WriteLine("HUD: " + s); } }
-    public static class PhotoMode { public static bool Active, ShowBefore; }
-    public class Settings { public int Quality = 3, Shadows = 2; public float ViewDistance = 1f; }
-    public class GameApp : MonoBehaviour
-    {
-        public static GameApp I;
-        public WorldState W;
-        public bool InGame;
-        public AppMode Mode;
-        public Settings Settings = new Settings();
-        public event Action<string> OnPlanetChanged;
-        public event Action OnSessionStarted, OnSessionEnded;
-        public event Action<JObj> OnFx;
-    }
-}
 
 public static class Harness
 {
@@ -39,5 +20,36 @@ namespace RePlanet
         public static UnityEngine.Material CreateWater(string planet, System.Func<UnityEngine.Texture2D> fallbackNormals) { return null; }
         public static void SetWaterClarity(UnityEngine.Material m, string planet, float q) { }
         public static void AnimateWater(UnityEngine.Material m, float t) { }
+    }
+
+    public class PostFX : MonoBehaviour
+    {
+        public static PostFX I { get; private set; }
+        public static bool Running => false;
+        public void Configure(int q, bool calm) { }
+    }
+
+    public class UIRoot : MonoBehaviour
+    {
+        public static bool WantsCursor;
+    }
+
+    /// <summary>Klang-Ersatz: IntroTime gibt die Prüfumgebung vor (Sequenzzeit wie vom Score).</summary>
+    public class AudioManager : MonoBehaviour
+    {
+        public static AudioManager I { get; private set; }
+        public static double FakeIntroTime = -1;
+        public static void Play(string id, Vector3? pos = null, float volume = 1f, float pitch = 1f) { }
+        public static void Loop(string key, string clipId, bool on, Vector3? pos = null, float volume = 1f, float pitch = 1f) { }
+        public static void Ui(string id) { }
+        public static void PlayIntro() { }
+        public static void StopIntro() { FakeIntroTime = -1; }
+        public static double IntroTime => FakeIntroTime;
+        public static bool IntroReady => false;
+        public static void PlayEnding() { }
+        public static void StopEnding() { }
+        public static void DuckMusic(float amount) { }
+        public static float VoiceGain => 1f;
+        public static Transform VoiceParent => null;
     }
 }
