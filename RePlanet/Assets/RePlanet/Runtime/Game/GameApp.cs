@@ -419,6 +419,8 @@ namespace RePlanet
                         UIState.Open(UIScreen.Ending);
                         OnEndingRequested(() =>
                         {
+                            // Sitzung während des Abspanns beendet (Verbindung verloren)? Dann bleibt es beim Menü.
+                            if (Client == null || !Client.Joined) { if (Mode == AppMode.Ending) { Mode = AppMode.Menu; UIState.Open(UIScreen.MainMenu); } return; }
                             Mode = AppMode.Playing;
                             UIState.Open(UIScreen.None);
                             Act(new JObj().Set("a", "endingSeen"));

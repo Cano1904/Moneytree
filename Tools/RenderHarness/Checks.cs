@@ -82,7 +82,7 @@ public static class Checks
     static List<MonoBehaviour> Live()
     {
         var l = new List<MonoBehaviour>();
-        foreach (var c in World.All.ToArray()) if (c is MonoBehaviour mb && !mb.IsDead) l.Add(mb);
+        foreach (var mb in World.Behaviours.ToArray()) if (!mb.IsDead) l.Add(mb);
         return l.OrderBy(Order).ToList();
     }
 

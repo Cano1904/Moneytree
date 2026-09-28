@@ -546,9 +546,11 @@ namespace UnityEngine
     /// <summary>Alle lebenden Komponenten – für den Bildtakt der Prüfumgebung (Awake/Start/Update/LateUpdate per Reflexion).</summary>
     public static class World
     {
-        public static readonly List<Component> All = new List<Component>();
-        public static void Register(Component c) { All.Add(c); }
-        public static void Unregister(Component c) { All.Remove(c); }
+        public static readonly HashSet<Component> All = new HashSet<Component>();
+        public static readonly List<MonoBehaviour> Behaviours = new List<MonoBehaviour>();
+        public static readonly HashSet<GameObject> Objects = new HashSet<GameObject>();
+        public static void Register(Component c) { All.Add(c); if (c is MonoBehaviour b) Behaviours.Add(b); }
+        public static void Unregister(Component c) { All.Remove(c); if (c is MonoBehaviour b) Behaviours.Remove(b); }
         public static Action<Component> OnAdded;
     }
 
@@ -556,7 +558,8 @@ namespace UnityEngine
     {
         public GameObject gameObject;
         public override bool IsDead => destroyedObj || (gameObject is object && gameObject.destroyedObj);
-        public Transform transform => gameObject.transform;
+        /// <summary>Wie Unity: Zugriff auf ein zerstörtes Objekt wirft MissingReferenceException.</summary>
+        public Transform transform { get { if (IsDead) throw new MissingReferenceException("The object of type '" + GetType().Name + "' has been destroyed but you are still trying to access it."); return gameObject.transform; } }
         public string tag { get => gameObject.tag; set => gameObject.tag = value; }
         public T GetComponent<T>() where T : Component => gameObject.GetComponent<T>();
         public Component GetComponent(Type t) => gameObject.GetComponent(t);
@@ -680,22 +683,26 @@ namespace UnityEngine
         public int layer;
         public bool isStatic;
         public readonly List<Component> comps = new List<Component>();
-        public Transform transform;
+        internal Transform tr;
+        public Transform transform { get { if (destroyedObj) throw new MissingReferenceException("The object of type 'GameObject' (" + name + ") has been destroyed but you are still trying to access it."); return tr; } }
         public Scene scene => new Scene();
         public GameObject() : this("GameObject") { }
         public GameObject(string n, params Type[] components)
         {
-            name = n; transform = new Transform { gameObject = this }; comps.Add(transform);
+            name = n; tr = new Transform { gameObject = this }; comps.Add(tr); World.Objects.Add(this);
             foreach (var t in components) AddComponent(t);
         }
         public GameObject gameObject => this;
-        public bool activeInHierarchy { get { var t = transform; while (t != null) { if (!t.gameObject.activeSelf) return false; t = t.parent; } return !destroyedObj; } }
+        public bool activeInHierarchy { get { if (destroyedObj) return false; var t = tr; while (t != null) { if (!t.gameObject.activeSelf) return false; t = t.parent; } return true; } }
         internal void DestroyTree()
         {
-            foreach (var c in new List<Transform>(transform.children)) c.gameObject.DestroyTree();
+            if (destroyedObj) return;
+            foreach (var c in new List<Transform>(tr.children)) c.gameObject.DestroyTree();
+            foreach (var c in comps) CallIfExists(c, "OnDestroy");
             destroyedObj = true;
-            foreach (var c in comps) { c.destroyedObj = true; World.Unregister(c); CallIfExists(c, "OnDestroy"); }
-            transform.parent?.children.Remove(transform);
+            foreach (var c in comps) { c.destroyedObj = true; World.Unregister(c); }
+            World.Objects.Remove(this);
+            tr.parent?.children.Remove(tr);
         }
         internal static void CallIfExists(Component c, string m)
         {
@@ -708,7 +715,7 @@ namespace UnityEngine
         public Component AddComponent(Type t)
         {
             if (destroyedObj) throw new MissingReferenceException("AddComponent auf zerstörtem GameObject " + name);
-            if (t == typeof(Transform)) return transform;
+            if (t == typeof(Transform)) return tr;
             var c = (Component)Activator.CreateInstance(t, true);
             c.gameObject = this; comps.Add(c);
             World.Register(c);
@@ -723,12 +730,12 @@ namespace UnityEngine
         public T[] GetComponentsInChildren<T>(bool inactive) where T : Component
         {
             var l = new List<T>(); void Walk(Transform t) { if (!inactive && !t.gameObject.activeSelf) return; foreach (var c in t.gameObject.comps) if (c is T k) l.Add(k); foreach (var ch in t.children) Walk(ch); }
-            Walk(transform); return l.ToArray();
+            Walk(tr); return l.ToArray();
         }
         public T[] GetComponentsInChildren<T>() where T : Component => GetComponentsInChildren<T>(false);
-        public void SetActive(bool a) { activeSelf = a; }
+        public void SetActive(bool a) { if (destroyedObj) throw new MissingReferenceException("SetActive auf zerstörtem GameObject " + name); activeSelf = a; }
         public bool CompareTag(string t) => tag == t;
-        public static GameObject Find(string n) { foreach (var c in World.All) if (c is Transform t && t.gameObject.name == n) return t.gameObject; return null; }
+        public static GameObject Find(string n) { foreach (var g in World.Objects) if (g.name == n && g.activeInHierarchy) return g; return null; }
         public static GameObject CreatePrimitive(PrimitiveType t) { var g = new GameObject(t.ToString()); g.AddComponent<MeshFilter>().sharedMesh = new Mesh(); g.AddComponent<MeshRenderer>(); return g; }
     }
     public enum PrimitiveType { Sphere, Capsule, Cylinder, Cube, Plane, Quad }
