@@ -381,7 +381,9 @@ namespace RePlanet
             float day = Mathf.Clamp01(elev * 4f + 0.2f);
             L.SunColor = pal.Sun * Mathf.Lerp(0.35f, 1.3f, day) * (1f - stormBlend * 0.7f);
             L.SkyCube = probe != null ? probe.texture : null;
-            L.FogSky = Underwater ? 0f : 0.85f;
+            // Die Echtzeit-Sonde füllt ihre Würfelseiten über mehrere Bilder – vorher nicht als Nebelfarbe nutzen
+            float probeAge = Time.unscaledTime - probeStart;
+            L.FogSky = Underwater ? 0f : 0.85f * Mathf.Clamp01((probeAge - 0.5f) * 2f);
             L.FogFalloff = Underwater ? 0f : 0.035f;
             L.FogBase = fogBase;
             L.FogLinear = Underwater ? 0.8f : 0.35f + stormBlend * 0.6f;
@@ -412,7 +414,7 @@ namespace RePlanet
         // Die Szene ist leer (keine gebackene Beleuchtung), daher gäbe es ohne eigene Sonde keine Umgebungsreflexion
         // für Metall und Wasser. Eine kleine Echtzeit-Sonde rendert nur den (animierten) Himmel und folgt der Kamera.
         ReflectionProbe probe;
-        float probeTimer;
+        float probeTimer, probeStart;
 
         void BuildReflections()
         {
@@ -432,6 +434,7 @@ namespace RePlanet
                 probe.size = new Vector3(2000f, 2000f, 2000f);
                 probe.importance = 0;
                 probe.RenderProbe();
+                probeStart = Time.unscaledTime;
             }
             catch (System.Exception e) { Debug.LogWarning("[RE:PLANET] Reflexionssonde: " + e.Message); probe = null; }
         }
