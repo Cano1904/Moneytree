@@ -223,7 +223,7 @@ namespace RePlanet
                         break;
                     }
                 case "boat":
-                    mb.For(Mats.Get(Mats.Opaque, new Color(0.92f, 0.92f, 0.9f))).Lathe(new Vector3(0, -0.4f, 0), new[] { new Vector2(0, 0), new Vector2(1.2f, 0.2f), new Vector2(1.6f, 1.0f) }, 8);
+                    mb.For(Mats.Get(Mats.Opaque, new Color(0.92f, 0.92f, 0.9f))).Lathe(new Vector3(0, -0.4f, 0), new[] { new Vector2(0, 0), new Vector2(1.2f, 0.2f), new Vector2(1.6f, 1.0f) }, 8, true);
                     mb.For(orange).Box(new Vector3(0, 0.9f, -0.8f), new Vector3(1.6f, 1.2f, 1.6f));
                     mb.For(glass).Box(new Vector3(0, 1.1f, 0.02f), new Vector3(1.4f, 0.6f, 0.05f));
                     mb.For(dark).Box(new Vector3(0, 0.7f, 1.8f), new Vector3(2.6f, 0.08f, 0.08f));

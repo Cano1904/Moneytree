@@ -324,7 +324,7 @@ namespace RePlanet
                     var p = roof + new Vector3(rng.Range(-sw * 0.35f, sw * 0.35f), 0.9f, rng.Range(-bx.Hz * 0.6f, bx.Hz * 0.6f));
                     var o = mb.M;
                     mb.M = Matrix4x4.TRS(p, Quaternion.Euler(-55, rng.Range(0f, 360f), 0), Vector3.one);
-                    mb.For(acMat).Lathe(Vector3.zero, new[] { new Vector2(0, 0), new Vector2(0.4f, 0.1f), new Vector2(0.55f, 0.22f) }, 10);
+                    mb.For(acMat).Lathe(Vector3.zero, new[] { new Vector2(0, 0), new Vector2(0.4f, 0.1f), new Vector2(0.55f, 0.22f) }, 10, true);
                     mb.M = o;
                     mb.For(railMat).Beam(p + Vector3.down * 0.9f, p, 0.06f);
                 }
@@ -1035,7 +1035,7 @@ namespace RePlanet
             mb.For(railMat).Cylinder(top, 0.08f, 4f, 5);
             var od = mb.M;
             mb.M = Matrix4x4.TRS(top + Vector3.up * 3f, Quaternion.Euler(-50, rng.Range(0f, 360f), 0), Vector3.one);
-            mb.For(acMat).Lathe(Vector3.zero, new[] { new Vector2(0, 0), new Vector2(0.7f, 0.2f), new Vector2(1f, 0.45f) }, 12);
+            mb.For(acMat).Lathe(Vector3.zero, new[] { new Vector2(0, 0), new Vector2(0.7f, 0.2f), new Vector2(1f, 0.45f) }, 12, true);
             mb.M = od;
         }
 

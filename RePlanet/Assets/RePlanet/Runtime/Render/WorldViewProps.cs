@@ -181,7 +181,7 @@ namespace RePlanet
                             dish.transform.SetParent(Root, false);
                             dish.transform.localPosition = pos + Vector3.up * 6.6f;
                             var db = new MeshBuilder();
-                            db.Lathe(Vector3.zero, new[] { new Vector2(0, 0), new Vector2(1.2f, 0.25f), new Vector2(2.5f, 0.8f), new Vector2(3.2f, 1.6f), new Vector2(3.25f, 1.7f) }, 20);
+                            db.Lathe(Vector3.zero, new[] { new Vector2(0, 0), new Vector2(1.2f, 0.25f), new Vector2(2.5f, 0.8f), new Vector2(3.2f, 1.6f), new Vector2(3.25f, 1.7f) }, 20, true);
                             db.Cylinder(new Vector3(0, 0, 0), 0.08f, 2.6f, 6);
                             db.Sphere(new Vector3(0, 2.6f, 0), 0.2f, 8, 5);
                             Obj("dish", db.Build("dish"), white, Vector3.zero, Vector3.one, Quaternion.Euler(-60, 0, 0), dish.transform);

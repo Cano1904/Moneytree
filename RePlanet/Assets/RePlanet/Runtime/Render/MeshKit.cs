@@ -280,28 +280,33 @@ namespace RePlanet
                 }
         }
 
-        /// <summary>Rotationskörper aus Profil (x = Radius, y = Höhe).</summary>
-        public void Lathe(Vector3 c, Vector2[] profile, int seg = 12)
+        /// <summary>Rotationskörper aus Profil (x = Radius, y = Höhe). twoSided: offene Schalen (Schüsseln) auch von innen sichtbar.</summary>
+        public void Lathe(Vector3 c, Vector2[] profile, int seg = 12, bool twoSided = false)
         {
-            int start = v.Count;
-            for (int i = 0; i < profile.Length; i++)
+            for (int side = 0; side < (twoSided ? 2 : 1); side++)
             {
-                Vector2 prev = profile[Mathf.Max(0, i - 1)], next = profile[Mathf.Min(profile.Length - 1, i + 1)];
-                var tan = (next - prev).normalized;
-                for (int s = 0; s <= seg; s++)
+                int start = v.Count;
+                float flip = side == 0 ? 1f : -1f;
+                for (int i = 0; i < profile.Length; i++)
                 {
-                    float a = s / (float)seg * Mathf.PI * 2;
-                    var dir = new Vector3(Mathf.Cos(a), 0, Mathf.Sin(a));
-                    var normal = (dir * tan.y - Vector3.up * tan.x).normalized;
-                    V(c + dir * profile[i].x + Vector3.up * profile[i].y, normal, new Vector2(s / (float)seg, i / (float)(profile.Length - 1)));
+                    Vector2 prev = profile[Mathf.Max(0, i - 1)], next = profile[Mathf.Min(profile.Length - 1, i + 1)];
+                    var tan = (next - prev).normalized;
+                    for (int s = 0; s <= seg; s++)
+                    {
+                        float a = s / (float)seg * Mathf.PI * 2;
+                        var dir = new Vector3(Mathf.Cos(a), 0, Mathf.Sin(a));
+                        var normal = (dir * tan.y - Vector3.up * tan.x).normalized * flip;
+                        V(c + dir * profile[i].x + Vector3.up * profile[i].y, normal, new Vector2(s / (float)seg, i / (float)(profile.Length - 1)));
+                    }
                 }
+                for (int i = 0; i < profile.Length - 1; i++)
+                    for (int s = 0; s < seg; s++)
+                    {
+                        int a = start + i * (seg + 1) + s, b = a + seg + 1;
+                        if (side == 0) { Tri(a, b + 1, a + 1); Tri(a, b, b + 1); }
+                        else { Tri(a, a + 1, b + 1); Tri(a, b + 1, b); }
+                    }
             }
-            for (int i = 0; i < profile.Length - 1; i++)
-                for (int s = 0; s < seg; s++)
-                {
-                    int a = start + i * (seg + 1) + s, b = a + seg + 1;
-                    Tri(a, b + 1, a + 1); Tri(a, b, b + 1);
-                }
         }
 
         public void Torus(Vector3 c, float R, float r, int seg = 14, int sides = 6)
@@ -975,7 +980,7 @@ namespace RePlanet
                     break;
                 case "pot":
                     b.Sub = Main;
-                    b.Lathe(Vector3.zero, new[] { new Vector2(0f, 0f), new Vector2(0.14f, 0f), new Vector2(0.2f, 0.26f), new Vector2(0.235f, 0.27f), new Vector2(0.235f, 0.32f), new Vector2(0.2f, 0.32f), new Vector2(0.19f, 0.29f) }, 12);
+                    b.Lathe(Vector3.zero, new[] { new Vector2(0f, 0f), new Vector2(0.14f, 0f), new Vector2(0.2f, 0.26f), new Vector2(0.235f, 0.27f), new Vector2(0.235f, 0.32f), new Vector2(0.2f, 0.32f), new Vector2(0.19f, 0.29f) }, 12, true);
                     b.Sub = Dark;
                     b.Cylinder(new Vector3(0, 0.26f, 0), 0.19f, 0.02f, 12);
                     b.Beam(new Vector3(0, 0.27f, 0), new Vector3(0.05f, 0.55f, 0.02f), 0.015f);
@@ -1021,7 +1026,7 @@ namespace RePlanet
                         b.BoxJ(new Vector3(Mathf.Cos(a) * r, 0.04f, Mathf.Sin(a) * r), new Vector3(0.16f - (i % 2) * 0.05f, 0.015f, 0.1f), new Vector3(i * 17 % 40 - 20, i * 60, i * 11 % 30), 0.035f, i + 40);
                     }
                     b.BoxJ(new Vector3(0.05f, 0.1f, 0.02f), new Vector3(0.14f, 0.2f, 0.015f), new Vector3(-20, 30, 12), 0.04f, 51);
-                    b.Lathe(new Vector3(-0.15f, 0.03f, 0.12f), new[] { new Vector2(0.09f, 0f), new Vector2(0.07f, 0.06f), new Vector2(0.04f, 0.1f), new Vector2(0.035f, 0.2f), new Vector2(0.04f, 0.21f) }, 8);
+                    b.Lathe(new Vector3(-0.15f, 0.03f, 0.12f), new[] { new Vector2(0.09f, 0f), new Vector2(0.07f, 0.06f), new Vector2(0.04f, 0.1f), new Vector2(0.035f, 0.2f), new Vector2(0.04f, 0.21f) }, 8, true);
                     break;
                 case "chunk": // Stahlbrocken mit blanker Schnittfläche
                     b.Sub = Main;

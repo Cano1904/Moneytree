@@ -673,7 +673,7 @@ namespace RePlanet
                 float y = h * (0.55f + d * 0.25f);
                 var o = mb.M;
                 mb.M = mb.M * Matrix4x4.TRS(new Vector3(0, y, 0), Quaternion.Euler(-70 + d * 20, d * 130, 0), Vector3.one);
-                mb.For(dish).Lathe(Vector3.zero, new[] { new Vector2(0, 0), new Vector2(1.4f, 0.4f), new Vector2(2f, 0.9f) }, 10);
+                mb.For(dish).Lathe(Vector3.zero, new[] { new Vector2(0, 0), new Vector2(1.4f, 0.4f), new Vector2(2f, 0.9f) }, 10, true);
                 mb.M = o;
             }
             mb.For(glowRed).Sphere(new Vector3(0, n * seg + 0.4f, 0), 0.45f, 6, 4);
@@ -856,7 +856,7 @@ namespace RePlanet
                     case "bag": b.Crumple(new Vector3(0, 0.1f, 0), 0.2f, 0.5f, 7, 0.3f, 6, 4); b.Crumple(new Vector3(0.12f, 0.2f, 0.04f), 0.06f, 1f, 8, 0.3f, 4, 3); break;
                     case "carton": b.BoxJ(new Vector3(0, 0.05f, 0), new Vector3(0.5f, 0.1f, 0.38f), new Vector3(0, 0, 3), 0.04f, 5); b.BoxRot(new Vector3(0.3f, 0.02f, 0.05f), new Vector3(0.18f, 0.015f, 0.36f), new Vector3(0, 0, -12)); break;
                     case "paper": b.BoxJ(new Vector3(0, 0.01f, 0), new Vector3(0.3f, 0.012f, 0.22f), Vector3.zero, 0.02f, 7); b.BoxJ(new Vector3(0.18f, 0.03f, 0.1f), new Vector3(0.12f, 0.06f, 0.1f), new Vector3(20, 30, 10), 0.03f, 8); break;
-                    case "cup": b.Lathe(new Vector3(-0.06f, 0.05f, 0), new[] { new Vector2(0.035f, 0), new Vector2(0.05f, 0.14f), new Vector2(0.052f, 0.15f) }, 7); break;
+                    case "cup": b.Lathe(new Vector3(-0.06f, 0.05f, 0), new[] { new Vector2(0.035f, 0), new Vector2(0.05f, 0.14f), new Vector2(0.052f, 0.15f) }, 7, true); break;
                     case "tire": b.TorusRot(new Vector3(0, 0.12f, 0), new Vector3(0, 0, 8), 0.3f, 0.11f, 10, 5); break;
                     case "shards": for (int i = 0; i < 4; i++) b.BoxJ(new Vector3((i - 1.5f) * 0.08f, 0.012f, (i % 2) * 0.07f), new Vector3(0.09f, 0.012f, 0.06f), new Vector3(0, i * 50, 0), 0.025f, i); break;
                     case "plank": b.BoxJ(new Vector3(0, 0.03f, 0), new Vector3(0.15f, 0.04f, 1.1f), new Vector3(0, 0, 4), 0.02f, 9); b.BoxRot(new Vector3(0.1f, 0.06f, 0.3f), new Vector3(0.12f, 0.03f, 0.6f), new Vector3(0, 40, 0)); break;

@@ -433,7 +433,7 @@ namespace RePlanet
                 }
             }
             restored.M = Matrix4x4.TRS(c, Quaternion.identity, new Vector3(bx.Hx * 2, bx.H, bx.Hz));
-            restored.For(glass).Lathe(Vector3.zero, new[] { new Vector2(1f, 0), new Vector2(0.92f, 0.4f), new Vector2(0.7f, 0.75f), new Vector2(0.38f, 0.95f), new Vector2(0f, 1f) }, 16);
+            restored.For(glass).Lathe(Vector3.zero, new[] { new Vector2(1f, 0), new Vector2(0.92f, 0.4f), new Vector2(0.7f, 0.75f), new Vector2(0.38f, 0.95f), new Vector2(0f, 1f) }, 16, true);
             restored.M = Matrix4x4.identity;
             for (int i = 0; i < 14; i++)
                 restored.For(plant).Sphere(c + new Vector3(-bx.Hx + 2 + (i % 7) * (bx.Hx * 2 - 4) / 6f, 1.2f, (i < 7 ? -1 : 1) * bx.Hz * 0.4f), 1.4f, 8, 6);

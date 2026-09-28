@@ -129,7 +129,7 @@ namespace RePlanet
             mb.For(railMat).Cylinder(new Vector3(1.8f, gy + 7.4f, -148f), 0.12f, 6f, 6);
             var o = mb.M;
             mb.M = Matrix4x4.TRS(new Vector3(1.8f, gy + 12.6f, -148f), Quaternion.Euler(-50, 150, 0), Vector3.one);
-            mb.For(acMat).Lathe(Vector3.zero, new[] { new Vector2(0, 0), new Vector2(0.8f, 0.25f), new Vector2(1.2f, 0.55f) }, 14);
+            mb.For(acMat).Lathe(Vector3.zero, new[] { new Vector2(0, 0), new Vector2(0.8f, 0.25f), new Vector2(1.2f, 0.55f) }, 14, true);
             mb.M = o;
             mb.For(Glow(new Color(1f, 0.25f, 0.1f), 3f)).Sphere(new Vector3(1.8f, gy + 13.5f, -148f), 0.2f, 6, 4);
             mb.For(acMat).Box(new Vector3(-1.5f, gy + 7.9f, -143.5f), new Vector3(1.6f, 0.9f, 1.2f));
