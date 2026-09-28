@@ -13,6 +13,7 @@ namespace RePlanet
     /// <item>Erzeugung auf Hintergrund-Threads, AudioClips entstehen auf dem Hauptthread; versionierter Disk-Cache unter persistentDataPath/audiocache.</item>
     /// <item>Musik: sieben Stems je Stück, synchron per PlayScheduled gestartet; Lautstärke je Stem folgt Wiederherstellung, Tageszeit, Sturm und Wind; Überblendung bei Planetenwechsel.</item>
     /// <item>Intro-Score und Abspann mit vorgemerktem Start, falls die Erzeugung noch läuft; IntroTime ist DSP-genau.</item>
+    /// <item>Sprachkanal: Lautstärke „Sprache“ (VoiceGain) und weiches Absenken der Musik (DuckMusic), solange der Erzähler (<see cref="Narrator"/>) spricht.</item>
     /// <item>3D-Effekte aus einem Quellen-Pool, Dauerklänge (Werkzeuge, Motor), planetentypische Ambience (Wind, Sturm, Wasser, Nacht) und Reaktion auf Spielereignisse (GameApp.OnFx).</item>
     /// </list>
     /// Öffentliche Aufrufe werfen nie Ausnahmen; fehlende Clips werden still übersprungen (und im Hintergrund nachgeladen).
@@ -619,6 +620,7 @@ namespace RePlanet
                 if (app != null && app.Settings != null && !Mathf.Approximately(AudioListener.volume, app.Settings.MasterVolume)) AudioListener.volume = app.Settings.MasterVolume;
                 bool mute = app != null && app.Settings != null && app.Settings.MuteWhenUnfocused && !focused;
                 focusGain = Mathf.MoveTowards(focusGain, mute ? 0f : 1f, dt * 3f);
+                UpdateDuck(dt);
                 UpdateIntro();
                 UpdateMusic(dt);
                 UpdateAmbience(dt);
@@ -662,7 +664,43 @@ namespace RePlanet
             }
         }
 
-        float MusicVolume() { var app = GameApp.I; return app != null && app.Settings != null ? app.Settings.MusicVolume : 0.7f; }
+        /// <summary>Musiklautstärke aus den Einstellungen, abgesenkt, solange der Erzähler spricht (Ducking).</summary>
+        float MusicVolume() { var app = GameApp.I; return (app != null && app.Settings != null ? app.Settings.MusicVolume : 0.7f) * (1f - duck); }
+
+        // ================================================================== Sprachkanal (Erzähler)
+        float duck, duckReq, duckReqAt = -10f;
+
+        /// <summary>
+        /// Senkt die Musik (Intro-Score, Abspann, Planetenmusik) weich ab, solange der Aufruf jedes Bild wiederholt wird.
+        /// amount 0 … 0,9 = Anteil der Absenkung. Ohne weitere Aufrufe kehrt die Musik nach kurzer Zeit weich zurück.
+        /// </summary>
+        public static void DuckMusic(float amount)
+        {
+            if (I == null) return;
+            I.duckReq = Mathf.Clamp(amount, 0f, 0.9f);
+            I.duckReqAt = Time.unscaledTime;
+        }
+
+        /// <summary>Lautstärke des Sprachkanals (Einstellung „Sprache“ × Fokus-Stummschaltung).</summary>
+        public static float VoiceGain
+        {
+            get
+            {
+                if (I == null) return 0.8f;
+                var app = GameApp.I;
+                return (app != null && app.Settings != null ? app.Settings.VoiceVolume : 0.8f) * I.focusGain;
+            }
+        }
+
+        /// <summary>Elternobjekt für Sprachquellen (unter dem Audio-Knoten); null, solange kein AudioManager existiert.</summary>
+        public static Transform VoiceParent { get { return I != null ? I.root : null; } }
+
+        void UpdateDuck(float dt)
+        {
+            float target = Time.unscaledTime - duckReqAt < 0.2f ? duckReq : 0f;
+            // schnell absenken (≈ 0,3 s), langsam zurück (≈ 1,2 s) – kein Pumpen zwischen zwei Sätzen
+            duck = Mathf.MoveTowards(duck, target, dt * (target > duck ? 2.0f : 0.5f));
+        }
 
         /// <summary>Welche Musik gerade laufen soll (null = keine).</summary>
         string WantedMusic()
