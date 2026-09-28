@@ -1,5 +1,5 @@
 // RE:PLANET – Oberflächen (Built-in, Surface Shader mit Standard-Beleuchtung, Schatten und Nebel).
-// Grundfarbe aus der Farbpalette (UV0), dazu je Ecke (UV1): x = Oberflächenklasse + Zufallswert je Bauteil,
+// Grundfarbe aus der Farbpalette (UV0, Alpha = Glätte), dazu je Ecke (UV1): x = Oberflächenklasse + Zufallswert je Bauteil,
 // y = Bodennähe (1 am Wandfuß). Daraus entstehen im Objektraum projiziert: Putz mit Wasserflecken, Regenschlieren und
 // Farbklecksen, Beton mit Schalungsfugen, Ziegel im Verband, Wellblech mit Rostläufern, Lack mit Kratzern, Rost und
 // Kantenabrieb, Asphalt mit Körnung und Rissen, Gummi, Holz, Fliesen, Stein. Relief über die Bildschirmableitung der
@@ -108,7 +108,7 @@ Shader "RePlanet/Surface"
             float edge = saturate((curv - 6.0) / 18.0) * nearF;
 
             float3 alb = pal.rgb * (1.0 + (rnd - 0.5) * 0.1);
-            float smooth = _Glossiness;
+            float smooth = _Glossiness * pal.a; // Palette: Alpha = Glätte je Farbe
             float metal = _Metallic;
             float h = 0.0;          // Relief in Metern
             float occ = 1.0;

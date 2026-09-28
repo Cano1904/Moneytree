@@ -570,6 +570,7 @@ namespace RePlanet
             var ps = w.Planet(Planet);
             float dark = Rules.Darkness(Rules.DayPhase(w, Planet));
             bool before = PhotoMode.Active && PhotoMode.ShowBefore;
+            AnimateBaseLights(dark);
             for (int a = 0; a < 3; a++)
             {
                 bool done = ps.Projects[GameData.ProjectId(Planet, a)].Done && !before;
@@ -587,6 +588,7 @@ namespace RePlanet
         public void CollectLitLamps(Vector3 near, float radius, List<Vector3> result)
         {
             result.Clear();
+            foreach (var p in baseLamps) if ((p - near).sqrMagnitude < radius * radius) result.Add(p);
             for (int a = 0; a < 3; a++)
             {
                 if (areaLight[a] < 0.5f) continue;

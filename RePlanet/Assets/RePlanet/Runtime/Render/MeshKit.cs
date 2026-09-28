@@ -559,9 +559,12 @@ namespace RePlanet
         {
             if (tex != null) return;
             tex = new Texture2D(N, N, TextureFormat.RGBA32, false) { filterMode = FilterMode.Point, wrapMode = TextureWrapMode.Clamp, name = "RP_Palette" };
-            matte = SurfaceLook.Lit("RP_Palette_Matt", Color.white, 0.2f, 0f, tex);
-            glossy = SurfaceLook.Lit("RP_Palette_Glanz", Color.white, 0.85f, 0f, tex);
-            metal = SurfaceLook.Lit("RP_Palette_Metall", Color.white, 0.55f, 0.6f, tex);
+            // Mit dem Oberflächen-Shader trägt das Alpha des Texels die Glätte je Farbe (ein Material für matt und
+            // glänzend); beim Standard-Rückfall bleiben matt und glänzend getrennt.
+            bool custom = SurfaceLook.Custom;
+            matte = SurfaceLook.Lit("RP_Palette_Matt", Color.white, custom ? 1f : 0.2f, 0f, tex);
+            glossy = custom ? matte : SurfaceLook.Lit("RP_Palette_Glanz", Color.white, 0.85f, 0f, tex);
+            metal = SurfaceLook.Lit("RP_Palette_Metall", Color.white, custom ? 1f : 0.55f, 0.6f, tex);
             try { var t = Mats.Template(Mats.Opaque); templateGloss = t.HasProperty("_Glossiness") ? t.GetFloat("_Glossiness") : 0.2f; } catch { templateGloss = 0.2f; }
         }
 
@@ -593,7 +596,10 @@ namespace RePlanet
             {
                 Init();
                 Color32 c = m.color;
-                var key = new Color32Key { V = (c.r << 16) | (c.g << 8) | c.b };
+                float g = templateGloss;
+                try { if (m.HasProperty("_Glossiness")) g = m.GetFloat("_Glossiness"); } catch { }
+                int gq = Mathf.Clamp(Mathf.RoundToInt(g * 15f), 0, 15);
+                var key = new Color32Key { V = (gq << 24) | (c.r << 16) | (c.g << 8) | c.b };
                 int i;
                 if (!index.TryGetValue(key, out i))
                 {
@@ -602,14 +608,13 @@ namespace RePlanet
                     {
                         i = index.Count;
                         index[key] = i;
-                        tex.SetPixel(i % N, i / N, m.color);
+                        var tc = m.color; tc.a = gq / 15f;
+                        tex.SetPixel(i % N, i / N, tc);
                         dirty = true;
                     }
                 }
                 if (ok)
                 {
-                    float g = templateGloss;
-                    try { if (m.HasProperty("_Glossiness")) g = m.GetFloat("_Glossiness"); } catch { }
                     bool met = false;
                     try { met = IsMetal(m); } catch { }
                     target = met ? metal : g >= 0.5f ? glossy : matte;
