@@ -1,0 +1,19 @@
+RE:PLANET – Erzählerstimme
+==========================
+
+In diesen Ordner gehören die Sprachaufnahmen des Erzählers (Intro und Abspann).
+Das Spiel lädt sie automatisch; fehlen sie, laufen die Sequenzen mit Untertiteln.
+
+Dateinamen (Endung .wav, .ogg oder .mp3):
+  intro_01 … intro_14     Intro, 14 Zeilen
+  ending_01 … ending_05   Abspann, 5 Zeilen (optional)
+
+Format: WAV, 48 kHz, mono, ca. -20 LUFS, Spitzen max. -1 dBFS.
+Wichtig: keine Stille am Dateianfang (die Datei startet genau zur vorgesehenen Sekunde)
+und die maximale Dauer jeder Zeile einhalten.
+
+Der Ordner heißt immer Resources/Voice und liegt neben Resources/RePlanetSky.shader,
+z. B. Assets/RePlanet/Resources/Voice/ oder Assets/Settings/RePlanet/Resources/Voice/.
+
+Texte, Startzeiten, maximale Dauer, Regieanweisungen und Tipps zur Aufnahme:
+  docs/SPRECHERTEXT.md

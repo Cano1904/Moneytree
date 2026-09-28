@@ -2509,13 +2509,13 @@ namespace RePlanet.Core
         /// </summary>
         public static readonly Shot[] Shots =
         {
-            new Shot { Start = 0, End = 14, Id = "skyline", Lines = new[] { "Erde, im Jahr 2100.", "Die Menschen hatten alles. Und sie warfen alles weg." } },
-            new Shot { Start = 14, End = 30, Id = "megastore", Lines = new[] { "Der Konzern KONSUMA versprach: „Alles. Sofort. Immer neu.“", "Bis der Müll höher war als die Hochhäuser." } },
-            new Shot { Start = 30, End = 46, Id = "arks", Lines = new[] { "Die Menschen stiegen in die großen Archen. „Nur für fünf Jahre“, hieß es.", "Auf vier Welten blieben Recyclingroboter zurück, um aufzuräumen." } },
-            new Shot { Start = 46, End = 60, Id = "shutdown", Lines = new[] { "Aus fünf Jahren wurden fünfzig.", "Einer nach dem anderen gaben die Roboter auf." } },
-            new Shot { Start = 60, End = 75, Id = "home", Lines = new[] { "Nur einer arbeitete weiter.", "MIKO. Jeden Morgen. Würfel für Würfel." } },
-            new Shot { Start = 75, End = 88, Id = "sprout", Lines = new[] { "Und eines Tages fand MIKO etwas, das es seit Jahrzehnten nicht mehr gab.", "Einen Keimling." } },
-            new Shot { Start = 88, End = 100, Id = "ship", Lines = new[] { "Ein altes Signal erwachte: PROGRAMM ZWEITE CHANCE.", "Wenn das Leben zurückkehrt, kehren auch wir zurück." } },
+            new Shot { Start = 0, End = 14, Id = "skyline", Lines = new[] { "Es gab einmal eine Welt, die alles hatte.", "Und alles, was sie hatte, warf sie fort." } },
+            new Shot { Start = 14, End = 30, Id = "megastore", Lines = new[] { "KONSUMA versprach uns das Glück. „Alles. Sofort. Immer neu.“", "Wir kauften und kauften … bis der Müll unsere Städte überragte." } },
+            new Shot { Start = 30, End = 46, Id = "arks", Lines = new[] { "Dann bauten wir Archen. „Nur für fünf Jahre“, sagten sie.", "Zurück blieben die Maschinen. Auf vier Welten. Um aufzuräumen." } },
+            new Shot { Start = 46, End = 60, Id = "shutdown", Lines = new[] { "Aus fünf Jahren wurden fünfzig.", "Eine Maschine nach der anderen … verstummte." } },
+            new Shot { Start = 60, End = 75, Id = "home", Lines = new[] { "Nur eine nicht. Eine kleine, sture Maschine.", "MIKO. Jeden Morgen. Würfel für Würfel." } },
+            new Shot { Start = 75, End = 88, Id = "sprout", Lines = new[] { "Bis MIKO eines Tages etwas fand, das längst verloren war.", "Einen Keimling. Klein. Grün. Lebendig." } },
+            new Shot { Start = 88, End = 100, Id = "ship", Lines = new[] { "Ein altes Signal erwachte: PROGRAMM ZWEITE CHANCE.", "Wenn das Leben zurückkehrt … kehren auch wir zurück." } },
         };
     }
 }
