@@ -64,7 +64,7 @@ namespace RePlanet
             mb.For(steel).Box(new Vector3(0, 7.2f, 0.05f), new Vector3(8.4f, 3.3f, 0.2f));
             mb.For(Mat(new Color(0.92f, 0.86f, 0.7f))).Box(new Vector3(0, 7.2f, -0.08f), new Vector3(8f, 3f, 0.06f));
             for (int k = 0; k < 5; k++)
-                if (rng.Chance(0.6f)) mb.For(Mat(SignCols[rng.Range(0, SignCols.Length)] * rng.Range(0.8f, 1.1f))).BoxRot(new Vector3(-3.2f + k * 1.6f, 6.3f + rng.Range(0f, 0.6f), -0.12f), new Vector3(1.5f, rng.Range(0.5f, 1.4f), 0.02f), new Vector3(0, 0, rng.Range(-8f, 8f)));
+                if (rng.Chance(0.6f)) mb.For(Mat(SignCols[rng.Range(0, SignCols.Length)])).BoxRot(new Vector3(-3.2f + k * 1.6f, 6.3f + rng.Range(0f, 0.6f), -0.12f), new Vector3(1.5f, rng.Range(0.5f, 1.4f), 0.02f), new Vector3(0, 0, rng.Range(-8f, 8f)));
             for (int s = -1; s <= 1; s += 2)
             {
                 mb.For(steel).Beam(new Vector3(s * 2.5f, 5.75f, -0.9f), new Vector3(s * 2.5f, 5.95f, -1.6f), 0.05f);

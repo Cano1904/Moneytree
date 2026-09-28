@@ -40,8 +40,8 @@ namespace RePlanet
             { Mesh = mesh; Col = col; Weight = weight; Scale = scale; Tpl = tpl; Gloss = gloss; }
         }
 
-        const float CellW = 75f, CellD = 50f;
-        const int CellsX = 4, CellsZ = 6;
+        const float CellW = 75f, CellD = 100f;
+        const int CellsX = 4, CellsZ = 3;
 
         readonly string planet;
         readonly PlanetLayout layout;
@@ -138,14 +138,14 @@ namespace RePlanet
         }
 
         // ================================================================== Hintergrund-Ring
-        const int Sectors = 16;
+        const int Sectors = 12;
         readonly MultiBuilder[] sectors = new MultiBuilder[Sectors];
 
         MultiBuilder SectorAt(float x, float z)
         {
             float a = Mathf.Atan2(z, x);
             int s = Mathf.Clamp((int)((a + Mathf.PI) / (Mathf.PI * 2f) * Sectors), 0, Sectors - 1);
-            return sectors[s] ?? (sectors[s] = new MultiBuilder());
+            return sectors[s] ?? (sectors[s] = new MultiBuilder { UsePalette = true });
         }
 
         Material[] junk;      // Palette der Müllmassen

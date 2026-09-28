@@ -43,6 +43,7 @@ namespace RePlanet
         readonly Dictionary<string, Transform> ecoVisuals = new Dictionary<string, Transform>();
         readonly Dictionary<string, GameObject> loreVisuals = new Dictionary<string, GameObject>();
         readonly List<KeyValuePair<Transform, float>> trees = new List<KeyValuePair<Transform, float>>();
+        readonly List<int> treeAreas = new List<int>();
         readonly List<Transform> spinners = new List<Transform>();
         readonly List<ParticleSystem> fountains = new List<ParticleSystem>();
         readonly Dictionary<string, Transform> projectSites = new Dictionary<string, Transform>();
@@ -143,7 +144,7 @@ namespace RePlanet
             foreach (var l in lampPositions) l.Clear();
             duneSets[0].Clear(); duneSets[1].Clear();
             mounds.Clear(); zoneLamps.Clear(); zoneLampMats.Clear(); repairVisuals.Clear(); ecoVisuals.Clear(); loreVisuals.Clear();
-            trees.Clear(); spinners.Clear(); fountains.Clear(); projectSites.Clear(); spinnerProjects.Clear(); builtShelters.Clear();
+            trees.Clear(); treeAreas.Clear(); spinners.Clear(); fountains.Clear(); projectSites.Clear(); spinnerProjects.Clear(); builtShelters.Clear();
             backdrop = null;
             roofTops.Clear();
             if (terrainTex != null) Destroy(terrainTex);
@@ -407,8 +408,8 @@ namespace RePlanet
 
         void BuildGreenhouse(Box bx)
         {
-            var ruin = new MultiBuilder();
-            var restored = new MultiBuilder();
+            var ruin = new MultiBuilder { UsePalette = true };
+            var restored = new MultiBuilder { UsePalette = true };
             var frame = Mats.Get(Mats.Metal, new Color(0.35f, 0.38f, 0.36f));
             var glass = Mats.Get(Mats.Fade, new Color(0.7f, 0.9f, 0.95f, 0.35f));
             var plant = Mats.Get(Mats.Opaque, new Color(0.25f, 0.6f, 0.25f));
@@ -532,10 +533,11 @@ namespace RePlanet
                 if (planted) kv.Value.localScale = Vector3.one * Mathf.Lerp(0.15f, 1f, M.Smooth(g));
             }
             // Bäume färben sich mit der Ökologie des Bereichs
-            foreach (var kv in trees)
+            for (int t = 0; t < trees.Count; t++)
             {
+                var kv = trees[t];
                 if (kv.Key == null) continue;
-                int area = PlanetLayout.AreaOf(kv.Key.position.z);
+                int area = t < treeAreas.Count ? treeAreas[t] : PlanetLayout.AreaOf(kv.Key.position.z);
                 float eco = before ? 0 : Rules.EcoFraction(w, ps, area);
                 kv.Key.gameObject.SetActive(eco > kv.Value);
             }

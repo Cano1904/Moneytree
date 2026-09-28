@@ -43,7 +43,7 @@ namespace RePlanet
         void BuildBase()
         {
             var b = Layout.Base;
-            var mb = new MultiBuilder();
+            var mb = new MultiBuilder { UsePalette = true };
             if (trimMat == null) InitBuildingMats();
             float gy = b.Center.y;
             CoreBuilding(mb, gy);
@@ -370,7 +370,7 @@ namespace RePlanet
         /// </summary>
         void BuildShip(Vector3 at)
         {
-            var mb = new MultiBuilder();
+            var mb = new MultiBuilder { UsePalette = true };
             var hull = Mats.Get(Mats.Metal, new Color(0.86f, 0.87f, 0.9f));
             var hullDark = Mat(new Color(0.34f, 0.36f, 0.4f));
             var dark = Mat(new Color(0.16f, 0.17f, 0.2f));

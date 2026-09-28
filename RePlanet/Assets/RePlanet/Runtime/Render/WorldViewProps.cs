@@ -39,7 +39,8 @@ namespace RePlanet
         void BuildProps()
         {
             if (trimMat == null) InitBuildingMats();
-            var cb = new ChunkBuilder(60f);
+            var cb = new ChunkBuilder(80f);
+            treeDead = new ChunkBuilder(80f); treeAlive.Clear(); treeAliveThreshold.Clear();
             var dark = Mats.Get(Mats.Opaque, new Color(0.22f, 0.22f, 0.24f));
             var rust = Mats.Get(Mats.Opaque, new Color(0.5f, 0.3f, 0.2f));
             var rng = new Rng(Def.Seed + 3);
@@ -75,8 +76,17 @@ namespace RePlanet
                     case "palm":
                     case "deadcactus":
                     case "icespike":
-                        BuildTree(p, rng);
-                        break;
+                        {
+                            float threshold = 0.05f + rng.Next() * 0.9f;
+                            int bucket = Mathf.Clamp((int)(threshold * 4f), 0, 3);
+                            int key = area * 4 + bucket;
+                            MultiBuilder alive;
+                            if (!treeAlive.TryGetValue(key, out alive)) { alive = new MultiBuilder { UsePalette = true }; treeAlive[key] = alive; treeAliveThreshold[key] = (bucket + 0.5f) / 4f; }
+                            var dead = treeDead.At(pos.x, pos.z);
+                            dead.M = alive.M = mb.M;
+                            BuildTree(p, rng, dead, alive);
+                            break;
+                        }
                     case "billboard":
                         Billboard(mb, rng);
                         BuildKonsumaSign(pos, p.Rot, p.Scale);
@@ -146,7 +156,7 @@ namespace RePlanet
                         break;
                     case "filterstation":
                         {
-                            var off = new MultiBuilder(); var on = new MultiBuilder();
+                            var off = new MultiBuilder { UsePalette = true }; var on = new MultiBuilder { UsePalette = true };
                             off.M = on.M = mb.M;
                             FilterStation(off, on);
                             projectSwitches.Add(new Switchable { Off = off.Build("FilterOff", Root), On = on.Build("FilterOn", Root), Project = "pelagia_p2" });
@@ -154,7 +164,7 @@ namespace RePlanet
                         }
                     case "reef":
                         {
-                            var on = new MultiBuilder();
+                            var on = new MultiBuilder { UsePalette = true };
                             on.M = mb.M;
                             Reef(on, rng);
                             projectSwitches.Add(new Switchable { On = on.Build("Reef", Root), Project = "pelagia_p3" });
@@ -180,7 +190,7 @@ namespace RePlanet
                         }
                     case "tradepost":
                         {
-                            var off = new MultiBuilder(); var on = new MultiBuilder();
+                            var off = new MultiBuilder { UsePalette = true }; var on = new MultiBuilder { UsePalette = true };
                             off.M = on.M = mb.M;
                             off.For(rust).Box(new Vector3(0, 2, 0), new Vector3(8, 4, 5));
                             off.For(Mats.Get(Mats.Opaque, new Color(0.35f, 0.2f, 0.14f))).BoxRot(new Vector3(0, 4.2f, 0), new Vector3(8.6f, 0.2f, 5.6f), new Vector3(0, 0, 6));
@@ -194,7 +204,7 @@ namespace RePlanet
                         }
                     case "recycler":
                         {
-                            var on = new MultiBuilder();
+                            var on = new MultiBuilder { UsePalette = true };
                             on.M = mb.M;
                             on.For(Mats.Get(Mats.Opaque, new Color(0.3f, 0.65f, 0.55f))).Box(new Vector3(0, 6, -6), new Vector3(20, 3, 3));
                             on.For(Mats.Get(Mats.Emissive, new Color(0.3f, 1f, 0.6f), new Color(0.4f, 2f, 0.8f))).Box(new Vector3(0, 8, -4.4f), new Vector3(10, 1.2f, 0.2f));
@@ -215,6 +225,14 @@ namespace RePlanet
             }
             BuildStreetFurniture(cb);
             cb.Build("Props", Root, true);
+            // Bäume: kahle Teile in Blöcken, lebendige Teile je Bereich und Wachstumsstufe zusammengefasst
+            treeDead.Build("TreesDead", Root, true);
+            foreach (var kv in treeAlive)
+            {
+                var go = kv.Value.BuildCombined("TreesAlive_" + kv.Key, Root, true);
+                trees.Add(new KeyValuePair<Transform, float>(go.transform, treeAliveThreshold[kv.Key]));
+                treeAreas.Add(kv.Key / 4);
+            }
             foreach (var kv in spinnersPending) spinnerProjects[kv.Key] = kv.Value;
             spinnersPending.Clear();
         }
@@ -329,15 +347,12 @@ namespace RePlanet
         /// Baum/Palme/Kaktus/Eisspitze: der kahle Teil ist immer sichtbar, der lebendige Teil (Krone, Wedel, Blüten,
         /// leuchtende Flechten) erscheint, sobald die Ökologie des Bereichs den Schwellwert des Baums erreicht.
         /// </summary>
-        void BuildTree(Prop p, Rng rng)
+        ChunkBuilder treeDead;
+        readonly Dictionary<int, MultiBuilder> treeAlive = new Dictionary<int, MultiBuilder>();
+        readonly Dictionary<int, float> treeAliveThreshold = new Dictionary<int, float>();
+
+        void BuildTree(Prop p, Rng rng, MultiBuilder dead, MultiBuilder alive)
         {
-            var go = new GameObject(p.Kind);
-            go.transform.SetParent(Root, false);
-            go.transform.localPosition = P(p.Pos);
-            go.transform.localRotation = Quaternion.Euler(0, p.Rot * Mathf.Rad2Deg, 0);
-            go.transform.localScale = Vector3.one * p.Scale;
-            var dead = new MultiBuilder();
-            var alive = new MultiBuilder();
             var trunk = Mats.Get(Mats.Opaque, new Color(0.35f, 0.26f, 0.18f));
             var trunkD = Mats.Get(Mats.Opaque, new Color(0.28f, 0.21f, 0.15f));
             switch (p.Kind)
@@ -416,7 +431,7 @@ namespace RePlanet
                         {
                             float a = i * 1.6f, tilt = i == 0 ? 0 : 18f + i * 6f;
                             var o = dead.M;
-                            dead.M = Matrix4x4.TRS(new Vector3(Mathf.Cos(a) * (i == 0 ? 0 : 0.5f), -0.2f, Mathf.Sin(a) * (i == 0 ? 0 : 0.5f)), Quaternion.Euler(Mathf.Sin(a) * tilt, 0, -Mathf.Cos(a) * tilt), Vector3.one);
+                            dead.M = o * Matrix4x4.TRS(new Vector3(Mathf.Cos(a) * (i == 0 ? 0 : 0.5f), -0.2f, Mathf.Sin(a) * (i == 0 ? 0 : 0.5f)), Quaternion.Euler(Mathf.Sin(a) * tilt, 0, -Mathf.Cos(a) * tilt), Vector3.one);
                             dead.For(iceM).Cylinder(Vector3.zero, i == 0 ? 0.8f : 0.4f, i == 0 ? 4f : 2.2f - i * 0.2f, 6, true, 0f);
                             dead.M = o;
                         }
@@ -433,11 +448,6 @@ namespace RePlanet
                         break;
                     }
             }
-            dead.Build("dead", go.transform, true);
-            var aliveGo = alive.Build("alive", go.transform, true);
-            // Bäume bleiben kahl, bis die Ökologie des Bereichs wächst (je Baum eigener Schwellwert)
-            float threshold = 0.05f + rng.Next() * 0.9f;
-            trees.Add(new KeyValuePair<Transform, float>(aliveGo.transform, threshold));
         }
 
         /// <summary>Gepflanzter Setzling je Planet (wächst mit der Zeit).</summary>
@@ -525,7 +535,7 @@ namespace RePlanet
                 go.transform.localPosition = P(s.Pos);
                 // Pflanzstelle (Markierung) bleibt immer sichtbar
                 Obj("bed", MeshKit.Cylinder, Mats.Get(Mats.Opaque, new Color(0.35f, 0.25f, 0.18f)), P(s.Pos) + Vector3.up * 0.02f, new Vector3(2.2f, 0.06f, 2.2f), Quaternion.identity, Root, false);
-                var plantB = new MultiBuilder();
+                var plantB = new MultiBuilder { UsePalette = true };
                 EcoPlant(plantB, new Rng((int)Hash.Fnv1a(s.Id)));
                 plantB.Build("Plant", go.transform, true);
                 ecoVisuals[s.Id] = go.transform;
@@ -559,7 +569,7 @@ namespace RePlanet
         /// <summary>Unterschlupf (planetentypisch) – auch für selbst gebaute Notunterschlüpfe.</summary>
         public GameObject BuildShelter(Vector3 pos, float yaw, bool emergency)
         {
-            var mb = new MultiBuilder();
+            var mb = new MultiBuilder { UsePalette = true };
             mb.M = Matrix4x4.TRS(pos, Quaternion.Euler(0, yaw * Mathf.Rad2Deg, 0), Vector3.one);
             var dark = Mats.Get(Mats.Opaque, new Color(0.25f, 0.25f, 0.27f));
             var warm = Mats.Get(Mats.Emissive, new Color(1f, 0.8f, 0.5f), new Color(1.2f, 0.8f, 0.4f));

@@ -49,7 +49,8 @@ namespace RePlanet
         static readonly Color[] SignCols = { new Color(0.85f, 0.25f, 0.2f), new Color(0.2f, 0.45f, 0.75f), new Color(0.95f, 0.72f, 0.2f), new Color(0.25f, 0.6f, 0.4f) };
         static readonly Color[] ContainerCols = { new Color(0.62f, 0.22f, 0.17f), new Color(0.2f, 0.4f, 0.62f), new Color(0.25f, 0.5f, 0.35f), new Color(0.85f, 0.5f, 0.18f), new Color(0.82f, 0.82f, 0.78f), new Color(0.55f, 0.35f, 0.25f) };
 
-        Material trimMat, darkMat, roofMat, woodMat, acMat, railMat, rubbleMat, plinthMat, glassDark, signLight;
+        Material trimMat, trimDarkMat, darkMat, roofMat, woodMat, acMat, railMat, rubbleMat, plinthMat, glassDark, signLight;
+        static readonly Color[] RoofCols = { new Color(0.55f, 0.2f, 0.15f), new Color(0.2f, 0.32f, 0.45f), new Color(0.25f, 0.4f, 0.3f) };
 
         /// <summary>Dachhöhen der Flachdach-Gebäude (drei Scheiben entlang X; Ruinen sind teilweise abgebrochen).</summary>
         readonly Dictionary<Box, float[]> roofTops = new Dictionary<Box, float[]>();
@@ -68,6 +69,7 @@ namespace RePlanet
         void InitBuildingMats()
         {
             trimMat = Mat(new Color(0.86f, 0.84f, 0.78f));
+            trimDarkMat = Mat(new Color(0.42f, 0.39f, 0.35f));
             darkMat = Mat(new Color(0.16f, 0.16f, 0.17f));
             roofMat = Mat(new Color(0.3f, 0.29f, 0.29f));
             woodMat = Mat(new Color(0.46f, 0.33f, 0.22f));
@@ -83,7 +85,7 @@ namespace RePlanet
         void BuildBoxes()
         {
             InitBuildingMats();
-            var cb = new ChunkBuilder(60f);
+            var cb = new ChunkBuilder(80f);
             var rng = new Rng(Def.Seed + 77);
             foreach (var bx in Layout.Colliders)
             {
@@ -180,7 +182,7 @@ namespace RePlanet
             float gy = Terrain.HeightAt(Planet, bx.Cx, bx.Cz);
             float top = bx.Y0 + bx.H;
             var wall = Mat(col);
-            var trim = rng.Chance(0.5f) ? trimMat : Mat(col * 0.72f);
+            var trim = rng.Chance(0.5f) ? trimMat : trimDarkMat;
             var win = WindowMat(area);
             int style = rng.Range(0, 4);
             bool ruin = !mall && rng.Chance(0.3f) && top - gy > 7f;
@@ -236,7 +238,7 @@ namespace RePlanet
             float winW = mall ? 3.2f : 1.2f, winH = mall ? 2.2f : 1.5f, spacing = mall ? 4.5f : 3f;
             bool balconies = !mall && style == 0;
             bool shutters = !mall && style == 1;
-            var shutterMat = Mat(SignCols[rng.Range(0, SignCols.Length)] * 0.8f);
+            var shutterMat = Mat(SignCols[rng.Range(0, SignCols.Length)]);
             for (int f = 0; f < 4; f++)
             {
                 if ((faceMask & (1 << f)) == 0) continue;
@@ -367,7 +369,7 @@ namespace RePlanet
             FBox(mb.For(railMat), f, u, y + 0.62f, 1.08f, 2.0f, 0.9f, 0.05f);
             FBox(mb.For(railMat), f, u - 0.98f, y + 0.62f, 0.55f, 0.05f, 0.9f, 1.1f);
             FBox(mb.For(railMat), f, u + 0.98f, y + 0.62f, 0.55f, 0.05f, 0.9f, 1.1f);
-            if (rng.Chance(0.35f)) FBox(mb.For(Mat(SignCols[rng.Range(0, SignCols.Length)] * 0.7f)), f, u + 0.5f, y + 0.4f, 0.5f, 0.5f, 0.5f, 0.5f, 0f); // abgestellte Kiste
+            if (rng.Chance(0.35f)) FBox(mb.For(woodMat), f, u + 0.5f, y + 0.4f, 0.5f, 0.5f, 0.5f, 0.5f, 0f); // abgestellte Kiste
         }
 
         void Door(MultiBuilder mb, Facade f, float u, float gy)
@@ -401,7 +403,7 @@ namespace RePlanet
                 if (!rng.Chance(0.15f)) FBox(mb.For(signLight), f, -w * 0.4f + (k + 0.5f) * w * 0.8f / letters, gy + 3.0f + (rng.Chance(0.1f) ? -0.15f : 0f), 0.23f, w * 0.5f / letters, 0.45f, 0.03f, rng.Chance(0.1f) ? 15f : 0f);
             if (!mall && rng.Chance(0.7f)) // Markise mit Streifen
             {
-                var aw = Mat(SignCols[rng.Range(0, SignCols.Length)] * 0.9f);
+                var aw = Mat(SignCols[rng.Range(0, SignCols.Length)]);
                 bool torn = rng.Chance(0.3f);
                 FBox(mb.For(aw), f, 0, gy + 2.45f, 0.65f, w * (torn ? 0.6f : 0.95f), 0.06f, 1.3f, 0f, -18f);
                 for (int k = 0; k < 5; k++) FBox(mb.For(trimMat), f, -w * 0.38f + k * w * 0.19f, gy + 2.46f, 0.66f, w * 0.06f, 0.07f, 1.32f, 0f, -18f);
@@ -520,8 +522,8 @@ namespace RePlanet
             float gy = Terrain.HeightAt(Planet, bx.Cx, bx.Cz);
             float top = bx.Y0 + bx.H;
             var wall = Mat(col);
-            var rib = Mat(col * 0.82f);
-            var roofC = Planet == "pelagia" ? SignCols[rng.Range(0, SignCols.Length)] * 0.65f : Planet == "pyra" ? new Color(0.36f, 0.22f, 0.16f) : new Color(0.32f, 0.33f, 0.34f);
+            var rib = Mat(col);
+            var roofC = Planet == "pelagia" ? RoofCols[rng.Range(0, RoofCols.Length)] : Planet == "pyra" ? new Color(0.36f, 0.22f, 0.16f) : new Color(0.32f, 0.33f, 0.34f);
             var roof = Mat(roofC);
             var rust = Mat(new Color(0.4f, 0.22f, 0.14f));
             var win = WindowMat(area);
@@ -824,7 +826,7 @@ namespace RePlanet
             var o = mb.M;
             mb.M = Matrix4x4.TRS(c, Quaternion.Euler(0, yaw, 0), Vector3.one);
             mb.For(colM).Box(Vector3.zero, new Vector3(2.4f, 2.55f, 6f));
-            var ribM = Mat(ContainerCols[rng.Range(0, ContainerCols.Length)] * 0.8f);
+            var ribM = colM;
             for (float z = -2.6f; z <= 2.61f; z += 0.65f)
             {
                 mb.For(ribM).Box(new Vector3(1.22f, 0, z), new Vector3(0.05f, 2.35f, 0.12f));
@@ -844,8 +846,8 @@ namespace RePlanet
             var pole = Mat(new Color(0.4f, 0.3f, 0.2f));
             var plank = Mat(new Color(0.55f, 0.42f, 0.28f));
             var wall = Mat(col);
-            var siding = Mat(col * 0.82f);
-            var roof = Mat(SignCols[rng.Range(0, SignCols.Length)] * 0.75f);
+            var siding = trimDarkMat;
+            var roof = Mat(RoofCols[rng.Range(0, RoofCols.Length)]);
             float deck = g + 1.4f;
             float wallTop = g + h - 0.6f;
             for (int i = 0; i < 4; i++)
@@ -878,7 +880,7 @@ namespace RePlanet
                 else if (fc.Len > 2f)
                 {
                     FBox(mb.For(rng.Chance(0.3f) ? glassDark : WindowMat(area)), fc, 0, deck + 1.4f, 0.04f, 0.9f, 0.8f, 0.06f);
-                    var sh = Mat(SignCols[rng.Range(0, SignCols.Length)] * 0.7f);
+                    var sh = Mat(SignCols[rng.Range(0, SignCols.Length)]);
                     FBox(mb.For(sh), fc, -0.7f, deck + 1.4f, 0.06f, 0.4f, 0.9f, 0.04f);
                     FBox(mb.For(sh), fc, 0.7f, deck + 1.4f, 0.06f, 0.4f, 0.9f, 0.04f, rng.Chance(0.4f) ? -15f : 0f);
                 }
@@ -911,7 +913,7 @@ namespace RePlanet
                 for (int k = 1; k < 5; k++)
                 {
                     var p = Vector3.Lerp(a, lamp + Vector3.up * 1.9f, k / 5f) + Vector3.down * 0.3f;
-                    mb.For(Mat(SignCols[rng.Range(0, SignCols.Length)] * 0.95f)).Box(p, new Vector3(0.35f, 0.5f, 0.02f));
+                    mb.For(Mat(SignCols[rng.Range(0, SignCols.Length)])).Box(p, new Vector3(0.35f, 0.5f, 0.02f));
                 }
             }
         }

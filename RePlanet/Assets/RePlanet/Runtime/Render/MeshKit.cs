@@ -23,13 +23,15 @@ namespace RePlanet
         public Color Tint = Color.white;
         /// <summary>Aktuelles Untermesh (0 … MaxSub-1), in das neue Dreiecke geschrieben werden.</summary>
         public int Sub;
+        /// <summary>Fester UV-Wert für alle neuen Ecken (Farbpalette), sonst die Flächenkoordinaten.</summary>
+        public Vector2? FixedUV;
         public int VertexCount { get { return v.Count; } }
 
         int V(Vector3 p, Vector3 normal, Vector2 u)
         {
             v.Add(M.MultiplyPoint3x4(p));
             n.Add(M.MultiplyVector(normal).normalized);
-            uv.Add(u);
+            uv.Add(FixedUV ?? u);
             col.Add(Tint);
             return v.Count - 1;
         }
@@ -403,7 +405,101 @@ namespace RePlanet
         {
             v.Clear(); n.Clear(); uv.Clear(); col.Clear();
             for (int i = 0; i < MaxSub; i++) if (ts[i] != null) ts[i].Clear();
-            M = Matrix4x4.identity; Sub = 0;
+            M = Matrix4x4.identity; Sub = 0; FixedUV = null;
+        }
+    }
+
+    /// <summary>
+    /// Farbpalette als Textur: Der Standard-Shader kennt keine Eckenfarben, liest aber _MainTex. Jede schlichte,
+    /// deckende Farbe aus Mats.Get (Vorlage Opaque, ohne Leuchten) bekommt ein Texel; die Ecken eines Teils zeigen per
+    /// UV auf dieses Texel. So teilen sich alle diese Teile ein einziges Material (plus eine glänzende Variante) –
+    /// statt eines Draw-Calls je Farbe und Block. Leuchtende, metallische, transparente und eigenständige
+    /// (animierte) Materialien bleiben unverändert.
+    /// </summary>
+    public static class Palette
+    {
+        const int N = 64;
+        static Texture2D tex;
+        static Material matte, glossy;
+        static readonly Dictionary<Color32Key, int> index = new Dictionary<Color32Key, int>();
+        static readonly Dictionary<Material, KeyValuePair<Material, Vector2>> routes = new Dictionary<Material, KeyValuePair<Material, Vector2>>();
+        static bool dirty;
+        static float templateGloss = -1f;
+
+        struct Color32Key : System.IEquatable<Color32Key>
+        {
+            public int V;
+            public bool Equals(Color32Key o) { return V == o.V; }
+            public override int GetHashCode() { return V; }
+        }
+
+        static void Init()
+        {
+            if (tex != null) return;
+            tex = new Texture2D(N, N, TextureFormat.RGBA32, false) { filterMode = FilterMode.Point, wrapMode = TextureWrapMode.Clamp, name = "RP_Palette" };
+            matte = Mats.Unique(Mats.Opaque, Color.white);
+            matte.name = "RP_Palette_Matt";
+            matte.mainTexture = tex;
+            glossy = Mats.Unique(Mats.Opaque, Color.white);
+            glossy.name = "RP_Palette_Glanz";
+            glossy.mainTexture = tex;
+            try { glossy.SetFloat("_Glossiness", 0.85f); } catch { }
+            try { var t = Mats.Template(Mats.Opaque); templateGloss = t.HasProperty("_Glossiness") ? t.GetFloat("_Glossiness") : 0.2f; } catch { templateGloss = 0.2f; }
+        }
+
+        static bool Plain(Material m)
+        {
+            // Mats.Get benennt Materialien „RP_Opaque_RRGGBBAA“; Mats.Unique behält den Vorlagennamen (bleibt eigenständig)
+            var n = m.name;
+            if (n == null || n.Length != Mats.Opaque.Length + 9 || !n.StartsWith(Mats.Opaque + "_")) return false;
+            if (m.IsKeywordEnabled("_EMISSION")) return false;
+            return m.color.a > 0.99f;
+        }
+
+        /// <summary>Leitet ein schlichtes Material auf das Paletten-Material um; liefert false, wenn es eigenständig bleiben soll.</summary>
+        public static bool Route(Material m, out Material target, out Vector2 uv)
+        {
+            target = m; uv = Vector2.zero;
+            if (m == null) return false;
+            KeyValuePair<Material, Vector2> r;
+            if (routes.TryGetValue(m, out r)) { target = r.Key; uv = r.Value; return target != m; }
+            bool ok = false;
+            try { ok = Plain(m); } catch { ok = false; }
+            if (ok)
+            {
+                Init();
+                Color32 c = m.color;
+                var key = new Color32Key { V = (c.r << 16) | (c.g << 8) | c.b };
+                int i;
+                if (!index.TryGetValue(key, out i))
+                {
+                    if (index.Count >= N * N) ok = false;
+                    else
+                    {
+                        i = index.Count;
+                        index[key] = i;
+                        tex.SetPixel(i % N, i / N, m.color);
+                        dirty = true;
+                    }
+                }
+                if (ok)
+                {
+                    float g = templateGloss;
+                    try { if (m.HasProperty("_Glossiness")) g = m.GetFloat("_Glossiness"); } catch { }
+                    target = g >= 0.5f ? glossy : matte;
+                    uv = new Vector2((i % N + 0.5f) / N, (i / N + 0.5f) / N);
+                }
+            }
+            routes[m] = new KeyValuePair<Material, Vector2>(target, uv);
+            return target != m;
+        }
+
+        /// <summary>Überträgt neu vergebene Farben auf die Grafikkarte.</summary>
+        public static void Flush()
+        {
+            if (!dirty || tex == null) return;
+            tex.Apply(false);
+            dirty = false;
         }
     }
 
@@ -413,12 +509,18 @@ namespace RePlanet
         readonly Dictionary<Material, MeshBuilder> parts = new Dictionary<Material, MeshBuilder>();
         readonly List<Material> order = new List<Material>();
         public Matrix4x4 M = Matrix4x4.identity;
+        /// <summary>Schlichte Farben über die Farbpalette zusammenfassen (weniger Draw-Calls).</summary>
+        public bool UsePalette;
 
         public MeshBuilder For(Material m)
         {
+            Vector2 uv = Vector2.zero; Material target = m;
+            bool pal = UsePalette && Palette.Route(m, out target, out uv);
+            if (!pal) { target = m; uv = Vector2.zero; }
             MeshBuilder b;
-            if (!parts.TryGetValue(m, out b)) { b = new MeshBuilder(); parts[m] = b; order.Add(m); }
+            if (!parts.TryGetValue(target, out b)) { b = new MeshBuilder(); parts[target] = b; order.Add(target); }
             b.M = M;
+            b.FixedUV = pal ? (Vector2?)uv : null;
             return b;
         }
 
@@ -434,6 +536,7 @@ namespace RePlanet
 
         public GameObject Build(string name, Transform parent, bool shadows = true)
         {
+            Palette.Flush();
             var go = new GameObject(name);
             if (parent != null) go.transform.SetParent(parent, false);
             foreach (var mat in order)
@@ -457,6 +560,7 @@ namespace RePlanet
         /// </summary>
         public GameObject BuildCombined(string name, Transform parent, bool shadows = true)
         {
+            Palette.Flush();
             var go = new GameObject(name);
             if (parent != null) go.transform.SetParent(parent, false);
             var verts = new List<Vector3>(); var norms = new List<Vector3>(); var uvs = new List<Vector2>();
@@ -495,13 +599,14 @@ namespace RePlanet
     {
         readonly Dictionary<long, MultiBuilder> chunks = new Dictionary<long, MultiBuilder>();
         readonly float size;
-        public ChunkBuilder(float chunkSize) { size = chunkSize; }
+        readonly bool palette;
+        public ChunkBuilder(float chunkSize, bool usePalette = true) { size = chunkSize; palette = usePalette; }
 
         public MultiBuilder At(float x, float z)
         {
             long k = ((long)Mathf.FloorToInt(x / size) << 32) ^ (uint)Mathf.FloorToInt(z / size);
             MultiBuilder mb;
-            if (!chunks.TryGetValue(k, out mb)) { mb = new MultiBuilder(); chunks[k] = mb; }
+            if (!chunks.TryGetValue(k, out mb)) { mb = new MultiBuilder { UsePalette = palette }; chunks[k] = mb; }
             return mb;
         }
 
