@@ -41,25 +41,32 @@ namespace RePlanet
             l.Add(a); l.Add(b); l.Add(c);
         }
 
+        /// <summary>
+        /// Viereck a-b-c-d (umlaufend). Die Dreiecke werden so gewickelt, dass die Vorderseite in Richtung
+        /// <paramref name="normal"/> zeigt – Unity rendert nur Dreiecke, die von vorn im Uhrzeigersinn erscheinen
+        /// (Vorderseiten-Normale = Cross(b − a, c − a)). Früher war die Wicklung fest und für Quader verkehrt herum:
+        /// man sah deren Innenseiten.
+        /// </summary>
         public void Quad(Vector3 a, Vector3 b, Vector3 c, Vector3 d, Vector3 normal)
         {
             int i0 = V(a, normal, new Vector2(0, 0)), i1 = V(b, normal, new Vector2(1, 0)), i2 = V(c, normal, new Vector2(1, 1)), i3 = V(d, normal, new Vector2(0, 1));
-            Tri(i0, i2, i1); Tri(i0, i3, i2);
+            if (Vector3.Dot(Vector3.Cross(b - a, c - a) + Vector3.Cross(c - a, d - a), normal) >= 0f) { Tri(i0, i1, i2); Tri(i0, i2, i3); }
+            else { Tri(i0, i2, i1); Tri(i0, i3, i2); }
         }
 
         /// <summary>Viereck mit automatisch bestimmter Normale; die Vorderseite zeigt in Richtung <paramref name="outward"/>.</summary>
         public void Face(Vector3 a, Vector3 b, Vector3 c, Vector3 d, Vector3 outward)
         {
-            var nr = Vector3.Cross(b - a, c - a);
+            var nr = Vector3.Cross(b - a, c - a) + Vector3.Cross(c - a, d - a);
             if (nr.sqrMagnitude < 1e-12f) nr = outward;
-            if (Vector3.Dot(nr, outward) < 0) { var t = b; b = d; d = t; nr = -nr; }
+            if (Vector3.Dot(nr, outward) < 0) nr = -nr;
             Quad(a, b, c, d, nr.normalized);
         }
 
         /// <summary>Dreieck, dessen Vorderseite in Richtung <paramref name="outward"/> zeigt.</summary>
         public void TriFace(Vector3 a, Vector3 b, Vector3 c, Vector3 outward)
         {
-            var nr = -Vector3.Cross(b - a, c - a);
+            var nr = Vector3.Cross(b - a, c - a);
             if (Vector3.Dot(nr, outward) < 0) { var t = b; b = c; c = t; nr = -nr; }
             nr = nr.sqrMagnitude < 1e-12f ? outward.normalized : nr.normalized;
             int i0 = V(a, nr, new Vector2(0, 0)), i1 = V(b, nr, new Vector2(1, 0)), i2 = V(c, nr, new Vector2(0.5f, 1));
@@ -109,10 +116,13 @@ namespace RePlanet
             M = old * Matrix4x4.TRS(c, Quaternion.Euler(euler), Vector3.one);
             var h = s * 0.5f;
             var p = new Vector3[8];
+            // Verschiebung je Achse höchstens 30 % der Kantenlänge – sonst falten sich dünne Platten um
+            float cap = Mathf.Min(Mathf.Abs(s.x), Mathf.Min(Mathf.Abs(s.y), Mathf.Abs(s.z))) * 0.6f;
+            var jx = Mathf.Min(jitter, Mathf.Min(Mathf.Abs(s.x) * 0.3f, cap)); var jy = Mathf.Min(jitter, Mathf.Min(Mathf.Abs(s.y) * 0.3f, cap)); var jz = Mathf.Min(jitter, Mathf.Min(Mathf.Abs(s.z) * 0.3f, cap));
             for (int i = 0; i < 8; i++)
             {
                 var q = new Vector3((i & 1) == 0 ? -h.x : h.x, (i & 2) == 0 ? -h.y : h.y, (i & 4) == 0 ? -h.z : h.z);
-                q += new Vector3(Hash01(i, 1, seed) - 0.5f, Hash01(i, 2, seed) - 0.5f, Hash01(i, 3, seed) - 0.5f) * 2f * jitter;
+                q += new Vector3((Hash01(i, 1, seed) - 0.5f) * 2f * jx, (Hash01(i, 2, seed) - 0.5f) * 2f * jy, (Hash01(i, 3, seed) - 0.5f) * 2f * jz);
                 p[i] = q;
             }
             Face(p[0], p[2], p[3], p[1], Vector3.back);
@@ -310,7 +320,7 @@ namespace RePlanet
                 for (int j = 0; j < sides; j++)
                 {
                     int a = start + i * (sides + 1) + j, b = a + sides + 1;
-                    Tri(a, b, b + 1); Tri(a, b + 1, a + 1);
+                    Tri(a, b + 1, b); Tri(a, a + 1, b + 1); // Außenseite vorn (früher verkehrt herum)
                 }
         }
 
@@ -335,7 +345,8 @@ namespace RePlanet
                 {
                     float ph = x / (float)seg * Mathf.PI * 2;
                     int xi = x % seg;
-                    float jit = 1f + noise * (Hash01(xi, y, seed) - 0.5f) * 2f;
+                    // Großteil der Zufallsform je Spalte gemeinsam, damit sich die Hülle nicht nach innen faltet
+                    float jit = 1f + noise * ((Hash01(xi, 0, seed) - 0.5f) * 1.5f + (Hash01(xi, y, seed + 17) - 0.5f) * 0.5f);
                     if (y == rings) jit = 1f;
                     var d = new Vector3(Mathf.Cos(th) * Mathf.Cos(ph), Mathf.Sin(th), Mathf.Cos(th) * Mathf.Sin(ph));
                     V(c + new Vector3(d.x * r * jit, d.y * h * jit, d.z * r * jit), new Vector3(d.x, d.y * 1.5f, d.z).normalized, new Vector2(x / (float)seg, pv));
