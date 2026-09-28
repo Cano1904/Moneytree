@@ -769,7 +769,7 @@ namespace RePlanet
         {
             var f = new Dictionary<char, string>();
             Action<char, string> G = (c, rows) => f[c] = rows;
-            G('A', ".###.#...##...######...##...##...#");
+            G('A', ".###.#...##...#######...##...##...#");
             G('B', "####.#...##...#####.#...##...#####.");
             G('C', ".#####....#....#....#....#.....####");
             G('D', "####.#...##...##...##...##...#####.");
@@ -811,7 +811,8 @@ namespace RePlanet
             for (int ci = 0; ci < s.Length; ci++)
             {
                 string gl;
-                if (!Font.TryGetValue(char.ToUpperInvariant(s[ci]), out gl)) continue;
+                // Jede Glyphe hat 7×5 Zellen; eine zu kurze Zeichenkette würde sonst mitten im Bühnenbau abbrechen
+                if (!Font.TryGetValue(char.ToUpperInvariant(s[ci]), out gl) || gl.Length < 35) continue;
                 var mat = ci == altIndex && alt != null ? alt : m;
                 for (int row = 0; row < 7; row++)
                     for (int col = 0; col < 5; col++)
