@@ -312,6 +312,23 @@ namespace RePlanet
             return tm;
         }
 
+        /// <summary>Doppelseitiges, gebogenes Wedelblatt (Palmen, Farne).</summary>
+        static void FrondLeaf(MeshBuilder b, Vector3 basePos, float yaw, float len, float width, float lift, float droop)
+        {
+            var dir = Quaternion.Euler(0, yaw, 0) * Vector3.forward;
+            var side = Quaternion.Euler(0, yaw, 0) * Vector3.right;
+            var p0 = basePos; var p1 = basePos + dir * len * 0.5f + Vector3.up * lift; var p2 = basePos + dir * len + Vector3.up * (lift - droop);
+            float w0 = width * 0.3f, w1 = width, w2 = width * 0.12f;
+            b.Face(p0 - side * w0, p1 - side * w1, p1 + side * w1, p0 + side * w0, Vector3.up);
+            b.Face(p0 - side * w0, p0 + side * w0, p1 + side * w1, p1 - side * w1, Vector3.down);
+            b.Face(p1 - side * w1, p2 - side * w2, p2 + side * w2, p1 + side * w1, Vector3.up);
+            b.Face(p1 - side * w1, p1 + side * w1, p2 + side * w2, p2 - side * w2, Vector3.down);
+        }
+
+        /// <summary>
+        /// Baum/Palme/Kaktus/Eisspitze: der kahle Teil ist immer sichtbar, der lebendige Teil (Krone, Wedel, Blüten,
+        /// leuchtende Flechten) erscheint, sobald die Ökologie des Bereichs den Schwellwert des Baums erreicht.
+        /// </summary>
         void BuildTree(Prop p, Rng rng)
         {
             var go = new GameObject(p.Kind);
@@ -319,36 +336,161 @@ namespace RePlanet
             go.transform.localPosition = P(p.Pos);
             go.transform.localRotation = Quaternion.Euler(0, p.Rot * Mathf.Rad2Deg, 0);
             go.transform.localScale = Vector3.one * p.Scale;
-            var dead = new GameObject("dead"); dead.transform.SetParent(go.transform, false);
-            var alive = new GameObject("alive"); alive.transform.SetParent(go.transform, false);
+            var dead = new MultiBuilder();
+            var alive = new MultiBuilder();
             var trunk = Mats.Get(Mats.Opaque, new Color(0.35f, 0.26f, 0.18f));
+            var trunkD = Mats.Get(Mats.Opaque, new Color(0.28f, 0.21f, 0.15f));
             switch (p.Kind)
             {
                 case "tree":
-                    Obj("trunk", MeshKit.Cylinder, trunk, new Vector3(0, 1.8f, 0), new Vector3(0.35f, 3.6f, 0.35f), Quaternion.identity, dead.transform);
-                    Obj("branch", MeshKit.Cube, trunk, new Vector3(0.4f, 3.2f, 0), new Vector3(1.2f, 0.12f, 0.12f), Quaternion.Euler(0, 0, 35), dead.transform);
-                    Obj("crown", MeshKit.Sphere, Mats.Get(Mats.Opaque, new Color(0.3f + rng.Next() * 0.1f, 0.55f + rng.Next() * 0.15f, 0.25f)), new Vector3(0, 4.2f, 0), new Vector3(3.4f, 3f, 3.4f), Quaternion.identity, alive.transform);
-                    Obj("crown2", MeshKit.Sphere, Mats.Get(Mats.Opaque, new Color(0.9f, 0.4f, 0.45f)), new Vector3(0.9f, 5f, 0.4f), new Vector3(1.4f, 1.2f, 1.4f), Quaternion.identity, alive.transform);
-                    break;
+                    {
+                        dead.For(trunk).Tube(Vector3.zero, new Vector3(0.1f, 3.4f, 0), 0.24f, 8, false, 0.12f);
+                        dead.For(trunkD).Cylinder(Vector3.zero, 0.34f, 0.3f, 8, false, 0.24f);
+                        for (int i = 0; i < 5; i++)
+                        {
+                            float a = i * 1.3f + rng.Range(0f, 0.5f), y = 2.0f + i * 0.35f;
+                            var s0 = new Vector3(0.05f, y, 0);
+                            var s1 = s0 + new Vector3(Mathf.Cos(a) * 1.3f, 0.9f, Mathf.Sin(a) * 1.3f);
+                            dead.For(trunk).Tube(s0, s1, 0.08f, 5, false, 0.04f);
+                            dead.For(trunk).Tube(s1, s1 + new Vector3(Mathf.Cos(a + 0.6f) * 0.5f, 0.5f, Mathf.Sin(a + 0.6f) * 0.5f), 0.035f, 4, false, 0.01f);
+                        }
+                        var leafA = Mats.Get(Mats.Opaque, new Color(0.28f + rng.Next() * 0.1f, 0.52f + rng.Next() * 0.15f, 0.24f));
+                        var leafB = Mats.Get(Mats.Opaque, new Color(0.38f, 0.66f, 0.3f));
+                        for (int i = 0; i < 6; i++)
+                        {
+                            float a = i * 1.05f;
+                            var c = new Vector3(Mathf.Cos(a) * (i == 0 ? 0f : 1.1f), 4.1f + (i % 3) * 0.45f + (i == 0 ? 0.8f : 0f), Mathf.Sin(a) * (i == 0 ? 0f : 1.1f));
+                            alive.For(i % 2 == 0 ? leafA : leafB).Crumple(c, i == 0 ? 1.6f : 1.15f, 0.8f, i + (int)(p.Pos.x * 3), 0.2f, 9, 6);
+                        }
+                        var blossom = Mats.Get(Mats.Opaque, rng.Chance(0.5f) ? new Color(0.95f, 0.5f, 0.6f) : new Color(1f, 0.85f, 0.4f));
+                        for (int i = 0; i < 9; i++)
+                        {
+                            float a = rng.Range(0f, 6.28f), r = rng.Range(1.2f, 1.9f);
+                            alive.For(blossom).Sphere(new Vector3(Mathf.Cos(a) * r, rng.Range(3.9f, 5.8f), Mathf.Sin(a) * r), 0.16f, 6, 4);
+                        }
+                        break;
+                    }
                 case "palm":
-                    Obj("trunk", MeshKit.Cylinder, trunk, new Vector3(0.3f, 2.5f, 0), new Vector3(0.3f, 5f, 0.3f), Quaternion.Euler(0, 0, -8), dead.transform);
-                    for (int i = 0; i < 6; i++)
-                        Obj("leaf", MeshKit.Cube, Mats.Get(Mats.Opaque, new Color(0.2f, 0.55f, 0.3f)), new Vector3(0.7f, 4.9f, 0), new Vector3(2.8f, 0.08f, 0.7f), Quaternion.Euler(0, i * 60, -25), alive.transform);
-                    break;
+                    {
+                        var pts = new Vector3[6];
+                        float lean = rng.Range(0.3f, 0.9f);
+                        for (int i = 0; i < 6; i++) { float t = i / 5f; pts[i] = new Vector3(lean * t * t * 1.4f, t * 5.2f, 0); }
+                        for (int i = 0; i < 5; i++)
+                        {
+                            dead.For(trunk).Tube(pts[i], pts[i + 1], Mathf.Lerp(0.26f, 0.17f, i / 5f), 7, false, Mathf.Lerp(0.26f, 0.17f, (i + 1) / 5f));
+                            dead.For(trunkD).Torus(pts[i] + Vector3.up * 0.5f, Mathf.Lerp(0.26f, 0.17f, i / 5f) + 0.02f, 0.035f, 8, 3);
+                        }
+                        var top = pts[5];
+                        var frondM = Mats.Get(Mats.Opaque, new Color(0.22f, 0.58f, 0.32f));
+                        var frondM2 = Mats.Get(Mats.Opaque, new Color(0.3f, 0.66f, 0.36f));
+                        for (int i = 0; i < 9; i++) FrondLeaf(alive.For(i % 2 == 0 ? frondM : frondM2), top, i * 40 + rng.Range(-8f, 8f), rng.Range(2.4f, 3.1f), 0.32f, 0.5f, 1.4f);
+                        var nut = Mats.Get(Mats.Opaque, new Color(0.42f, 0.3f, 0.18f));
+                        for (int i = 0; i < 3; i++) alive.For(nut).Sphere(top + new Vector3(Mathf.Cos(i * 2.1f) * 0.22f, -0.2f, Mathf.Sin(i * 2.1f) * 0.22f), 0.14f, 6, 4);
+                        // trockene, hängende Wedel am toten Stamm
+                        for (int i = 0; i < 4; i++) FrondLeaf(dead.For(Mats.Get(Mats.Opaque, new Color(0.52f, 0.42f, 0.26f))), top + Vector3.down * 0.2f, i * 90 + 30, 1.8f, 0.22f, -0.2f, 1.2f);
+                        break;
+                    }
                 case "deadcactus":
-                    Obj("trunk", MeshKit.Cylinder, Mats.Get(Mats.Opaque, new Color(0.45f, 0.35f, 0.25f)), new Vector3(0, 1.2f, 0), new Vector3(0.5f, 2.4f, 0.5f), Quaternion.identity, dead.transform);
-                    Obj("arm", MeshKit.Cylinder, Mats.Get(Mats.Opaque, new Color(0.45f, 0.35f, 0.25f)), new Vector3(0.45f, 1.5f, 0), new Vector3(0.3f, 1.0f, 0.3f), Quaternion.identity, dead.transform);
-                    Obj("green", MeshKit.Cylinder, Mats.Get(Mats.Opaque, new Color(0.35f, 0.6f, 0.3f)), new Vector3(0, 1.3f, 0), new Vector3(0.55f, 2.6f, 0.55f), Quaternion.identity, alive.transform);
-                    Obj("bloom", MeshKit.Sphere, Mats.Get(Mats.Opaque, new Color(1f, 0.45f, 0.3f)), new Vector3(0, 2.7f, 0), Vector3.one * 0.5f, Quaternion.identity, alive.transform);
-                    break;
+                    {
+                        var dry = Mats.Get(Mats.Opaque, new Color(0.45f, 0.35f, 0.25f));
+                        dead.For(dry).Tube(Vector3.zero, new Vector3(0, 2.6f, 0), 0.26f, 8, true, 0.22f);
+                        dead.For(dry).Tube(new Vector3(0.2f, 1.1f, 0), new Vector3(0.65f, 1.2f, 0), 0.14f, 6);
+                        dead.For(dry).Tube(new Vector3(0.65f, 1.2f, 0), new Vector3(0.7f, 1.9f, 0), 0.14f, 6, true, 0.12f);
+                        dead.For(dry).Tube(new Vector3(-0.2f, 1.5f, 0.05f), new Vector3(-0.55f, 1.45f, 0.1f), 0.12f, 6);
+                        dead.For(dry).Tube(new Vector3(-0.55f, 1.45f, 0.1f), new Vector3(-0.62f, 1.9f, 0.1f), 0.12f, 6, true, 0.1f);
+                        var green = Mats.Get(Mats.Opaque, new Color(0.32f, 0.6f, 0.34f));
+                        alive.For(green).Tube(Vector3.zero, new Vector3(0, 2.7f, 0), 0.3f, 10, true, 0.26f);
+                        alive.For(green).Tube(new Vector3(0.2f, 1.1f, 0), new Vector3(0.68f, 1.2f, 0), 0.18f, 8);
+                        alive.For(green).Tube(new Vector3(0.68f, 1.2f, 0), new Vector3(0.74f, 2.05f, 0), 0.18f, 8, true, 0.15f);
+                        alive.For(green).Tube(new Vector3(-0.2f, 1.5f, 0.05f), new Vector3(-0.58f, 1.45f, 0.1f), 0.16f, 8);
+                        alive.For(green).Tube(new Vector3(-0.58f, 1.45f, 0.1f), new Vector3(-0.65f, 2.0f, 0.1f), 0.16f, 8, true, 0.13f);
+                        var bloom = Mats.Get(Mats.Emissive, new Color(1f, 0.45f, 0.3f), new Color(1.2f, 0.4f, 0.2f));
+                        foreach (var t in new[] { new Vector3(0, 2.72f, 0), new Vector3(0.74f, 2.07f, 0), new Vector3(-0.65f, 2.02f, 0.1f) })
+                            for (int i = 0; i < 5; i++) alive.For(bloom).Sphere(t + new Vector3(Mathf.Cos(i * 1.26f) * 0.1f, 0.03f, Mathf.Sin(i * 1.26f) * 0.1f), 0.07f, 5, 3);
+                        break;
+                    }
                 case "icespike":
-                    Obj("spike", MeshKit.Get("spike", b => b.Cylinder(Vector3.zero, 0.8f, 4f, 6, true, 0f)), Mats.Get(Mats.Opaque, new Color(0.8f, 0.92f, 1f), null, 0.9f), Vector3.zero, Vector3.one, Quaternion.Euler(rng.Range(-10f, 10f), 0, rng.Range(-10f, 10f)), dead.transform);
-                    Obj("lichen", MeshKit.Sphere, Mats.Get(Mats.Emissive, new Color(0.3f, 0.9f, 0.7f), new Color(0.2f, 0.8f, 0.6f)), new Vector3(0, 0.2f, 0), new Vector3(2f, 0.4f, 2f), Quaternion.identity, alive.transform);
-                    break;
+                    {
+                        var iceM = Mats.Get(Mats.Opaque, new Color(0.8f, 0.92f, 1f), null, 0.9f);
+                        for (int i = 0; i < 4; i++)
+                        {
+                            float a = i * 1.6f, tilt = i == 0 ? 0 : 18f + i * 6f;
+                            var o = dead.M;
+                            dead.M = Matrix4x4.TRS(new Vector3(Mathf.Cos(a) * (i == 0 ? 0 : 0.5f), -0.2f, Mathf.Sin(a) * (i == 0 ? 0 : 0.5f)), Quaternion.Euler(Mathf.Sin(a) * tilt, 0, -Mathf.Cos(a) * tilt), Vector3.one);
+                            dead.For(iceM).Cylinder(Vector3.zero, i == 0 ? 0.8f : 0.4f, i == 0 ? 4f : 2.2f - i * 0.2f, 6, true, 0f);
+                            dead.M = o;
+                        }
+                        var lichen = Mats.Get(Mats.Emissive, new Color(0.3f, 0.9f, 0.7f), new Color(0.2f, 0.8f, 0.6f));
+                        alive.For(lichen).Crumple(new Vector3(0, 0.05f, 0), 1.2f, 0.18f, (int)p.Pos.x, 0.35f, 10, 3);
+                        var flower = Mats.Get(Mats.Emissive, new Color(0.7f, 0.5f, 1f), new Color(1f, 0.6f, 1.6f));
+                        for (int i = 0; i < 6; i++)
+                        {
+                            float a = i * 1.05f + 0.3f;
+                            var s0 = new Vector3(Mathf.Cos(a) * 1.0f, 0, Mathf.Sin(a) * 1.0f);
+                            alive.For(lichen).Tube(s0, s0 + Vector3.up * 0.5f, 0.02f, 4);
+                            alive.For(flower).Sphere(s0 + Vector3.up * 0.55f, 0.09f, 6, 4, 1.3f);
+                        }
+                        break;
+                    }
             }
+            dead.Build("dead", go.transform, true);
+            var aliveGo = alive.Build("alive", go.transform, true);
             // Bäume bleiben kahl, bis die Ökologie des Bereichs wächst (je Baum eigener Schwellwert)
             float threshold = 0.05f + rng.Next() * 0.9f;
-            trees.Add(new KeyValuePair<Transform, float>(alive.transform, threshold));
+            trees.Add(new KeyValuePair<Transform, float>(aliveGo.transform, threshold));
+        }
+
+        /// <summary>Gepflanzter Setzling je Planet (wächst mit der Zeit).</summary>
+        void EcoPlant(MultiBuilder mb, Rng rng)
+        {
+            switch (Planet)
+            {
+                case "pelagia":
+                    {
+                        var cols = new[] { new Color(1f, 0.45f, 0.5f), new Color(1f, 0.7f, 0.3f), new Color(0.6f, 0.4f, 1f), new Color(0.3f, 0.9f, 0.7f) };
+                        for (int i = 0; i < 7; i++)
+                        {
+                            var m = Mats.Get(Mats.Opaque, cols[i % 4]);
+                            var b0 = new Vector3(Mathf.Cos(i * 0.9f) * 0.6f, 0, Mathf.Sin(i * 0.9f) * 0.6f);
+                            var t0 = b0 + new Vector3(rng.Range(-0.2f, 0.2f), 1.0f + i * 0.12f, rng.Range(-0.2f, 0.2f));
+                            mb.For(m).Tube(b0, t0, 0.11f, 6, false, 0.06f);
+                            mb.For(m).Tube(Vector3.Lerp(b0, t0, 0.5f), Vector3.Lerp(b0, t0, 0.5f) + new Vector3(0.35f, 0.4f, 0.1f), 0.06f, 5, true, 0.03f);
+                        }
+                        mb.For(Mats.Get(Mats.Opaque, new Color(0.95f, 0.5f, 0.7f))).BoxJ(new Vector3(-0.4f, 0.6f, 0.4f), new Vector3(1f, 1f, 0.05f), new Vector3(0, 40, 0), 0.12f, 3);
+                        for (int i = 0; i < 8; i++) mb.For(Mats.Get(Mats.Emissive, new Color(0.4f, 1f, 0.95f), new Color(0.6f, 2f, 1.8f))).Sphere(new Vector3(Mathf.Cos(i * 0.8f) * 0.9f, 0.25f, Mathf.Sin(i * 0.8f) * 0.9f), 0.07f, 5, 3);
+                        break;
+                    }
+                case "nivalis":
+                    {
+                        mb.For(Mats.Get(Mats.Emissive, new Color(0.3f, 0.9f, 0.7f), new Color(0.3f, 1.2f, 0.9f))).Crumple(new Vector3(0, 0.05f, 0), 1.2f, 0.2f, 3, 0.35f, 10, 3);
+                        var ice = Mats.Get(Mats.Emissive, new Color(0.65f, 0.85f, 1f), new Color(0.25f, 0.5f, 0.9f), 0.95f);
+                        for (int i = 0; i < 5; i++)
+                        {
+                            var o = mb.M;
+                            float a = i * 1.26f;
+                            mb.M = o * Matrix4x4.TRS(new Vector3(Mathf.Cos(a) * 0.3f, 0, Mathf.Sin(a) * 0.3f), Quaternion.Euler(Mathf.Sin(a) * 20f, 0, -Mathf.Cos(a) * 20f), Vector3.one);
+                            mb.For(ice).Cylinder(Vector3.zero, 0.12f, 0.7f + (i % 3) * 0.3f, 6, false);
+                            mb.For(ice).Cylinder(new Vector3(0, 0.7f + (i % 3) * 0.3f, 0), 0.12f, 0.25f, 6, false, 0f);
+                            mb.M = o;
+                        }
+                        for (int i = 0; i < 6; i++) mb.For(Mats.Get(Mats.Emissive, new Color(0.75f, 0.5f, 1f), new Color(1.2f, 0.8f, 2f))).Sphere(new Vector3(Mathf.Cos(i) * 0.9f, 0.4f, Mathf.Sin(i) * 0.9f), 0.08f, 5, 3, 1.3f);
+                        break;
+                    }
+                default:
+                    {
+                        var trunk = Mats.Get(Mats.Opaque, new Color(0.35f, 0.26f, 0.18f));
+                        var green = Mats.Get(Mats.Opaque, Planet == "pyra" ? new Color(0.35f, 0.6f, 0.3f) : new Color(0.3f, 0.62f, 0.25f));
+                        var green2 = Mats.Get(Mats.Opaque, Planet == "pyra" ? new Color(0.5f, 0.65f, 0.3f) : new Color(0.42f, 0.7f, 0.32f));
+                        mb.For(trunk).Tube(Vector3.zero, new Vector3(0, 2.8f, 0), 0.16f, 7, false, 0.09f);
+                        mb.For(Mats.Get(Mats.Opaque, new Color(0.5f, 0.4f, 0.28f))).Tube(new Vector3(0.6f, 0, 0), new Vector3(0.1f, 1.6f, 0), 0.03f, 4); // Stützpfahl
+                        for (int i = 0; i < 4; i++) mb.For(i % 2 == 0 ? green : green2).Crumple(new Vector3(Mathf.Cos(i * 1.6f) * (i == 0 ? 0 : 0.7f), 3.2f + (i % 2) * 0.4f, Mathf.Sin(i * 1.6f) * (i == 0 ? 0 : 0.7f)), i == 0 ? 1.3f : 0.9f, 0.8f, i + 11, 0.2f, 8, 5);
+                        var bl = Mats.Get(Mats.Opaque, new Color(1f, 0.6f, 0.75f));
+                        for (int i = 0; i < 7; i++) mb.For(bl).Sphere(new Vector3(Mathf.Cos(i * 0.9f) * 1.1f, 3.3f + (i % 3) * 0.3f, Mathf.Sin(i * 0.9f) * 1.1f), 0.13f, 6, 4);
+                        var fl = Mats.Get(Mats.Opaque, new Color(1f, 0.85f, 0.3f));
+                        for (int i = 0; i < 6; i++) { var q = new Vector3(Mathf.Cos(i * 1.05f) * 0.9f, 0, Mathf.Sin(i * 1.05f) * 0.9f); mb.For(green).Tube(q, q + Vector3.up * 0.35f, 0.015f, 4); mb.For(fl).Sphere(q + Vector3.up * 0.38f, 0.06f, 5, 3); }
+                        break;
+                    }
+            }
         }
 
         // ================================================================== Punkte in der Welt
@@ -383,22 +525,9 @@ namespace RePlanet
                 go.transform.localPosition = P(s.Pos);
                 // Pflanzstelle (Markierung) bleibt immer sichtbar
                 Obj("bed", MeshKit.Cylinder, Mats.Get(Mats.Opaque, new Color(0.35f, 0.25f, 0.18f)), P(s.Pos) + Vector3.up * 0.02f, new Vector3(2.2f, 0.06f, 2.2f), Quaternion.identity, Root, false);
-                var plant = new GameObject("Plant"); plant.transform.SetParent(go.transform, false);
-                if (Planet == "pelagia")
-                {
-                    for (int i = 0; i < 5; i++) Obj("coral", MeshKit.Cylinder, Mats.Get(Mats.Opaque, new[] { new Color(1f, 0.45f, 0.5f), new Color(1f, 0.7f, 0.3f), new Color(0.6f, 0.4f, 1f) }[i % 3]), new Vector3((i - 2) * 0.5f, 0.6f, (i % 2) * 0.4f), new Vector3(0.3f, 1.2f + i * 0.2f, 0.3f), Quaternion.Euler(i * 7, 0, i * 5), plant.transform);
-                }
-                else if (Planet == "nivalis")
-                {
-                    Obj("lichen", MeshKit.Sphere, Mats.Get(Mats.Emissive, new Color(0.3f, 0.9f, 0.7f), new Color(0.3f, 1.2f, 0.9f)), new Vector3(0, 0.2f, 0), new Vector3(2.4f, 0.5f, 2.4f), Quaternion.identity, plant.transform, false);
-                }
-                else
-                {
-                    var green = Mats.Get(Mats.Opaque, Planet == "pyra" ? new Color(0.35f, 0.6f, 0.3f) : new Color(0.3f, 0.62f, 0.25f));
-                    Obj("trunk", MeshKit.Cylinder, Mats.Get(Mats.Opaque, new Color(0.35f, 0.26f, 0.18f)), new Vector3(0, 1.5f, 0), new Vector3(0.3f, 3f, 0.3f), Quaternion.identity, plant.transform);
-                    Obj("crown", MeshKit.Sphere, green, new Vector3(0, 3.6f, 0), new Vector3(3f, 2.6f, 3f), Quaternion.identity, plant.transform);
-                    Obj("flower", MeshKit.Sphere, Mats.Get(Mats.Opaque, new Color(1f, 0.6f, 0.75f)), new Vector3(0.8f, 4.3f, 0.5f), Vector3.one * 0.6f, Quaternion.identity, plant.transform);
-                }
+                var plantB = new MultiBuilder();
+                EcoPlant(plantB, new Rng((int)Hash.Fnv1a(s.Id)));
+                plantB.Build("Plant", go.transform, true);
                 ecoVisuals[s.Id] = go.transform;
                 go.SetActive(false);
             }
