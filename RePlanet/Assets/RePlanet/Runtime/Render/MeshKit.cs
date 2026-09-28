@@ -17,6 +17,7 @@ namespace RePlanet
         readonly List<Vector3> v = new List<Vector3>();
         readonly List<Vector3> n = new List<Vector3>();
         readonly List<Vector2> uv = new List<Vector2>();
+        readonly List<Vector2> uv2 = new List<Vector2>();
         readonly List<Color> col = new List<Color>();
         readonly List<int>[] ts = new List<int>[MaxSub];
         public Matrix4x4 M = Matrix4x4.identity;
@@ -25,15 +26,129 @@ namespace RePlanet
         public int Sub;
         /// <summary>Fester UV-Wert für alle neuen Ecken (Farbpalette), sonst die Flächenkoordinaten.</summary>
         public Vector2? FixedUV;
+        /// <summary>Abbildung der Flächen-UVs (Skalierung xy, Versatz zw) – z. B. auf eine Zelle eines Symbol-Atlas.</summary>
+        public Vector4 UVRect = new Vector4(1, 1, 0, 0);
+        /// <summary>
+        /// Oberflächenklasse für den Oberflächen-Shader (siehe <see cref="SurfKind"/>): landet zusammen mit
+        /// <see cref="PartRand"/> (Zufallswert je Bauteil) und der Bodennähe in UV-Kanal 1.
+        /// </summary>
+        public int Surf;
+        /// <summary>Zufallswert 0..1 je Bauteil (Farb-/Musterversatz, Fensterbeleuchtung).</summary>
+        public float PartRand;
+        /// <summary>Bodenhöhe für Schmutz am Fuß von Wänden (NaN = kein Bodenschmutz).</summary>
+        public float GroundY = float.NaN;
+        /// <summary>Höhe (m), bis zu der der Bodenschmutz reicht.</summary>
+        public float GrimeHeight = 2.2f;
         public int VertexCount { get { return v.Count; } }
 
         int V(Vector3 p, Vector3 normal, Vector2 u)
         {
-            v.Add(M.MultiplyPoint3x4(p));
+            var wp = M.MultiplyPoint3x4(p);
+            v.Add(wp);
             n.Add(M.MultiplyVector(normal).normalized);
-            uv.Add(FixedUV ?? u);
+            uv.Add(FixedUV ?? new Vector2(u.x * UVRect.x + UVRect.z, u.y * UVRect.y + UVRect.w));
+            float g = float.IsNaN(GroundY) ? 0f : Mathf.Clamp01(1f - (wp.y - GroundY) / GrimeHeight);
+            uv2.Add(new Vector2(Surf + Mathf.Clamp01(PartRand) * 0.98f, g));
             col.Add(Tint);
             return v.Count - 1;
+        }
+
+        /// <summary>Ecke mit eigener Normale (für weiche Übergänge an Fasen).</summary>
+        int VN(Vector3 p, Vector3 normal, Vector2 u) { return V(p, normal, u); }
+
+        /// <summary>Dreieck mit Normalen je Ecke; die Vorderseite zeigt in Richtung der gemittelten Normale.</summary>
+        void TriN(Vector3 a, Vector3 b, Vector3 c, Vector3 na, Vector3 nb, Vector3 nc)
+        {
+            var outward = na + nb + nc;
+            if (Vector3.Dot(Vector3.Cross(b - a, c - a), outward) < 0) { var t = b; b = c; c = t; var tn = nb; nb = nc; nc = tn; }
+            int i0 = VN(a, na, new Vector2(0, 0)), i1 = VN(b, nb, new Vector2(1, 0)), i2 = VN(c, nc, new Vector2(0.5f, 1));
+            Tri(i0, i1, i2);
+        }
+
+        /// <summary>Viereck mit Normalen je Ecke (umlaufend a-b-c-d); Vorderseite in Richtung der gemittelten Normale.</summary>
+        void QuadN(Vector3 a, Vector3 b, Vector3 c, Vector3 d, Vector3 na, Vector3 nb, Vector3 nc, Vector3 nd)
+        {
+            var outward = na + nb + nc + nd;
+            int i0 = VN(a, na, new Vector2(0, 0)), i1 = VN(b, nb, new Vector2(1, 0)), i2 = VN(c, nc, new Vector2(1, 1)), i3 = VN(d, nd, new Vector2(0, 1));
+            if (Vector3.Dot(Vector3.Cross(b - a, c - a) + Vector3.Cross(c - a, d - a), outward) >= 0f) { Tri(i0, i1, i2); Tri(i0, i2, i3); }
+            else { Tri(i0, i2, i1); Tri(i0, i3, i2); }
+        }
+
+        static Vector3 Axis(int a, float s) { return a == 0 ? new Vector3(s, 0, 0) : a == 1 ? new Vector3(0, s, 0) : new Vector3(0, 0, s); }
+        static float Comp(Vector3 v, int a) { return a == 0 ? v.x : a == 1 ? v.y : v.z; }
+        static Vector3 Compose(int a, float va, int b, float vb, int c, float vc)
+        {
+            var r = Vector3.zero;
+            if (a == 0) r.x = va; else if (a == 1) r.y = va; else r.z = va;
+            if (b == 0) r.x = vb; else if (b == 1) r.y = vb; else r.z = vb;
+            if (c == 0) r.x = vc; else if (c == 1) r.y = vc; else r.z = vc;
+            return r;
+        }
+
+        /// <summary>
+        /// Quader mit gefasten Kanten: Flächen, 12 Kantenfasen und 8 Eckdreiecke. Die Fasen interpolieren zwischen den
+        /// Normalen der Nachbarflächen und wirken dadurch abgerundet (fängt Glanzlichter, keine harten Kanten).
+        /// </summary>
+        public void BevelBox(Vector3 c, Vector3 s, float bevel)
+        {
+            var h = new Vector3(Mathf.Abs(s.x), Mathf.Abs(s.y), Mathf.Abs(s.z)) * 0.5f;
+            bevel = Mathf.Min(bevel, Mathf.Min(h.x, Mathf.Min(h.y, h.z)) * 0.9f);
+            if (bevel < 0.002f) { Box(c, s); return; }
+            var i = h - Vector3.one * bevel;
+            // Flächen
+            for (int a = 0; a < 3; a++)
+            {
+                int b = (a + 1) % 3, d = (a + 2) % 3;
+                for (int sg = -1; sg <= 1; sg += 2)
+                {
+                    float fa = sg * Comp(h, a);
+                    Vector3 p0 = c + Compose(a, fa, b, -Comp(i, b), d, -Comp(i, d)), p1 = c + Compose(a, fa, b, Comp(i, b), d, -Comp(i, d));
+                    Vector3 p2 = c + Compose(a, fa, b, Comp(i, b), d, Comp(i, d)), p3 = c + Compose(a, fa, b, -Comp(i, b), d, Comp(i, d));
+                    Quad(p0, p1, p2, p3, Axis(a, sg));
+                }
+            }
+            // Kanten (zwischen Fläche a und Fläche b, entlang Achse d)
+            for (int a = 0; a < 3; a++)
+            {
+                int b = (a + 1) % 3, d = (a + 2) % 3;
+                for (int sa = -1; sa <= 1; sa += 2)
+                    for (int sb = -1; sb <= 1; sb += 2)
+                    {
+                        Vector3 na = Axis(a, sa), nb = Axis(b, sb);
+                        Vector3 a0 = c + Compose(a, sa * Comp(h, a), b, sb * Comp(i, b), d, -Comp(i, d)), a1 = c + Compose(a, sa * Comp(h, a), b, sb * Comp(i, b), d, Comp(i, d));
+                        Vector3 b0 = c + Compose(a, sa * Comp(i, a), b, sb * Comp(h, b), d, -Comp(i, d)), b1 = c + Compose(a, sa * Comp(i, a), b, sb * Comp(h, b), d, Comp(i, d));
+                        QuadN(a0, a1, b1, b0, na, na, nb, nb);
+                    }
+            }
+            // Ecken
+            for (int k = 0; k < 8; k++)
+            {
+                float sx = (k & 1) == 0 ? -1 : 1, sy = (k & 2) == 0 ? -1 : 1, sz = (k & 4) == 0 ? -1 : 1;
+                var px = c + new Vector3(sx * h.x, sy * i.y, sz * i.z);
+                var py = c + new Vector3(sx * i.x, sy * h.y, sz * i.z);
+                var pz = c + new Vector3(sx * i.x, sy * i.y, sz * h.z);
+                TriN(px, py, pz, new Vector3(sx, 0, 0), new Vector3(0, sy, 0), new Vector3(0, 0, sz));
+            }
+        }
+
+        /// <summary>Gefaster Quader mit Drehung (Grad).</summary>
+        public void BevelBoxRot(Vector3 c, Vector3 s, Vector3 euler, float bevel)
+        {
+            var old = M;
+            M = old * Matrix4x4.TRS(c, Quaternion.Euler(euler), Vector3.one);
+            BevelBox(Vector3.zero, s, bevel);
+            M = old;
+        }
+
+        /// <summary>Zylinder entlang Y mit gerundeten Kanten oben und unten (Lathe-Profil) – Tanks, Naben, Poller.</summary>
+        public void RoundCylinder(Vector3 c, float r, float h, float round, int seg = 16)
+        {
+            round = Mathf.Min(round, Mathf.Min(r * 0.9f, h * 0.45f));
+            var prof = new List<Vector2> { new Vector2(0, 0) };
+            for (int k = 0; k <= 3; k++) { float a = k / 3f * Mathf.PI * 0.5f; prof.Add(new Vector2(r - round + Mathf.Sin(a) * round, round - Mathf.Cos(a) * round)); }
+            for (int k = 0; k <= 3; k++) { float a = k / 3f * Mathf.PI * 0.5f; prof.Add(new Vector2(r - round + Mathf.Cos(a) * round, h - round + Mathf.Sin(a) * round)); }
+            prof.Add(new Vector2(0, h));
+            Lathe(c, prof.ToArray(), seg);
         }
 
         public void Tri(int a, int b, int c)
@@ -378,10 +493,10 @@ namespace RePlanet
         }
 
         /// <summary>Hängt alle Ecken und Dreiecke (aller Untermeshes) an fremde Listen an.</summary>
-        public void AppendTo(List<Vector3> verts, List<Vector3> norms, List<Vector2> uvs, List<int> tris)
+        public void AppendTo(List<Vector3> verts, List<Vector3> norms, List<Vector2> uvs, List<Vector2> uvs2, List<int> tris)
         {
             int baseIdx = verts.Count;
-            verts.AddRange(v); norms.AddRange(n); uvs.AddRange(uv);
+            verts.AddRange(v); norms.AddRange(n); uvs.AddRange(uv); uvs2.AddRange(uv2);
             for (int s = 0; s < MaxSub; s++)
             {
                 var l = ts[s];
@@ -397,6 +512,7 @@ namespace RePlanet
             m.SetVertices(v);
             m.SetNormals(n);
             m.SetUVs(0, uv);
+            m.SetUVs(1, uv2);
             if (colors) m.SetColors(col);
             int subs = 1;
             for (int i = 0; i < MaxSub; i++) if (ts[i] != null && ts[i].Count > 0) subs = i + 1;
@@ -408,24 +524,25 @@ namespace RePlanet
 
         public void Clear()
         {
-            v.Clear(); n.Clear(); uv.Clear(); col.Clear();
+            v.Clear(); n.Clear(); uv.Clear(); uv2.Clear(); col.Clear();
             for (int i = 0; i < MaxSub; i++) if (ts[i] != null) ts[i].Clear();
-            M = Matrix4x4.identity; Sub = 0; FixedUV = null;
+            M = Matrix4x4.identity; Sub = 0; FixedUV = null; UVRect = new Vector4(1, 1, 0, 0); Surf = 0; PartRand = 0; GroundY = float.NaN;
         }
     }
 
     /// <summary>
-    /// Farbpalette als Textur: Der Standard-Shader kennt keine Eckenfarben, liest aber _MainTex. Jede schlichte,
-    /// deckende Farbe aus Mats.Get (Vorlage Opaque, ohne Leuchten) bekommt ein Texel; die Ecken eines Teils zeigen per
-    /// UV auf dieses Texel. So teilen sich alle diese Teile ein einziges Material (plus eine glänzende Variante) –
-    /// statt eines Draw-Calls je Farbe und Block. Leuchtende, metallische, transparente und eigenständige
-    /// (animierte) Materialien bleiben unverändert.
+    /// Farbpalette als Textur: Jede schlichte, deckende Farbe aus Mats.Get/Mats.Surface (Vorlage Opaque oder Metal,
+    /// ohne Leuchten) bekommt ein Texel; die Ecken eines Teils zeigen per UV auf dieses Texel. So teilen sich alle
+    /// diese Teile drei Materialien (matt, glänzend, Metall) – statt eines Draw-Calls je Farbe und Block. Die
+    /// Paletten-Materialien nutzen den Oberflächen-Shader (Putz, Beton, Ziegel, Blech, Lack, Asphalt … je Ecke über
+    /// UV-Kanal 1, siehe <see cref="SurfaceLook"/>). Leuchtende, transparente und eigenständige (animierte)
+    /// Materialien bleiben unverändert.
     /// </summary>
     public static class Palette
     {
         const int N = 64;
         static Texture2D tex;
-        static Material matte, glossy;
+        static Material matte, glossy, metal;
         static readonly Dictionary<Color32Key, int> index = new Dictionary<Color32Key, int>();
         static readonly Dictionary<Material, KeyValuePair<Material, Vector2>> routes = new Dictionary<Material, KeyValuePair<Material, Vector2>>();
         static bool dirty;
@@ -442,21 +559,23 @@ namespace RePlanet
         {
             if (tex != null) return;
             tex = new Texture2D(N, N, TextureFormat.RGBA32, false) { filterMode = FilterMode.Point, wrapMode = TextureWrapMode.Clamp, name = "RP_Palette" };
-            matte = Mats.Unique(Mats.Opaque, Color.white);
-            matte.name = "RP_Palette_Matt";
-            matte.mainTexture = tex;
-            glossy = Mats.Unique(Mats.Opaque, Color.white);
-            glossy.name = "RP_Palette_Glanz";
-            glossy.mainTexture = tex;
-            try { glossy.SetFloat("_Glossiness", 0.85f); } catch { }
+            matte = SurfaceLook.Lit("RP_Palette_Matt", Color.white, 0.2f, 0f, tex);
+            glossy = SurfaceLook.Lit("RP_Palette_Glanz", Color.white, 0.85f, 0f, tex);
+            metal = SurfaceLook.Lit("RP_Palette_Metall", Color.white, 0.55f, 0.6f, tex);
             try { var t = Mats.Template(Mats.Opaque); templateGloss = t.HasProperty("_Glossiness") ? t.GetFloat("_Glossiness") : 0.2f; } catch { templateGloss = 0.2f; }
         }
 
+        static bool IsMetal(Material m) { return m.name != null && m.name.StartsWith(Mats.Metal + "_"); }
+
         static bool Plain(Material m)
         {
-            // Mats.Get benennt Materialien „RP_Opaque_RRGGBBAA“; Mats.Unique behält den Vorlagennamen (bleibt eigenständig)
+            // Mats.Get benennt Materialien „RP_Opaque_RRGGBBAA“ bzw. „RP_Metal_RRGGBBAA“; Mats.Unique behält den
+            // Vorlagennamen (bleibt eigenständig)
             var n = m.name;
-            if (n == null || n.Length != Mats.Opaque.Length + 9 || !n.StartsWith(Mats.Opaque + "_")) return false;
+            if (n == null) return false;
+            bool opaque = n.Length == Mats.Opaque.Length + 9 && n.StartsWith(Mats.Opaque + "_");
+            bool metalN = n.Length == Mats.Metal.Length + 9 && n.StartsWith(Mats.Metal + "_");
+            if (!opaque && !metalN) return false;
             if (m.IsKeywordEnabled("_EMISSION")) return false;
             return m.color.a > 0.99f;
         }
@@ -491,7 +610,9 @@ namespace RePlanet
                 {
                     float g = templateGloss;
                     try { if (m.HasProperty("_Glossiness")) g = m.GetFloat("_Glossiness"); } catch { }
-                    target = g >= 0.5f ? glossy : matte;
+                    bool met = false;
+                    try { met = IsMetal(m); } catch { }
+                    target = met ? metal : g >= 0.5f ? glossy : matte;
                     uv = new Vector2((i % N + 0.5f) / N, (i / N + 0.5f) / N);
                 }
             }
@@ -519,6 +640,9 @@ namespace RePlanet
         public Matrix4x4 M = Matrix4x4.identity;
         /// <summary>Schlichte Farben über die Farbpalette zusammenfassen (weniger Draw-Calls).</summary>
         public bool UsePalette;
+        /// <summary>Bodenhöhe des gerade gebauten Objekts (Schmutz am Wandfuß); NaN = ohne.</summary>
+        public float GroundY = float.NaN;
+        int partCounter;
 
         public MeshBuilder For(Material m)
         {
@@ -529,6 +653,10 @@ namespace RePlanet
             if (!parts.TryGetValue(target, out b)) { b = new MeshBuilder(); parts[target] = b; order.Add(target); }
             b.M = M;
             b.FixedUV = pal ? (Vector2?)uv : null;
+            b.UVRect = new Vector4(1, 1, 0, 0);
+            b.Surf = Mats.SurfOf(m);
+            b.PartRand = MeshBuilder.Hash01(partCounter++, 7, parts.Count * 31 + 5);
+            b.GroundY = GroundY;
             return b;
         }
 
@@ -571,7 +699,7 @@ namespace RePlanet
             Palette.Flush();
             var go = new GameObject(name);
             if (parent != null) go.transform.SetParent(parent, false);
-            var verts = new List<Vector3>(); var norms = new List<Vector3>(); var uvs = new List<Vector2>();
+            var verts = new List<Vector3>(); var norms = new List<Vector3>(); var uvs = new List<Vector2>(); var uvs2 = new List<Vector2>();
             var mats = new List<Material>();
             var tris = new List<List<int>>();
             foreach (var mat in order)
@@ -579,14 +707,14 @@ namespace RePlanet
                 var b = parts[mat];
                 if (b.VertexCount == 0) continue;
                 var all = new List<int>();
-                b.AppendTo(verts, norms, uvs, all);
+                b.AppendTo(verts, norms, uvs, uvs2, all);
                 mats.Add(mat);
                 tris.Add(all);
             }
             if (mats.Count == 0) return go;
             var m = new Mesh { name = name };
             if (verts.Count > 65000) m.indexFormat = IndexFormat.UInt32;
-            m.SetVertices(verts); m.SetNormals(norms); m.SetUVs(0, uvs);
+            m.SetVertices(verts); m.SetNormals(norms); m.SetUVs(0, uvs); m.SetUVs(1, uvs2);
             m.subMeshCount = mats.Count;
             for (int i = 0; i < mats.Count; i++) m.SetTriangles(tris[i], i, false);
             m.RecalculateBounds();

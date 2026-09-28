@@ -268,7 +268,7 @@ namespace UnityEngine
         public int subMeshCount { get => subs; set { subs = value; while (T.Count < value) T.Add(new List<int>()); } }
         public void SetVertices(List<Vector3> v) { V = new List<Vector3>(v); }
         public void SetNormals(List<Vector3> n) { N = new List<Vector3>(n); }
-        public List<Vector2> UV = new List<Vector2>(); public void SetUVs(int ch, List<Vector2> u) { UV = new List<Vector2>(u); }
+        public List<Vector2> UV = new List<Vector2>(); public List<Vector2> UV2 = new List<Vector2>(); public void SetUVs(int ch, List<Vector2> u) { if (ch == 0) UV = new List<Vector2>(u); else UV2 = new List<Vector2>(u); }
         public void SetColors(List<Color> c) { }
         public void SetTriangles(List<int> t, int sub, bool calc = true) { subMeshCount = Math.Max(subMeshCount, sub + 1); T[sub] = new List<int>(t); }
         public void GetVertices(List<Vector3> l) { l.Clear(); l.AddRange(V); }
@@ -292,6 +292,7 @@ namespace UnityEngine
         public void SetPixel(int x, int y, Color c) { Px[y * W + x] = c; }
         public Color Sample(Vector2 uv) { int x = Mathf.Clamp((int)(uv.x * W), 0, W - 1), y = Mathf.Clamp((int)(uv.y * H), 0, H - 1); return Px[y * W + x]; }
         public void Apply(bool m) { }
+        public void Apply(bool m, bool r) { }
     }
     public enum TextureFormat { RGBA32 }
     public enum TextureWrapMode { Clamp, Repeat }

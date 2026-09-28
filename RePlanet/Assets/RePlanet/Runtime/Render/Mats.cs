@@ -7,6 +7,15 @@ namespace RePlanet
     /// Material-Verwaltung. Vorlagen liegen als Assets in Resources/ (vom Editor-Setup angelegt, damit Shader-Varianten
     /// im Build enthalten sind) und werden je Farbe geklont und zwischengespeichert. Fällt auf Shader.Find zurück.
     /// </summary>
+    /// <summary>
+    /// Oberflächenklassen des Oberflächen-Shaders (Resources/RePlanetSurface.shader). Die Klasse wird je Ecke
+    /// mitgegeben, so teilen sich Putz, Beton, Ziegel … weiterhin ein Paletten-Material.
+    /// </summary>
+    public static class SurfKind
+    {
+        public const int Generic = 0, Plaster = 1, Concrete = 2, Brick = 3, Cladding = 4, Paint = 5, Asphalt = 6, Rubber = 7, Wood = 8, Tiles = 9, Stone = 10;
+    }
+
     public static class Mats
     {
         static readonly Dictionary<string, Material> templates = new Dictionary<string, Material>();
@@ -89,6 +98,37 @@ namespace RePlanet
             m.renderQueue = 3000;
         }
 
+        static readonly Dictionary<Material, int> surfOf = new Dictionary<Material, int>();
+        static readonly Dictionary<(int, Color, float, bool), Material> surfCache = new Dictionary<(int, Color, float, bool), Material>();
+
+        /// <summary>Oberflächenklasse eines Materials (für den Oberflächen-Shader); Metall-Vorlagen gelten als Lack/Metall.</summary>
+        public static int SurfOf(Material m)
+        {
+            int k;
+            if (m != null && surfOf.TryGetValue(m, out k)) return k;
+            return SurfKind.Generic;
+        }
+
+        /// <summary>
+        /// Schlichtes Material mit Oberflächenklasse (Putz, Beton, Ziegel, Wellblech, Lack, Asphalt …). Wird wie
+        /// <see cref="Get(string, Color, Color?, float)"/> über die Farbpalette zusammengefasst; die Klasse bestimmt das Detail im Shader.
+        /// </summary>
+        public static Material Surface(int kind, Color color, float gloss = -1f, bool metal = false)
+        {
+            var key = (kind, color, gloss, metal);
+            Material m;
+            if (surfCache.TryGetValue(key, out m) && m != null) return m;
+            string tpl = metal ? Metal : Opaque;
+            m = new Material(Template(tpl));
+            m.name = tpl + "_" + ColorUtility.ToHtmlStringRGBA(color);
+            m.color = color;
+            if (gloss >= 0 && m.HasProperty("_Glossiness")) m.SetFloat("_Glossiness", gloss);
+            m.enableInstancing = true;
+            surfOf[m] = kind;
+            surfCache[key] = m;
+            return m;
+        }
+
         /// <summary>Material der Vorlage mit Farbe (und optional Leuchtfarbe). Wird zwischengespeichert.</summary>
         public static Material Get(string template, Color color, Color? emission = null, float gloss = -1f)
         {
@@ -106,6 +146,7 @@ namespace RePlanet
             }
             if (gloss >= 0 && m.HasProperty("_Glossiness")) m.SetFloat("_Glossiness", gloss);
             m.enableInstancing = true;
+            if (template == Metal) surfOf[m] = SurfKind.Paint;
             cache[key] = m;
             return m;
         }

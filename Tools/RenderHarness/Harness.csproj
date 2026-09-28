@@ -10,7 +10,7 @@
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="$(Src)/Core/**/*.cs" />
-    <Compile Include="$(Src)/Runtime/Render/MeshKit.cs;$(Src)/Runtime/Render/Backdrop.cs;$(Src)/Runtime/Render/WorldView.cs;$(Src)/Runtime/Render/WorldViewProps.cs;$(Src)/Runtime/Render/WorldViewBuildings.cs;$(Src)/Runtime/Render/WorldViewBase.cs;$(Src)/Runtime/Render/WorldViewPropsDetail.cs;$(Src)/Runtime/Render/Mats.cs;$(Src)/Runtime/Render/TrashRenderer.cs;$(Src)/Runtime/Render/FloraRenderer.cs" />
+    <Compile Include="$(Src)/Runtime/Render/MeshKit.cs;$(Src)/Runtime/Render/Backdrop.cs;$(Src)/Runtime/Render/WorldView.cs;$(Src)/Runtime/Render/WorldViewProps.cs;$(Src)/Runtime/Render/WorldViewBuildings.cs;$(Src)/Runtime/Render/WorldViewBase.cs;$(Src)/Runtime/Render/WorldViewPropsDetail.cs;$(Src)/Runtime/Render/Mats.cs;$(Src)/Runtime/Render/TrashRenderer.cs;$(Src)/Runtime/Render/FloraRenderer.cs;$(Src)/Runtime/Render/SurfaceLook.cs" />
     <Compile Include="UnityStub.cs;GameStub.cs;Program.cs" />
   </ItemGroup>
 </Project>

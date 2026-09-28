@@ -363,9 +363,7 @@ namespace RePlanet
         {
             Material m;
             if (windowMats.TryGetValue(area, out m)) return m;
-            m = Mats.Unique(Mats.Emissive, new Color(0.08f, 0.1f, 0.12f));
-            m.SetFloat("_Glossiness", 0.9f);
-            Mats.SetEmission(m, Color.black);
+            m = SurfaceLook.Window(new Color(0.08f, 0.1f, 0.12f));
             windowMats[area] = m;
             return m;
         }
