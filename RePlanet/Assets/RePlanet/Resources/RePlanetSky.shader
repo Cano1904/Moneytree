@@ -229,7 +229,7 @@ Shader "RePlanet/Sky"
 
                 // Grundverlauf
                 float up = saturate(h);
-                float3 col = lerp(_HorizonColor.rgb, _ZenithColor.rgb, pow(up, 0.5));
+                float3 col = lerp(_HorizonColor.rgb, _ZenithColor.rgb, pow(up, 0.38));
                 if (h < 0.0) col = lerp(_HorizonColor.rgb, _GroundColor.rgb, saturate(-h * 5.0));
                 // Streulicht: der Himmel wird zur Sonne hin heller und wärmer (breiter Mie-Hof, am Horizont stärker)
                 float sdot = dot(d, sunDir);
@@ -312,7 +312,7 @@ Shader "RePlanet/Sky"
                     cc += _SunColor.rgb * towardSun * 0.3 * lightAmt;
                     // Silberrand: dünne Ränder leuchten gegen die Sonne
                     cc += _SunColor.rgb * pow(saturate(1.0 - dens), 2.0) * towardSun * 0.45;
-                    col = lerp(col, cc, dens * 0.96);
+                    col = lerp(col, cc, dens * 0.9);
                 }
 
                 // Wolkenbank am Horizont (vor der Wolkenschicht, hinter dem Dunst)

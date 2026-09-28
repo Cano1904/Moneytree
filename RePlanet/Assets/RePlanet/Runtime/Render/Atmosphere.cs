@@ -105,7 +105,7 @@ namespace RePlanet
                 P1 = Body(new Vector3(-0.45f, 0.22f, 0.79f), 18f, 0x2A3048, 0x485070, 0xFFC890, 0.35f, 2.3f, 1.3f),
                 P2 = Body(new Vector3(0.55f, 0.3f, 0.62f), 3.5f, 0xC06A4A, 0x7A3A2A, 0xFF9A6A, 0f, 7.1f, 0.5f),
                 SunAzimuth = 160f, CloudScale = 0.7f, CloudDensity = 4.2f, FogDay = 0.009f, FogStorm = 0.05f,
-                GradeShadow = Mats.C(0x5A1E48), GradeHighlight = Mats.C(0xFFA050), Saturation = 1.25f, Contrast = 1.22f, Bank = 1f, BankHeight = 1.2f } },
+                GradeShadow = Mats.C(0x5A1E48), GradeHighlight = Mats.C(0xFFA050), Saturation = 1.1f, Contrast = 1.2f, Bank = 1f, BankHeight = 1.2f } },
             // PELAGIA: türkiser Zenit, rosa Horizont, heller Mond, weiche Wolkentürme über dem Meer
             { "pelagia", new PlanetSky {
                 Day = Pal(0x1FA8B8, 0xFFC2CE, 0xFFD6DC, 0x4A7A88, 0xFFF4F6, 0x9A5A8A, 0xFF8AC0, 0x3ABCC0, 0xFFF0DA, 0xE6C4CC, 0.32f, 0.14f, 0.4f),
@@ -136,9 +136,14 @@ namespace RePlanet
             Sun = go.AddComponent<Light>();
             Sun.type = LightType.Directional;
             Sun.shadows = LightShadows.Soft;
-            Sun.shadowStrength = 0.8f;
+            Sun.shadowStrength = 0.78f; // Schatten nehmen die (farbige) Himmelsaufhellung an
+            Sun.shadowBias = 0.04f;
+            Sun.shadowNormalBias = 0.35f;
             Sun.intensity = 1.1f;
             RenderSettings.sun = Sun;
+            // Nahbereich der Schattenkaskaden feiner auflösen (die Distanz selbst legen die Einstellungen fest)
+            QualitySettings.shadowCascade2Split = 0.22f;
+            QualitySettings.shadowProjection = ShadowProjection.StableFit;
             var sh = Resources.Load<Shader>("RePlanetSky") ?? Shader.Find("RePlanet/Sky");
             if (sh != null && sh.isSupported) { sky = new Material(sh); customSky = true; }
             else sky = new Material(Mats.Template(Mats.Sky));
@@ -262,7 +267,8 @@ namespace RePlanet
             }
             // Fotomodus-Belichtung: mit Nachbearbeitung wirkt sie dort (vor dem Tonemapping), sonst auf Licht und Himmel
             float bright = (GameApp.I != null ? GameApp.I.Settings.Brightness : 1f) * (PhotoMode.Active && !PostFX.Running ? PhotoMode.Exposure : 1f);
-            Sun.intensity *= bright;
+            // Mit HDR-Tonemapping darf die Sonne kräftiger sein (Lichter werden weich abgerollt statt abgeschnitten)
+            Sun.intensity *= bright * (PostFX.Running ? 1.3f : 1f);
             if (GameApp.I != null) Sun.shadows = GameApp.I.Settings.Shadows == 0 ? LightShadows.None : GameApp.I.Settings.Shadows == 1 ? LightShadows.Hard : LightShadows.Soft;
 
             // Blitze im Sturm
@@ -342,9 +348,12 @@ namespace RePlanet
             }
             RenderSettings.fogColor = fogColor * (1f + lightning * 0.6f);
             RenderSettings.fogDensity = fogDensity;
-            RenderSettings.ambientSkyColor = pal.Zenith * Mathf.Lerp(1.0f, 0.55f, dark) * bright + Color.white * lightning * 0.5f;
-            RenderSettings.ambientEquatorColor = pal.Horizon * Mathf.Lerp(0.8f, 0.35f, dark) * bright;
-            RenderSettings.ambientGroundColor = pal.Ground * 0.55f * bright;
+            // Umgebungslicht aus dem Himmel: Zenit (mit Wolkenlicht aufgehellt) von oben, Horizontdunst von der Seite,
+            // Boden + warmes Sonnen-Rückstrahlen von unten – farbige Schatten statt grauer
+            float day = 1f - dark;
+            RenderSettings.ambientSkyColor = Color.Lerp(pal.Zenith, pal.CloudLight, 0.3f) * Mathf.Lerp(1.0f, 0.55f, dark) * bright + Color.white * lightning * 0.5f;
+            RenderSettings.ambientEquatorColor = Color.Lerp(pal.Horizon, pal.Haze, 0.3f) * Mathf.Lerp(0.8f, 0.35f, dark) * bright;
+            RenderSettings.ambientGroundColor = (pal.Ground * 0.55f + pal.Sun * 0.12f * day * (1f - stormBlend)) * bright;
             if (cam != null)
             {
                 cam.farClipPlane = Mathf.Lerp(420f, 900f, Mathf.Clamp01((view - 0.5f)));
@@ -371,7 +380,7 @@ namespace RePlanet
             L.FogLinear = Underwater ? 2.5f : 0.35f + stormBlend * 0.6f;
             L.FogSunScatter = Underwater ? 0f : (0.35f + duskAmt * 0.5f) * (1f - dark) * (1f - stormBlend * 0.6f);
             L.FogMax = 1f;
-            L.Exposure = Mathf.Lerp(1.1f, 1.3f, dark);
+            L.Exposure = Mathf.Lerp(0.85f, 1.05f, dark); // ACES hebt Mitteltöne an → etwas unter 1
             L.Contrast = Mathf.Lerp(ps.Contrast, 1.05f, stormBlend * 0.7f);
             L.Saturation = Mathf.Lerp(ps.Saturation, 1.0f, stormBlend * 0.6f) * Mathf.Lerp(1f, 0.92f, dark);
             L.Vibrance = 0.45f;

@@ -143,7 +143,7 @@ def render(planet, P, phase, storm, W=960, H=540, yaw_deg=None, pitch_deg=8, t=4
     h = d[..., 1]
     Z, Ho, Hz, G = lin(pal["Zenith"]), lin(pal["Horizon"]), lin(pal["Haze"]), lin(pal["Ground"])
     up = sat(h)
-    col = mix(Ho, Z, np.power(up, 0.5)[..., None])
+    col = mix(Ho, Z, np.power(up, 0.38)[..., None])
     col = np.where((h < 0)[..., None], mix(Ho, G, sat(-h * 5)[..., None]), col)
     sunI = 3 * (1 - storm * 0.8) if elev > -0.05 else 0
     sunGlow = (1 + dusk * 0.8) * (1 - storm * 0.7) if elev > -0.05 else 0
@@ -204,7 +204,7 @@ def render(planet, P, phase, storm, W=960, H=540, yaw_deg=None, pitch_deg=8, t=4
     sunC = lin(pal["Sun"]) * (1 - dark * 0.9)
     cc = cc + sunC * (towards * 0.3 * lightAmt)[..., None] + sunC * (sat(1 - dens) ** 2 * towards * 0.45)[..., None]
     cm = h > -0.02
-    col = np.where(cm[..., None], mix(col, cc, (dens * 0.96)[..., None]), col)
+    col = np.where(cm[..., None], mix(col, cc, (dens * 0.9)[..., None]), col)
     # Wolkenbank am Horizont
     bankS = P["Bank"] * (1 - 0.3 * dark) * (1 + storm * 0.25)
     bankH = P["BankHeight"] * (1 + storm * 0.4)
@@ -243,7 +243,7 @@ def lum(c): return c[..., 0] * 0.2126 + c[..., 1] * 0.7152 + c[..., 2] * 0.0722
 def post_grade(col, P, pal, dark, dusk, storm):
     """Farbkorrektur wie Resources/RePlanetPostFX.shader (Pass Zusammensetzen) mit den Werten aus Atmosphere.UpdateLook
     (ohne Bloom, Sonnenstrahlen, Korn – nur Belichtung, Kontrast, ACES, Split-Toning, Sättigung/Vibrance, Vignette)."""
-    exposure = 1.1 + (1.3 - 1.1) * dark
+    exposure = 0.85 + (1.05 - 0.85) * dark
     contrast = P["Contrast"] + (1.05 - P["Contrast"]) * storm * 0.7
     satur = (P["Saturation"] + (1.0 - P["Saturation"]) * storm * 0.6) * (1 + (0.92 - 1) * dark)
     split = (0.3 + 0.12 * dark) * (1 - storm * 0.4)
