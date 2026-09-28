@@ -1,0 +1,24 @@
+{
+  "directed": false,
+  "multigraph": false,
+  "graph": {},
+  "nodes": [
+    {
+      "id": "moneytree_project",
+      "label": "Moneytree",
+      "author": null,
+      "captured_at": null,
+      "community": 0,
+      "community_name": "Moneytree Project",
+      "contributor": null,
+      "file_type": "document",
+      "norm_label": "moneytree",
+      "source_file": "README.md",
+      "source_location": "L1",
+      "source_url": null
+    }
+  ],
+  "links": [],
+  "hyperedges": [],
+  "built_at_commit": "2e72d0b4603ee0a2b12fde546d8eb88ad8a1e799"
+}
