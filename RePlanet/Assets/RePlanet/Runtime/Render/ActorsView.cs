@@ -154,7 +154,7 @@ namespace RePlanet
                 towDrone = new GameObject("TowDrone");
                 towDrone.transform.SetParent(root, false);
                 var mf = towDrone.AddComponent<MeshFilter>(); mf.sharedMesh = MeshKit.Trash("drone");
-                towDrone.AddComponent<MeshRenderer>().sharedMaterial = Mats.Get(Mats.Opaque, new Color(1f, 0.55f, 0.2f));
+                towDrone.AddComponent<MeshRenderer>().sharedMaterials = DroneMats(new Color(1f, 0.55f, 0.2f));
                 towDrone.transform.localScale = Vector3.one * 3f;
             }
             towDrone.SetActive(true);
@@ -310,7 +310,17 @@ namespace RePlanet
         void DrawCarried(DynObj d, Vector3 at, Quaternion rot)
         {
             var t = d.Def;
-            Graphics.DrawMesh(MeshKit.Trash(t.Shape), Matrix4x4.TRS(at, rot, Vector3.one * (t.Crane ? t.Size : 1f)), TrashRenderer.MaterialFor(t), 0);
+            TrashRenderer.DrawTrash(t, Matrix4x4.TRS(at, rot, Vector3.one * (t.Crane ? t.Size : 1f)));
+        }
+
+        /// <summary>Materialien für das mehrteilige Drohnen-Mesh (Rumpf in Wunschfarbe, Nebenteile wie beim Müll).</summary>
+        static Material[] DroneMats(Color body)
+        {
+            var mesh = MeshKit.Trash("drone");
+            var arr = new Material[Mathf.Max(1, mesh.subMeshCount)];
+            arr[0] = Mats.Get(Mats.Opaque, body);
+            for (int i = 1; i < arr.Length; i++) arr[i] = i == MeshKit.Signal ? Mats.Get(Mats.Emissive, new Color(0.4f, 1f, 1f), new Color(0.6f, 2f, 2f)) : TrashRenderer.SlotMaterial(i);
+            return arr;
         }
 
         void UpdateDrones(GameClient client, float dt)
@@ -321,7 +331,7 @@ namespace RePlanet
                 var go = new GameObject("Drohne");
                 go.transform.SetParent(root, false);
                 go.AddComponent<MeshFilter>().sharedMesh = MeshKit.Trash("drone");
-                go.AddComponent<MeshRenderer>().sharedMaterial = Mats.Get(Mats.Opaque, new Color(0.35f, 0.65f, 0.9f));
+                go.AddComponent<MeshRenderer>().sharedMaterials = DroneMats(new Color(0.35f, 0.65f, 0.9f));
                 go.transform.localScale = Vector3.one * 1.6f;
                 var light = new GameObject("Licht");
                 light.transform.SetParent(go.transform, false);

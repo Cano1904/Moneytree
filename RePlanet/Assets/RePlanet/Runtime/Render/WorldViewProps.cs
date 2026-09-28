@@ -554,59 +554,35 @@ namespace RePlanet
         // ================================================================== Müllberge & Horizont
         void BuildMounds()
         {
-            var mats = new[] { Mats.Get(Mats.Opaque, Planet == "pyra" ? new Color(0.45f, 0.3f, 0.22f) : Planet == "nivalis" ? new Color(0.6f, 0.65f, 0.7f) : new Color(0.45f, 0.42f, 0.36f)),
-                               Mats.Get(Mats.Opaque, new Color(0.5f, 0.45f, 0.35f)) };
+            var baseCols = new[] { Planet == "pyra" ? new Color(0.45f, 0.3f, 0.22f) : Planet == "nivalis" ? new Color(0.6f, 0.65f, 0.7f) : new Color(0.45f, 0.42f, 0.36f), new Color(0.5f, 0.45f, 0.35f) };
+            var junk = new[] { new Color(0.72f, 0.36f, 0.24f), new Color(0.3f, 0.5f, 0.66f), new Color(0.8f, 0.72f, 0.4f), new Color(0.42f, 0.55f, 0.36f) };
             for (int i = 0; i < Layout.Mounds.Count; i++)
             {
                 var m = Layout.Mounds[i];
-                var go = Obj("Mound", MeshKit.Mound(i % 7), mats[i % 2], P(m.Pos), new Vector3(m.Radius, m.Height, m.Radius), Quaternion.Euler(0, i * 47, 0));
+                var go = Obj("Mound", MeshKit.Mound(i % 7), Mats.Get(Mats.Opaque, baseCols[i % 2]), P(m.Pos), new Vector3(m.Radius, m.Height, m.Radius), Quaternion.Euler(0, i * 47, 0));
+                go.GetComponent<MeshRenderer>().sharedMaterials = new[]
+                {
+                    Mats.Get(Mats.Opaque, baseCols[i % 2]), Mats.Get(Mats.Opaque, junk[i % junk.Length]),
+                    Mats.Get(Mats.Metal, new Color(0.5f, 0.48f, 0.45f)), Mats.Get(Mats.Opaque, new Color(0.14f, 0.14f, 0.15f)),
+                };
                 mounds.Add(go.transform);
             }
         }
 
+        /// <summary>Horizont und dekorative Müllmassen (Hintergrund-Ring, fernes Gelände, Streumüll) – siehe <see cref="Backdrop"/>.</summary>
         void BuildSkyline()
         {
-            var mb = new MultiBuilder();
-            var rng = new Rng(Def.Seed + 11);
-            foreach (var p in Layout.Props)
-            {
-                if (p.Kind != "skyline" && p.Kind != "mesa" && p.Kind != "farisland" && p.Kind != "icepeak") continue;
-                mb.M = Matrix4x4.TRS(P(p.Pos), Quaternion.Euler(0, p.Rot * Mathf.Rad2Deg, 0), Vector3.one * p.Scale);
-                switch (p.Kind)
-                {
-                    case "skyline":
-                        if (p.Style == 9)
-                        {
-                            // Turm aus gepressten Müllwürfeln
-                            var cubeMat = Mats.Get(Mats.Opaque, new Color(0.55f + rng.Next() * 0.1f, 0.42f, 0.28f));
-                            float y = 0; int n = 8 + rng.Range(0, 10);
-                            for (int i = 0; i < n; i++)
-                            {
-                                float w = Mathf.Lerp(12f, 6f, i / (float)n);
-                                mb.For(cubeMat).BoxRot(new Vector3(rng.Range(-1f, 1f), y + 2.5f, rng.Range(-1f, 1f)), new Vector3(w, 5f, w), new Vector3(0, rng.Range(-8f, 8f), 0));
-                                y += 5f;
-                            }
-                        }
-                        else
-                        {
-                            var m = Mats.Get(Mats.Opaque, new Color(0.45f, 0.42f, 0.4f) * (0.8f + p.Style * 0.08f));
-                            float h = 30 + p.Style * 18 + rng.Range(0f, 30f);
-                            mb.For(m).Box(new Vector3(0, h * 0.5f, 0), new Vector3(14, h, 14));
-                            mb.For(m).Box(new Vector3(0, h + 6f, 0), new Vector3(8, 12, 8));
-                        }
-                        break;
-                    case "mesa":
-                        mb.For(Mats.Get(Mats.Opaque, new Color(0.62f, 0.3f, 0.2f))).Cylinder(Vector3.zero, 22f, 30f + p.Style * 10, 9, true, 16f);
-                        break;
-                    case "farisland":
-                        mb.For(Mats.Get(Mats.Opaque, new Color(0.35f, 0.5f, 0.3f))).Blob(Vector3.zero, 26f, 10f + p.Style * 4, 10, 3, p.Style * 7 + (int)p.Pos.x, 0.25f);
-                        break;
-                    case "icepeak":
-                        mb.For(Mats.Get(Mats.Opaque, new Color(0.85f, 0.92f, 1f), null, 0.8f)).Cylinder(Vector3.zero, 24f, 45f + p.Style * 15, 7, true, 0f);
-                        break;
-                }
-            }
-            mb.Build("Skyline", Root, false);
+            backdrop = new Backdrop(Planet, Layout, Root);
+            try { backdrop.Build(); }
+            catch (System.Exception e) { Debug.LogException(e); }
+        }
+
+        /// <summary>Menge des Streumülls eines Bereichs: voll im Ausgangszustand, 15 % Rest nach dem Hauptmüll, weg nach dem Projekt.</summary>
+        public static float LitterFactor(PlanetState ps, int area)
+        {
+            float c = Rules.Cleanliness(ps, area);
+            bool done = ps.Projects[GameData.ProjectId(ps.Id, area)].Done;
+            return Mathf.Clamp01(1f - c / GameData.AreaCleanThreshold) * 0.85f + (done ? 0f : 0.15f);
         }
     }
 

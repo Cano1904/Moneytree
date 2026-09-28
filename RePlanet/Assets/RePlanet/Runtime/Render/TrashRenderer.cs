@@ -6,7 +6,8 @@ using UnityEngine.Rendering;
 namespace RePlanet
 {
     /// <summary>
-    /// Zeichnet alle Müllobjekte per GPU-Instancing (ein Draw-Call je Typ und 1023 Objekte).
+    /// Zeichnet alle Müllobjekte per GPU-Instancing (ein Draw-Call je Typ, Untermesh und 1023 Objekte).
+    /// Die Formen haben bis zu fünf Untermeshes (Grundfarbe, dunkle Teile, Metall, Etiketten, Signalfarbe).
     /// Nahe Objekte werfen Schatten, entfernte werden per Sichtweite ausgeblendet. Keine GameObjects pro Objekt.
     /// </summary>
     public class TrashRenderer : MonoBehaviour
@@ -16,7 +17,7 @@ namespace RePlanet
         class Batch
         {
             public Mesh Mesh;
-            public Material Mat;
+            public Material[] Mats;
             public readonly List<Matrix4x4> Near = new List<Matrix4x4>();
             public readonly List<Matrix4x4> Far = new List<Matrix4x4>();
         }
@@ -49,11 +50,51 @@ namespace RePlanet
             return Mats.Get(Mats.Opaque, c);
         }
 
+        /// <summary>Material eines Nebenteils (Untermesh 1–4) – gemeinsam für alle Müllarten.</summary>
+        public static Material SlotMaterial(int slot)
+        {
+            switch (slot)
+            {
+                case MeshKit.Dark: return Mats.Get(Mats.Opaque, new Color(0.12f, 0.12f, 0.13f), null, 0.35f);
+                case MeshKit.Metal: return Mats.Get(Mats.Metal, new Color(0.66f, 0.68f, 0.7f));
+                case MeshKit.Light: return Mats.Get(Mats.Opaque, new Color(0.9f, 0.88f, 0.8f));
+                case MeshKit.Signal: return Mats.Get(Mats.Opaque, new Color(0.95f, 0.42f, 0.14f));
+                default: return Mats.Get(Mats.Opaque, Color.gray);
+            }
+        }
+
+        static readonly Dictionary<string, Material[]> matCache = new Dictionary<string, Material[]>();
+
+        /// <summary>Materialien je Untermesh der Form eines Müll-Typs (Index 0 = Grundfarbe).</summary>
+        public static Material[] MaterialsFor(TrashType t)
+        {
+            Material[] arr;
+            if (matCache.TryGetValue(t.Id, out arr) && arr[0] != null) return arr;
+            var mesh = MeshKit.Trash(t.Shape);
+            arr = new Material[Mathf.Max(1, mesh.subMeshCount)];
+            arr[0] = MaterialFor(t);
+            for (int i = 1; i < arr.Length; i++) arr[i] = SlotMaterial(i);
+            matCache[t.Id] = arr;
+            return arr;
+        }
+
+        /// <summary>Zeichnet ein einzelnes Müllobjekt mit allen Teilen (getragene Last, fliegende Objekte).</summary>
+        public static void DrawTrash(TrashType t, Matrix4x4 m, Material overrideAll = null)
+        {
+            var mesh = MeshKit.Trash(t.Shape);
+            var mats = MaterialsFor(t);
+            for (int s = 0; s < mesh.subMeshCount; s++)
+            {
+                if (mesh.GetIndexCount(s) == 0) continue;
+                Graphics.DrawMesh(mesh, m, overrideAll ?? mats[Mathf.Min(s, mats.Length - 1)], 0, null, s, null, ShadowCastingMode.On, true);
+            }
+        }
+
         Batch Get(TrashType t)
         {
             Batch b;
             if (batches.TryGetValue(t.Id, out b)) return b;
-            b = new Batch { Mesh = MeshKit.Trash(t.Shape), Mat = MaterialFor(t) };
+            b = new Batch { Mesh = MeshKit.Trash(t.Shape), Mats = MaterialsFor(t) };
             batches[t.Id] = b;
             return b;
         }
@@ -79,7 +120,7 @@ namespace RePlanet
         void Rebuild(WorldView wv)
         {
             foreach (var b in batches.Values) { b.Near.Clear(); b.Far.Clear(); }
-            if (ice == null) ice = new Batch { Mesh = MeshKit.Cube, Mat = Mats.Get(Mats.Fade, new Color(0.75f, 0.9f, 1f, 0.55f), null, 0.95f) };
+            if (ice == null) ice = new Batch { Mesh = MeshKit.Get("iceblock", bb => { bb.BoxJ(Vector3.zero, Vector3.one, Vector3.zero, 0.08f, 3); bb.BoxJ(new Vector3(0.2f, 0.45f, 0.1f), new Vector3(0.5f, 0.3f, 0.5f), new Vector3(0, 30, 8), 0.06f, 4); }), Mats = new[] { Mats.Get(Mats.Fade, new Color(0.75f, 0.9f, 1f, 0.55f), null, 0.95f) } };
             ice.Near.Clear(); ice.Far.Clear();
             visible.Clear();
             var cam = Camera.main;
@@ -120,24 +161,29 @@ namespace RePlanet
             chunkIdx = 0;
             foreach (var b in batches.Values)
             {
-                DrawList(b.Mesh, b.Mat, b.Near, shadows ? ShadowCastingMode.On : ShadowCastingMode.Off);
-                DrawList(b.Mesh, b.Mat, b.Far, ShadowCastingMode.Off);
+                DrawList(b.Mesh, b.Mats, b.Near, shadows ? ShadowCastingMode.On : ShadowCastingMode.Off);
+                DrawList(b.Mesh, b.Mats, b.Far, ShadowCastingMode.Off);
             }
-            if (ice != null) DrawList(ice.Mesh, ice.Mat, ice.Near, ShadowCastingMode.Off);
+            if (ice != null) DrawList(ice.Mesh, ice.Mats, ice.Near, ShadowCastingMode.Off);
             ObjView h;
             if (HighlightKey != null && visible.TryGetValue(HighlightKey, out h))
             {
                 var m = MatrixFor(h) * Matrix4x4.Scale(Vector3.one * 1.12f);
-                Graphics.DrawMesh(MeshKit.Trash(h.T.Shape), m, HighlightBlocked ? highlightBad : highlightMat, 0, null, 0, null, ShadowCastingMode.Off, false);
+                var mesh = MeshKit.Trash(h.T.Shape);
+                var hm = HighlightBlocked ? highlightBad : highlightMat;
+                for (int s = 0; s < mesh.subMeshCount; s++)
+                    if (mesh.GetIndexCount(s) > 0) Graphics.DrawMesh(mesh, m, hm, 0, null, s, null, ShadowCastingMode.Off, false);
             }
         }
 
-        void DrawList(Mesh mesh, Material mat, List<Matrix4x4> list, ShadowCastingMode sh)
+        void DrawList(Mesh mesh, Material[] mats, List<Matrix4x4> list, ShadowCastingMode sh)
         {
             if (list.Count == 0) return;
+            int subs = mesh.subMeshCount;
             if (!SystemInfo.supportsInstancing)
             {
-                foreach (var m in list) Graphics.DrawMesh(mesh, m, mat, 0, null, 0, null, sh, true);
+                foreach (var m in list)
+                    for (int s = 0; s < subs; s++) Graphics.DrawMesh(mesh, m, mats[Mathf.Min(s, mats.Length - 1)], 0, null, s, null, sh, true);
                 return;
             }
             for (int i = 0; i < list.Count; i += 1023)
@@ -147,7 +193,12 @@ namespace RePlanet
                 chunk.Clear();
                 int n = Mathf.Min(1023, list.Count - i);
                 for (int k = 0; k < n; k++) chunk.Add(list[i + k]);
-                Graphics.DrawMeshInstanced(mesh, 0, mat, chunk, null, sh, true);
+                for (int s = 0; s < subs; s++)
+                {
+                    if (mesh.GetIndexCount(s) == 0) continue;
+                    // Kleine Nebenteile (Etiketten, Schrauben) werfen keine eigenen Schatten
+                    Graphics.DrawMeshInstanced(mesh, s, mats[Mathf.Min(s, mats.Length - 1)], chunk, null, s == 0 || s == MeshKit.Dark ? sh : ShadowCastingMode.Off, true);
+                }
             }
         }
     }

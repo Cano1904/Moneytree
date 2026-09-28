@@ -47,6 +47,10 @@ namespace RePlanet
         readonly List<ParticleSystem> fountains = new List<ParticleSystem>();
         readonly Dictionary<string, Transform> projectSites = new Dictionary<string, Transform>();
         readonly List<GameObject> builtShelters = new List<GameObject>();
+        Backdrop backdrop;
+        bool lastBefore;
+        /// <summary>Dekorative Müllmassen des aktuellen Planeten (Statistik: Instanzen, Ring-Ecken).</summary>
+        public Backdrop Backdrop { get { return backdrop; } }
         Material terrainMat, waterMat;
         Texture2D terrainTex;
         GameObject water;
@@ -134,6 +138,7 @@ namespace RePlanet
             duneSets[0].Clear(); duneSets[1].Clear();
             mounds.Clear(); zoneLamps.Clear(); zoneLampMats.Clear(); repairVisuals.Clear(); ecoVisuals.Clear(); loreVisuals.Clear();
             trees.Clear(); spinners.Clear(); fountains.Clear(); projectSites.Clear(); spinnerProjects.Clear(); builtShelters.Clear();
+            backdrop = null;
             if (terrainTex != null) Destroy(terrainTex);
             terrainTex = null;
         }
@@ -608,6 +613,7 @@ namespace RePlanet
             }
             foreach (var s in spinners) if (s != null) s.Rotate(0, 0, 60f * dt, Space.Self);
             AnimateLights(dt);
+            if (backdrop != null) backdrop.Draw(Camera.main, dt);
             refreshTimer -= dt;
             if (refreshTimer <= 0) { refreshTimer = 0.4f; Refresh(false); }
             if (water != null)
@@ -651,6 +657,10 @@ namespace RePlanet
             for (int k = 0; k < 2; k++) foreach (var g in duneSets[k]) if (g != null && g.activeSelf != (k == active)) g.SetActive(k == active);
             // Müllberge schrumpfen mit der Reinigung ihres Bereichs
             bool before = PhotoMode.Active && PhotoMode.ShowBefore;
+            // Streumüll, Wandhaufen und Dachmüll nehmen mit der Sauberkeit ab (Fotomodus-Vorher: voll)
+            if (backdrop != null)
+                for (int a = 0; a < 3; a++) backdrop.SetDensity(a, before ? 1f : LitterFactor(ps, a), first || before != lastBefore);
+            lastBefore = before;
             for (int i = 0; i < mounds.Count && i < Layout.Mounds.Count; i++)
             {
                 var m = Layout.Mounds[i];
