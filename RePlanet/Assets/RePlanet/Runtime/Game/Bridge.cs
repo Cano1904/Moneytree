@@ -70,7 +70,7 @@ namespace RePlanet
             if (string.IsNullOrEmpty(text)) return;
             // Gleiche Meldung nicht stapeln
             foreach (var t in Toasts)
-                if (t.Text == text && Time.unscaledTime - t.Created < t.Duration) { t.Created = Time.unscaledTime; return; }
+                if (t.Text == text && t.MergeKey == null && Time.unscaledTime - t.Created < t.Duration) { t.Created = Time.unscaledTime; t.Count++; return; }
             Toasts.Add(new Toast { Text = text, Kind = kind, Created = Time.unscaledTime, Duration = duration });
             if (Toasts.Count > 6) Toasts.RemoveAt(0);
         }

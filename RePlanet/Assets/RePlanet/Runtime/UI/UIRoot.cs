@@ -92,6 +92,7 @@ namespace RePlanet
             if (BuildMode.Active && UIState.Screen != UIScreen.None) BuildMode.Active = false;
             if (!PhotoMode.Active && UIState.Screen == UIScreen.Photo) UIState.Open(UIScreen.None);
 
+            ProcessToasts(app);
             PruneToasts();
             UpdateBuildInput(app);
             UpdateSettingsApply(app);
