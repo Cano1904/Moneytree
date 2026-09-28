@@ -60,6 +60,9 @@ namespace RePlanet
         public int TotalInstances { get; private set; }
         public int RingVertices { get; private set; }
 
+        /// <summary>Dachhöhe eines Gebäudes an Position x (NaN = kein begehbares Flachdach). Kommt von WorldView.</summary>
+        public System.Func<Box, float, float> RoofAt;
+
         public Backdrop(string planet, PlanetLayout layout, Transform root)
         {
             this.planet = planet; this.layout = layout; this.root = root;
@@ -102,7 +105,7 @@ namespace RePlanet
         // ================================================================== Fernes Gelände
         void BuildFarGround()
         {
-            float[] rings = { 167.5f, 172f, 180f, 195f, 220f, 260f, 320f, 400f, 520f, 700f, 950f };
+            float[] rings = { 167.5f, 172f, 180f, 195f, 220f, 260f, 320f, 400f, 520f, 700f };
             const int N = 128;
             var b = new MeshBuilder();
             var pts = new Vector3[rings.Length, N + 1];
@@ -885,7 +888,10 @@ namespace RePlanet
 
         int AddKind(Spec s, bool heap)
         {
-            var m = s.Tpl == Mats.Metal ? Met(s.Col) : Opq(s.Col, s.Gloss);
+            // Deko-Müll ist staubiger und matter als sammelbare Objekte, damit diese hervorstechen
+            var dust = new Color(0.44f, 0.41f, 0.37f);
+            var col = Color.Lerp(s.Col, dust, heap ? 0.2f : 0.35f) * (heap ? 0.95f : 0.88f);
+            var m = s.Tpl == Mats.Metal ? Met(col) : Opq(col, s.Gloss);
             kinds.Add(new Kind { Mesh = LitterMesh(s.Mesh), Mat = m, Heap = heap });
             return kinds.Count - 1;
         }
@@ -1068,16 +1074,18 @@ namespace RePlanet
                         }
                     }
                 }
-                // Dächer (nur flache Dächer: Häuser, Kaufhäuser, Serverhallen)
-                if (bx.Kind == "house" || bx.Kind == "mall" || bx.Kind == "serverhall" || (bx.Kind == "areawall" && planet == "terra"))
+                // Dächer (nur flache Dächer; die Höhe liefert WorldView – Ruinen sind stellenweise abgebrochen)
+                if (RoofAt != null && (bx.Kind == "house" || bx.Kind == "mall" || bx.Kind == "serverhall" || (bx.Kind == "areawall" && planet == "terra")))
                 {
                     int n = Mathf.Clamp((int)(bx.Hx * bx.Hz * 0.06f), 1, 7);
                     for (int k = 0; k < n; k++)
                     {
                         if (!rng.Chance(0.6f)) continue;
                         float x = bx.Cx + rng.Range(-bx.Hx + 1f, bx.Hx - 1f), z = bx.Cz + rng.Range(-bx.Hz + 1f, bx.Hz - 1f);
+                        float roof = RoofAt(bx, x);
+                        if (float.IsNaN(roof)) continue;
                         int s = pick(heaps, hSum);
-                        add(hIdx[s], new Vector3(x, bx.Y0 + bx.H + 0.02f, z), rng.Range(0f, 360f), heaps[s].Scale * rng.Range(0.8f, 1.4f), 3f);
+                        add(hIdx[s], new Vector3(x, roof + 0.02f, z), rng.Range(0f, 360f), heaps[s].Scale * rng.Range(0.8f, 1.4f), 3f);
                         roofCount++;
                     }
                 }

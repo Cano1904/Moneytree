@@ -51,6 +51,20 @@ namespace RePlanet
 
         Material trimMat, darkMat, roofMat, woodMat, acMat, railMat, rubbleMat, plinthMat, glassDark, signLight;
 
+        /// <summary>Dachhöhen der Flachdach-Gebäude (drei Scheiben entlang X; Ruinen sind teilweise abgebrochen).</summary>
+        readonly Dictionary<Box, float[]> roofTops = new Dictionary<Box, float[]>();
+
+        /// <summary>Begehbare Dachhöhe bei x (NaN, wenn dort kein intaktes Flachdach ist) – für Dachmüll im Hintergrund.</summary>
+        float RoofHeight(Box bx, float x)
+        {
+            float[] s;
+            if (!roofTops.TryGetValue(bx, out s)) return float.NaN;
+            float sw = bx.Hx * 2f / 3f;
+            int i = Mathf.Clamp(Mathf.FloorToInt((x - (bx.Cx - bx.Hx)) / sw), 0, 2);
+            float top = Mathf.Max(s[0], Mathf.Max(s[1], s[2]));
+            return s[i] < top - 0.5f ? float.NaN : s[i];
+        }
+
         void InitBuildingMats()
         {
             trimMat = Mat(new Color(0.86f, 0.84f, 0.78f));
@@ -173,6 +187,7 @@ namespace RePlanet
             // Körper: drei Scheiben entlang X, bei Ruinen unterschiedlich hoch abgebrochen
             var slice = new float[3];
             for (int i = 0; i < 3; i++) slice[i] = top;
+            roofTops[bx] = slice;
             if (ruin)
             {
                 int keep = rng.Range(0, 3);
@@ -423,6 +438,7 @@ namespace RePlanet
                 }
             }
             mb.For(snowM).Box(new Vector3(bx.Cx, top + 0.12f, bx.Cz), new Vector3(bx.Hx * 2 + 0.1f, 0.25f, bx.Hz * 2 + 0.1f));
+            roofTops[bx] = new[] { top + 0.25f, top + 0.25f, top + 0.25f };
             // Reihen von Rückkühlern auf dem Dach
             int nx = Mathf.Max(1, (int)(bx.Hx * 2 / 3.2f)), nz = Mathf.Max(1, (int)(bx.Hz * 2 / 4f));
             for (int i = 0; i < nx; i++)

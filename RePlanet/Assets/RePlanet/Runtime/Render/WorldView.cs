@@ -145,6 +145,7 @@ namespace RePlanet
             mounds.Clear(); zoneLamps.Clear(); zoneLampMats.Clear(); repairVisuals.Clear(); ecoVisuals.Clear(); loreVisuals.Clear();
             trees.Clear(); spinners.Clear(); fountains.Clear(); projectSites.Clear(); spinnerProjects.Clear(); builtShelters.Clear();
             backdrop = null;
+            roofTops.Clear();
             if (terrainTex != null) Destroy(terrainTex);
             terrainTex = null;
         }

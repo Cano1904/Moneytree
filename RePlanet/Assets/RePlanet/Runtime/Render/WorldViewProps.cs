@@ -627,7 +627,7 @@ namespace RePlanet
         /// <summary>Horizont und dekorative Müllmassen (Hintergrund-Ring, fernes Gelände, Streumüll) – siehe <see cref="Backdrop"/>.</summary>
         void BuildSkyline()
         {
-            backdrop = new Backdrop(Planet, Layout, Root);
+            backdrop = new Backdrop(Planet, Layout, Root) { RoofAt = RoofHeight };
             try { backdrop.Build(); }
             catch (System.Exception e) { Debug.LogException(e); }
         }
