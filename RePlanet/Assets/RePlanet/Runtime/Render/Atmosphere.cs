@@ -335,7 +335,14 @@ namespace RePlanet
                 if (stars != null) stars.gameObject.SetActive(dark > 0.3f);
             }
 
-            UpdateLook(ps, pal, sunDir, elev, dark, duskAmt, water);
+            // Bezugshöhe des Höhennebels: Boden unter der Kamera (Täler dichter, Bergkuppen klarer)
+            float fogBase = water > -50f ? water : 0f;
+            if (cam != null)
+            {
+                var cp = cam.transform.position;
+                if (Mathf.Abs(cp.x) < 200f && Mathf.Abs(cp.z) < 200f) fogBase = Mathf.Max(fogBase, Terrain.HeightAt(planet, cp.x, cp.z)) - 3f;
+            }
+            UpdateLook(ps, pal, sunDir, elev, dark, duskAmt, fogBase);
 
             // Nebel: Farbe = Horizontdunst, damit Landschaft und Himmel verschmelzen
             float view = GameApp.I != null ? GameApp.I.Settings.ViewDistance : 1f;
@@ -367,7 +374,7 @@ namespace RePlanet
         float stormBlend;
 
         /// <summary>Bildlook für die Nachbearbeitung aus Palette, Tageszeit und Wetter.</summary>
-        void UpdateLook(PlanetSky ps, Palette pal, Vector3 sunDir, float elev, float dark, float duskAmt, float water)
+        void UpdateLook(PlanetSky ps, Palette pal, Vector3 sunDir, float elev, float dark, float duskAmt, float fogBase)
         {
             var L = Look;
             L.SunDir = sunDir;
@@ -376,8 +383,8 @@ namespace RePlanet
             L.SkyCube = probe != null ? probe.texture : null;
             L.FogSky = Underwater ? 0f : 0.85f;
             L.FogFalloff = Underwater ? 0f : 0.035f;
-            L.FogBase = water > -50f ? water : 0f;
-            L.FogLinear = Underwater ? 2.5f : 0.35f + stormBlend * 0.6f;
+            L.FogBase = fogBase;
+            L.FogLinear = Underwater ? 0.8f : 0.35f + stormBlend * 0.6f;
             L.FogSunScatter = Underwater ? 0f : (0.35f + duskAmt * 0.5f) * (1f - dark) * (1f - stormBlend * 0.6f);
             L.FogMax = 1f;
             L.Exposure = Mathf.Lerp(0.85f, 1.05f, dark); // ACES hebt Mitteltöne an → etwas unter 1
@@ -391,7 +398,7 @@ namespace RePlanet
             L.Vignette = 0.5f;
             L.Bloom = Mathf.Lerp(0.2f, 0.32f, Mathf.Max(duskAmt, dark));
             L.BloomThreshold = Mathf.Lerp(0.95f, 0.7f, dark);
-            L.ShaftStrength = elev > -0.02f && !Underwater ? (0.5f + duskAmt * 0.6f) * (1f - stormBlend * 0.85f) * (1f - dark) : 0f;
+            L.ShaftStrength = elev > -0.02f && !Underwater ? (0.3f + duskAmt * 0.45f) * (1f - stormBlend * 0.85f) * (1f - dark) : 0f;
             L.ShaftThreshold = Mathf.Lerp(0.55f, 0.35f, duskAmt);
             if (Underwater)
             {

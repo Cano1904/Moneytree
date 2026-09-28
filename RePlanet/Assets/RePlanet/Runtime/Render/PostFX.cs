@@ -60,6 +60,7 @@ namespace RePlanet
                 mat = new Material(sh) { name = "RePlanetPostFX", hideFlags = HideFlags.HideAndDontSave };
                 if (SystemInfo.SupportsRenderTextureFormat(RenderTextureFormat.RGB111110Float)) hdrFormat = RenderTextureFormat.RGB111110Float;
                 else if (!SystemInfo.SupportsRenderTextureFormat(RenderTextureFormat.DefaultHDR)) hdrFormat = RenderTextureFormat.Default;
+                Configure(quality, false); // bis CameraRig die Einstellungen übergibt
             }
             catch (Exception e)
             {
@@ -97,7 +98,8 @@ namespace RePlanet
             fogThisFrame = RenderSettings.fog;
             fogColor = RenderSettings.fogColor;
             fogDensity = RenderSettings.fogDensity;
-            if (Running && fogThisFrame)
+            // nur wenn die Tiefentextur da ist – sonst bliebe das Bild ganz ohne Nebel
+            if (Running && fogThisFrame && (cam.depthTextureMode & DepthTextureMode.Depth) != 0)
             {
                 // Unity-Nebel aus, damit nicht doppelt vernebelt wird – die Luftperspektive übernimmt
                 RenderSettings.fog = false;
@@ -192,6 +194,8 @@ namespace RePlanet
                 w /= 2; h /= 2;
             }
             RenderTexture bloom = n > 0 ? down[n - 1] : null;
+            // Die Aufwärtskette summiert alle Stufen → Stärke auf die Stufenzahl normieren
+            if (n > 0) mat.SetVector(idBloom, new Vector4(look.BloomThreshold, look.BloomThreshold * 0.5f, bloomIntensity * 3f / n, reduceFlashing ? 6f : 20f));
             for (int i = n - 2; i >= 0; i--)
             {
                 up[i] = Get(down[i].width, down[i].height);
