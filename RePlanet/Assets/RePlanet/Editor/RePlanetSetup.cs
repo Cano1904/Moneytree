@@ -67,6 +67,8 @@ namespace RePlanet.EditorTools
         public static readonly string[] AlwaysIncludedShaders =
         {
             "Skybox/Procedural", "Unlit/Color", "Unlit/Texture", "Unlit/Transparent", "Sprites/Default", "RePlanet/Sky",
+            // Eigene Darstellung (liegen ohnehin in Resources/; der Eintrag meldet im Setup-Protokoll, falls einer nicht kompiliert)
+            "RePlanet/Water", "RePlanet/Terrain", "Hidden/RePlanet/PostFX",
         };
 
         static double waitStart;

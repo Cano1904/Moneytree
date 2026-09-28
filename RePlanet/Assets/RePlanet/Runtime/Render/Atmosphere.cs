@@ -108,7 +108,7 @@ namespace RePlanet
                 GradeShadow = Mats.C(0x5A1E48), GradeHighlight = Mats.C(0xFFA050), Saturation = 1.1f, Contrast = 1.2f, Bank = 1f, BankHeight = 1.2f } },
             // PELAGIA: türkiser Zenit, rosa Horizont, heller Mond, weiche Wolkentürme über dem Meer
             { "pelagia", new PlanetSky {
-                Day = Pal(0x1FA8B8, 0xFFC2CE, 0xFFD6DC, 0x4A7A88, 0xFFF4F6, 0x9A5A8A, 0xFF8AC0, 0x3ABCC0, 0xFFF0DA, 0xE6C4CC, 0.32f, 0.14f, 0.4f),
+                Day = Pal(0x1FA8B8, 0xFFC2CE, 0xFFD6DC, 0x4A7A88, 0xFFE4EC, 0x3E8A9E, 0xFF8AC0, 0x3ABCC0, 0xFFF0DA, 0xE6C4CC, 0.32f, 0.14f, 0.4f),
                 Dusk = Pal(0x3A4A8A, 0xFF9A90, 0xF090A8, 0x3A4A5A, 0xFFC0B0, 0x6A4A80, 0xFF7AA8, 0x3A7AB0, 0xFFB08A, 0xC08898, 0.38f, 0.3f, 0.6f),
                 Night = Pal(0x0A0818, 0x2A1A3A, 0x2E2240, 0x0A1018, 0x40304E, 0x100C1A, 0xA05AC8, 0x2A3A8A, 0xC8C8FF, 0x1E1830, 0.35f, 0.5f, 0.45f),
                 Storm = Pal(0x4A5460, 0x8A9AA4, 0x7A8A94, 0x2A3A44, 0xA0B0B8, 0x3A4650, 0x6A7A8A, 0x2A3440, 0xC8D8E0, 0x6E7E88, 0.98f, 0.05f, 0.85f),
