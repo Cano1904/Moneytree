@@ -115,9 +115,10 @@ namespace RePlanet
         }
 
         /// <summary>
-        /// Schwenkt die Kamera langsam hinter MIKO, solange er sich bewegt und die Kamera eine Weile nicht selbst gedreht
-        /// wurde – so wandert sie beim Laufen entlang von Wänden nicht allmählich vor ihn. Läuft MIKO auf die Kamera zu
-        /// (Rückwärtsgehen), bleibt sie stehen, sonst würde sie im Kreis drehen. Im Fahrzeug folgt sie zügiger.
+        /// Schwenkt die Kamera langsam hinter MIKO, solange er vorwärts/schräg läuft und die Kamera eine Weile nicht selbst
+        /// gedreht wurde – so bleibt sie hinter ihm, statt nach Kurven allmählich seitlich oder vor ihm zu stehen. Läuft MIKO
+        /// seitwärts oder auf die Kamera zu (Steuerung relativ zur Kamera), bleibt sie stehen, sonst würde sie im Kreis drehen.
+        /// Im Fahrzeug folgt sie zügiger (außer beim Rückwärtsfahren).
         /// </summary>
         void FollowBehind(Vector3 target, float dt)
         {
@@ -131,7 +132,8 @@ namespace RePlanet
             if (lookIdle < (vehicle ? 0.8f : 1.5f) || speed < 1f) return;
             float robotYaw = pc.RenderYaw * Mathf.Rad2Deg;
             float delta = Mathf.DeltaAngle(Yaw, robotYaw);
-            if (Mathf.Abs(delta) > (vehicle ? 150f : 105f)) return;
+            // Seitwärtslaufen (90°) dreht nicht mit – sonst liefe MIKO bei gehaltener Seitwärtstaste im Kreis
+            if (Mathf.Abs(delta) > (vehicle ? 150f : 75f)) return;
             float rate = (vehicle ? 70f : 32f) * Mathf.Clamp01(speed / 5f);
             Yaw = Mathf.MoveTowardsAngle(Yaw, robotYaw, rate * dt);
         }

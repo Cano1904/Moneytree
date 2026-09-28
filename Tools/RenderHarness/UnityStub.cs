@@ -908,7 +908,14 @@ namespace UnityEngine
     public enum MaterialGlobalIlluminationFlags { None = 0, RealtimeEmissive = 1, BakedEmissive = 2, EmissiveIsBlack = 4, AnyEmissive = 3 }
     public static class Resources
     {
-        public static T Load<T>(string n) where T : class { if (typeof(T) == typeof(Material)) return new Material(new Shader()) { name = n } as T; return null; }
+        /// <summary>Prüfumgebung: Sprachaufnahmen (Resources/Voice) simulieren, Länge in Sekunden (0 = keine).</summary>
+        public static float FakeVoiceLength;
+        public static T Load<T>(string n) where T : class
+        {
+            if (typeof(T) == typeof(Material)) return new Material(new Shader()) { name = n } as T;
+            if (typeof(T) == typeof(AudioClip) && FakeVoiceLength > 0 && n.StartsWith("Voice/")) return AudioClip.Create(n, (int)(FakeVoiceLength * 48000), 1, 48000, false) as T;
+            return null;
+        }
         public static Object Load(string n) => null;
         public static T[] LoadAll<T>(string n) where T : class => new T[0];
         public static T GetBuiltinResource<T>(string n) where T : class => typeof(T) == typeof(Font) ? new Font { name = n } as T : null;

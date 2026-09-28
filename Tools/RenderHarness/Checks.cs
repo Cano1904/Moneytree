@@ -233,6 +233,32 @@ public static class Checks
             CollectWarnings();
         }
 
+        // Mit Sprachaufnahmen (Erzähler plant Zeilen, Untertitel folgen den Aufnahmen), Untertitel an und aus
+        foreach (bool subs in new[] { true, false })
+        {
+            Begin("Intro mit Sprachaufnahmen, Untertitel " + (subs ? "an" : "aus"));
+            Resources.FakeVoiceLength = 5.2f;
+            ClearVoiceCache(); // der Erzähler merkt sich fehlende Aufnahmen (im Spiel kommen keine nachträglich hinzu)
+            app.Settings.Subtitles = subs;
+            AudioManager.FakeIntroTime = 0;
+            app.PlayIntroOnly();
+            int lines = 0; string lastLine = null; bool recSeen = false;
+            Run(IntroTimeline.Total + 2.5f, 1f / 15f, t =>
+            {
+                AudioManager.FakeIntroTime = t;
+                if (Hud.Subtitle != null && Hud.Subtitle != lastLine) { lastLine = Hud.Subtitle; lines++; }
+                if (Narrator.HasRecordings) recSeen = true;
+            });
+            if (!recSeen) Fail("Erzähler findet die Aufnahmen nicht");
+            Info("Untertitelzeilen gezeigt: " + lines + ", Aufnahmen erkannt: " + recSeen);
+            if (subs && lines < 10) Fail("Zu wenige Untertitel mit Aufnahmen: " + lines);
+            if (!subs && lines > 0) Fail("Untertitel trotz ausgeschalteter Untertitel: " + lines);
+            if (app.Mode != AppMode.Menu) Fail("Intro (mit Stimme) endet nicht im Menü: " + app.Mode);
+            CollectWarnings();
+        }
+        Resources.FakeVoiceLength = 0; app.Settings.Subtitles = true;
+        ClearVoiceCache();
+
         // Ohne Musik: nach 10 s läuft das Bild frei weiter; Überspringen durch Gedrückthalten
         Begin("Intro ohne Musik + Überspringen");
         AudioManager.FakeIntroTime = -1;
@@ -244,6 +270,12 @@ public static class Checks
         if ((bool)playingField.GetValue(intro)) Fail("Überspringen beendet das Intro nicht");
         if (app.Mode != AppMode.Menu) Fail("Nach dem Überspringen nicht im Menü: " + app.Mode);
         CollectWarnings();
+    }
+
+    static void ClearVoiceCache()
+    {
+        var f = typeof(Narrator).GetField("cache", BindingFlags.NonPublic | BindingFlags.Static);
+        ((System.Collections.IDictionary)f.GetValue(null)).Clear();
     }
 
     // ================================================================== Spiel
