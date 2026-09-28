@@ -38,24 +38,23 @@ namespace RePlanet
         // ================================================================== Requisiten
         void BuildProps()
         {
-            var mb = new MultiBuilder();
+            if (trimMat == null) InitBuildingMats();
+            var cb = new ChunkBuilder(60f);
             var dark = Mats.Get(Mats.Opaque, new Color(0.22f, 0.22f, 0.24f));
             var rust = Mats.Get(Mats.Opaque, new Color(0.5f, 0.3f, 0.2f));
-            var wood = Mats.Get(Mats.Opaque, new Color(0.42f, 0.3f, 0.2f));
             var rng = new Rng(Def.Seed + 3);
             foreach (var p in Layout.Props)
             {
                 var pos = P(p.Pos);
                 int area = Mathf.Clamp(p.Area, 0, 2);
+                var mb = cb.At(pos.x, pos.z);
                 mb.M = Matrix4x4.TRS(pos, Quaternion.Euler(0, p.Rot * Mathf.Rad2Deg, 0), Vector3.one * p.Scale);
                 switch (p.Kind)
                 {
                     case "lamp":
                     case "heatlamp":
-                        mb.For(dark).Cylinder(Vector3.zero, 0.12f, 5f, 8);
-                        mb.For(dark).Box(new Vector3(0, 5f, 0.6f), new Vector3(0.15f, 0.15f, 1.3f));
-                        mb.For(LampMat(area)).Box(new Vector3(0, 4.85f, 1.15f), new Vector3(0.45f, 0.2f, 0.6f));
-                        lampPositions[area].Add(pos + Quaternion.Euler(0, p.Rot * Mathf.Rad2Deg, 0) * new Vector3(0, 4.6f, 1.15f));
+                        if (StreetLamp(mb, rng, area, p.Kind == "heatlamp"))
+                            lampPositions[area].Add(pos + Quaternion.Euler(0, p.Rot * Mathf.Rad2Deg, 0) * new Vector3(0, 5.1f, 1.27f));
                         break;
                     case "zonelamp":
                         {
@@ -67,6 +66,8 @@ namespace RePlanet
                             go.transform.localPosition = pos;
                             Obj("pole", MeshKit.Cylinder, dark, new Vector3(0, 1.6f, 0), new Vector3(0.18f, 3.2f, 0.18f), Quaternion.identity, go.transform);
                             Obj("globe", MeshKit.Sphere, m, new Vector3(0, 3.4f, 0), Vector3.one * 0.7f, Quaternion.identity, go.transform, false);
+                            Obj("cap", MeshKit.Cylinder, dark, new Vector3(0, 3.8f, 0), new Vector3(0.5f, 0.12f, 0.5f), Quaternion.identity, go.transform);
+                            Obj("base", MeshKit.Cylinder, dark, new Vector3(0, 0.15f, 0), new Vector3(0.5f, 0.3f, 0.5f), Quaternion.identity, go.transform);
                             zoneLamps[p.Style] = go;
                             break;
                         }
@@ -77,87 +78,77 @@ namespace RePlanet
                         BuildTree(p, rng);
                         break;
                     case "billboard":
-                        mb.For(dark).Box(new Vector3(-2.5f, 3f, 0), new Vector3(0.3f, 6f, 0.3f));
-                        mb.For(dark).Box(new Vector3(2.5f, 3f, 0), new Vector3(0.3f, 6f, 0.3f));
-                        mb.For(Mats.Get(Mats.Opaque, new Color(0.92f, 0.86f, 0.7f))).Box(new Vector3(0, 7.2f, 0), new Vector3(8f, 3f, 0.3f));
+                        Billboard(mb, rng);
                         BuildKonsumaSign(pos, p.Rot, p.Scale);
                         break;
                     case "busstop":
-                        mb.For(dark).Box(new Vector3(-1.4f, 1.2f, 0), new Vector3(0.1f, 2.4f, 0.1f));
-                        mb.For(dark).Box(new Vector3(1.4f, 1.2f, 0), new Vector3(0.1f, 2.4f, 0.1f));
-                        mb.For(Mats.Get(Mats.Fade, new Color(0.7f, 0.85f, 0.9f, 0.4f))).Box(new Vector3(0, 1.2f, -0.6f), new Vector3(2.8f, 2.2f, 0.05f));
-                        mb.For(Mats.Get(Mats.Opaque, new Color(0.95f, 0.75f, 0.2f))).Box(new Vector3(0, 2.5f, 0), new Vector3(3.2f, 0.15f, 1.4f));
-                        mb.For(Mats.Get(Mats.Opaque, new Color(0.2f, 0.5f, 0.3f))).Box(new Vector3(1.9f, 2.6f, 0.3f), new Vector3(0.6f, 0.6f, 0.05f));
+                        BusStop(mb, rng);
                         break;
                     case "fountain":
                         {
                             var stone = Mats.Get(Mats.Opaque, new Color(0.7f, 0.68f, 0.62f));
-                            mb.For(stone).Cylinder(Vector3.zero, 3f, 0.6f, 20, true, 3f);
-                            mb.For(Mats.Get(Mats.Water, new Color(0.3f, 0.6f, 0.75f, 0.6f))).Cylinder(new Vector3(0, 0.5f, 0), 2.7f, 0.05f, 20);
-                            mb.For(stone).Cylinder(Vector3.zero, 0.3f, 2.2f, 10);
+                            var stoneD = Mats.Get(Mats.Opaque, new Color(0.55f, 0.53f, 0.49f));
+                            mb.For(stone).Cylinder(Vector3.zero, 3f, 0.6f, 24, true, 3f);
+                            mb.For(stoneD).Torus(new Vector3(0, 0.6f, 0), 2.9f, 0.14f, 24, 4);
+                            mb.For(Mats.Get(Mats.Water, new Color(0.3f, 0.6f, 0.75f, 0.6f))).Cylinder(new Vector3(0, 0.5f, 0), 2.7f, 0.05f, 24);
+                            mb.For(stoneD).Cylinder(Vector3.zero, 0.45f, 1.5f, 12, true, 0.3f);
+                            mb.For(stone).Cylinder(new Vector3(0, 1.5f, 0), 1.2f, 0.25f, 16, true, 1.3f);
+                            mb.For(stone).Cylinder(Vector3.zero, 0.25f, 2.2f, 10);
+                            mb.For(stone).Sphere(new Vector3(0, 2.25f, 0), 0.3f, 10, 6);
+                            for (int k = 0; k < 5; k++) mb.For(Mats.Get(Mats.Opaque, new Color(0.45f, 0.35f, 0.22f))).Crumple(new Vector3(Mathf.Cos(k * 1.3f) * 1.8f, 0.52f, Mathf.Sin(k * 1.3f) * 1.8f), 0.18f, 0.25f, k, 0.3f, 6, 3);
                             fountains.Add(MakeFountain(pos + Vector3.up * 2.2f * p.Scale));
                             break;
                         }
                     case "pipe":
-                        mb.For(rust).CylinderX(new Vector3(0, 0.8f, 0), 0.6f, 12f, 12);
+                        mb.For(rust).CylinderX(new Vector3(0, 0.8f, 0), 0.6f, 12f, 14);
+                        for (int k = -1; k <= 1; k++)
+                        {
+                            mb.For(acMat).CylinderX(new Vector3(k * 5.8f, 0.8f, 0), 0.72f, 0.2f, 14);
+                            mb.For(dark).Box(new Vector3(k * 4f, 0.2f, 0), new Vector3(0.4f, 0.4f, 1.5f));
+                        }
                         break;
                     case "rustcar":
-                        {
-                            var carCol = new[] { new Color(0.55f, 0.3f, 0.22f), new Color(0.35f, 0.4f, 0.45f), new Color(0.6f, 0.52f, 0.3f), new Color(0.3f, 0.36f, 0.3f) }[p.Style % 4];
-                            var m = Mats.Get(Mats.Opaque, carCol);
-                            mb.For(m).Box(new Vector3(0, 0.55f, 0), new Vector3(1.8f, 0.7f, 4f));
-                            mb.For(m).Box(new Vector3(0, 1.1f, -0.3f), new Vector3(1.6f, 0.55f, 2f));
-                            mb.For(dark).Box(new Vector3(0, 1.1f, 0.72f), new Vector3(1.5f, 0.45f, 0.05f));
-                            for (int i = 0; i < 4; i++) mb.For(dark).CylinderX(new Vector3(i % 2 == 0 ? 0.88f : -0.88f, 0.3f, i < 2 ? 1.3f : -1.3f), 0.32f, 0.22f, 8);
-                            break;
-                        }
+                        CarWreck(mb, rng, p.Style + rng.Range(0, 6));
+                        break;
                     case "gantry":
-                        mb.For(rust).Box(new Vector3(-7, 4, 0), new Vector3(0.6f, 8, 0.6f));
-                        mb.For(rust).Box(new Vector3(7, 4, 0), new Vector3(0.6f, 8, 0.6f));
-                        mb.For(dark).Box(new Vector3(0, 8.3f, 0), new Vector3(16f, 0.8f, 1.6f));
+                        Gantry(mb, rng);
                         break;
                     case "turbine":
                         {
-                            mb.For(Mats.Get(Mats.Opaque, new Color(0.85f, 0.83f, 0.8f))).Cylinder(Vector3.zero, 0.7f, 22f, 10, true, 0.35f);
+                            TurbineTower(mb);
                             var rotor = new GameObject("Rotor");
                             rotor.transform.SetParent(Root, false);
-                            rotor.transform.localPosition = pos + Vector3.up * 22f * p.Scale;
+                            rotor.transform.localPosition = pos + Vector3.up * 22.1f * p.Scale + Quaternion.Euler(0, p.Rot * Mathf.Rad2Deg, 0) * new Vector3(0, 0, 0.9f * p.Scale);
                             rotor.transform.localRotation = Quaternion.Euler(0, p.Rot * Mathf.Rad2Deg, 0);
                             var blades = new MeshBuilder();
-                            for (int i = 0; i < 3; i++) blades.BoxRot(Vector3.zero, new Vector3(0.6f, 9f, 0.15f), new Vector3(0, 0, i * 120));
-                            var bgo = Obj("blades", blades.Build("blades"), Mats.Get(Mats.Opaque, new Color(0.9f, 0.9f, 0.88f)), new Vector3(0, 0, 0.6f), Vector3.one, Quaternion.identity, rotor.transform);
+                            blades.Sphere(Vector3.zero, 0.55f, 10, 6);
+                            for (int i = 0; i < 3; i++)
+                            {
+                                var o = blades.M;
+                                blades.M = Matrix4x4.TRS(Vector3.zero, Quaternion.Euler(0, 0, i * 120), Vector3.one);
+                                blades.BoxRot(new Vector3(0, 2.2f, 0), new Vector3(0.75f, 3.6f, 0.14f), new Vector3(0, 12, 0));
+                                blades.BoxRot(new Vector3(0.05f, 6.2f, 0), new Vector3(0.45f, 4.6f, 0.1f), new Vector3(0, 18, 0));
+                                blades.M = o;
+                            }
+                            var bgo = Obj("blades", blades.Build("blades"), Mats.Get(Mats.Opaque, new Color(0.9f, 0.9f, 0.88f)), Vector3.zero, Vector3.one * p.Scale, Quaternion.identity, rotor.transform);
                             spinnersPending.Add(new KeyValuePair<Transform, string>(bgo.transform, "pyra_p2"));
                             break;
                         }
                     case "chimney":
-                        mb.For(Mats.Get(Mats.Opaque, new Color(0.45f, 0.3f, 0.25f))).Cylinder(Vector3.zero, 1.3f, 26f, 12, true, 1f);
+                        Chimney(mb);
                         break;
                     case "harborcrane":
-                        {
-                            var y = Mats.Get(Mats.Opaque, new Color(0.9f, 0.6f, 0.15f));
-                            mb.For(y).Box(new Vector3(-3, 7, 0), new Vector3(0.8f, 14, 0.8f));
-                            mb.For(y).Box(new Vector3(3, 7, 0), new Vector3(0.8f, 14, 0.8f));
-                            mb.For(y).Box(new Vector3(0, 14.5f, 4), new Vector3(1.2f, 1.2f, 22f));
-                            mb.For(dark).Box(new Vector3(0, 12.5f, 13f), new Vector3(0.1f, 4f, 0.1f));
-                            break;
-                        }
+                        HarborCrane(mb, rng);
+                        break;
                     case "lighthouse":
-                        {
-                            mb.For(Mats.Get(Mats.Opaque, new Color(0.95f, 0.95f, 0.92f))).Cylinder(Vector3.zero, 2.2f, 18f, 14, true, 1.6f);
-                            mb.For(Mats.Get(Mats.Opaque, new Color(0.85f, 0.25f, 0.2f))).Cylinder(new Vector3(0, 6, 0), 2.0f, 2.5f, 14);
-                            mb.For(Mats.Get(Mats.Opaque, new Color(0.85f, 0.25f, 0.2f))).Cylinder(new Vector3(0, 12, 0), 1.8f, 2.5f, 14);
-                            var lm = LampMat(0);
-                            mb.For(lm).Cylinder(new Vector3(0, 18, 0), 1.3f, 2f, 12);
-                            lampPositions[0].Add(pos + Vector3.up * 19f);
-                            break;
-                        }
+                        Lighthouse(mb, 0);
+                        lampPositions[0].Add(pos + Vector3.up * 19.3f);
+                        break;
                     case "filterstation":
                         {
                             var off = new MultiBuilder(); var on = new MultiBuilder();
                             off.M = on.M = mb.M;
-                            off.For(rust).Box(new Vector3(0, 1.5f, 0), new Vector3(4, 3, 4));
-                            on.For(Mats.Get(Mats.Opaque, new Color(0.85f, 0.9f, 0.92f))).Box(new Vector3(0, 1.5f, 0), new Vector3(4, 3, 4));
-                            on.For(Mats.Get(Mats.Emissive, new Color(0.2f, 0.8f, 0.9f), new Color(0.2f, 1.2f, 1.4f))).Cylinder(new Vector3(0, 3f, 0), 1.2f, 1.5f, 12);
+                            FilterStation(off, on);
                             projectSwitches.Add(new Switchable { Off = off.Build("FilterOff", Root), On = on.Build("FilterOn", Root), Project = "pelagia_p2" });
                             break;
                         }
@@ -165,27 +156,24 @@ namespace RePlanet
                         {
                             var on = new MultiBuilder();
                             on.M = mb.M;
-                            var colors = new[] { new Color(1f, 0.45f, 0.5f), new Color(1f, 0.7f, 0.3f), new Color(0.6f, 0.4f, 1f), new Color(0.3f, 0.9f, 0.7f) };
-                            for (int i = 0; i < 40; i++)
-                            {
-                                float a = rng.Range(0, 6.28f), r = rng.Range(0f, 14f);
-                                on.For(Mats.Get(Mats.Opaque, colors[i % 4])).Cylinder(new Vector3(Mathf.Cos(a) * r, 0, Mathf.Sin(a) * r), rng.Range(0.15f, 0.4f), rng.Range(0.8f, 2.5f), 6, true, 0.05f);
-                            }
+                            Reef(on, rng);
                             projectSwitches.Add(new Switchable { On = on.Build("Reef", Root), Project = "pelagia_p3" });
                             break;
                         }
                     case "buoy":
-                        mb.For(Mats.Get(Mats.Opaque, p.Style == 0 ? new Color(0.9f, 0.3f, 0.2f) : new Color(0.95f, 0.8f, 0.2f))).Cylinder(new Vector3(0, -0.4f, 0), 0.6f, 1.2f, 10, true, 0.3f);
+                        NavBuoy(mb, p.Style);
                         break;
                     case "radar":
                         {
+                            RadarBase(mb);
                             var white = Mats.Get(Mats.Opaque, new Color(0.9f, 0.92f, 0.95f));
-                            mb.For(dark).Cylinder(Vector3.zero, 0.5f, 6f, 8);
                             var dish = new GameObject("Dish");
                             dish.transform.SetParent(Root, false);
-                            dish.transform.localPosition = pos + Vector3.up * 6.5f;
+                            dish.transform.localPosition = pos + Vector3.up * 6.6f;
                             var db = new MeshBuilder();
-                            db.Lathe(Vector3.zero, new[] { new Vector2(0, 0), new Vector2(2.5f, 0.8f), new Vector2(3.2f, 1.6f) }, 16);
+                            db.Lathe(Vector3.zero, new[] { new Vector2(0, 0), new Vector2(1.2f, 0.25f), new Vector2(2.5f, 0.8f), new Vector2(3.2f, 1.6f), new Vector2(3.25f, 1.7f) }, 20);
+                            db.Cylinder(new Vector3(0, 0, 0), 0.08f, 2.6f, 6);
+                            db.Sphere(new Vector3(0, 2.6f, 0), 0.2f, 8, 5);
                             Obj("dish", db.Build("dish"), white, Vector3.zero, Vector3.one, Quaternion.Euler(-60, 0, 0), dish.transform);
                             spinnersPending.Add(new KeyValuePair<Transform, string>(dish.transform, p.LitBy));
                             break;
@@ -195,8 +183,12 @@ namespace RePlanet
                             var off = new MultiBuilder(); var on = new MultiBuilder();
                             off.M = on.M = mb.M;
                             off.For(rust).Box(new Vector3(0, 2, 0), new Vector3(8, 4, 5));
+                            off.For(Mats.Get(Mats.Opaque, new Color(0.35f, 0.2f, 0.14f))).BoxRot(new Vector3(0, 4.2f, 0), new Vector3(8.6f, 0.2f, 5.6f), new Vector3(0, 0, 6));
+                            off.For(woodMat).BoxRot(new Vector3(-1.5f, 1.5f, 2.55f), new Vector3(2.4f, 0.2f, 0.06f), new Vector3(0, 0, 20));
                             on.For(Mats.Get(Mats.Opaque, new Color(0.8f, 0.55f, 0.3f))).Box(new Vector3(0, 2, 0), new Vector3(8, 4, 5));
+                            on.For(Mats.Get(Mats.Opaque, new Color(0.3f, 0.65f, 0.55f))).Box(new Vector3(0, 4.15f, 0), new Vector3(8.6f, 0.3f, 5.6f));
                             on.For(Mats.Get(Mats.Emissive, new Color(1f, 0.6f, 0.2f), new Color(2f, 1f, 0.3f))).Box(new Vector3(0, 4.6f, 2.6f), new Vector3(5, 1, 0.2f));
+                            for (int k = 0; k < 3; k++) on.For(WindowMat(0)).Box(new Vector3(-2.5f + k * 2.5f, 2.2f, 2.52f), new Vector3(1.6f, 1.4f, 0.06f));
                             projectSwitches.Add(new Switchable { Off = off.Build("TradeOff", Root), On = on.Build("TradeOn", Root), Project = "pyra_p1" });
                             break;
                         }
@@ -206,6 +198,8 @@ namespace RePlanet
                             on.M = mb.M;
                             on.For(Mats.Get(Mats.Opaque, new Color(0.3f, 0.65f, 0.55f))).Box(new Vector3(0, 6, -6), new Vector3(20, 3, 3));
                             on.For(Mats.Get(Mats.Emissive, new Color(0.3f, 1f, 0.6f), new Color(0.4f, 2f, 0.8f))).Box(new Vector3(0, 8, -4.4f), new Vector3(10, 1.2f, 0.2f));
+                            for (int k = -2; k <= 2; k++) on.For(acMat).Box(new Vector3(k * 4f, 2.2f, -6f), new Vector3(0.5f, 4.4f, 0.5f));
+                            for (float x = -9.5f; x < 10f; x += 1f) on.For(dark).CylinderZ(new Vector3(x, 7.55f, -6f), 0.1f, 2.8f, 6);
                             projectSwitches.Add(new Switchable { On = on.Build("Recycler", Root), Project = "pyra_p3" });
                             break;
                         }
@@ -219,7 +213,8 @@ namespace RePlanet
                         break;
                 }
             }
-            mb.Build("Props", Root, true);
+            BuildStreetFurniture(cb);
+            cb.Build("Props", Root, true);
             foreach (var kv in spinnersPending) spinnerProjects[kv.Key] = kv.Value;
             spinnersPending.Clear();
         }
