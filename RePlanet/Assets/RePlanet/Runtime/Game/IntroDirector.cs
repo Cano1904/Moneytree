@@ -319,7 +319,9 @@ namespace RePlanet
                 if (buf.Length < need) buf = new ParticleSystem.Particle[need];
                 var main = Ps.main;
                 if (main.maxParticles < need) main.maxParticles = need + 32;
-                if (!started) { Ps.Play(); Ps.Pause(); started = true; }
+                // Das System läuft (ohne Emission), damit Unity Grenzen und Sichtbarkeit laufend neu berechnet;
+                // die Teilchen werden jedes Bild nach der Simulation neu gesetzt und bewegen sich daher nicht selbst.
+                if (!started || !Ps.isPlaying) { Ps.Play(); started = true; }
                 int n = 0;
                 for (int i = 0; i < Items.Count; i++)
                 {
@@ -351,7 +353,7 @@ namespace RePlanet
             var ps = go.AddComponent<ParticleSystem>();
             ps.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
             var main = ps.main;
-            main.loop = false; main.playOnAwake = false; main.startLifetime = 1e4f; main.startSpeed = 0f; main.maxParticles = 256;
+            main.loop = true; main.playOnAwake = false; main.startLifetime = 1e4f; main.startSpeed = 0f; main.maxParticles = 256;
             main.simulationSpace = ParticleSystemSimulationSpace.World;
             main.cullingMode = ParticleSystemCullingMode.AlwaysSimulate;
             var em = ps.emission; em.enabled = false;
@@ -2115,7 +2117,7 @@ namespace RePlanet
             else
             {
                 float lx = lt - 7.5f;
-                SetLook(0.29f, 0.05f, 0.0035f, new Color(0.96f, 0.8f, 0.62f), new Color(0.5f, 0.46f, 0.45f), new Color(0.56f, 0.44f, 0.34f), new Color(0.2f, 0.15f, 0.11f),
+                SetLook(0.28f, 0.05f, 0.0035f, new Color(0.96f, 0.8f, 0.62f), new Color(0.5f, 0.46f, 0.45f), new Color(0.56f, 0.44f, 0.34f), new Color(0.2f, 0.15f, 0.11f),
                     sd, new Color(1f, 0.8f, 0.55f), 1.6f, 1600f);
                 look.SunSize = 0.05f;
                 if (doorL != null) { doorL.localRotation = Quaternion.Euler(0f, 108f, 0f); doorR.localRotation = Quaternion.Euler(0f, -108f, 0f); }
@@ -2270,17 +2272,17 @@ namespace RePlanet
             for (int i = 0; i < 14; i++)
             {
                 var c = r.Chance(0.5f) ? new Color(1f, 0.85f, 0.6f, r.Range(0.07f, 0.14f)) : new Color(0.7f, 1f, 0.6f, r.Range(0.05f, 0.1f));
-                bokeh.Add(halo.Add(new Vector3(r.Range(-0.14f, 0.2f), r.Range(0.0f, 0.16f), r.Range(-0.2f, -0.12f)), r.Range(0.025f, 0.06f), c));
+                bokeh.Add(halo.Add(new Vector3(r.Range(-0.12f, 0.24f), r.Range(0.02f, 0.3f), r.Range(-0.1f, -0.01f)), r.Range(0.02f, 0.05f), c));
             }
             mikoNear = RobotModel.Create(macro, "MIKO_Nah");
             mikoNear.transform.localPosition = new Vector3(2.2f, 0f, 0.6f);
         }
 
-        /// <summary>true, wenn p der Nahaufnahme (Kamera bei ≈ (0,15 | −0,25), Blick auf den Keimling) oder MIKOs Weg im Weg läge.</summary>
+        /// <summary>true, wenn p der Nahaufnahme (Kamera → Keimling → MIKO dahinter) oder MIKOs Anfahrt im Weg läge.</summary>
         static bool MacroClear(Vector3 p, float r)
         {
             var q = new Vector2(p.x, p.z);
-            return PathNear(q, q, new Vector2(0.2f, -0.4f), new Vector2(0f, 0f)) < r || PathNear(q, q, new Vector2(2.7f, 0.9f), new Vector2(0.1f, 0.8f)) < r * 0.8f;
+            return PathNear(q, q, new Vector2(0.2f, -0.45f), new Vector2(0.1f, 2.1f)) < r || PathNear(q, q, new Vector2(2.7f, 0.9f), new Vector2(0.6f, 0.45f)) < r * 0.8f;
         }
 
         Transform Leaf(Transform parent, Mesh mesh, Material mat, Vector3 at, float yaw)
@@ -2322,15 +2324,16 @@ namespace RePlanet
             else
             {
                 float lc = lt - 6.5f;
-                SetLook(0.35f, 0.15f, 0.45f / MacroScale, new Color(0.42f, 0.36f, 0.27f), new Color(0.34f, 0.3f, 0.28f), new Color(0.3f, 0.24f, 0.2f), new Color(0.11f, 0.09f, 0.07f),
+                SetLook(0.35f, 0.15f, 0.3f / MacroScale, new Color(0.42f, 0.36f, 0.27f), new Color(0.34f, 0.3f, 0.28f), new Color(0.3f, 0.24f, 0.2f), new Color(0.11f, 0.09f, 0.07f),
                     sd, new Color(0.9f, 0.8f, 0.66f), 0.4f, 200f, 0.03f);
-                mikoNear.transform.localPosition = new Vector3(0.08f, 0f, 0.82f);
+                mikoNear.transform.localPosition = new Vector3(0.1f, 0f, 2f);
                 mikoNear.transform.localRotation = Quaternion.Euler(0f, 180f, 0f);
                 if (lt > 8.2f && Once("happy")) { mikoNear.Emote("happy"); AudioManager.Play("beep_happy", null, 0.55f); }
                 var toSprout = (macro.TransformPoint(sproutTop) - mikoNear.transform.position).normalized;
                 mikoNear.Animate(Time.deltaTime, 0f, 0.3f, "grab", false, false, false, false, 0.15f, toSprout);
                 float e = M.Smooth(lc / 6.5f);
-                Cam(new Vector3(0.2f - 0.07f * e, 0.065f - 0.008f * e, -0.3f + 0.1f * e), sproutTop + new Vector3(0f, -0.02f, 0f), 34f - 6f * e, 0f, 0.07f);
+                // Keimling im unteren Drittel, dahinter – weich im Dunst – MIKOs leuchtende Augen
+                Cam(new Vector3(0.2f - 0.07f * e, 0.045f, -0.3f + 0.1f * e), new Vector3(0.02f, 0.28f - 0.05f * e, 0.6f), 34f - 4f * e, 0f, 0.07f);
                 for (int i = 0; i < bokeh.Count; i++)
                 {
                     bokeh[i].Gain = Mathf.Clamp01(lc / 1.2f) * (0.7f + 0.3f * Mathf.Sin(t * 0.6f + i));
@@ -2809,7 +2812,7 @@ namespace RePlanet
         /// <summary>Die vermüllte Erde von oben: ockerbraune Kontinente, trübe Meere, Staubstürme – und Wolkenschicht mit Alpha.</summary>
         void MakePlanet(out Texture2D surface, out Texture2D cloudTex)
         {
-            int W = detail < 0.6f ? 512 : 1024, H = W / 2;
+            int W = detail < 0.6f ? 512 : 768, H = W / 2;
             var px = new Color32[W * H];
             var cl = new Color32[W * H];
             for (int y = 0; y < H; y++)
@@ -2820,7 +2823,7 @@ namespace RePlanet
                 {
                     float lon = (x + 0.5f) / W * Mathf.PI * 2f;
                     var p = new Vector3(cl0 * Mathf.Cos(lon), sl, cl0 * Mathf.Sin(lon));
-                    float cont = Fbm3(p * 1.6f + new Vector3(10f, 10f, 10f), 7, 5);
+                    float cont = Fbm3(p * 1.6f + new Vector3(10f, 10f, 10f), 7, 4);
                     float detailN = Fbm3(p * 7f + new Vector3(3f, 3f, 3f), 8, 3);
                     Color c;
                     if (cont < 0.47f)
@@ -2839,9 +2842,10 @@ namespace RePlanet
                     c = Color.Lerp(c, new Color(0.78f, 0.76f, 0.72f), pole * 0.8f);
                     c.a = 1f;
                     px[y * W + x] = C32(c);
-                    float cn = Fbm3(p * 3.2f + new Vector3(1f, 5f, 2f) + new Vector3(Mathf.Sin(lat * 6f) * 0.3f, 0f, 0f), 9, 5);
+                    float cn = Fbm3(p * 3.2f + new Vector3(1f, 5f, 2f) + new Vector3(Mathf.Sin(lat * 6f) * 0.3f, 0f, 0f), 9, 4);
                     float ca = Mathf.Clamp01((cn - 0.52f) * 3.2f);
-                    float dustBand = Mathf.Clamp01(1f - Mathf.Abs(sl - 0.25f) / 0.2f) * Mathf.Clamp01((Fbm3(p * 5f, 10, 3) - 0.45f) * 3f);
+                    float band = Mathf.Clamp01(1f - Mathf.Abs(sl - 0.25f) / 0.2f);
+                    float dustBand = band > 0f ? band * Mathf.Clamp01((Fbm3(p * 5f, 10, 2) - 0.45f) * 3f) : 0f;
                     var ccol = Color.Lerp(new Color(0.95f, 0.93f, 0.9f), new Color(0.85f, 0.7f, 0.5f), dustBand);
                     ccol.a = Mathf.Clamp01(ca * 0.85f + dustBand * 0.45f);
                     cl[y * W + x] = C32(ccol);
