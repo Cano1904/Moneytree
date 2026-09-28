@@ -16,7 +16,6 @@ namespace RePlanet
         string savesMsg; bool savesMsgError;
         string ngName = "Meine Welt";
         int ngSlot;
-        bool ngIntro = true;
         SlotInfo ngExisting;
         int ngExistingFor = -1;
         string planetPreviewed;
@@ -57,48 +56,52 @@ namespace RePlanet
         {
             if (Time.unscaledTime > mainRefresh) RefreshMainMenu();
             Vignette();
-            // Seitliche Abdunklung hinter der Menüspalte
+            // Mittige Abdunklung hinter Titel und Knopfspalte (weich zu den Seiten)
+            float bw = Mathf.Min(440f, VW - 80f);
+            float cx = VW * 0.5f;
             if (Event.current.type == EventType.Repaint)
             {
-                for (int i = 0; i < 12; i++)
+                for (int i = 0; i < 10; i++)
                 {
-                    float a = (UISkin.Contrast ? 0.7f : 0.42f) * (1f - i / 12f);
-                    UISkin.Rect(new Rect(i * 50f, 0, 50f, VH), new Color(0.01f, 0.05f, 0.07f, a));
+                    float a = (UISkin.Contrast ? 0.7f : 0.36f) * (1f - i / 10f);
+                    float half = bw * 0.5f + 40f + i * 36f;
+                    UISkin.Rect(new Rect(cx - half, 0, 36f, VH), new Color(0.01f, 0.05f, 0.07f, a));
+                    UISkin.Rect(new Rect(cx + half - 36f, 0, 36f, VH), new Color(0.01f, 0.05f, 0.07f, a));
                 }
+                UISkin.Rect(new Rect(cx - bw * 0.5f - 40f + 36f, 0, bw + 80f - 72f, VH), new Color(0.01f, 0.05f, 0.07f, UISkin.Contrast ? 0.7f : 0.36f));
             }
 
-            float left = Mathf.Max(40f, VW * 0.06f);
             float titleH = Mathf.Min(150f, VH * 0.16f);
             var ts = UISkin.Title;
             int oldSize = ts.fontSize;
             ts.fontSize = (int)Mathf.Clamp(titleH * 0.8f, 48, 120);
-            ts.alignment = TextAnchor.MiddleLeft;
+            ts.alignment = TextAnchor.MiddleCenter;
             float top = Mathf.Max(24f, VH * 0.07f);
-            UISkin.Shadow(new Rect(left, top, VW - left, titleH), UISkin.Col("RE", UISkin.Text) + UISkin.Col(":", UISkin.Accent) + UISkin.Col("PLANET", UISkin.Text), ts);
-            ts.fontSize = oldSize; ts.alignment = TextAnchor.MiddleCenter;
+            UISkin.Shadow(new Rect(0, top, VW, titleH), UISkin.Col("RE", UISkin.Text) + UISkin.Col(":", UISkin.Accent) + UISkin.Col("PLANET", UISkin.Text), ts);
+            ts.fontSize = oldSize;
             var sub = UISkin.Subtitle;
-            sub.alignment = TextAnchor.MiddleLeft;
-            UISkin.Shadow(new Rect(left + 6, top + titleH - 6, VW - left, 44), "Eine zweite Chance", sub);
             sub.alignment = TextAnchor.MiddleCenter;
-
-            float y = top + titleH + 60f;
-            int n = 8;
-            float bh = Mathf.Clamp((VH - y - 80f) / n - 10f, 34f, 54f);
-            float bw = Mathf.Min(420f, VW - left * 2);
-            float step = bh + 10f;
+            UISkin.Shadow(new Rect(0, top + titleH - 6, VW, 44), "Eine zweite Chance", sub);
 
             bool canContinue = mainSlot != null;
+            float y = top + titleH + 64f;
+            int n = 7;
+            float bh = Mathf.Clamp((VH - y - 110f) / n - 10f, 34f, 54f);
+            float step = bh + 10f;
+            float left = cx - bw * 0.5f;
+
             if (UINav.Button(new Rect(left, y, bw, bh), L("Fortsetzen"), canContinue))
             {
                 app.Continue(mainSlot);
             }
+            y += step;
             if (canContinue && mainSlotInfo != null)
             {
                 string info = mainSlotInfo.Error != null ? UISkin.Col(mainSlotInfo.Error, UISkin.Warn)
                     : (mainSlotInfo.World ?? "Welt") + " · " + mainSlotInfo.Planet + " · " + FormatTime(mainSlotInfo.Playtime);
-                GUI.Label(new Rect(left + bw + 16, y, VW - left - bw - 30, bh), info, UISkin.LabelSmall);
+                GUI.Label(new Rect(0, y - 8, VW, 24), UISkin.Col(info, UISkin.TextDim), SmallCenter());
+                y += 18f;
             }
-            y += step;
             if (UINav.Button(new Rect(left, y, bw, bh), L("Neues Spiel"))) UIState.Open(UIScreen.NewGame);
             y += step;
             if (UINav.Button(new Rect(left, y, bw, bh), L("Koop"))) OpenSub(UIScreen.Coop, UIScreen.MainMenu);
@@ -106,8 +109,6 @@ namespace RePlanet
             if (UINav.Button(new Rect(left, y, bw, bh), L("Spielstände"))) OpenSub(UIScreen.Saves, UIScreen.MainMenu);
             y += step;
             if (UINav.Button(new Rect(left, y, bw, bh), L("Einstellungen"))) OpenSub(UIScreen.Settings, UIScreen.MainMenu);
-            y += step;
-            if (UINav.Button(new Rect(left, y, bw, bh), "Intro ansehen")) app.PlayIntroOnly();
             y += step;
             if (UINav.Button(new Rect(left, y, bw, bh), "Mitwirkende")) UIState.Open(UIScreen.Credits);
             y += step;
@@ -119,14 +120,11 @@ namespace RePlanet
             }
             else if (UINav.Button(new Rect(left, y, bw, bh), L("Beenden"))) confirm = "quit";
 
-            // Versionshinweis
+            // Versionshinweis und Steuerung (klein, unten mittig)
             string ver = "Version " + Application.version + " · Unity " + Application.unityVersion + " · Inspiriert von WALL·E – eigene Figuren und Welten";
-            GUI.Label(new Rect(left, VH - 40, VW - left * 2, 30), ver, UISkin.LabelTiny);
-            string hint = InputMap.UsingPad ? "Steuerkreuz/Stick: Auswahl · A: Bestätigen · B: Zurück" : "Pfeiltasten/Maus: Auswahl · Eingabe: Bestätigen · Esc: Zurück";
-            var hs = UISkin.LabelTiny;
-            hs.alignment = TextAnchor.MiddleRight;
-            GUI.Label(new Rect(0, VH - 40, VW - 30, 30), hint, hs);
-            hs.alignment = TextAnchor.MiddleLeft;
+            string hint = InputMap.UsingPad ? "Steuerkreuz/Stick · A: Bestätigen · B: Zurück" : "Pfeiltasten/Maus · Eingabe: Bestätigen · Esc: Zurück";
+            GUI.Label(new Rect(0, VH - 58, VW, 24), UISkin.Col(hint, UISkin.TextDim), SmallCenter());
+            GUI.Label(new Rect(0, VH - 34, VW, 24), UISkin.Col(ver, UISkin.TextDim * new Color(1, 1, 1, 0.7f)), SmallCenter());
         }
 
         // ================================================================== Neues Spiel
@@ -134,8 +132,6 @@ namespace RePlanet
         {
             var app = GameApp.I;
             if (app == null) return;
-            ngIntro = true;
-            if (!app.Settings.IntroSeenOnce) ngIntro = true;
             if (string.IsNullOrEmpty(ngName)) ngName = "Meine Welt";
             // Freien Slot vorschlagen
             ngSlot = 0;
@@ -151,7 +147,7 @@ namespace RePlanet
         void DrawNewGame(GameApp app)
         {
             Vignette();
-            var r = CenterRect(760, 560);
+            var r = CenterRect(760, 460);
             var inner = Window(r, L("Neues Spiel"));
             float y = inner.y + 6;
             GUI.Label(new Rect(inner.x, y, inner.width, 30), "Name der Welt", UISkin.LabelSmall);
@@ -172,16 +168,11 @@ namespace RePlanet
             else warn = UISkin.Col("Dieser Speicherplatz ist frei.", UISkin.Good);
             GUI.Label(new Rect(inner.x + 10, y, inner.width - 20, 60), warn, UISkin.WrapSmall);
             y += 66;
-            ngIntro = UINav.Toggle(new Rect(inner.x, y, inner.width, 44), ngIntro, "Intro abspielen");
-            y += 50;
-            if (!app.Settings.IntroSeenOnce)
-                GUI.Label(new Rect(inner.x + 10, y, inner.width - 20, 30), "Empfohlen beim ersten Spiel: Das Intro erzählt, warum MIKO allein ist.", UISkin.LabelSmall);
-            y += 40;
             float bw = (inner.width - 14) * 0.5f;
             var go = new Rect(inner.x, inner.yMax - 56, bw, 52);
             if (UINav.Button(go, "Los geht's!", true, UISkin.ButtonSel))
             {
-                app.BeginNewGame(string.IsNullOrEmpty(ngName) ? "Meine Welt" : ngName.Trim(), SaveStore.Slots[ngSlot], ngIntro);
+                app.BeginNewGame(string.IsNullOrEmpty(ngName) ? "Meine Welt" : ngName.Trim(), SaveStore.Slots[ngSlot], true);
             }
             if (UINav.Button(new Rect(go.xMax + 14, go.y, bw, 52), L("Zurück"))) Back();
         }
