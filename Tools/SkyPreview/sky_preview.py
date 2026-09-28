@@ -47,6 +47,11 @@ def parse_palettes():
             mm = re.search(key + r" = (-?[\d.]+)f", body)
             return float(mm.group(1)) if mm else default
         p["SunAzimuth"] = num("SunAzimuth", 0); p["CloudScale"] = num("CloudScale", 0.9); p["CloudDensity"] = num("CloudDensity", 2.4); p["Aurora"] = num("Aurora", 0)
+        p["Bank"] = num("Bank", 0.8); p["BankHeight"] = num("BankHeight", 1.0)
+        p["Saturation"] = num("Saturation", 1.2); p["Contrast"] = num("Contrast", 1.18)
+        for key, default in (("GradeShadow", "4D7390"), ("GradeHighlight", "FFD9A6")):
+            mm = re.search(key + r" = Mats\.C\(0x([0-9A-Fa-f]+)\)", body)
+            p[key] = hexcol(mm.group(1) if mm else default)
         planets[name] = p
     return planets
 
@@ -138,9 +143,14 @@ def render(planet, P, phase, storm, W=960, H=540, yaw_deg=None, pitch_deg=8, t=4
     h = d[..., 1]
     Z, Ho, Hz, G = lin(pal["Zenith"]), lin(pal["Horizon"]), lin(pal["Haze"]), lin(pal["Ground"])
     up = sat(h)
-    col = mix(Ho, Z, np.power(up, 0.5)[..., None])
+    col = mix(Ho, Z, np.power(up, 0.38)[..., None])
     col = np.where((h < 0)[..., None], mix(Ho, G, sat(-h * 5)[..., None]), col)
-    neb = fbm5(d * 2.3 + np.array([0, t * 0.003, 0], np.float32))
+    sunI = 3 * (1 - storm * 0.8) if elev > -0.05 else 0
+    sunGlow = (1 + dusk * 0.8) * (1 - storm * 0.7) if elev > -0.05 else 0
+    sdot = d @ sun
+    mie = sat(sdot) ** 5 * (0.35 + 0.65 * (1 - up)) + sat(sdot) ** 40 * 0.6
+    col = col + lin(pal["Sun"]) * (1 - dark * 0.9) * (mie * 0.35 * sunGlow)[..., None]
+    neb =fbm5(d * 2.3 + np.array([0, t * 0.003, 0], np.float32))
     neb2 = fbm3(d * 5.1 + neb[..., None] * 1.8)
     nebCol = mix(lin(pal["NebB"]), lin(pal["NebA"]), sat(neb2 * 1.6 - 0.3)[..., None])
     col = col + nebCol * (sat(neb * 1.8 - 0.55) * pal["Nebula"] * (1 - storm) * sat(h * 3 + 0.2))[..., None]
@@ -153,7 +163,7 @@ def render(planet, P, phase, storm, W=960, H=540, yaw_deg=None, pitch_deg=8, t=4
         col = col + sc * (star * tw * 2.2 * stars * sat(h * 6 + 0.3))[..., None]
         dust = sat(fbm3(d * 14) * 1.35 - 0.4) ** 3
         col = col + np.array([0.6, 0.65, 0.9], np.float32) * (dust * 0.25 * stars)[..., None]
-    aur = P["Aurora"] * dark * (1 - storm)
+    aur = P["Aurora"] * (0.3 + 0.7 * dark) * (1 - storm)
     if aur > 0.001:
         wave = fbm3(np.stack([d[..., 0] * 2.2, d[..., 2] * 2.2, np.full_like(h, t * 0.04)], -1)) * 3
         center = 0.28 + 0.08 * np.sin(d[..., 0] * 3 + wave + t * 0.15)
@@ -162,13 +172,12 @@ def render(planet, P, phase, storm, W=960, H=540, yaw_deg=None, pitch_deg=8, t=4
         rays = rays * 0.75 + 0.25 * fbm3(np.stack([d[..., 0] * 20, h * 3, np.full_like(h, t * 0.1)], -1))
         ac = mix(lin(np.array([0.2, 1, 0.6], np.float32)), lin(np.array([0.6, 0.3, 1], np.float32)), sat((h - center) * 4)[..., None])
         col = col + ac * (curtain * rays * aur * 0.9 * (h > 0))[..., None]
-    vis = (0.55 + 0.45 * dark) * (1 - storm * 0.85)
+    vis = (0.85 + 0.15 * dark) * (1 - storm * 0.85)
     col = body(d, col, P["P1"], sun, vis)
     col = body(d, col, P["P2"], sun, vis)
     sd = d @ sun; cosS = math.cos(0.03 + dusk * 0.015)
     disc = smoothstep(cosS, cosS + (1 - cosS) * 0.25, sd)
     glow = sat(sd) ** 10 * 0.45 + sat(sd) ** 90 * 0.8
-    sunI = 3 * (1 - storm * 0.8) if elev > -0.05 else 0
     col = col + lin(pal["Sun"]) * (1 - dark * 0.9) * ((glow + disc * sunI) * (h > -0.04))[..., None]
     # Wolken (gekrümmte Schale + Selbstverschattung, wie im Shader)
     def cloudField(p):
@@ -183,18 +192,41 @@ def render(planet, P, phase, storm, W=960, H=540, yaw_deg=None, pitch_deg=8, t=4
     wdir = np.array([1, 0.3], np.float32); wdir /= np.linalg.norm(wdir)
     p = p + np.array([wdir[0], 0, wdir[1]], np.float32) * t * (0.02 + storm * 0.08) + np.array([0, t * 0.004, 0], np.float32)
     c = cloudField(p)
-    dens = sat((c - (1 - pal["Cover"]) * 0.85) * (P["CloudDensity"] + storm * 1.5)) * sat(h * 8 + 0.08)
+    cdens = P["CloudDensity"] + storm * 1.5
+    dens = sat((c - (1 - pal["Cover"]) * 0.85) * cdens) * sat(h * 14 + 0.15)
     toSun = np.array([sun[0], 0, sun[2]], np.float32); toSun /= np.linalg.norm(toSun) + 1e-4
     cs = cloudField(p + toSun * 0.35)
-    lightAmt = sat(0.55 + (c - cs) * 3.2)
+    lightAmt = sat(0.5 + (c - cs) * 4.0)
     towards = sat(sd * 0.5 + 0.5) ** 3
     shade = sat(c * 1.3 - 0.2)
-    cc = mix(lin(pal["CloudShadow"]), lin(pal["CloudLight"]), sat(lightAmt * 0.75 + shade * 0.35)[..., None])
+    thick = sat((c - (1 - pal["Cover"]) * 0.85) * cdens * 0.5)
+    cc = mix(lin(pal["CloudShadow"]), lin(pal["CloudLight"]), sat(lightAmt * 0.8 + shade * 0.25 - thick * 0.35 + 0.15)[..., None])
     sunC = lin(pal["Sun"]) * (1 - dark * 0.9)
     cc = cc + sunC * (towards * 0.3 * lightAmt)[..., None] + sunC * (sat(1 - dens) ** 2 * towards * 0.45)[..., None]
     cm = h > -0.02
-    col = np.where(cm[..., None], mix(col, cc, (dens * 0.96)[..., None]), col)
-    haze = np.exp(-np.abs(h) * 9) * pal["HazeStrength"]
+    col = np.where(cm[..., None], mix(col, cc, (dens * 0.9)[..., None]), col)
+    # Wolkenbank am Horizont
+    bankS = P["Bank"] * (1 - 0.3 * dark) * (1 + storm * 0.25)
+    bankH = P["BankHeight"] * (1 + storm * 0.4)
+    if bankS > 0.001:
+        az = np.stack([d[..., 0], d[..., 2]], -1); az /= np.linalg.norm(az, axis=-1, keepdims=True) + 1e-4
+        cspeed = 0.02 + storm * 0.08
+        drift = wdir * t * cspeed * 0.15
+        top = 0.05 + 0.2 * bankH * sat(fbm3(np.stack([az[..., 0] * 2.3 + drift[0], np.full_like(h, 0.7), az[..., 1] * 2.3 + drift[1]], -1)) * 2 - 0.45)
+        hn = sat(h / top)
+        pb = np.stack([az[..., 0] * 5 + drift[0], h * 16, az[..., 1] * 5 + drift[1]], -1) * P["CloudScale"]
+        n = fbm5(pb)
+        shape = n + (1 - hn) * 0.42 - hn * hn * 0.25
+        bd = sat((shape - 0.62) * 5) * sat(1 - hn * 0.98) * sat(h * 60 + 1) * bankS
+        n2 = fbm3(pb + np.array([0, 0.9, 0], np.float32))
+        bl = sat(0.35 + (n - n2) * 2.5 + hn * 0.55)
+        tsb = sat(sd * 0.5 + 0.5) ** 4
+        bc = mix(lin(pal["CloudShadow"]), lin(pal["CloudLight"]), bl[..., None])
+        bc = bc + sunC * (tsb * (0.25 + bl * 0.45))[..., None] + sunC * (sat(1 - bd) ** 3 * tsb * 0.6)[..., None]
+        bc = mix(bc, Hz, (sat(0.45 - h * 2) * pal["HazeStrength"])[..., None])
+        bm = (h > -0.03) & (h < 0.3)
+        col = np.where(bm[..., None], mix(col, bc, (sat(bd) * 0.95)[..., None]), col)
+    haze = np.exp(-np.abs(h) * 14) * pal["HazeStrength"]
     col = mix(col, Hz, sat(haze)[..., None])
     # Vordergrund: Hügelsilhouette im Nebel (nur zur Einordnung)
     xs_ang = np.arctan2(d[..., 0], d[..., 2])
@@ -203,32 +235,64 @@ def render(planet, P, phase, storm, W=960, H=540, yaw_deg=None, pitch_deg=8, t=4
     land = mix(G * 0.6, fog, 0.55)
     col = np.where((h < ridge)[..., None], land, col)
     img = (srgb(col) * 255).clip(0, 255).astype(np.uint8)
-    return Image.fromarray(img, "RGB")
+    graded = (srgb(post_grade(col, P, pal, dark, dusk, storm)) * 255).clip(0, 255).astype(np.uint8)
+    return Image.fromarray(img, "RGB"), Image.fromarray(graded, "RGB")
+
+def lum(c): return c[..., 0] * 0.2126 + c[..., 1] * 0.7152 + c[..., 2] * 0.0722
+
+def post_grade(col, P, pal, dark, dusk, storm):
+    """Farbkorrektur wie Resources/RePlanetPostFX.shader (Pass Zusammensetzen) mit den Werten aus Atmosphere.UpdateLook
+    (ohne Bloom, Sonnenstrahlen, Korn – nur Belichtung, Kontrast, ACES, Split-Toning, Sättigung/Vibrance, Vignette)."""
+    exposure = 0.85 + (1.05 - 0.85) * dark
+    contrast = P["Contrast"] + (1.05 - P["Contrast"]) * storm * 0.7
+    satur = (P["Saturation"] + (1.0 - P["Saturation"]) * storm * 0.6) * (1 + (0.92 - 1) * dark)
+    split = (0.3 + 0.12 * dark) * (1 - storm * 0.4)
+    st = lin(mix(P["GradeShadow"], pal["Zenith"], dark * 0.5))
+    ht = lin(mix(P["GradeHighlight"], pal["Sun"], dusk * 0.5))
+    c = np.maximum(col * exposure, 0)
+    c = 0.18 * np.power(c / 0.18 + 1e-5, contrast)
+    c = np.clip(c * (2.51 * c + 0.03) / (c * (2.43 * c + 0.59) + 0.14), 0, 1)
+    l = lum(c); hl = smoothstep(0.08, 0.75, l)[..., None]
+    tS = 1 + (st / max(lum(st), 0.01) - 1) * split; tH = 1 + (ht / max(lum(ht), 0.01) - 1) * split
+    c = c * (tS + (tH - tS) * hl)
+    l = lum(c)[..., None]; mx = c.max(-1, keepdims=True); mn = c.min(-1, keepdims=True)
+    s = satur * (1 + 0.45 * (1 - (mx - mn) / np.maximum(mx, 1e-4)))
+    c = np.maximum(l + (c - l) * s, 0)
+    H, W = c.shape[:2]; y, x = np.mgrid[0:H, 0:W]; u = x / W - 0.5; v = y / H - 0.5
+    vg = np.clip((2 * (u * u + v * v)) ** 1.25 * 0.5, 0, 1)[..., None]
+    vc = lin(mix(np.array([0.2, 0.18, 0.26], np.float32), P["GradeShadow"] * 0.5, 0.5))
+    return c + (c * vc - c) * vg
 
 def main():
     out = sys.argv[1] if len(sys.argv) > 1 else "sky_preview"
     os.makedirs(out, exist_ok=True)
     pals = parse_palettes()
     shots = [("tag", 0.42, 0.0), ("daemmerung", 0.74, 0.0), ("nacht", 0.93, 0.0), ("sturm", 0.45, 1.0)]
-    tiles = []
+    # Blickwinkel: Standard leicht nach oben; mit „--spielblick“ wie die Spielkamera (flach, Horizont im oberen Drittel)
+    pitch = -6 if "--spielblick" in sys.argv else 8
+    size = (480, 270) if "--klein" in sys.argv else (640, 360)
+    tiles, tiles_post = [], []
     for planet in ("terra", "pyra", "pelagia", "nivalis"):
-        row = []
+        row, row_post = [], []
         for name, phase, storm in shots:
-            img = render(planet, pals[planet], phase, storm, 640, 360)
+            img, img_post = render(planet, pals[planet], phase, storm, size[0], size[1], pitch_deg=pitch)
             img.save(os.path.join(out, f"himmel_{planet}_{name}.png"))
-            row.append(img)
+            img_post.save(os.path.join(out, f"himmel_{planet}_{name}_post.png"))
+            row.append(img); row_post.append(img_post)
             print(planet, name, "ok", flush=True)
-        tiles.append(row)
-    # Übersicht
-    W, H = 640, 360
-    sheet = Image.new("RGB", (W * 4, H * 4 + 40), (10, 10, 14))
-    dr = ImageDraw.Draw(sheet)
-    for r, row in enumerate(tiles):
-        for c, img in enumerate(row):
-            sheet.paste(img, (c * W, 40 + r * H))
-            dr.text((c * W + 10, 40 + r * H + 8), f"{['TERRA','PYRA','PELAGIA','NIVALIS'][r]} – {shots[c][0]}", fill=(255, 255, 255))
-    dr.text((10, 12), "Himmels-Shader-Vorschau (NumPy-Nachrechnung, keine Spielszene)", fill=(255, 220, 160))
-    sheet.save(os.path.join(out, "himmel_uebersicht.png"))
+        tiles.append(row); tiles_post.append(row_post)
+    # Übersicht (roh und mit Nachbearbeitung)
+    W, H = size
+    for rows, fname, title in ((tiles, "himmel_uebersicht.png", "Himmels-Shader-Vorschau (NumPy-Nachrechnung, keine Spielszene)"),
+                               (tiles_post, "himmel_uebersicht_post.png", "Himmel + Farbkorrektur der Nachbearbeitung (ACES, Split-Toning, Vibrance; ohne Bloom)")):
+        sheet = Image.new("RGB", (W * 4, H * 4 + 40), (10, 10, 14))
+        dr = ImageDraw.Draw(sheet)
+        for r, row in enumerate(rows):
+            for c, img in enumerate(row):
+                sheet.paste(img, (c * W, 40 + r * H))
+                dr.text((c * W + 10, 40 + r * H + 8), f"{['TERRA','PYRA','PELAGIA','NIVALIS'][r]} - {shots[c][0]}", fill=(255, 255, 255))
+        dr.text((10, 12), title, fill=(255, 220, 160))
+        sheet.save(os.path.join(out, fname))
 
 if __name__ == "__main__":
     main()

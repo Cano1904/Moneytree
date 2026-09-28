@@ -120,6 +120,20 @@ namespace RePlanet
             return m;
         }
 
+        /// <summary>
+        /// Eigener Shader aus Resources/ (Dateiname ohne Endung) bzw. per Shader-Name. Liefert null, wenn er fehlt oder
+        /// von der Grafikkarte nicht unterstützt wird – der Aufrufer nimmt dann sein Standard-Material.
+        /// </summary>
+        public static Shader CustomShader(string resource, string shaderName)
+        {
+            Shader s = null;
+            try { s = Resources.Load<Shader>(resource); if (s == null) s = Shader.Find(shaderName); }
+            catch (System.Exception e) { Debug.LogWarning("[RE:PLANET] Shader " + shaderName + ": " + e.Message); }
+            if (s == null) return null;
+            if (!s.isSupported) { Debug.LogWarning("[RE:PLANET] Shader " + shaderName + " wird nicht unterstützt – Rückfall auf Standard."); return null; }
+            return s;
+        }
+
         public static void SetEmission(Material m, Color c)
         {
             if (m == null || !m.HasProperty("_EmissionColor")) return;
