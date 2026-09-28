@@ -279,7 +279,7 @@ namespace RePlanet
                 drops.Add(new Drop
                 {
                     Id = d.Id, T = tt, To = new Vector3(d.Pos.x, d.Pos.y, d.Pos.z), Rot = Quaternion.Euler(0f, d.Rot * Mathf.Rad2Deg, 0f), Scale = s,
-                    Start = 6.0f + i * 0.13f + UnityEngine.Random.Range(0f, 0.08f), Dur = 0.75f + UnityEngine.Random.Range(0f, 0.2f),
+                    Start = 6.1f + Mathf.Min(i, 13) * 0.1f + UnityEngine.Random.Range(0f, 0.05f), Dur = 0.75f + UnityEngine.Random.Range(0f, 0.15f),
                     Spin = UnityEngine.Random.Range(180f, 540f), SpinAxis = UnityEngine.Random.onUnitSphere
                 });
                 i++;
@@ -289,8 +289,8 @@ namespace RePlanet
             AudioManager.Play("whoosh", FreighterPos(), 1f, 0.55f);
         }
 
-        // Pfad: Anflug (0–3,8 s), Sinkflug (3,8–5,6 s), am Boden (5,6–8,9 s), Start (ab 8,9 s), Ende 14 s
-        const float TApproach = 3.8f, TLand = 5.6f, TOpen = 5.7f, TClose = 8.1f, TLift = 8.9f, TEnd = 14f;
+        // Pfad: Anflug (0–3,8 s), Sinkflug (3,8–5,6 s), am Boden (5,6–9 s, Ausladen 6,1–8,4 s), Start (ab 9 s), Ende 14 s
+        const float TApproach = 3.8f, TLand = 5.6f, TOpen = 5.7f, TClose = 8.3f, TLift = 9.0f, TEnd = 14f;
 
         Vector3 FreighterPos() { return freighter != null ? freighter.position : ground; }
 
