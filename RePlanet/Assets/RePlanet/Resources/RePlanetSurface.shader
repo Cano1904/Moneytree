@@ -17,6 +17,8 @@ Shader "RePlanet/Surface"
         _Look ("Detail, Schmutz, Relief, Nahbereich (m)", Vector) = (1, 1, 1, 70)
         _DirtColor ("Schmutzfarbe", Color) = (0.3, 0.25, 0.2, 1)
         _SurfClass ("Klasse erzwingen (-1 = je Ecke)", Float) = -1
+        _GlowTex ("Leuchten je Palettenfarbe", 2D) = "black" {}
+        _GlowScale ("Leuchtfaktor", Float) = 0
     }
 
     SubShader
@@ -31,6 +33,8 @@ Shader "RePlanet/Surface"
 
         sampler2D _MainTex;
         sampler2D _DetailTex;
+        sampler2D _GlowTex;
+        float _GlowScale;
         half4 _Color, _EmissionColor, _DirtColor;
         half _Glossiness, _Metallic;
         float4 _Look;
@@ -260,7 +264,7 @@ Shader "RePlanet/Surface"
             o.Metallic = saturate(metal);
             o.Smoothness = saturate(smooth);
             o.Occlusion = occ;
-            o.Emission = _EmissionColor.rgb;
+            o.Emission = _EmissionColor.rgb + tex2D(_GlowTex, IN.uv_MainTex).rgb * _GlowScale;
             o.Alpha = 1.0;
         }
         ENDCG

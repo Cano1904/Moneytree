@@ -581,13 +581,64 @@ namespace RePlanet
                 var go = new GameObject("ProjectSite" + a);
                 go.transform.SetParent(Root, false);
                 go.transform.localPosition = site;
-                Obj("terminal", MeshKit.Cube, dark, new Vector3(0, 1.1f, 0), new Vector3(1.4f, 2.2f, 0.9f), Quaternion.identity, go.transform);
-                Obj("screen", MeshKit.Cube, Mats.Get(Mats.Emissive, new Color(1f, 0.6f, 0.2f), new Color(1.8f, 0.9f, 0.3f)), new Vector3(0, 1.6f, 0.46f), new Vector3(1.1f, 0.8f, 0.04f), Quaternion.identity, go.transform, false);
-                for (int i = 0; i < 4; i++) Obj("scaffold", MeshKit.Cube, Mats.Get(Mats.Opaque, new Color(0.85f, 0.6f, 0.15f)), new Vector3(i % 2 == 0 ? -3 : 3, 2.5f, i < 2 ? -3 : 3), new Vector3(0.2f, 5f, 0.2f), Quaternion.identity, go.transform);
+                ProjectSiteModel(go.transform);
                 projectSites[GameData.ProjectId(Planet, a)] = go.transform;
-                var tm = TextLabel(go.transform, GameData.Projects[GameData.ProjectId(Planet, a)].Name, new Vector3(0, 6.2f, 0), 0.36f, new Color(1f, 0.85f, 0.5f));
-                if (tm != null) tm.gameObject.AddComponent<Billboard>();
+                // Projektzeichen (Stern) statt Schriftzug, dreht sich zur Kamera
+                IconBillboard(go.transform, new Vector3(0, 6.2f, 0), 1.1f, SurfaceLook.Icon.Star);
             }
+        }
+
+        /// <summary>Leuchtendes Piktogramm, das sich zur Kamera dreht (ersetzt schwebende Namensschilder).</summary>
+        GameObject IconBillboard(Transform parent, Vector3 localPos, float size, int icon)
+        {
+            var b = new MeshBuilder();
+            b.UVRect = SurfaceLook.IconRect(icon);
+            float h = size * 0.5f;
+            // Billboard dreht +Z von der Kamera weg: sichtbare Seite zeigt nach −Z, rechts = +X
+            b.Quad(new Vector3(-h, -h, 0), new Vector3(h, -h, 0), new Vector3(h, h, 0), new Vector3(-h, h, 0), Vector3.back);
+            var go = Obj("Piktogramm", b.Build("icon"), SurfaceLook.SignMaterial(), localPos, Vector3.one, Quaternion.identity, parent, false);
+            go.AddComponent<Billboard>();
+            return go;
+        }
+
+        /// <summary>Projektplatz: gefastes Terminal mit Projekt-Piktogramm, Gerüst mit Streben, Bohlen und Absperrband.</summary>
+        void ProjectSiteModel(Transform parent)
+        {
+            var pmb = new MultiBuilder { UsePalette = true, GroundY = 0f };
+            var orange = Paint(new Color(0.9f, 0.62f, 0.15f), 0.45f);
+            var dark = Paint(new Color(0.22f, 0.23f, 0.25f), 0.4f);
+            pmb.For(Conc(new Color(0.5f, 0.49f, 0.47f))).BevelBox(new Vector3(0, 0.08f, 0), new Vector3(1.6f, 0.16f, 1.1f), 0.03f);
+            pmb.For(dark).BevelBox(new Vector3(0, 1.1f, 0), new Vector3(1.4f, 2.0f, 0.9f), 0.07f);
+            pmb.For(Steel(new Color(0.3f, 0.31f, 0.33f))).BevelBoxRot(new Vector3(0, 1.62f, 0.44f), new Vector3(1.2f, 0.9f, 0.06f), new Vector3(-8, 0, 0), 0.02f);
+            var o = pmb.M;
+            pmb.M = Matrix4x4.TRS(new Vector3(0, 1.62f, 0.475f), Quaternion.Euler(-8, 0, 0), Vector3.one);
+            var sb = pmb.For(SurfaceLook.SignMaterial());
+            sb.UVRect = SurfaceLook.IconRect(SurfaceLook.Icon.Star);
+            sb.Quad(new Vector3(0.4f, -0.4f, 0), new Vector3(-0.4f, -0.4f, 0), new Vector3(-0.4f, 0.4f, 0), new Vector3(0.4f, 0.4f, 0), Vector3.forward);
+            pmb.M = o;
+            HazardBand(pmb, new Vector3(0, 2.18f, 0.46f), 0, 1.4f, 0.12f, 0.02f);
+            pmb.For(Glow(new Color(1f, 0.6f, 0.2f), 1.2f)).Box(new Vector3(0, 0.25f, 0.455f), new Vector3(1.2f, 0.04f, 0.02f));
+            // Gerüst: vier Stützen mit Fußplatten, Kreuzstreben, Bohlen, Absperrband
+            for (int i = 0; i < 4; i++)
+            {
+                var p = new Vector3(i % 2 == 0 ? -3 : 3, 0, i < 2 ? -3 : 3);
+                pmb.For(orange).Box(p + Vector3.up * 2.5f, new Vector3(0.14f, 5f, 0.14f));
+                pmb.For(dark).Box(p + Vector3.up * 0.02f, new Vector3(0.4f, 0.04f, 0.4f));
+            }
+            for (int s = -1; s <= 1; s += 2)
+            {
+                pmb.For(orange).Beam(new Vector3(-3, 0.3f, s * 3), new Vector3(3, 4.7f, s * 3), 0.06f);
+                pmb.For(orange).Beam(new Vector3(s * 3, 0.3f, -3), new Vector3(s * 3, 4.7f, 3), 0.06f);
+                pmb.For(orange).Box(new Vector3(0, 4.9f, s * 3), new Vector3(6.1f, 0.1f, 0.1f));
+                pmb.For(orange).Box(new Vector3(s * 3, 4.9f, 0), new Vector3(0.1f, 0.1f, 6.1f));
+            }
+            for (int k = 0; k < 5; k++) pmb.For(woodMat).Box(new Vector3(-2.4f + k * 1.2f, 4.98f, -3f), new Vector3(1.1f, 0.05f, 0.35f));
+            for (int s = -1; s <= 1; s += 2)
+            {
+                pmb.For(Paint(new Color(0.95f, 0.3f, 0.2f), 0.4f)).Box(new Vector3(0, 0.9f, s * 3.05f), new Vector3(6f, 0.07f, 0.01f));
+                pmb.For(Paint(new Color(0.95f, 0.3f, 0.2f), 0.4f)).Box(new Vector3(s * 3.05f, 0.9f, 0), new Vector3(0.01f, 0.07f, 6f));
+            }
+            pmb.Build("ProjectSiteMesh", parent, true);
         }
 
         /// <summary>Unterschlupf (planetentypisch) – auch für selbst gebaute Notunterschlüpfe.</summary>
@@ -635,8 +686,8 @@ namespace RePlanet
                 }
             mb.For(warm).Box(new Vector3(0, 2.4f, -0.8f), new Vector3(0.4f, 0.1f, 0.2f));
             var go = mb.Build(emergency ? "Notunterschlupf" : "Unterschlupf", Root, true);
-            var tm = TextLabel(go.transform, emergency ? "Notunterschlupf" : Def.ShelterName, pos + Vector3.up * 3.9f, 0.24f, new Color(0.8f, 1f, 0.9f));
-            if (tm != null) tm.gameObject.AddComponent<Billboard>();
+            // Unterschlupf-Zeichen (Haus) statt Schriftzug
+            IconBillboard(go.transform, pos + Vector3.up * 3.9f, emergency ? 0.6f : 0.75f, SurfaceLook.Icon.House);
             return go;
         }
 

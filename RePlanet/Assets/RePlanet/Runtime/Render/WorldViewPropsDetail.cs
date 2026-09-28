@@ -16,24 +16,34 @@ namespace RePlanet
         /// <summary>Straßenlaterne mit Sockel, konischem Mast, geschwungenem Ausleger und Leuchtenkopf. Liefert false, wenn sie kaputt ist (leuchtet nie).</summary>
         bool StreetLamp(MultiBuilder mb, Rng rng, int area, bool heat)
         {
-            var pole = Mat(heat ? new Color(0.32f, 0.36f, 0.42f) : new Color(0.24f, 0.26f, 0.27f));
+            var pole = SMat(SurfKind.Paint, heat ? new Color(0.32f, 0.36f, 0.42f) : new Color(0.24f, 0.26f, 0.27f), 0.45f);
+            var steel = MetalMat(new Color(0.55f, 0.57f, 0.6f));
             bool broken = !heat && rng.Chance(0.15f);
             var o = mb.M;
             if (broken) mb.M = o * Matrix4x4.TRS(Vector3.zero, Quaternion.Euler(rng.Range(-14f, 14f), 0, rng.Range(8f, 16f)), Vector3.one);
-            mb.For(plinthMat).Cylinder(Vector3.zero, 0.24f, 0.55f, 8, true, 0.2f);
-            mb.For(pole).Cylinder(new Vector3(0, 0.5f, 0), 0.12f, 4.6f, 8, true, 0.07f);
-            mb.For(pole).Box(new Vector3(0.13f, 0.95f, 0), new Vector3(0.04f, 0.4f, 0.16f));
-            // Ausleger in drei Segmenten
+            // Betonsockel mit Fußflansch und Schrauben, Mast mit Revisionsklappe und Manschetten
+            mb.For(plinthMat).Cylinder(Vector3.zero, 0.26f, 0.45f, 12, true, 0.22f);
+            mb.For(pole).Cylinder(new Vector3(0, 0.45f, 0), 0.18f, 0.08f, 12);
+            for (int k = 0; k < 4; k++) { float ang = k * 90f + 45f; mb.For(steel).Box(Quaternion.Euler(0, ang, 0) * new Vector3(0, 0.55f, 0.14f), new Vector3(0.04f, 0.05f, 0.04f)); }
+            mb.For(pole).Cylinder(new Vector3(0, 0.5f, 0), 0.12f, 4.6f, 12, true, 0.07f);
+            mb.For(pole).BevelBox(new Vector3(0.115f, 1.0f, 0), new Vector3(0.03f, 0.42f, 0.14f), 0.01f);
+            mb.For(steel).Box(new Vector3(0.132f, 1.12f, 0), new Vector3(0.01f, 0.03f, 0.06f));
+            mb.For(pole).Cylinder(new Vector3(0, 2.6f, 0), 0.115f, 0.06f, 12);
+            // Ausleger in drei Segmenten mit Zierbogen
             var a = new Vector3(0, 5.0f, 0); var b = new Vector3(0, 5.35f, 0.35f); var c = new Vector3(0, 5.45f, 0.95f);
-            mb.For(pole).Beam(new Vector3(0, 4.9f, 0), a, 0.09f);
-            mb.For(pole).Beam(a, b, 0.08f);
-            mb.For(pole).Beam(b, c, 0.08f);
-            mb.For(pole).BoxRot(new Vector3(0, 5.42f, 1.25f), new Vector3(0.42f, 0.14f, 0.75f), new Vector3(-4, 0, 0));
-            mb.For(broken ? glassDark : LampMat(area)).BoxRot(new Vector3(0, 5.32f, 1.27f), new Vector3(0.34f, 0.06f, 0.6f), new Vector3(-4, 0, 0));
+            mb.For(pole).Tube(new Vector3(0, 4.9f, 0), a, 0.07f, 8);
+            mb.For(pole).Tube(a, b, 0.06f, 8);
+            mb.For(pole).Tube(b, c, 0.06f, 8);
+            mb.For(pole).Tube(new Vector3(0, 4.5f, 0.02f), new Vector3(0, 5.1f, 0.6f), 0.025f, 6);
+            // Leuchtenkopf: gefastes Gehäuse, Kühlrippen, Diffusor
+            mb.For(pole).BevelBoxRot(new Vector3(0, 5.44f, 1.25f), new Vector3(0.44f, 0.14f, 0.78f), new Vector3(-4, 0, 0), 0.04f);
+            for (int k = 0; k < 4; k++) mb.For(pole).BoxRot(new Vector3(0, 5.53f, 1.0f + k * 0.16f), new Vector3(0.34f, 0.04f, 0.03f), new Vector3(-4, 0, 0));
+            mb.For(broken ? glassDark : LampMat(area)).BoxRot(new Vector3(0, 5.35f, 1.27f), new Vector3(0.34f, 0.05f, 0.6f), new Vector3(-4, 0, 0));
+            if (!heat) mb.For(SMat(SurfKind.Rubber, new Color(0.08f, 0.08f, 0.09f))).Tube(new Vector3(0.1f, 0.5f, 0.05f), new Vector3(0.1f, 0.05f, 0.35f), 0.015f, 5);
             if (heat)
             {
                 // Heizelement mit Gitter und Schneekappe
-                mb.For(Mat(new Color(0.85f, 0.4f, 0.18f))).Box(new Vector3(0, 2.4f, 0.22f), new Vector3(0.36f, 0.8f, 0.22f));
+                mb.For(SMat(SurfKind.Paint, new Color(0.85f, 0.4f, 0.18f))).BevelBox(new Vector3(0, 2.4f, 0.22f), new Vector3(0.36f, 0.8f, 0.22f), 0.03f);
                 for (int k = 0; k < 5; k++) mb.For(darkMat).Box(new Vector3(0, 2.1f + k * 0.15f, 0.34f), new Vector3(0.34f, 0.03f, 0.02f));
                 mb.For(Mat(new Color(0.95f, 0.97f, 1f), 0.3f)).BoxRot(new Vector3(0, 5.52f, 1.25f), new Vector3(0.44f, 0.06f, 0.7f), new Vector3(-4, 0, 0));
             }
@@ -45,7 +55,7 @@ namespace RePlanet
 
         void Billboard(MultiBuilder mb, Rng rng)
         {
-            var steel = Mat(new Color(0.3f, 0.3f, 0.32f));
+            var steel = SMat(SurfKind.Paint, new Color(0.3f, 0.3f, 0.32f), 0.4f);
             // zwei Gittermasten
             for (int s = -1; s <= 1; s += 2)
             {
@@ -62,7 +72,7 @@ namespace RePlanet
             mb.For(steel).Box(new Vector3(0, 6.3f, -0.98f), new Vector3(8.2f, 0.05f, 0.05f));
             for (float x = -4f; x <= 4f; x += 1f) mb.For(steel).Box(new Vector3(x, 6.0f, -0.98f), new Vector3(0.04f, 0.6f, 0.04f));
             mb.For(steel).Box(new Vector3(0, 7.2f, 0.05f), new Vector3(8.4f, 3.3f, 0.2f));
-            mb.For(Mat(new Color(0.92f, 0.86f, 0.7f))).Box(new Vector3(0, 7.2f, -0.08f), new Vector3(8f, 3f, 0.06f));
+            mb.For(SMat(SurfKind.Plaster, new Color(0.92f, 0.86f, 0.7f))).Box(new Vector3(0, 7.2f, -0.08f), new Vector3(8f, 3f, 0.06f));
             for (int k = 0; k < 5; k++)
                 if (rng.Chance(0.6f)) mb.For(Mat(SignCols[rng.Range(0, SignCols.Length)])).BoxRot(new Vector3(-3.2f + k * 1.6f, 6.3f + rng.Range(0f, 0.6f), -0.12f), new Vector3(1.5f, rng.Range(0.5f, 1.4f), 0.02f), new Vector3(0, 0, rng.Range(-8f, 8f)));
             for (int s = -1; s <= 1; s += 2)
@@ -74,8 +84,8 @@ namespace RePlanet
 
         void BusStop(MultiBuilder mb, Rng rng)
         {
-            var frame = Mat(new Color(0.22f, 0.3f, 0.26f));
-            var yellow = Mat(new Color(0.95f, 0.75f, 0.2f));
+            var frame = SMat(SurfKind.Paint, new Color(0.22f, 0.3f, 0.26f), 0.45f);
+            var yellow = SMat(SurfKind.Paint, new Color(0.95f, 0.75f, 0.2f), 0.45f);
             for (int s = -1; s <= 1; s += 2)
             {
                 mb.For(frame).Box(new Vector3(s * 1.45f, 1.2f, -0.6f), new Vector3(0.08f, 2.4f, 0.08f));
@@ -103,9 +113,9 @@ namespace RePlanet
         /// <summary>Autowrack (Limousine oder Kastenwagen) mit Scheiben, Leuchten, Stoßstangen, Rädern/Ziegelsteinen, offener Tür oder Haube, Rost.</summary>
         void CarWreck(MultiBuilder mb, Rng rng, int style)
         {
-            var body = Mat(new[] { new Color(0.55f, 0.3f, 0.22f), new Color(0.35f, 0.4f, 0.45f), new Color(0.6f, 0.52f, 0.3f), new Color(0.3f, 0.36f, 0.3f), new Color(0.62f, 0.62f, 0.6f), new Color(0.5f, 0.2f, 0.18f) }[style % 6]);
-            var rust = Mat(new Color(0.42f, 0.24f, 0.15f));
-            var tire = Mat(new Color(0.1f, 0.1f, 0.11f));
+            var body = SMat(SurfKind.Paint, new[] { new Color(0.55f, 0.3f, 0.22f), new Color(0.35f, 0.4f, 0.45f), new Color(0.6f, 0.52f, 0.3f), new Color(0.3f, 0.36f, 0.3f), new Color(0.62f, 0.62f, 0.6f), new Color(0.5f, 0.2f, 0.18f) }[style % 6], 0.45f);
+            var rust = SMat(SurfKind.Paint, new Color(0.42f, 0.24f, 0.15f), 0.12f);
+            var tire = SMat(SurfKind.Rubber, new Color(0.1f, 0.1f, 0.11f));
             bool van = style % 3 == 2;
             if (van)
             {
@@ -142,16 +152,17 @@ namespace RePlanet
             {
                 var wp = new Vector3(i % 2 == 0 ? 0.86f : -0.86f, 0.34f, i < 2 ? 1.3f : -1.25f);
                 if (rng.Chance(0.2f)) { mb.For(Mat(new Color(0.6f, 0.3f, 0.22f))).Box(wp + Vector3.down * 0.18f, new Vector3(0.3f, 0.3f, 0.45f)); continue; }
-                mb.For(tire).CylinderX(wp, 0.34f, 0.24f, 10);
-                mb.For(acMat).CylinderX(wp + new Vector3(Mathf.Sign(wp.x) * 0.02f, 0, 0), 0.19f, 0.25f, 8);
+                mb.For(tire).CylinderX(wp, 0.34f, 0.24f, 14);
+                mb.For(tire).TorusRot(wp, new Vector3(0, 0, 90), 0.3f, 0.06f, 14, 4);
+                mb.For(acMat).CylinderX(wp + new Vector3(Mathf.Sign(wp.x) * 0.02f, 0, 0), 0.19f, 0.25f, 10);
             }
         }
 
         /// <summary>Förderbrücke über der Straße (PYRA): Gitterstützen, Fachwerkträger, Band mit Rollen und Schrottstücken.</summary>
         void Gantry(MultiBuilder mb, Rng rng)
         {
-            var rust = Mat(new Color(0.5f, 0.3f, 0.2f));
-            var dark = Mat(new Color(0.2f, 0.2f, 0.22f));
+            var rust = SMat(SurfKind.Paint, new Color(0.5f, 0.3f, 0.2f), 0.2f);
+            var dark = SMat(SurfKind.Rubber, new Color(0.2f, 0.2f, 0.22f));
             for (int s = -1; s <= 1; s += 2)
             {
                 float x = s * 7f;
@@ -178,7 +189,7 @@ namespace RePlanet
 
         void TurbineTower(MultiBuilder mb)
         {
-            var white = Mat(new Color(0.88f, 0.87f, 0.84f));
+            var white = SMat(SurfKind.Paint, new Color(0.88f, 0.87f, 0.84f), 0.5f);
             mb.For(plinthMat).Cylinder(Vector3.zero, 1.1f, 0.6f, 12);
             mb.For(white).Cylinder(new Vector3(0, 0.6f, 0), 0.7f, 21.4f, 12, true, 0.38f);
             mb.For(Mat(new Color(0.85f, 0.3f, 0.22f))).Cylinder(new Vector3(0, 3f, 0), 0.66f, 0.6f, 12, false, 0.645f);
@@ -188,7 +199,7 @@ namespace RePlanet
 
         void Chimney(MultiBuilder mb)
         {
-            var brick = Mat(new Color(0.45f, 0.3f, 0.25f));
+            var brick = SMat(SurfKind.Brick, new Color(0.5f, 0.28f, 0.22f));
             mb.For(plinthMat).Box(new Vector3(0, 1.2f, 0), new Vector3(3.4f, 2.4f, 3.4f));
             mb.For(brick).Cylinder(Vector3.zero, 1.3f, 26f, 14, true, 1f);
             for (float y = 5f; y < 25f; y += 5f) mb.For(darkMat).Cylinder(new Vector3(0, y, 0), Mathf.Lerp(1.32f, 1.02f, y / 26f), 0.35f, 14);
@@ -200,8 +211,8 @@ namespace RePlanet
         /// <summary>Portal-Hafenkran: vier Beine mit Kreuzstreben, Querträger, Ausleger über dem Wasser, Kabine, Maschinenhaus, Seile, Spreader.</summary>
         void HarborCrane(MultiBuilder mb, Rng rng)
         {
-            var y = Mat(new Color(0.9f, 0.6f, 0.15f));
-            var red = Mat(new Color(0.8f, 0.25f, 0.18f));
+            var y = SMat(SurfKind.Paint, new Color(0.9f, 0.6f, 0.15f), 0.45f);
+            var red = SMat(SurfKind.Paint, new Color(0.8f, 0.25f, 0.18f), 0.45f);
             for (int i = 0; i < 4; i++)
             {
                 var p = new Vector3(i % 2 == 0 ? -3f : 3f, 0, i < 2 ? -2f : 2f);
@@ -242,9 +253,9 @@ namespace RePlanet
 
         void Lighthouse(MultiBuilder mb, int area)
         {
-            var white = Mat(new Color(0.95f, 0.95f, 0.92f));
-            var red = Mat(new Color(0.85f, 0.25f, 0.2f));
-            var rock = Mat(new Color(0.5f, 0.48f, 0.44f));
+            var white = SMat(SurfKind.Plaster, new Color(0.95f, 0.95f, 0.92f));
+            var red = SMat(SurfKind.Paint, new Color(0.85f, 0.25f, 0.2f), 0.4f);
+            var rock = SMat(SurfKind.Stone, new Color(0.5f, 0.48f, 0.44f));
             for (int k = 0; k < 6; k++) mb.For(rock).Blob(new Vector3(Mathf.Cos(k) * 2.6f, -0.4f, Mathf.Sin(k) * 2.6f), 1.2f + (k % 3) * 0.3f, 0.9f, 7, 2, k, 0.35f);
             mb.For(plinthMat).Cylinder(Vector3.zero, 2.6f, 0.8f, 16);
             mb.For(white).Cylinder(new Vector3(0, 0.8f, 0), 2.2f, 17.2f, 16, true, 1.6f);
@@ -264,15 +275,15 @@ namespace RePlanet
         /// <summary>Filterstation: aus = verrosteter Tank mit Leck; an = sauberer Tank mit leuchtenden Filterfenstern.</summary>
         void FilterStation(MultiBuilder off, MultiBuilder on)
         {
-            var rust = Mat(new Color(0.5f, 0.3f, 0.2f));
-            var rustD = Mat(new Color(0.35f, 0.2f, 0.14f));
+            var rust = SMat(SurfKind.Cladding, new Color(0.5f, 0.3f, 0.2f), 0.2f);
+            var rustD = SMat(SurfKind.Paint, new Color(0.35f, 0.2f, 0.14f), 0.15f);
             off.For(rust).Cylinder(new Vector3(0, 0, 0), 1.9f, 3.2f, 16);
             off.For(rustD).Cylinder(new Vector3(0, 3.2f, 0), 1.95f, 0.4f, 16, true, 1.4f);
             off.For(rustD).Tube(new Vector3(1.6f, 1.2f, 0), new Vector3(3.2f, 0.2f, 0.6f), 0.25f, 8);
             off.For(rustD).BoxJ(new Vector3(-1.2f, 1.5f, 1.4f), new Vector3(0.8f, 0.9f, 0.05f), new Vector3(0, 40, 0), 0.1f, 3);
             off.For(Mat(new Color(0.1f, 0.09f, 0.08f))).Blob(new Vector3(2.8f, 0f, 0.8f), 1.5f, 0.05f, 10, 2, 5, 0.3f);
-            var white = Mat(new Color(0.85f, 0.9f, 0.92f));
-            var glow = Glow(new Color(0.2f, 0.8f, 0.9f), 1.8f);
+            var white = SMat(SurfKind.Paint, new Color(0.85f, 0.9f, 0.92f), 0.5f);
+            var glow = Glow(new Color(0.2f, 0.8f, 0.9f), 1.4f);
             on.For(white).Cylinder(new Vector3(0, 0, 0), 1.9f, 3.2f, 16);
             on.For(Mat(new Color(0.18f, 0.72f, 0.68f))).Cylinder(new Vector3(0, 3.2f, 0), 1.95f, 0.4f, 16, true, 1.4f);
             for (int k = 0; k < 4; k++) { float a = k * 1.571f + 0.4f; on.For(glow).BoxRot(new Vector3(Mathf.Cos(a) * 1.9f, 1.8f, Mathf.Sin(a) * 1.9f), new Vector3(0.7f, 1.2f, 0.08f), new Vector3(0, 90 - a * Mathf.Rad2Deg, 0)); }
@@ -393,17 +404,28 @@ namespace RePlanet
                             if (rng.Chance(0.3f)) mb.M = o * Matrix4x4.TRS(Vector3.zero, Quaternion.Euler(rng.Range(-20f, 20f), 0, rng.Range(-15f, 15f)), Vector3.one);
                             mb.For(railMat).Cylinder(Vector3.zero, 0.04f, 2.5f, 6);
                             if (rng.Chance(0.5f)) { mb.For(Mat(new Color(0.8f, 0.15f, 0.12f))).CylinderZ(new Vector3(0, 2.4f, 0.05f), 0.32f, 0.03f, 14); mb.For(signLight).CylinderZ(new Vector3(0, 2.4f, 0.07f), 0.24f, 0.02f, 14); }
-                            else { mb.For(Mat(new Color(0.2f, 0.4f, 0.75f))).Box(new Vector3(0, 2.3f, 0.05f), new Vector3(0.55f, 0.55f, 0.03f)); mb.For(signLight).Box(new Vector3(0, 2.3f, 0.07f), new Vector3(0.12f, 0.35f, 0.01f)); }
+                            else
+                            {
+                                mb.For(SMat(SurfKind.Paint, new Color(0.2f, 0.4f, 0.75f), 0.5f)).BevelBox(new Vector3(0, 2.3f, 0.05f), new Vector3(0.55f, 0.55f, 0.03f), 0.01f);
+                                var ib = mb.For(SurfaceLook.PaintedIconMaterial());
+                                ib.UVRect = SurfaceLook.IconRect(SurfaceLook.Icon.Arrow);
+                                ib.Quad(new Vector3(-0.24f, 2.06f, 0.068f), new Vector3(0.24f, 2.06f, 0.068f), new Vector3(0.24f, 2.54f, 0.068f), new Vector3(-0.24f, 2.54f, 0.068f), Vector3.forward);
+                            }
                             mb.M = o;
                             break;
                         }
                     case 1: // Hydrant
-                        mb.For(Mat(new Color(0.8f, 0.18f, 0.14f))).Cylinder(Vector3.zero, 0.14f, 0.6f, 8);
-                        mb.For(Mat(new Color(0.8f, 0.18f, 0.14f))).Cylinder(new Vector3(0, 0.6f, 0), 0.16f, 0.14f, 8, true, 0.05f);
-                        mb.For(acMat).CylinderX(new Vector3(0, 0.42f, 0), 0.06f, 0.42f, 6);
+                        mb.For(SMat(SurfKind.Paint, new Color(0.8f, 0.18f, 0.14f), 0.5f)).RoundCylinder(Vector3.zero, 0.14f, 0.62f, 0.03f, 12);
+                        mb.For(SMat(SurfKind.Paint, new Color(0.8f, 0.18f, 0.14f), 0.5f)).Cylinder(new Vector3(0, 0.6f, 0), 0.16f, 0.14f, 12, true, 0.05f);
+                        mb.For(acMat).CylinderX(new Vector3(0, 0.42f, 0), 0.06f, 0.42f, 8);
+                        mb.For(acMat).Cylinder(new Vector3(0, 0.74f, 0), 0.03f, 0.05f, 6);
                         break;
                     case 2: // Poller
-                        for (int k = -1; k <= 1; k++) mb.For(k == 0 ? Mat(new Color(0.95f, 0.75f, 0.2f)) : dark).Cylinder(new Vector3(k * 1.2f, 0, 0), 0.1f, 0.85f, 8, true, 0.08f);
+                        for (int k = -1; k <= 1; k++)
+                        {
+                            mb.For(k == 0 ? SMat(SurfKind.Paint, new Color(0.95f, 0.75f, 0.2f)) : dark).RoundCylinder(new Vector3(k * 1.2f, 0, 0), 0.1f, 0.85f, 0.05f, 10);
+                            mb.For(signLight).Cylinder(new Vector3(k * 1.2f, 0.62f, 0), 0.102f, 0.06f, 10, false);
+                        }
                         break;
                     default: // Parkbank mit Armlehnen
                         mb.For(woodMat).Box(new Vector3(0, 0.45f, 0), new Vector3(1.8f, 0.06f, 0.45f));
@@ -417,13 +439,14 @@ namespace RePlanet
 
         void TrafficLight(MultiBuilder mb, float arm)
         {
-            var pole = Mat(new Color(0.24f, 0.26f, 0.27f));
-            var housing = Mat(new Color(0.13f, 0.14f, 0.15f));
+            var pole = SMat(SurfKind.Paint, new Color(0.24f, 0.26f, 0.27f), 0.45f);
+            var housing = SMat(SurfKind.Paint, new Color(0.13f, 0.14f, 0.15f), 0.4f);
             mb.For(pole).Cylinder(Vector3.zero, 0.09f, arm > 0 ? 5.6f : 3.2f, 8);
             var off = new[] { Mat(new Color(0.35f, 0.08f, 0.06f), 0.8f), Mat(new Color(0.4f, 0.3f, 0.06f), 0.8f), Mat(new Color(0.06f, 0.3f, 0.12f), 0.8f) };
             System.Action<Vector3> head = p =>
             {
-                mb.For(housing).Box(p, new Vector3(0.36f, 1.0f, 0.28f));
+                mb.For(housing).BevelBox(p, new Vector3(0.36f, 1.0f, 0.28f), 0.04f);
+                mb.For(Mat(new Color(0.9f, 0.9f, 0.88f))).Box(p + new Vector3(0, 0, -0.15f), new Vector3(0.5f, 1.12f, 0.02f)); // Kontrastblende
                 for (int k = 0; k < 3; k++)
                 {
                     mb.For(off[k]).CylinderZ(p + new Vector3(0, 0.3f - k * 0.3f, 0.15f), 0.1f, 0.03f, 10);

@@ -19,7 +19,6 @@ namespace RePlanet
         Transform root, body, head, visor, eyeL, eyeR, bin, binFill, arm1, arm2, tip, stickerQuad;
         readonly Transform[] wheels = new Transform[3];
         readonly Transform[] lidUp = new Transform[2], lidDown = new Transform[2];
-        Transform springL, springR, springF;
         Material bodyMat, accentMat, eyeMat, visorMat, fillMat, stickerMat, lampMat;
         readonly Dictionary<string, GameObject> heads = new Dictionary<string, GameObject>();
         readonly Dictionary<string, GameObject> extras = new Dictionary<string, GameObject>();

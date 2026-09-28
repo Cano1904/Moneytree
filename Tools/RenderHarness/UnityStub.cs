@@ -298,7 +298,7 @@ namespace UnityEngine
     public enum TextureWrapMode { Clamp, Repeat }
     public enum FilterMode { Trilinear, Bilinear, Point }
 
-    public class Shader : Object { public static Shader Find(string n) => new Shader { name = n }; public bool isSupported => false; }
+    public class Shader : Object { public static Shader Find(string n) => new Shader { name = n }; public bool isSupported => Environment.GetEnvironmentVariable("RP_EIGENE_SHADER") == "1"; } // Standard: Rückfallpfad; RP_EIGENE_SHADER=1 simuliert die eigenen Shader
     public class Material : Object
     {
         public Color color = Color.white; public Color emission = Color.black; public string tpl; public Shader shader; public int renderQueue;
@@ -313,6 +313,8 @@ namespace UnityEngine
         public void SetFloat(string p, float v) { floats[p] = v; }
         public void SetInt(string p, int v) { }
         public void SetColor(string p, Color c) { if (p == "_EmissionColor") emission = c; }
+        public Color GetColor(string p) => p == "_EmissionColor" ? emission : color;
+        public void SetVectorArray(string p, Vector4[] v) { }
         public void SetTexture(string p, object t) { }
         public void EnableKeyword(string k) { keys.Add(k); } public void DisableKeyword(string k) { keys.Remove(k); }
         public void SetOverrideTag(string a, string b) { }

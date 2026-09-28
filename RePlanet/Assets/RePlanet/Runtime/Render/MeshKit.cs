@@ -541,9 +541,12 @@ namespace RePlanet
     public static class Palette
     {
         const int N = 64;
-        static Texture2D tex;
-        static Material matte, glossy, metal;
+        static Texture2D tex, glowAlbedo, glowTex;
+        static Material matte, glossy, metal, glow;
         static readonly Dictionary<Color32Key, int> index = new Dictionary<Color32Key, int>();
+        static readonly Dictionary<long, int> glowIndex = new Dictionary<long, int>();
+        /// <summary>Leuchtfarben werden durch diesen Faktor geteilt gespeichert (HDR-Leuchten bis 4×).</summary>
+        const float GlowRange = 4f;
         static readonly Dictionary<Material, KeyValuePair<Material, Vector2>> routes = new Dictionary<Material, KeyValuePair<Material, Vector2>>();
         static bool dirty;
         static float templateGloss = -1f;
@@ -566,7 +569,25 @@ namespace RePlanet
             glossy = custom ? matte : SurfaceLook.Lit("RP_Palette_Glanz", Color.white, 0.85f, 0f, tex);
             metal = SurfaceLook.Lit("RP_Palette_Metall", Color.white, custom ? 1f : 0.55f, 0.6f, tex);
             try { var t = Mats.Template(Mats.Opaque); templateGloss = t.HasProperty("_Glossiness") ? t.GetFloat("_Glossiness") : 0.2f; } catch { templateGloss = 0.2f; }
+            // Leuchtende Festfarben (Signallampen, Leuchtstreifen) teilen sich ein Material mit Leuchttextur –
+            // nur mit dem Oberflächen-Shader (der Standard-Shader kann Leuchten nicht je Ecke unterscheiden)
+            if (custom)
+            {
+                glowAlbedo = new Texture2D(N, N, TextureFormat.RGBA32, false) { filterMode = FilterMode.Point, wrapMode = TextureWrapMode.Clamp, name = "RP_Palette_LeuchtGrund" };
+                glowTex = new Texture2D(N, N, TextureFormat.RGBA32, false, true) { filterMode = FilterMode.Point, wrapMode = TextureWrapMode.Clamp, name = "RP_Palette_Leucht" };
+                glow = SurfaceLook.Lit("RP_Palette_Leuchten", Color.white, 1f, 0f, glowAlbedo);
+                SurfaceLook.SetGlow(glow, glowTex, GlowRange);
+            }
         }
+
+        static bool PlainGlow(Material m)
+        {
+            var n = m.name;
+            if (n == null || n.Length != Mats.Emissive.Length + 9 || !n.StartsWith(Mats.Emissive + "_")) return false;
+            return m.color.a > 0.99f;
+        }
+
+        static byte Q8(float v) { return (byte)Mathf.Clamp(Mathf.RoundToInt(v * 255f), 0, 255); }
 
         static bool IsMetal(Material m) { return m.name != null && m.name.StartsWith(Mats.Metal + "_"); }
 
@@ -592,6 +613,40 @@ namespace RePlanet
             if (routes.TryGetValue(m, out r)) { target = r.Key; uv = r.Value; return target != m; }
             bool ok = false;
             try { ok = Plain(m); } catch { ok = false; }
+            if (!ok)
+            {
+                bool g = false;
+                try { g = PlainGlow(m); } catch { g = false; }
+                if (g)
+                {
+                    Init();
+                    if (glow != null)
+                    {
+                        Color e = Color.black;
+                        try { if (m.HasProperty("_EmissionColor")) e = m.GetColor("_EmissionColor"); } catch { }
+                        Color32 c = m.color;
+                        var ec = new Color(e.r / GlowRange, e.g / GlowRange, e.b / GlowRange, 1f);
+                        long key = ((long)c.r << 48) | ((long)c.g << 40) | ((long)c.b << 32) | ((long)Q8(ec.r) << 16) | ((long)Q8(ec.g) << 8) | Q8(ec.b);
+                        int gi;
+                        if (!glowIndex.TryGetValue(key, out gi) && glowIndex.Count < N * N)
+                        {
+                            gi = glowIndex.Count;
+                            glowIndex[key] = gi;
+                            var ac = m.color; ac.a = 0.6f;
+                            glowAlbedo.SetPixel(gi % N, gi / N, ac);
+                            glowTex.SetPixel(gi % N, gi / N, ec);
+                            dirty = true;
+                        }
+                        if (glowIndex.TryGetValue(key, out gi))
+                        {
+                            target = glow;
+                            uv = new Vector2((gi % N + 0.5f) / N, (gi / N + 0.5f) / N);
+                        }
+                    }
+                }
+                routes[m] = new KeyValuePair<Material, Vector2>(target, uv);
+                return target != m;
+            }
             if (ok)
             {
                 Init();
@@ -633,6 +688,7 @@ namespace RePlanet
         {
             if (!dirty || tex == null) return;
             tex.Apply(false);
+            if (glowTex != null) { glowAlbedo.Apply(false); glowTex.Apply(false); }
             dirty = false;
         }
     }

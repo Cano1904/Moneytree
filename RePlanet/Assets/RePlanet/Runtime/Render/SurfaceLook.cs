@@ -59,6 +59,13 @@ namespace RePlanet
             return f;
         }
 
+        /// <summary>Leuchttextur (je Ecke über die Paletten-UV) für das Leucht-Paletten-Material.</summary>
+        public static void SetGlow(Material m, Texture glowTex, float scale)
+        {
+            if (m == null) return;
+            try { m.SetTexture("_GlowTex", glowTex); m.SetFloat("_GlowScale", scale); } catch { }
+        }
+
         /// <summary>
         /// Fenster: Glas mit Rahmen und Sprossen, Himmelsspiegelung; die Leuchtfarbe (_EmissionColor, von WorldView je
         /// Bereich gesetzt) schaltet einen Teil der Innenräume warm ein (einzelne flackern selten).
