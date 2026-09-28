@@ -34,6 +34,22 @@ namespace RePlanet
         public bool HighlightBlocked;
         readonly Dictionary<string, ObjView> visible = new Dictionary<string, ObjView>();
 
+        /// <summary>
+        /// Nur Darstellung: Lieferobjekte (<c>DynObj.Delivery</c>) bis zu diesem Zeitpunkt (<c>Time.time</c>) ausblenden – sie
+        /// werden erst sichtbar, wenn der Frachter sie „ausgeladen“ hat (<see cref="ShipArrival"/>). Die Spiellogik bleibt unverändert.
+        /// </summary>
+        public static float HideDeliveriesUntil = -1f;
+        /// <summary>Lieferobjekte (Dyn-Id), die trotz <see cref="HideDeliveriesUntil"/> schon sichtbar sind (bereits ausgeladen).</summary>
+        public static readonly HashSet<string> RevealedDeliveries = new HashSet<string>();
+
+        /// <summary>Beim nächsten Bild neu einsortieren (z. B. nach dem Ein-/Ausblenden von Lieferobjekten).</summary>
+        public static void RefreshSoon() { if (I != null) I.timer = 0f; }
+
+        static bool HiddenDelivery(ObjView o)
+        {
+            return o.D != null && o.D.Delivery && HideDeliveriesUntil > 0f && Time.time < HideDeliveriesUntil && !RevealedDeliveries.Contains(o.D.Id);
+        }
+
         void Awake()
         {
             I = this;
@@ -177,7 +193,7 @@ namespace RePlanet
             {
                 foreach (var t in wv.Layout.Trash) Add(Rules.FromStatic(ps, t), cp, far, near, true);
             }
-            else foreach (var o in Rules.All(ps)) Add(o, cp, far, near, false);
+            else foreach (var o in Rules.All(ps)) { if (!HiddenDelivery(o)) Add(o, cp, far, near, false); }
         }
 
         void Add(ObjView o, Vector3 cp, float far, float near, bool before)

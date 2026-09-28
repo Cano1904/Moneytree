@@ -18,9 +18,12 @@ RePlanet/Assets/RePlanet/
 │   │              CameraRig, PlayerController, IntroDirector, EndingDirector
 │   ├── Render/    WorldView (+Props), Atmosphere (Himmel/Licht/Wetter), TrashRenderer (Instancing),
 │   │              ActorsView (Roboter, Fahrzeuge, Drohnen, Anlagen), FxView (Effekte), FloraRenderer,
-│   │              RobotModel (MIKO), MeshKit (prozedurale Formen), Mats (Materialien)
+│   │              RobotModel (MIKO), MeshKit (prozedurale Formen), Mats (Materialien),
+│   │              ShipArrival (Containerfrachter bei Lieferungen, Landeanflug; Geometrie: FreighterModel),
+│   │              PlanetSelectScene (Planetenwahl als Weltall-Szene mit Anflug)
 │   ├── Audio/     AudioManager (Clips aus Core/Audio, Musikschichten, 3D-Effekte, Ambience)
-│   └── UI/        UIRoot (IMGUI: Hauptmenü, Einstellungen, HUD, Spielmenü, Karte, Bau-/Fotomodus)
+│   └── UI/        UIRoot (IMGUI: Hauptmenü, Einstellungen, HUD, Spielmenü, Karte, Bau-/Fotomodus);
+│                  HudHints: ruhiges HUD je Einstellung „Hinweise“ (Aus / Minimal / Ausführlich)
 ├── Editor/      Projekt-Setup (Material-Vorlagen, Szene, Build-Einstellungen) und Build-Menü
 └── Resources/   RePlanetSky.shader (eigener Himmel) + vom Setup erzeugte Material-Vorlagen
 ```

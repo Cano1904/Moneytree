@@ -334,6 +334,12 @@ namespace RePlanet
 
         float SettingsAccess(GameApp app, Settings s, float w, float y)
         {
+            int hi = UINav.Choice(new Rect(0, y, w, RowH), "Hinweise", Mathf.Clamp(s.Hints, 0, 2), Settings.HintNames);
+            if (hi != s.Hints) { s.Hints = hi; MarkSettings(); }
+            y += RowStep;
+            y = Note(s.Hints == Settings.HintsOff ? "Keine Tasten- und Tipp-Hinweise; nur Warnungen und wichtige Meldungen."
+                : s.Hints == Settings.HintsMinimal ? "Ruhiges HUD: Tastensymbol und ein Wort direkt am Objekt, kurze Meldungen. Das Ziel blendet sich aus – mit [" + InputMap.Label(GameAction.Missions) + "] oder bei einem neuen Ziel kommt es zurück."
+                : "Alle Hinweise als ausführlicher Text (Tastenhilfe, Ziel dauerhaft, vollständige Meldungen).", w, y);
             bool st = UINav.Toggle(new Rect(0, y, w, RowH), s.Subtitles, L("Untertitel"));
             if (st != s.Subtitles) { s.Subtitles = st; MarkSettings(); }
             y += RowStep;

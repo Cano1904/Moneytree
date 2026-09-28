@@ -41,6 +41,8 @@ namespace RePlanet
         public bool CameraShake = true;
         public bool HighContrast;
         public bool ReduceFlashing;
+        /// <summary>Hinweise im Spiel: 0 Aus, 1 Minimal (Standard: Tastensymbol + ein Wort am Objekt, kurze Meldungen), 2 Ausführlich.</summary>
+        public int Hints = 1;
 
         // ------------------------------------------------------------ Sonstiges
         public string Language = "de";
@@ -49,6 +51,8 @@ namespace RePlanet
         public string LastJoin = "";
         public bool IntroSeenOnce;
 
+        public const int HintsOff = 0, HintsMinimal = 1, HintsFull = 2;
+        public static readonly string[] HintNames = { "Aus", "Minimal", "Ausführlich" };
         public static readonly string[] QualityNames = { "Niedrig", "Mittel", "Hoch", "Ultra" };
         public static readonly string[] ShadowNames = { "Aus", "Niedrig", "Mittel", "Hoch" };
         public static readonly string[] WindowModeNames = { "Vollbild (randlos)", "Exklusives Vollbild", "Fenster" };
@@ -112,7 +116,7 @@ namespace RePlanet
                     .Set("fov", Fov).Set("sf", ShowFps)
                     .Set("mv", MasterVolume).Set("mu", MusicVolume).Set("sx", SfxVolume).Set("am", AmbientVolume).Set("ui", UiVolume).Set("vo", VoiceVolume).Set("mf", MuteWhenUnfocused)
                     .Set("ms", MouseSensitivity).Set("ps", PadSensitivity).Set("iy", InvertY).Set("ha", HoldActions)
-                    .Set("st", Subtitles).Set("ts", TextScale).Set("cs", CameraShake).Set("hc", HighContrast).Set("rf", ReduceFlashing)
+                    .Set("st", Subtitles).Set("ts", TextScale).Set("cs", CameraShake).Set("hc", HighContrast).Set("rf", ReduceFlashing).Set("hi", Hints)
                     .Set("lang", Language).Set("name", PlayerName).Set("port", CoopPort).Set("lj", LastJoin).Set("iso", IntroSeenOnce);
                 var b = new JObj();
                 foreach (var kv in Bindings) b[kv.Key] = kv.Value;
@@ -136,7 +140,7 @@ namespace RePlanet
                 s.MasterVolume = o.Float("mv", 0.9f); s.MusicVolume = o.Float("mu", 0.7f); s.SfxVolume = o.Float("sx", 0.85f); s.AmbientVolume = o.Float("am", 0.7f); s.UiVolume = o.Float("ui", 0.6f); s.VoiceVolume = o.Float("vo", 0.8f);
                 s.MuteWhenUnfocused = o.Bool("mf", true);
                 s.MouseSensitivity = Mathf.Clamp(o.Float("ms", 1f), 0.1f, 4f); s.PadSensitivity = Mathf.Clamp(o.Float("ps", 1f), 0.1f, 4f); s.InvertY = o.Bool("iy"); s.HoldActions = o.Bool("ha", true);
-                s.Subtitles = o.Bool("st", true); s.TextScale = Mathf.Clamp(o.Float("ts", 1f), 0.8f, 1.6f); s.CameraShake = o.Bool("cs", true); s.HighContrast = o.Bool("hc"); s.ReduceFlashing = o.Bool("rf");
+                s.Subtitles = o.Bool("st", true); s.TextScale = Mathf.Clamp(o.Float("ts", 1f), 0.8f, 1.6f); s.CameraShake = o.Bool("cs", true); s.HighContrast = o.Bool("hc"); s.ReduceFlashing = o.Bool("rf"); s.Hints = Mathf.Clamp(o.Int("hi", HintsMinimal), 0, 2);
                 s.Language = o.Str("lang", "de"); s.PlayerName = o.Str("name", "MIKO"); s.CoopPort = Mathf.Clamp(o.Int("port", 7777), 1024, 65535); s.LastJoin = o.Str("lj", ""); s.IntroSeenOnce = o.Bool("iso");
                 var b = o.Obj("bind");
                 if (b != null) foreach (var kv in b) if (kv.Value is string) s.Bindings[kv.Key] = (string)kv.Value;
