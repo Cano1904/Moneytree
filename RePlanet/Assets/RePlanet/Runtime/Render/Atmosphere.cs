@@ -43,7 +43,30 @@ namespace RePlanet
             public float SunAzimuth, CloudScale = 0.9f, CloudDensity = 2.4f, Aurora;
             public Color AuroraA = new Color(0.2f, 1f, 0.6f), AuroraB = new Color(0.6f, 0.3f, 1f);
             public float FogDay = 0.008f, FogStorm = 0.03f;
+            /// <summary>Farbkorrektur (Split-Toning) der Nachbearbeitung: Tönung der Schatten und der Lichter.</summary>
+            public Color GradeShadow = new Color(0.3f, 0.45f, 0.55f), GradeHighlight = new Color(1f, 0.85f, 0.65f);
+            public float Saturation = 1.2f, Contrast = 1.18f;
         }
+
+        /// <summary>
+        /// Bildlook für die Nachbearbeitung (PostFX): Sonnenstand/-farbe, Luftperspektive, Farbkorrektur je Planet.
+        /// Wird von Atmosphere jedes Bild aus Palette, Tageszeit und Wetter berechnet.
+        /// </summary>
+        public class LookInfo
+        {
+            public Vector3 SunDir = new Vector3(0.3f, 0.5f, 0.8f).normalized;
+            public Color SunColor = new Color(1f, 0.9f, 0.75f);
+            public Texture SkyCube;
+            public float FogSky = 0.85f, FogMax = 1f, FogFalloff = 0.035f, FogBase = 0f, FogLinear = 0.35f, FogSunScatter = 0.5f;
+            public float Exposure = 1.1f, Contrast = 1.18f, Saturation = 1.2f, Vibrance = 0.45f, SplitAmount = 0.3f;
+            public Color ShadowTint = new Color(0.3f, 0.45f, 0.55f), HighlightTint = new Color(1f, 0.85f, 0.65f);
+            public Color VignetteColor = new Color(0.3f, 0.25f, 0.4f);
+            public float Vignette = 0.45f, Bloom = 0.22f, BloomThreshold = 0.9f, ShaftStrength = 0.6f, ShaftThreshold = 0.45f;
+        }
+
+        public static readonly LookInfo DefaultLook = new LookInfo();
+        /// <summary>Aktueller Bildlook (für PostFX).</summary>
+        public readonly LookInfo Look = new LookInfo();
 
         static Palette Pal(uint zen, uint hor, uint haze, uint ground, uint cl, uint cs, uint na, uint nb, uint sun, uint fog, float cover, float neb, float hazeS)
         {
@@ -231,7 +254,8 @@ namespace RePlanet
                 Sun.color = pal.Sun;
                 Sun.intensity = Mathf.Lerp(0.35f, GameData.Planets.ContainsKey(planet) ? GameData.Planets[planet].SunIntensity : 1.1f, Mathf.Clamp01(elev * 2.5f)) * (1f - stormBlend * 0.55f);
             }
-            float bright = (GameApp.I != null ? GameApp.I.Settings.Brightness : 1f) * (PhotoMode.Active ? PhotoMode.Exposure : 1f); // Fotomodus: Belichtung
+            // Fotomodus-Belichtung: mit Nachbearbeitung wirkt sie dort (vor dem Tonemapping), sonst auf Licht und Himmel
+            float bright = (GameApp.I != null ? GameApp.I.Settings.Brightness : 1f) * (PhotoMode.Active && !PostFX.Running ? PhotoMode.Exposure : 1f);
             Sun.intensity *= bright;
             if (GameApp.I != null) Sun.shadows = GameApp.I.Settings.Shadows == 0 ? LightShadows.None : GameApp.I.Settings.Shadows == 1 ? LightShadows.Hard : LightShadows.Soft;
 
@@ -296,6 +320,8 @@ namespace RePlanet
                 if (stars != null) stars.gameObject.SetActive(dark > 0.3f);
             }
 
+            UpdateLook(ps, pal, sunDir, elev, dark, duskAmt, water);
+
             // Nebel: Farbe = Horizontdunst, damit Landschaft und Himmel verschmelzen
             float view = GameApp.I != null ? GameApp.I.Settings.ViewDistance : 1f;
             float fogDensity = Mathf.Lerp(ps.FogDay, ps.FogStorm, stormBlend) / Mathf.Max(0.5f, view);
@@ -321,6 +347,41 @@ namespace RePlanet
         }
 
         float stormBlend;
+
+        /// <summary>Bildlook für die Nachbearbeitung aus Palette, Tageszeit und Wetter.</summary>
+        void UpdateLook(PlanetSky ps, Palette pal, Vector3 sunDir, float elev, float dark, float duskAmt, float water)
+        {
+            var L = Look;
+            L.SunDir = sunDir;
+            float day = Mathf.Clamp01(elev * 4f + 0.2f);
+            L.SunColor = pal.Sun * Mathf.Lerp(0.35f, 1.3f, day) * (1f - stormBlend * 0.7f);
+            L.SkyCube = probe != null ? probe.texture : null;
+            L.FogSky = Underwater ? 0f : 0.85f;
+            L.FogFalloff = Underwater ? 0f : 0.035f;
+            L.FogBase = water > -50f ? water : 0f;
+            L.FogLinear = Underwater ? 2.5f : 0.35f + stormBlend * 0.6f;
+            L.FogSunScatter = Underwater ? 0f : (0.35f + duskAmt * 0.5f) * (1f - dark) * (1f - stormBlend * 0.6f);
+            L.FogMax = 1f;
+            L.Exposure = Mathf.Lerp(1.1f, 1.3f, dark);
+            L.Contrast = Mathf.Lerp(ps.Contrast, 1.05f, stormBlend * 0.7f);
+            L.Saturation = Mathf.Lerp(ps.Saturation, 1.0f, stormBlend * 0.6f) * Mathf.Lerp(1f, 0.92f, dark);
+            L.Vibrance = 0.45f;
+            L.SplitAmount = Mathf.Lerp(0.3f, 0.42f, dark) * (1f - stormBlend * 0.4f);
+            L.ShadowTint = Color.Lerp(ps.GradeShadow, pal.Zenith, dark * 0.5f);
+            L.HighlightTint = Color.Lerp(ps.GradeHighlight, pal.Sun, duskAmt * 0.5f);
+            L.VignetteColor = Color.Lerp(new Color(0.2f, 0.18f, 0.26f), ps.GradeShadow * 0.5f, 0.5f);
+            L.Vignette = 0.5f;
+            L.Bloom = Mathf.Lerp(0.2f, 0.32f, Mathf.Max(duskAmt, dark));
+            L.BloomThreshold = Mathf.Lerp(0.95f, 0.7f, dark);
+            L.ShaftStrength = elev > -0.02f && !Underwater ? (0.5f + duskAmt * 0.6f) * (1f - stormBlend * 0.85f) * (1f - dark) : 0f;
+            L.ShaftThreshold = Mathf.Lerp(0.55f, 0.35f, duskAmt);
+            if (Underwater)
+            {
+                L.ShadowTint = new Color(0.1f, 0.4f, 0.5f);
+                L.HighlightTint = new Color(0.6f, 1f, 0.95f);
+                L.Saturation = 1.05f;
+            }
+        }
 
         // ------------------------------------------------------------ Reflexionen
         // Die Szene ist leer (keine gebackene Beleuchtung), daher gäbe es ohne eigene Sonde keine Umgebungsreflexion

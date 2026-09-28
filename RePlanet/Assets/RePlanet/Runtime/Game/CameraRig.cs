@@ -15,6 +15,8 @@ namespace RePlanet
     {
         public static CameraRig I { get; private set; }
         public Camera Cam { get; private set; }
+        /// <summary>Eigene Nachbearbeitung (Bloom, Tonemapping, Luftperspektive …) an der Hauptkamera.</summary>
+        public PostFX Post { get; private set; }
         public float Yaw, Pitch = 18f, Distance = 6.5f;
         /// <summary>Zwischensequenz steuert die Kamera direkt.</summary>
         public bool Cinematic;
@@ -38,6 +40,7 @@ namespace RePlanet
             Cam.allowHDR = true;
             go.AddComponent<AudioListener>();
             go.AddComponent<FlareLayer>();
+            Post = go.AddComponent<PostFX>();
             // Weitere Darstellungsbausteine gehören an das Hauptobjekt
             foreach (var t in new[] { typeof(Atmosphere), typeof(TrashRenderer), typeof(ActorsView), typeof(FxView), typeof(FloraRenderer) })
                 if (GetComponent(t) == null) gameObject.AddComponent(t);
@@ -69,6 +72,7 @@ namespace RePlanet
             var app = GameApp.I;
             if (app == null) return;
             Cam.fieldOfView = PhotoMode.Active ? PhotoMode.Fov : app.Settings.Fov;
+            if (Post != null) Post.Configure(app.Settings.Quality, app.Settings.ReduceFlashing);
             Hud.CameraYaw = Yaw;
             if (Cinematic) { ApplyRenderScale(app); return; }
             if (app.Mode == AppMode.Menu || app.Mode == AppMode.PlanetSelect || (app.Mode == AppMode.Loading && app.W == null)) { MenuCamera(); ApplyRenderScale(app); return; }
@@ -200,11 +204,16 @@ namespace RePlanet
             try
             {
                 int w = PhotoMode.Portrait ? 1080 : 1920, h = PhotoMode.Portrait ? 1920 : 1080;
-                var rt = RenderTexture.GetTemporary(w, h, 24, RenderTextureFormat.ARGB32, RenderTextureReadWrite.sRGB, Mathf.Max(1, QualitySettings.antiAliasing));
+                // HDR-Ziel, damit Bloom/Tonemapping wie im Spiel wirken; danach in ein 8-Bit-Ziel kopieren (ReadPixels-sicher)
+                var hdrFmt = HdrFormat();
+                var rtHdr = RenderTexture.GetTemporary(w, h, 24, hdrFmt, hdrFmt == RenderTextureFormat.ARGB32 ? RenderTextureReadWrite.sRGB : RenderTextureReadWrite.Linear, Mathf.Max(1, QualitySettings.antiAliasing));
+                var rt = RenderTexture.GetTemporary(w, h, 0, RenderTextureFormat.ARGB32, RenderTextureReadWrite.sRGB);
                 var prev = Cam.targetTexture;
-                Cam.targetTexture = rt;
+                Cam.targetTexture = rtHdr;
                 Cam.Render();
                 Cam.targetTexture = prev;
+                Graphics.Blit(rtHdr, rt);
+                RenderTexture.ReleaseTemporary(rtHdr);
                 var active = RenderTexture.active;
                 RenderTexture.active = rt;
                 var tex = new Texture2D(w, h, TextureFormat.RGB24, false);
@@ -242,10 +251,17 @@ namespace RePlanet
             if (scaled == null || scaled.width != w || scaled.height != h)
             {
                 if (scaled != null) { Cam.targetTexture = null; scaled.Release(); Destroy(scaled); }
-                scaled = new RenderTexture(w, h, 24, RenderTextureFormat.Default) { filterMode = FilterMode.Bilinear, antiAliasing = Mathf.Max(1, QualitySettings.antiAliasing) };
+                scaled = new RenderTexture(w, h, 24, HdrFormat()) { filterMode = FilterMode.Bilinear, antiAliasing = Mathf.Max(1, QualitySettings.antiAliasing) };
                 scaled.Create();
             }
             Cam.targetTexture = scaled;
+        }
+
+        /// <summary>HDR-Format für Renderziele (sonst gingen Bloom-Spitzen und Tonemapping bei Render-Skalierung verloren).</summary>
+        static RenderTextureFormat HdrFormat()
+        {
+            if (SystemInfo.SupportsRenderTextureFormat(RenderTextureFormat.DefaultHDR)) return RenderTextureFormat.DefaultHDR;
+            return RenderTextureFormat.ARGB32;
         }
 
         void OnGUI()
