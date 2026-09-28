@@ -69,6 +69,7 @@ namespace RePlanet
                     float water = Terrain.WaterLevel(planet);
                     m.SetVector("_Slope", new Vector4(0.22f, 0.42f, water, water > -50f ? 1f : 0f));
                     m.SetFloat("_Glossiness", st.Gloss);
+                    SetRoads(m, planet);
                     return m;
                 }
                 catch (Exception e) { Debug.LogWarning("[RE:PLANET] Gelände-Shader: " + e.Message); }
@@ -77,6 +78,34 @@ namespace RePlanet
             f.mainTexture = tex;
             f.SetFloat("_Glossiness", planet == "nivalis" ? 0.35f : 0.08f);
             return f;
+        }
+
+        /// <summary>Straßensegmente des Layouts an den Gelände-Shader (Asphalt, Markierungen, Gehwege).</summary>
+        static void SetRoads(Material m, string planet)
+        {
+            try
+            {
+                var layout = RePlanet.Core.WorldGen.Get(planet);
+                var a = new Vector4[16]; var b = new Vector4[16];
+                int n = 0;
+                foreach (var r in layout.Roads)
+                {
+                    if (n >= 16) break;
+                    a[n] = new Vector4(r[0], r[1], r[2], r[3]);
+                    b[n] = new Vector4(r[4], 0, 0, 0);
+                    n++;
+                }
+                m.SetVectorArray("_RoadA", a);
+                m.SetVectorArray("_RoadB", b);
+                m.SetFloat("_RoadCount", n);
+                bool marks = planet == "terra" || planet == "nivalis" || planet == "pelagia";
+                Color asphalt = planet == "pyra" ? new Color(0.42f, 0.25f, 0.18f) : planet == "nivalis" ? new Color(0.32f, 0.34f, 0.38f) : new Color(0.17f, 0.17f, 0.18f);
+                m.SetColor("_RoadColor", new Color(asphalt.r, asphalt.g, asphalt.b, marks ? 1f : 0f));
+                m.SetVector("_RoadStyle", new Vector4(planet == "pelagia" ? 1f : 0f, planet == "terra" || planet == "nivalis" ? 1f : 0f, planet == "pyra" ? 0.4f : 1f, planet == "nivalis" ? 1f : 0f));
+                var bs = layout.Base;
+                m.SetVector("_BaseRect", new Vector4(bs.MinX, bs.MinZ, bs.MaxX, bs.MaxZ));
+            }
+            catch (Exception e) { Debug.LogWarning("[RE:PLANET] Straßen im Gelände-Shader: " + e.Message); }
         }
 
         // ================================================================== Wasser

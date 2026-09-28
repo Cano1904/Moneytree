@@ -1,7 +1,9 @@
 // RE:PLANET – Gelände (Built-in, Surface Shader mit Standard-Beleuchtung, Schattenempfang und Nebel).
 // Grundfarbe/Maske bleibt die zur Laufzeit gemalte Geländetextur (Verschmutzung, Begrünung, Straßen – WorldView).
 // Darüber: großflächige Farbvariation je Planet, Hangneigung → Fels mit Gesteinsschichtung (triplanar),
-// Detailrauschen in der Nähe, nasser Uferstreifen. Parameter setzt Runtime/Render/TerrainLook.cs.
+// Detailrauschen in der Nähe, nasser Uferstreifen. Straßen analytisch aus den Straßensegmenten des Layouts:
+// Asphalt mit Körnung, Rissen, Flickstellen und Pfützen, scharfe Markierungen (Mittel-/Randlinien, Zebrastreifen an
+// Kreuzungen, abgenutzt), Gehwegplatten mit Bordstein. Parameter setzt Runtime/Render/TerrainLook.cs.
 Shader "RePlanet/Terrain"
 {
     Properties
@@ -16,6 +18,10 @@ Shader "RePlanet/Terrain"
         _Slope ("Hang (Beginn, Ende), Uferhöhe, Ufer an", Vector) = (0.22, 0.42, 0, 0)
         _Glossiness ("Glätte", Range(0, 1)) = 0.08
         _RimColor ("Streiflicht (Himmel)", Color) = (0.5, 0.6, 0.7, 1)
+        _RoadColor ("Asphalt (a = Markierungen)", Color) = (0.2, 0.2, 0.22, 1)
+        _RoadStyle ("Markierung gelb, Gehweg, Risse, Schnee", Vector) = (0, 1, 1, 0)
+        _RoadCount ("Anzahl Straßen", Float) = 0
+        _BaseRect ("Stützpunkt (ohne Markierungen)", Vector) = (0, 0, 0, 0)
     }
 
     SubShader
@@ -31,6 +37,12 @@ Shader "RePlanet/Terrain"
         sampler2D _NoiseTex;
         float4 _RockA, _RockB, _TintA, _TintB, _Look, _Slope, _RimColor;
         half _Glossiness;
+        float4 _RoadA[16];      // xy Anfang, zw Ende (Welt-xz)
+        float4 _RoadB[16];      // x Breite
+        float _RoadCount;
+        float4 _RoadColor, _RoadStyle, _BaseRect;
+
+        float LineMask(float d, float halfW, float aa) { return 1.0 - smoothstep(halfW - aa, halfW + aa, d); }
 
         struct Input
         {
@@ -87,10 +99,113 @@ Shader "RePlanet/Terrain"
             // nasser Uferstreifen (dunkler, glänzender)
             float wet = _Slope.w * saturate(1.0 - abs(wp.y - _Slope.z - 0.15) / 0.55);
             albedo *= 1.0 - wet * 0.35;
+            float smoothness = saturate(lerp(_Glossiness, 0.12, rockMask) + wet * 0.45);
+
+            // ---------------- Straßen (analytisch, scharf auch aus der Nähe)
+            float roadMask = 0.0, walkMask = 0.0, curbMask = 0.0, inCount = 0.0;
+            float bestS = 0.0, bestT = 0.0, bestHW = 1.0;
+            int best = -1;
+            [loop] for (int i = 0; i < 16; i++)
+            {
+                if (i >= (int)_RoadCount) break;
+                float2 ra = _RoadA[i].xy, rb = _RoadA[i].zw;
+                float hw = _RoadB[i].x * 0.5;
+                float2 ab = rb - ra;
+                float len = max(length(ab), 1e-3);
+                float2 dir = ab / len;
+                float2 ap = wp.xz - ra;
+                float t = dot(ap, dir);
+                float sd = dot(ap, float2(-dir.y, dir.x));
+                float along = step(-0.5, t) * step(t, len + 0.5);
+                float d = abs(sd);
+                float inside = along * (1.0 - smoothstep(hw - 0.04, hw + 0.04, d));
+                if (inside > 0.5)
+                {
+                    inCount += 1.0;
+                    if (best < 0) { best = i; bestS = sd; bestT = dot(wp.xz, dir); bestHW = hw; }
+                }
+                roadMask = max(roadMask, inside);
+                curbMask = max(curbMask, along * step(hw, d) * step(d, hw + 0.28));
+                walkMask = max(walkMask, along * step(hw + 0.28, d) * step(d, hw + 2.8));
+            }
+            // Abstand zur Kante der nächsten kreuzenden Straße (für Zebrastreifen/Aussetzen der Linien)
+            float minEdge = 99.0;
+            [loop] for (int j = 0; j < 16; j++)
+            {
+                if (j >= (int)_RoadCount) break;
+                if (j == best) continue;
+                float2 ra = _RoadA[j].xy, rb = _RoadA[j].zw;
+                float2 ab = rb - ra;
+                float len = max(length(ab), 1e-3);
+                float2 dir = ab / len;
+                float2 ap = wp.xz - ra;
+                float t = dot(ap, dir);
+                if (t < -0.5 || t > len + 0.5) continue;
+                minEdge = min(minEdge, abs(dot(ap, float2(-dir.y, dir.x))) - _RoadB[j].x * 0.5);
+            }
+            float inBase = step(_BaseRect.x, wp.x) * step(wp.x, _BaseRect.z) * step(_BaseRect.y, wp.z) * step(wp.z, _BaseRect.w);
+            walkMask *= (1.0 - roadMask) * _RoadStyle.y * (1.0 - inBase);
+            curbMask *= (1.0 - roadMask) * _RoadStyle.y * (1.0 - inBase);
+            float flat = saturate(n.y * 4.0 - 3.0);
+            roadMask *= flat;
+            if (roadMask > 0.001 || walkMask > 0.001 || curbMask > 0.001)
+            {
+                float aa = max(fwidth(wp.x), fwidth(wp.z)) * 1.2 + 0.004;
+                // Asphalt: Körnung, Flicken, Risse, Pfützen, Rinne am Rand
+                float agg = tex2D(_NoiseTex, wp.xz * 1.9).a;
+                float fine = tex2D(_NoiseTex, wp.xz * 0.61 + 0.3).b;
+                float patchN = tex2D(_NoiseTex, wp.xz * 0.045 + 0.7).r;
+                float crackN = tex2D(_NoiseTex, wp.xz * 0.13 + 0.2).g;
+                float crackP = tex2D(_NoiseTex, wp.xz * 0.031 + 0.5).r;
+                float crack = LineMask(abs(crackN - 0.5), 0.012, fwidth(crackN) + 0.004) * smoothstep(0.45, 0.6, crackP) * _RoadStyle.z;
+                float puddle = smoothstep(0.64, 0.7, tex2D(_NoiseTex, wp.xz * 0.055 + 0.13).b) * (1.0 - _RoadStyle.w);
+                float gutter = saturate(1.0 - (bestHW - abs(bestS)) / 0.6);
+                float3 asph = _RoadColor.rgb * lerp(0.78, 1.15, agg) * lerp(0.9, 1.08, fine);
+                asph = lerp(asph, asph * 0.78, smoothstep(0.66, 0.7, patchN));
+                asph *= 1.0 - crack * 0.6;
+                asph = lerp(asph, asph * 0.7 + float3(0.02, 0.018, 0.015), gutter * 0.6);
+                asph = lerp(asph, base, 0.18); // Schmutz/Verschmutzungsgrad aus der Geländetextur
+                // Markierungen (abgenutzt), an Kreuzungen ausgesetzt, dort Zebrastreifen
+                float wear = smoothstep(0.25, 0.55, tex2D(_NoiseTex, wp.xz * 0.37 + 0.9).g);
+                float s = abs(bestS);
+                float nearCross = step(minEdge, 5.5);
+                float mark = 0.0;
+                if (inCount < 1.5 && nearCross < 0.5)
+                {
+                    if (bestHW > 6.5)   // breite Hauptstraße: doppelte Mittellinie, gestrichelte Fahrstreifen
+                    {
+                        mark = max(LineMask(abs(s - 0.2), 0.07, aa), 0.0);
+                        mark = max(mark, LineMask(abs(s - bestHW * 0.5), 0.07, aa) * step(frac(bestT / 6.0), 0.5));
+                    }
+                    else mark = LineMask(s, 0.08, aa) * step(frac(bestT / 6.0), 0.5);
+                    mark = max(mark, LineMask(abs(s - (bestHW - 0.45)), 0.07, aa));
+                }
+                float zebra = 0.0;
+                if (inCount < 1.5 && minEdge > 0.8 && minEdge < 4.3 && s < bestHW - 0.7)
+                    zebra = step(frac(bestS / 1.1), 0.5) * LineMask(abs(minEdge - 2.55), 1.6, aa);
+                mark = max(mark, zebra) * _RoadColor.a * (1.0 - inBase) * wear;
+                float3 paint = lerp(float3(0.82, 0.82, 0.78), float3(0.95, 0.75, 0.2), _RoadStyle.x);
+                float3 roadAlb = lerp(asph, paint, mark);
+                float roadSmooth = lerp(0.12, 0.35, mark) * (1.0 - crack);
+                roadAlb = lerp(roadAlb, roadAlb * 0.55, puddle);
+                roadSmooth = lerp(roadSmooth, 0.88, puddle);
+                roadAlb = lerp(roadAlb, float3(0.92, 0.95, 1.0), _RoadStyle.w * smoothstep(0.35, 0.7, fine) * 0.6);
+                // Gehwegplatten (0,6 m) und Bordstein
+                float2 wuv = wp.xz / 0.6;
+                float2 wf = abs(frac(wuv) - 0.5);
+                float joint = 1.0 - smoothstep(0.46, 0.49, max(wf.x, wf.y));
+                float slab = lerp(0.88, 1.08, frac(sin(dot(floor(wuv), float2(12.9898, 78.233))) * 43758.5453));
+                float3 walkAlb = lerp(base, float3(0.55, 0.53, 0.5), 0.6) * slab * lerp(0.75, 1.0, joint) * lerp(0.9, 1.05, fine);
+                float3 curbAlb = float3(0.66, 0.64, 0.6) * lerp(0.85, 1.05, agg);
+                albedo = lerp(albedo, roadAlb, roadMask);
+                smoothness = lerp(smoothness, roadSmooth, roadMask);
+                albedo = lerp(albedo, walkAlb, walkMask * flat);
+                albedo = lerp(albedo, curbAlb, curbMask * flat);
+            }
 
             o.Albedo = albedo;
             o.Metallic = 0.0;
-            o.Smoothness = saturate(lerp(_Glossiness, 0.12, rockMask) + wet * 0.45);
+            o.Smoothness = smoothness;
             o.Occlusion = lerp(1.0, 0.7 + tri * 0.3, rockMask);
             // leichtes Streiflicht in Himmelsfarbe an Silhouetten (Tiefe, NMS-typisch)
             float3 V = (_WorldSpaceCameraPos - wp) / max(dist, 0.0001);
