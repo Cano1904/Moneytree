@@ -8,7 +8,8 @@ namespace RePlanet
     /// <summary>
     /// Abschluss der Kampagne: Die Arche-Flotte kehrt zurück (Lichter sinken über dem Stützpunkt herab),
     /// Rückblick auf die vier wiederhergestellten Welten mit echten Werten aus dem Spielstand, danach Mitwirkende.
-    /// Anschließend geht das freie Spiel weiter.
+    /// Anschließend geht das freie Spiel weiter. Liegen Sprachaufnahmen (Resources/Voice/ending_01 … ending_05) vor,
+    /// spricht der Erzähler dazu (<see cref="Narrator"/>, Texte in Narrator.EndingCues, Skript in docs/SPRECHERTEXT.md).
     /// </summary>
     public class EndingDirector : MonoBehaviour
     {
@@ -27,6 +28,7 @@ namespace RePlanet
             playing = true; t = 0; skipHold = 0;
             if (CameraRig.I != null) CameraRig.I.Cinematic = true;
             AudioManager.PlayEnding();
+            Narrator.Begin(Narrator.EndingCues());
             Build();
         }
 
@@ -59,6 +61,7 @@ namespace RePlanet
             if (!playing) return;
             playing = false;
             AudioManager.StopEnding();
+            Narrator.Stop(0.35f);
             if (CameraRig.I != null) CameraRig.I.Cinematic = false;
             if (Atmosphere.I != null) Atmosphere.I.ForcePhase = -1f;
             if (stage != null) Destroy(stage.gameObject);
@@ -71,7 +74,8 @@ namespace RePlanet
         {
             if (!playing) return;
             t += Time.unscaledDeltaTime;
-            bool hold = Input.GetKey(KeyCode.Escape) || Input.GetKey(KeyCode.Return) || Input.GetKey(KeyCode.Space) || Input.GetKey(KeyCode.JoystickButton0);
+            Narrator.Tick(t);
+            bool hold = Input.GetKey(KeyCode.Escape) || Input.GetKey(KeyCode.Return) || Input.GetKey(KeyCode.Space) || Input.GetKey(KeyCode.JoystickButton0) || Input.GetMouseButton(0);
             skipHold = hold ? skipHold + Time.unscaledDeltaTime : 0f;
             if (skipHold > 1f || t > Length) { Finish(); return; }
             if (Atmosphere.I != null) Atmosphere.I.ForcePhase = Mathf.Lerp(0.7f, 0.78f, t / Length);
@@ -151,6 +155,20 @@ namespace RePlanet
                 };
                 for (int i = 0; i < credits.Length; i++)
                     GUI.Label(new Rect(0, Screen.height * 0.75f - scroll + i * 44 * scale, Screen.width, 44 * scale), credits[i], small);
+            }
+            // Untertitel zur Erzählerstimme (nur wenn Aufnahmen vorhanden sind – ohne Stimme erzählen die Tafeln)
+            if (Narrator.HasRecordings && (GameApp.I == null || GameApp.I.Settings == null || GameApp.I.Settings.Subtitles))
+            {
+                string line = Narrator.SubtitleAt(t);
+                if (!string.IsNullOrEmpty(line))
+                {
+                    var st = new GUIStyle(GUI.skin.label) { fontSize = (int)(32 * scale), alignment = TextAnchor.MiddleCenter, wordWrap = true };
+                    var rr = new Rect(Screen.width * 0.1f, Screen.height - bar - 100 * scale, Screen.width * 0.8f, 90 * scale);
+                    GUI.color = new Color(0, 0, 0, 0.8f);
+                    GUI.Label(new Rect(rr.x + 2, rr.y + 2, rr.width, rr.height), line, st);
+                    GUI.color = Color.white;
+                    GUI.Label(rr, line, st);
+                }
             }
             var hs = new GUIStyle(GUI.skin.label) { fontSize = (int)(20 * scale), alignment = TextAnchor.MiddleRight };
             GUI.color = new Color(1, 1, 1, 0.6f);

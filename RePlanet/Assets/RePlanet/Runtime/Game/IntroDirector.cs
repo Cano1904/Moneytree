@@ -127,7 +127,9 @@ namespace RePlanet
             shots.Clear(); shotFx.Clear(); glows.Clear();
             Geo.ClearCache();
             crowd = null; arks.Clear(); leftBehind.Clear(); bots.Clear(); fairy.Clear(); bokeh.Clear(); shelfGlow.Clear();
-            neonLetters.Clear(); homeShafts.Clear(); beamShafts.Clear(); skyShafts.Clear();
+            neonLetters.Clear(); homeShafts.Clear(); beamShafts.Clear(); skyShafts.Clear(); shipLights.Clear();
+            mikoHome = null; mikoNear = null; mikoShip = null; macro = null; sprout = null; leafL = leafR = null; ship = null; planet = clouds = null;
+            doorL = doorR = pressCube = null; doorLight = null; tumbleBag = null; beam = null; neonLight = null; signWash = sproutHalo = ring = limbGlow = trailGlow = null;
         }
 
         // ================================================================== Ablauf
@@ -636,6 +638,8 @@ namespace RePlanet
             {
                 var p = P(m);
                 int nx = xs.Length, nz = zs.Length, b = p.V.Count;
+                // absteigende Stützstellen spiegeln das Raster – dann Dreiecke umdrehen, damit die Oberseite sichtbar bleibt
+                bool flip = (xs[nx - 1] - xs[0]) * (zs[nz - 1] - zs[0]) < 0f;
                 for (int j = 0; j < nz; j++)
                     for (int i = 0; i < nx; i++)
                     {
@@ -647,8 +651,8 @@ namespace RePlanet
                     for (int i = 0; i < nx - 1; i++)
                     {
                         int a = b + j * nx + i, br = a + 1, tl = a + nx, tr = tl + 1;
-                        p.T.Add(a); p.T.Add(tl); p.T.Add(tr);
-                        p.T.Add(a); p.T.Add(tr); p.T.Add(br);
+                        if (flip) { p.T.Add(a); p.T.Add(tr); p.T.Add(tl); p.T.Add(a); p.T.Add(br); p.T.Add(tr); }
+                        else { p.T.Add(a); p.T.Add(tl); p.T.Add(tr); p.T.Add(a); p.T.Add(tr); p.T.Add(br); }
                     }
             }
 
@@ -1179,6 +1183,21 @@ namespace RePlanet
         Light neonLight;
         SunFx sunMega;
 
+        /// <summary>Kleinster Abstand (XZ) zwischen einem Laufweg a→b und der Kamerafahrt c→d (0, wenn sie sich kreuzen).</summary>
+        static float PathNear(Vector2 a, Vector2 b, Vector2 c, Vector2 d)
+        {
+            Func<Vector2, Vector2, Vector2, float> pd = (p, s0, s1) =>
+            {
+                var s = s1 - s0;
+                float u = Mathf.Clamp01(Vector2.Dot(p - s0, s) / Mathf.Max(1e-6f, s.sqrMagnitude));
+                return (p - (s0 + s * u)).magnitude;
+            };
+            Func<Vector2, Vector2, Vector2, float> side = (p, q, o) => (q.x - p.x) * (o.y - p.y) - (q.y - p.y) * (o.x - p.x);
+            float d1 = side(a, b, c), d2 = side(a, b, d), d3 = side(c, d, a), d4 = side(c, d, b);
+            if (d1 * d2 < 0f && d3 * d4 < 0f) return 0f;
+            return Mathf.Min(Mathf.Min(pd(a, c, d), pd(b, c, d)), Mathf.Min(pd(c, a, b), pd(d, a, b)));
+        }
+
         static float MegaHeight(float x, float z)
         {
             float plaza = Mathf.Clamp01((z - 300f) / 200f) + Mathf.Clamp01((Mathf.Abs(x) - 320f) / 200f);
@@ -1363,10 +1382,15 @@ namespace RePlanet
             phoneGeo.Box(crowd.PhoneMat, new Vector3(0.06f, 1.3f, 0.24f), new Vector3(0.08f, 0.14f, 0.02f));
             crowd.Phone = phoneGeo.ToMesh(crowd.PhoneMat, "Bildschirm", owned);
             int walkers = (int)(900 * detail) + 150;
-            for (int i = 0; i < walkers; i++)
+            // Startpunkte hinter der Kamera oder seitlich außerhalb des Bildes (dort fällt der Neubeginn einer Runde nicht auf);
+            // Wege, die der Kamerafahrt näher als 1,6 m kommen, werden verworfen – niemand läuft durch die Linse.
+            var camA = new Vector2(-12f, -32f); var camB = new Vector2(-4f, 2f);
+            for (int i = 0, tries = 0; i < walkers && tries < walkers * 4; tries++)
             {
-                var a = new Vector3(r.Range(-230f, 230f), 0f, r.Range(-60f, 100f));
+                var a = r.Chance(0.7f) ? new Vector3(r.Range(-240f, 240f), 0f, r.Range(-95f, -38f)) : new Vector3((r.Chance(0.5f) ? -1f : 1f) * r.Range(175f, 260f), 0f, r.Range(-30f, 100f));
                 var door = new Vector3(r.Range(-100f, 100f), 0f, 119f);
+                if (PathNear(new Vector2(a.x, a.z), new Vector2(door.x, door.z), camA, camB) < 1.6f) continue;
+                i++;
                 crowd.Agents.Add(new Crowd.Agent { A = a, B = door, Speed = r.Range(1.1f, 1.7f), Phase = r.Next(), Scale = r.Range(0.9f, 1.08f), Bag = r.Chance(0.45f), Phone = r.Chance(0.3f) });
             }
             foreach (var path in escalatorPaths)
@@ -1419,7 +1443,7 @@ namespace RePlanet
         {
             public Transform T;
             public Vector3 Base;
-            public float Ignite, Accel;
+            public float Ignite, Accel, Yaw;
             public Material Nozzle;
             public ParticleSystem Flame, Smoke, Dust;
             public Light L;
@@ -1510,6 +1534,7 @@ namespace RePlanet
             for (int i = 0; i < (int)(220 * detail) + 40; i++)
             {
                 float z = Mathf.Lerp(-30f, 380f, r.Next() * r.Next()), x = r.Range(-160f, 160f);
+                if (Mathf.Abs(x) < 14f && z < 9f) continue; // Standort der zurückgelassenen Roboter und der Kamera
                 Junk(bg, r, new Vector3(x, H(x, z), z), r.Range(1f, 1.6f));
             }
             for (int i = 0; i < 6; i++) BalePile(bg, r, new Vector3(r.Range(-60f, 60f), 0f, r.Range(15f, 90f)), 1.3f, r.Range(4, 12), H);
@@ -1543,7 +1568,8 @@ namespace RePlanet
                 var at = new GameObject("Arche_" + names[i]).transform;
                 at.SetParent(s, false);
                 at.localPosition = ark.Base + Vector3.up * 9f;
-                at.localRotation = Quaternion.Euler(0f, i == 0 ? 0f : r.Range(-40f, 40f), 0f);
+                ark.Yaw = i == 0 ? 0f : r.Range(-40f, 40f);
+                at.localRotation = Quaternion.Euler(0f, ark.Yaw, 0f);
                 ark.T = at;
                 var mg = new Geo();
                 BuildArkModel(mg, names[i]);
@@ -1654,7 +1680,7 @@ namespace RePlanet
                 float h = 0.5f * a.Accel * fly * fly;
                 float pitch = Mathf.Clamp01((fly - 5f) / 8f) * 9f * (i == 1 ? -1f : 1f);
                 a.T.localPosition = a.Base + Vector3.up * (9f + h) + new Vector3(pitch * fly * 0.9f, 0f, fly * fly * 0.25f);
-                a.T.localRotation = Quaternion.Euler(0f, a.T.localEulerAngles.y, pitch);
+                a.T.localRotation = Quaternion.Euler(0f, 0f, -pitch) * Quaternion.Euler(0f, a.Yaw, 0f); // neigt sich in Flugrichtung
                 Mats.SetEmission(a.Nozzle, new Color(2.2f, 2.6f, 3.2f) * ign * 1.6f);
                 if (a.Glow != null) { a.Glow.Gain = ign; a.Core.Gain = ign; }
                 if (a.L != null) a.L.intensity = ign * (5.5f + Mathf.PerlinNoise(t * 8f, i) * 1.5f);
@@ -1704,7 +1730,7 @@ namespace RePlanet
             for (int i = 0; i < (int)(260 * detail) + 40; i++)
             {
                 float z = r.Range(-20f, 160f), x = r.Range(-70f, 70f);
-                if (z > 4f && z < 24f && Mathf.Abs(x) < 30f) continue;
+                if (z > -6f && z < 25f && Mathf.Abs(x) < 32f) continue; // Roboterreihen und Kamerafahrt frei halten
                 Junk(g, r, new Vector3(x, H(x, z), z), r.Range(0.8f, 1.4f));
             }
             for (int i = 0; i < 14; i++)
@@ -1800,11 +1826,10 @@ namespace RePlanet
 
         void AnimateShutdown(float lt, float k)
         {
-            var sd = new Vector3(0.3f, -0.02f, 1f);
+            // blaue Stunde: Sonne unter dem Horizont (am Himmel unsichtbar), kaltes Restlicht von flach vorn
             SetLook(0.8f, 0.2f, 0.012f, new Color(0.3f, 0.32f, 0.4f), new Color(0.28f, 0.31f, 0.42f), new Color(0.24f, 0.24f, 0.3f), new Color(0.08f, 0.08f, 0.1f),
                 new Vector3(0.3f, 0.12f, 1f), new Color(0.55f, 0.62f, 0.85f), 0.35f, 900f);
             look.SkySun = 0f;
-            look.SunDir = sd.normalized;
             // Kamera: langsame Fahrt entlang der Reihe, am Ende auf dem letzten Roboter
             float e = M.Smooth(Mathf.Clamp01(lt / 11f));
             var p = new Vector3(-20f + 24.5f * e, 0.95f + 0.1f * e, 1.2f + 2.4f * e);
@@ -1851,7 +1876,7 @@ namespace RePlanet
             var r = new Rng(2105);
             Func<float, float, float> H = HomeHeight;
             var g = new Geo();
-            Ground(g, matGround, 500f, 900f, -700f, (int)(90 * Mathf.Max(0.6f, detail)), (int)(90 * Mathf.Max(0.6f, detail)), H, 6f);
+            Ground(g, matGround, 600f, 60f, -950f, (int)(90 * Mathf.Max(0.6f, detail)), (int)(90 * Mathf.Max(0.6f, detail)), H, 6f);
             g.Build("Gelaende", s, owned, false);
 
             // Lieferwagen: dünne Wände (innen und außen sichtbar), Fahrerhaus, Räder
@@ -1873,7 +1898,7 @@ namespace RePlanet
             foreach (var wz in new[] { -1.7f, 3.3f })
                 for (int sd = -1; sd <= 1; sd += 2) v.Mesh(Mats.Get(Mats.Opaque, new Color(0.1f, 0.1f, 0.1f)), wheel, TR(new Vector3(sd * 1.12f, 0.4f, wz), new Vector3(0f, 0f, 0f)));
             // Rampe aus einem Brett
-            v.Box(wood, TR(new Vector3(0.3f, VanFloor * 0.5f - 0.02f, -3.25f), new Vector3(-Mathf.Atan2(VanFloor, 1.3f) * Mathf.Rad2Deg * -1f, 0f, 0f)), new Vector3(0.8f, 0.05f, 1.45f));
+            v.Box(wood, TR(new Vector3(0.3f, VanFloor * 0.5f - 0.02f, -3.25f), new Vector3(-Mathf.Atan2(VanFloor, 1.3f) * Mathf.Rad2Deg, 0f, 0f)), new Vector3(0.8f, 0.05f, 1.45f));
             // Regale mit Sammelstücken
             var plank = Mats.Get(Mats.Opaque, new Color(0.45f, 0.32f, 0.2f));
             var shelfGlowSet = NewGlows(s, matSoftAdd);
@@ -1968,7 +1993,7 @@ namespace RePlanet
             for (int i = 0; i < (int)(240 * detail) + 40; i++)
             {
                 float z = r.Range(-60f, 6f), x = r.Range(-40f, 40f);
-                if (Mathf.Abs(x) < 3f && z > -9f) continue;
+                if (x > -3.5f && x < 6.5f && z > -10.5f) continue; // Wagen, MIKOs Arbeitsplatz und Kamera frei halten
                 Junk(o, r, new Vector3(x, H(x, z), z), r.Range(0.7f, 1.3f));
             }
             for (int i = 0; i < 18; i++)
@@ -2156,26 +2181,27 @@ namespace RePlanet
             var xs = new float[81];
             for (int i = 0; i <= 80; i++) { float q = -1f + 2f * i / 80f; xs[i] = 7f * (0.25f * q + 0.75f * q * Mathf.Abs(q)); }
             var zs = new float[81];
-            for (int j = 0; j <= 80; j++) { float q = j / 80f; zs[j] = -4f + 14f * (0.25f * q + 0.75f * q * q); }
+            for (int j = 0; j <= 80; j++) { float q = -1f + 2f * j / 80f; zs[j] = (q < 0f ? 4f : 10f) * (0.25f * q + 0.75f * q * Mathf.Abs(q)); }
             g.Grid(matGround, xs, zs, H, 1.4f);
             // Betonplatten und Trümmer, dazwischen der Riss
             for (int i = 0; i < 16; i++)
             {
                 float a = r.Range(0f, Mathf.PI * 2f), d = r.Range(0.35f, 2.8f);
                 var p = new Vector3(Mathf.Cos(a) * d, 0f, Mathf.Sin(a) * d + 0.6f);
+                if (MacroClear(p, 1.1f)) continue;
                 g.Tiled(matConcrete, TR(p + Vector3.up * (H(p.x, p.z) + 0.03f), new Vector3(r.Range(-14f, 14f), r.Range(0f, 360f), r.Range(-14f, 14f))), new Vector3(r.Range(0.4f, 1.3f), r.Range(0.08f, 0.2f), r.Range(0.3f, 1f)), new Vector2(1f, 1f), new Vector2(r.Next(), r.Next()));
             }
             var brick = Mats.Get(Mats.Opaque, new Color(0.55f, 0.28f, 0.2f));
             for (int i = 0; i < 26; i++)
             {
                 var p = new Vector3(r.Range(-2.5f, 2.5f), 0f, r.Range(-1.5f, 3.5f));
-                if (p.magnitude < 0.3f) continue;
+                if (p.magnitude < 0.3f || MacroClear(p, 0.55f)) continue;
                 g.Box(brick, TR(p + Vector3.up * (H(p.x, p.z) + 0.03f), new Vector3(r.Range(-20f, 20f), r.Range(0f, 360f), r.Range(-20f, 20f))), new Vector3(0.22f, 0.07f, 0.1f) * r.Range(0.6f, 1f));
             }
             for (int i = 0; i < 30; i++)
             {
                 var p = new Vector3(r.Range(-3.5f, 3.5f), 0f, r.Range(-1f, 5f));
-                if (p.magnitude < 0.5f) continue;
+                if (p.magnitude < 0.5f || MacroClear(p, 0.7f)) continue;
                 Junk(g, r, new Vector3(p.x, H(p.x, p.z), p.z), r.Range(0.35f, 0.8f), i % 4 == 0 ? "can" : i % 4 == 1 ? "pbottle" : i % 4 == 2 ? "sheetmetal" : "box");
             }
             // zerbrochene Wand im Hintergrund, durch deren Lücke das Licht fällt
@@ -2250,6 +2276,13 @@ namespace RePlanet
             mikoNear.transform.localPosition = new Vector3(2.2f, 0f, 0.6f);
         }
 
+        /// <summary>true, wenn p der Nahaufnahme (Kamera bei ≈ (0,15 | −0,25), Blick auf den Keimling) oder MIKOs Weg im Weg läge.</summary>
+        static bool MacroClear(Vector3 p, float r)
+        {
+            var q = new Vector2(p.x, p.z);
+            return PathNear(q, q, new Vector2(0.2f, -0.4f), new Vector2(0f, 0f)) < r || PathNear(q, q, new Vector2(2.7f, 0.9f), new Vector2(0.1f, 0.8f)) < r * 0.8f;
+        }
+
         Transform Leaf(Transform parent, Mesh mesh, Material mat, Vector3 at, float yaw)
         {
             var p = new GameObject("Keimblatt").transform;
@@ -2273,7 +2306,7 @@ namespace RePlanet
             var sproutTop = sprout != null ? sprout.localPosition + new Vector3(0f, 0.09f, 0f) : Vector3.zero;
             if (!close)
             {
-                SetLook(0.35f, 0.15f, 0.03f / MacroScale, new Color(0.46f, 0.39f, 0.3f), new Color(0.36f, 0.32f, 0.3f), new Color(0.32f, 0.26f, 0.21f), new Color(0.12f, 0.1f, 0.08f),
+                SetLook(0.35f, 0.15f, 0.12f / MacroScale, new Color(0.46f, 0.39f, 0.3f), new Color(0.36f, 0.32f, 0.3f), new Color(0.32f, 0.26f, 0.21f), new Color(0.12f, 0.1f, 0.08f),
                     sd, new Color(0.9f, 0.8f, 0.66f), 0.45f, 400f, 0.05f);
                 float roll = M.Smooth(Mathf.Clamp01(lt / 3.2f));
                 mikoNear.transform.localPosition = Vector3.Lerp(new Vector3(2.6f, 0f, 0.9f), new Vector3(0.62f, 0f, 0.45f), roll);
@@ -2289,7 +2322,7 @@ namespace RePlanet
             else
             {
                 float lc = lt - 6.5f;
-                SetLook(0.35f, 0.15f, 0.2f / MacroScale, new Color(0.42f, 0.36f, 0.27f), new Color(0.34f, 0.3f, 0.28f), new Color(0.3f, 0.24f, 0.2f), new Color(0.11f, 0.09f, 0.07f),
+                SetLook(0.35f, 0.15f, 0.45f / MacroScale, new Color(0.42f, 0.36f, 0.27f), new Color(0.34f, 0.3f, 0.28f), new Color(0.3f, 0.24f, 0.2f), new Color(0.11f, 0.09f, 0.07f),
                     sd, new Color(0.9f, 0.8f, 0.66f), 0.4f, 200f, 0.03f);
                 mikoNear.transform.localPosition = new Vector3(0.08f, 0f, 0.82f);
                 mikoNear.transform.localRotation = Quaternion.Euler(0f, 180f, 0f);
@@ -2422,12 +2455,12 @@ namespace RePlanet
 
         void AnimateShip(float lt, float k)
         {
-            // Sonne geht über dem Planetenrand auf (vom Rand verdeckt, dann frei)
-            float rise = Mathf.Lerp(-3.2f, 2.6f, M.Smooth(Mathf.Clamp01((lt - 0.5f) / 6f)));
-            var toPlanet = (planetC).normalized;
+            // Sonne geht über dem Planetenrand auf: erst vom Rand verdeckt (nur Dämmerungssaum), dann frei – kurz vor dem Titel
+            var toPlanet = planetC.normalized;
             float angR = Mathf.Asin(Mathf.Clamp01(planetR / planetC.magnitude));
-            var limbDir = Quaternion.AngleAxis(-angR * Mathf.Rad2Deg, Vector3.Cross(toPlanet, Vector3.right).normalized) * toPlanet;
-            var sd = (Quaternion.AngleAxis(9f, Vector3.up) * Quaternion.AngleAxis(-rise, Vector3.right) * new Vector3(0f, limbDir.y, limbDir.z)).normalized;
+            float limbElev = Mathf.Atan2(planetC.y, planetC.z) * Mathf.Rad2Deg + angR * Mathf.Rad2Deg;
+            float rise = Mathf.Lerp(-3.2f, 2.6f, M.Smooth(Mathf.Clamp01((lt - 0.5f) / 6f)));
+            var sd = Quaternion.Euler(-(limbElev + rise), 9f, 0f) * Vector3.forward;
             float sep = Vector3.Angle(sd, toPlanet) * Mathf.Deg2Rad;
             float vis = Mathf.Clamp01((sep - angR + 0.004f) / 0.03f);
             SetLook(0.5f, 0f, 0f, Color.black, new Color(0.03f, 0.035f, 0.05f), new Color(0.035f, 0.03f, 0.035f), new Color(0.01f, 0.01f, 0.015f),
@@ -2435,7 +2468,7 @@ namespace RePlanet
             look.Space = true;
             if (sunSpace != null) { sunSpace.Dir = shipShot.TransformDirection(sd); sunSpace.Vis = 1f; }
             if (sunSpaceFront != null) { sunSpaceFront.Dir = shipShot.TransformDirection(sd); sunSpaceFront.Vis = vis * 0.8f; }
-            // Dämmerungssaum am Rand und Atmosphärenring
+            // Atmosphärenring um die Silhouette und Dämmerungssaum an der Stelle, an der die Sonne aufgeht
             var cam = Camera.main;
             Vector3 camLocal = cam != null ? shipShot.InverseTransformPoint(cam.transform.position) : Vector3.zero;
             float d = (planetC - camLocal).magnitude;
@@ -2444,8 +2477,8 @@ namespace RePlanet
             if (limbGlow != null)
             {
                 var toC = (planetC - camLocal).normalized;
-                var side = (sd - toC * Vector3.Dot(sd, toC)).normalized;
-                limbGlow.Pos = camLocal + (toC * Mathf.Sqrt(Mathf.Max(0f, d * d - planetR * planetR)) + side * 0f).normalized * (d * 0.8f) + side * rc * 0.8f * 0f;
+                var side = sd - toC * Vector3.Dot(sd, toC);
+                side = side.sqrMagnitude > 1e-6f ? side.normalized : Vector3.up;
                 limbGlow.Pos = planetC + side * rc * 0.98f - toC * planetR * 0.3f;
                 limbGlow.Gain = 0.5f + 0.5f * vis;
             }
