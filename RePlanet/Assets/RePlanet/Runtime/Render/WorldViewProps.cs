@@ -356,75 +356,6 @@ namespace RePlanet
             trees.Add(new KeyValuePair<Transform, float>(alive.transform, threshold));
         }
 
-        // ================================================================== Stützpunkt
-        void BuildBase()
-        {
-            var b = Layout.Base;
-            var mb = new MultiBuilder();
-            var white = Mats.Get(Mats.Opaque, new Color(0.9f, 0.88f, 0.82f));
-            var teal = Mats.Get(Mats.Opaque, new Color(0.18f, 0.72f, 0.68f));
-            var orange = Mats.Get(Mats.Opaque, new Color(1f, 0.55f, 0.18f));
-            var dark = Mats.Get(Mats.Opaque, new Color(0.2f, 0.21f, 0.23f));
-            float gy = b.Center.y;
-            // Hauptgebäude (Recyclingstützpunkt)
-            mb.For(white).Box(new Vector3(0, gy + 3.5f, -145.5f), new Vector3(16, 7, 8));
-            mb.For(teal).Box(new Vector3(0, gy + 7.3f, -145.5f), new Vector3(16.6f, 0.6f, 8.6f));
-            mb.For(orange).Box(new Vector3(0, gy + 2.2f, -141.45f), new Vector3(16.2f, 0.5f, 0.1f));
-            mb.For(dark).Box(new Vector3(0, gy + 2f, -141.4f), new Vector3(5f, 4f, 0.12f));
-            mb.For(Mats.Get(Mats.Emissive, new Color(0.3f, 1f, 0.8f), new Color(0.3f, 1.6f, 1.2f))).Box(new Vector3(0, gy + 5.2f, -141.35f), new Vector3(3f, 1.5f, 0.1f));
-            mb.For(dark).Cylinder(new Vector3(5, gy + 7.6f, -146), 0.15f, 4f, 6);
-            // Ladeplatz
-            var ch = b.Stations["charge"];
-            mb.For(Mats.Get(Mats.Emissive, new Color(0.5f, 1f, 0.3f), new Color(0.6f, 1.6f, 0.3f))).Cylinder(new Vector3(ch.x, gy + 0.02f, ch.z), 2.6f, 0.06f, 24);
-            // Garage
-            mb.For(Mats.Get(Mats.Opaque, new Color(0.72f, 0.68f, 0.6f))).Box(new Vector3(-26, gy + 2.5f, -146), new Vector3(10, 5, 7));
-            mb.For(dark).Box(new Vector3(-26, gy + 2f, -142.45f), new Vector3(7, 4, 0.1f));
-            mb.For(orange).Box(new Vector3(-26, gy + 5.2f, -146), new Vector3(10.4f, 0.4f, 7.4f));
-            // Landeplatz + Transportschiff
-            var pad = b.ShipPad;
-            mb.For(dark).Cylinder(new Vector3(pad.x, gy, pad.z), 6.5f, 0.15f, 28);
-            mb.For(Mats.Get(Mats.Opaque, new Color(0.95f, 0.8f, 0.2f))).Torus(new Vector3(pad.x, gy + 0.16f, pad.z), 5.8f, 0.12f, 28, 4);
-            BuildShip(new Vector3(pad.x, gy + 0.2f, pad.z));
-            // Stationen (Terminals mit farbigem Bildschirm)
-            foreach (var kv in b.Stations)
-            {
-                uint col;
-                if (!StationColors.TryGetValue(kv.Key, out col) || kv.Key == "storage" || kv.Key == "charge") continue;
-                var sp = kv.Value;
-                mb.For(dark).Box(new Vector3(sp.x, gy + 1f, sp.z - 1.2f), new Vector3(1.2f, 2f, 0.8f));
-                mb.For(Mats.Get(Mats.Emissive, Mats.C(col), Mats.C(col) * 1.4f)).Box(new Vector3(sp.x, gy + 1.5f, sp.z - 0.78f), new Vector3(1f, 0.7f, 0.04f));
-                mb.For(Mats.Get(Mats.Opaque, Mats.C(col))).Box(new Vector3(sp.x, gy + 2.2f, sp.z - 1.2f), new Vector3(1.3f, 0.15f, 0.9f));
-                var label = new GameObject("Label_" + kv.Key);
-                label.transform.SetParent(Root, false);
-                label.transform.localPosition = new Vector3(sp.x, gy + 2.9f, sp.z - 1.2f);
-                var tm = TextLabel(label.transform, StationNames.ContainsKey(kv.Key) ? StationNames[kv.Key] : kv.Key, Vector3.zero, 0.16f, Color.white);
-                if (tm != null) label.AddComponent<Billboard>();
-            }
-            // Lager-Annahme
-            var st = b.Stations["storage"];
-            mb.For(Mats.Get(Mats.Emissive, Mats.C(0x2EC4B6), Mats.C(0x2EC4B6))).Box(new Vector3(st.x, gy + 0.03f, st.z), new Vector3(5f, 0.05f, 2.5f));
-            mb.Build("Base", Root, true);
-        }
-
-        void BuildShip(Vector3 at)
-        {
-            var mb = new MultiBuilder();
-            var hull = Mats.Get(Mats.Metal, new Color(0.85f, 0.87f, 0.9f));
-            var dark = Mats.Get(Mats.Opaque, new Color(0.2f, 0.22f, 0.26f));
-            var accent = Mats.Get(Mats.Opaque, new Color(1f, 0.55f, 0.18f));
-            mb.M = Matrix4x4.TRS(at, Quaternion.Euler(0, -30, 0), Vector3.one);
-            mb.For(hull).Lathe(new Vector3(0, 1.4f, 0), new[] { new Vector2(0, 0), new Vector2(2.6f, 0.2f), new Vector2(3.2f, 1.4f), new Vector2(2.6f, 2.6f), new Vector2(1.2f, 3.4f), new Vector2(0, 3.6f) }, 20);
-            mb.For(dark).Box(new Vector3(0, 3.6f, 2.2f), new Vector3(2.2f, 0.9f, 1.6f));
-            for (int i = 0; i < 3; i++)
-            {
-                float a = i * 120f * Mathf.Deg2Rad;
-                mb.For(dark).BoxRot(new Vector3(Mathf.Cos(a) * 2.6f, 0.7f, Mathf.Sin(a) * 2.6f), new Vector3(0.3f, 1.6f, 0.3f), new Vector3(0, -i * 120, 20));
-            }
-            mb.For(accent).Torus(new Vector3(0, 2.8f, 0), 3.0f, 0.12f, 24, 4);
-            mb.For(Mats.Get(Mats.Emissive, new Color(0.4f, 0.8f, 1f), new Color(0.6f, 1.2f, 2f))).Cylinder(new Vector3(0, 1.2f, -3.1f), 0.6f, 0.4f, 12);
-            mb.Build("TransportShip", Root, true);
-        }
-
         // ================================================================== Punkte in der Welt
         void BuildSpots()
         {
@@ -496,7 +427,7 @@ namespace RePlanet
                 Obj("screen", MeshKit.Cube, Mats.Get(Mats.Emissive, new Color(1f, 0.6f, 0.2f), new Color(1.8f, 0.9f, 0.3f)), new Vector3(0, 1.6f, 0.46f), new Vector3(1.1f, 0.8f, 0.04f), Quaternion.identity, go.transform, false);
                 for (int i = 0; i < 4; i++) Obj("scaffold", MeshKit.Cube, Mats.Get(Mats.Opaque, new Color(0.85f, 0.6f, 0.15f)), new Vector3(i % 2 == 0 ? -3 : 3, 2.5f, i < 2 ? -3 : 3), new Vector3(0.2f, 5f, 0.2f), Quaternion.identity, go.transform);
                 projectSites[GameData.ProjectId(Planet, a)] = go.transform;
-                var tm = TextLabel(go.transform, GameData.Projects[GameData.ProjectId(Planet, a)].Name, new Vector3(0, 5.8f, 0), 0.2f, new Color(1f, 0.85f, 0.5f));
+                var tm = TextLabel(go.transform, GameData.Projects[GameData.ProjectId(Planet, a)].Name, new Vector3(0, 6.2f, 0), 0.36f, new Color(1f, 0.85f, 0.5f));
                 if (tm != null) tm.gameObject.AddComponent<Billboard>();
             }
         }
@@ -546,7 +477,7 @@ namespace RePlanet
                 }
             mb.For(warm).Box(new Vector3(0, 2.4f, -0.8f), new Vector3(0.4f, 0.1f, 0.2f));
             var go = mb.Build(emergency ? "Notunterschlupf" : "Unterschlupf", Root, true);
-            var tm = TextLabel(go.transform, emergency ? "Notunterschlupf" : Def.ShelterName, pos + Vector3.up * 3.6f, 0.12f, new Color(0.8f, 1f, 0.9f));
+            var tm = TextLabel(go.transform, emergency ? "Notunterschlupf" : Def.ShelterName, pos + Vector3.up * 3.9f, 0.24f, new Color(0.8f, 1f, 0.9f));
             if (tm != null) tm.gameObject.AddComponent<Billboard>();
             return go;
         }
