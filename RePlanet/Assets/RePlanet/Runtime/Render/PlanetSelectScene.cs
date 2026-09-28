@@ -502,7 +502,7 @@ namespace RePlanet
 
         static Texture2D SurfaceTexture(PlanetDef pd, int index)
         {
-            const int w = 512, h = 256;
+            const int w = 384, h = 192;
             var tex = new Texture2D(w, h, TextureFormat.RGBA32, true) { name = "Oberflaeche_" + pd.Id, wrapMode = TextureWrapMode.Repeat, anisoLevel = 2 };
             var px = new Color32[w * h];
             var g1 = UISkinColor(pd.Ground); var g2 = UISkinColor(pd.Ground2); var acc = UISkinColor(pd.Accent);
@@ -565,7 +565,7 @@ namespace RePlanet
         static Texture2D CloudTexture()
         {
             if (cloudTex != null) return cloudTex;
-            const int w = 512, h = 256;
+            const int w = 384, h = 192;
             cloudTex = new Texture2D(w, h, TextureFormat.RGBA32, true) { name = "PlanetWolken", wrapMode = TextureWrapMode.Repeat };
             var px = new Color32[w * h];
             for (int y = 0; y < h; y++)
