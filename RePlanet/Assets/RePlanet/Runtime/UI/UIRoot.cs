@@ -364,6 +364,7 @@ namespace RePlanet
             }
             try
             {
+                DrawEntryOverlay();
                 bool photoClean = screen == UIScreen.Photo && PhotoMode.HideHud && !photoPanel;
                 if (screen != UIScreen.Intro && screen != UIScreen.Ending && screen != UIScreen.Loading && !photoClean) DrawToasts(app);
                 if (guiError != null && Time.unscaledTime < guiErrorUntil)
@@ -378,6 +379,18 @@ namespace RePlanet
             GUI.color = oldColor;
             UINav.EndPass();
             GUI.matrix = Matrix4x4.identity;
+        }
+
+        /// <summary>Atmosphäreneintritt nach der Planetenwahl: Glühen über dem ganzen Bild (auch während des Ladens).</summary>
+        void DrawEntryOverlay()
+        {
+            var ps = PlanetSelectScene.I;
+            if (ps == null || ps.Overlay <= 0.001f || Event.current.type != EventType.Repaint) return;
+            float a = Mathf.Clamp01(ps.Overlay);
+            var c = ps.OverlayColor;
+            UISkin.Rect(new Rect(0, 0, VW, VH), new Color(c.r, c.g, c.b, a));
+            float s = Mathf.Max(VW, VH) * 1.3f;
+            UISkin.Tex(new Rect((VW - s) * 0.5f, (VH - s) * 0.5f, s, s), UISkin.Circle, new Color(1f, 0.97f, 0.9f, a * 0.55f));
         }
 
         void DrawScreen(GameApp app, UIScreen screen)

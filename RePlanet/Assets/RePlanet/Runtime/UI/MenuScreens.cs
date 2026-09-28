@@ -198,7 +198,100 @@ namespace RePlanet
             return t;
         }
 
+        GUIStyle psTitle, psName;
+
+        /// <summary>
+        /// Planetenwahl über der Weltall-Szene (<see cref="PlanetSelectScene"/>): schlanke Liste links (Name, Untertitel),
+        /// darunter Stimmung und Beschreibung des gewählten Planeten. Auswahl (Maus, Pfeiltasten, Controller) lässt die Kamera
+        /// zum Planeten gleiten; Bestätigen startet den Anflug. Ohne Szene: bisherige Karten.
+        /// </summary>
         void DrawPlanetSelect(GameApp app)
+        {
+            var scene = PlanetSelectScene.I;
+            if (scene == null || !scene.Active) { DrawPlanetSelectCards(app); return; }
+            if (scene.Descending)
+            {
+                GUI.Label(new Rect(VW - 330, VH - 44, 310, 28), UISkin.Col("Beliebige Taste: überspringen", new Color(1, 1, 1, 0.5f)), SmallRight());
+                return;
+            }
+            if (psTitle == null || psTitle.fontSize != UISkin.H2.fontSize + 6)
+            {
+                psTitle = new GUIStyle(UISkin.H2) { fontSize = UISkin.H2.fontSize + 6, alignment = TextAnchor.MiddleLeft };
+                psName = new GUIStyle(UISkin.H1) { alignment = TextAnchor.MiddleLeft };
+            }
+            // weicher Schatten links hinter der Liste
+            if (Event.current.type == EventType.Repaint)
+                for (int i = 0; i < 12; i++)
+                    UISkin.Rect(new Rect(i * 48f, 0, 48f, VH), new Color(0.005f, 0.015f, 0.035f, (UISkin.Contrast ? 0.85f : 0.55f) * (1f - i / 12f)));
+
+            float x = Mathf.Max(40f, VW * 0.045f);
+            float y = Mathf.Max(28f, VH * 0.06f);
+            float lw = Mathf.Min(430f, VW * 0.34f);
+            UISkin.Shadow(new Rect(x, y, VW * 0.6f, 48), "Wohin fliegt MIKO zuerst?", psTitle);
+            y += 46;
+            GUI.Label(new Rect(x + 2, y, VW * 0.6f, 26), UISkin.Col("Startplanet wählen – die anderen erreichst du später mit dem Transportschiff.", UISkin.TextDim), UISkin.LabelSmall);
+            y += 48;
+
+            var list = new List<PlanetDef>(5);
+            foreach (var id in GameData.PlanetOrder) list.Add(GameData.Planets[id]);
+            string pick = null;
+            for (int i = 0; i < list.Count; i++)
+            {
+                var pd = list[i];
+                bool locked = !pd.StartPlanet;
+                var r = new Rect(x, y, lw, 58);
+                bool focused;
+                bool click = UINav.Area(r, out focused);
+                bool hover = UINav.IsHover(r);
+                if ((focused && UINav.KeyboardMode) || hover) pick = pd.Id;
+                bool sel = scene.Focused == pd.Id;
+                var accent = UISkin.FromRgb(pd.Accent);
+                if (Event.current.type == EventType.Repaint)
+                {
+                    if (sel || hover || focused) UISkin.RoundRect(r, new Color(accent.r * 0.25f, accent.g * 0.25f, accent.b * 0.3f, sel ? 0.75f : 0.45f));
+                    if (sel) UISkin.RoundRect(new Rect(r.x, r.y + 8, 4, r.height - 16), accent);
+                    if (focused && UINav.KeyboardMode) UISkin.OutlineRect(new Rect(r.x - 2, r.y - 2, r.width + 4, r.height + 4), UISkin.FocusCol);
+                }
+                UISkin.Tex(new Rect(r.x + 18, r.y + 17, 24, 24), UISkin.Circle, locked ? accent * new Color(0.5f, 0.5f, 0.5f, 1f) : accent);
+                GUI.Label(new Rect(r.x + 54, r.y + 4, r.width - 150, 28), UISkin.Col("<b>" + pd.Name + "</b>", locked ? UISkin.TextDim : sel ? accent : UISkin.Text), UISkin.Label);
+                GUI.Label(new Rect(r.x + 54, r.y + 30, r.width - 64, 24), UISkin.Col(pd.Subtitle, UISkin.TextDim), UISkin.LabelTiny);
+                if (locked) GUI.Label(new Rect(r.xMax - 110, r.y + 4, 100, 28), UISkin.Col("später", UISkin.Story), SmallRight());
+                if (click)
+                {
+                    if (locked) { AudioManager.Ui("beep_error"); scene.Focus(pd.Id); }
+                    else { AudioManager.Ui("ui_click"); scene.Descend(pd.Id); return; }
+                }
+                y += 64;
+            }
+            if (pick == null && UINav.KeyboardMode && UINav.Focus >= 0 && UINav.Focus < list.Count) pick = list[UINav.Focus].Id;
+            if (pick != null) scene.Focus(pick);
+
+            // Angaben zum gewählten Planeten
+            PlanetDef cur = null;
+            if (scene.Focused != null && GameData.Planets.TryGetValue(scene.Focused, out cur))
+            {
+                y += 14;
+                var accent = UISkin.FromRgb(cur.Accent);
+                UISkin.Shadow(new Rect(x, y, lw + 200, 46), UISkin.Col(cur.Name, accent), psName);
+                y += 46;
+                float mh = UISkin.TextHeight(UISkin.WrapSmall, cur.Mood, lw);
+                GUI.Label(new Rect(x, y, lw, mh + 4), UISkin.Col(cur.Mood, UISkin.Warn), UISkin.WrapSmall);
+                y += mh + 8;
+                string desc = cur.StartPlanet ? cur.Description : (string.IsNullOrEmpty(cur.UnlockHint) ? "Das Finale – wird später erreichbar." : cur.UnlockHint);
+                float dh = UISkin.TextHeight(UISkin.WrapSmall, desc, lw);
+                float room = VH - 150f - y;
+                if (dh > room) dh = Mathf.Max(0f, room);
+                if (dh > 10f) GUI.Label(new Rect(x, y, lw, dh + 4), UISkin.Col(desc, UISkin.Text), UISkin.WrapSmall);
+                y += dh + 6;
+            }
+
+            float by = VH - 84f;
+            bool canLand = cur != null && cur.StartPlanet;
+            if (UINav.Button(new Rect(x, by, lw * 0.62f, 50), canLand ? "Hier landen ›" : "Noch gesperrt", canLand, UISkin.ButtonSel) && canLand) { scene.Descend(cur.Id); return; }
+            if (UINav.Button(new Rect(x + lw * 0.62f + 12, by, lw * 0.38f - 12, 50), "‹ " + L("Zurück"))) Back();
+        }
+
+        void DrawPlanetSelectCards(GameApp app)
         {
             Vignette();
             UISkin.Shadow(new Rect(0, Mathf.Max(20, VH * 0.05f), VW, 60), "Wohin fliegt MIKO zuerst?", UISkin.H1);
