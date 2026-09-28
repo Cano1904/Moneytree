@@ -717,6 +717,9 @@ namespace RePlanet
                 for (float u = -fc.Len * 0.5f + rng.Range(1.5f, 3f); u < fc.Len * 0.5f - 1f; u += outer ? 9f : rng.Range(3.5f, 5.5f))
                 {
                     var p = fc.P(u, water + (outer ? 2.2f : 1.4f), 0.28f);
+                    // Fender nur dort, wo vor der Mauer Wasser ist (nicht über Land)
+                    var front = fc.P(u, 0, 2f);
+                    if (Terrain.HeightAt(Planet, Mathf.Clamp(front.x, -150, 150), Mathf.Clamp(front.z, -150, 150)) > water + 0.2f) continue;
                     mb.For(tire).TorusRot(p, new Vector3(90, fc.Yaw, 0), 0.42f, 0.16f, 10, 5);
                     mb.For(woodMat).Beam(p + Vector3.up * 0.55f, fc.P(u, top - capH, 0.06f), 0.04f);
                 }

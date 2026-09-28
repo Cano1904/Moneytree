@@ -512,20 +512,44 @@ namespace RePlanet
                 var pos = P(s.Pos);
                 var broken = new GameObject("RepairBroken"); broken.transform.SetParent(Root, false); broken.transform.localPosition = pos;
                 var fixedGo = new GameObject("RepairFixed"); fixedGo.transform.SetParent(Root, false); fixedGo.transform.localPosition = pos;
+                var bmb = new MultiBuilder { UsePalette = true };
+                var fmb = new MultiBuilder { UsePalette = true };
                 if (Planet == "pelagia")
                 {
-                    Obj("buoy", MeshKit.Cylinder, Mats.Get(Mats.Opaque, new Color(0.5f, 0.3f, 0.25f)), new Vector3(0, -0.2f, 0), new Vector3(1.2f, 1.2f, 1.2f), Quaternion.Euler(20, 0, 15), broken.transform);
-                    Obj("buoy", MeshKit.Cylinder, Mats.Get(Mats.Opaque, new Color(0.95f, 0.8f, 0.2f)), new Vector3(0, 0.2f, 0), new Vector3(1.2f, 1.6f, 1.2f), Quaternion.identity, fixedGo.transform);
-                    Obj("light", MeshKit.Sphere, Mats.Get(Mats.Emissive, new Color(1f, 0.4f, 0.2f), new Color(2f, 0.6f, 0.2f)), new Vector3(0, 1.2f, 0), Vector3.one * 0.5f, Quaternion.identity, fixedGo.transform, false);
+                    // kaputt: verrostete, halb gesunkene Boje mit abgeknicktem Mast; repariert: Seezeichen mit Licht
+                    bmb.M = Matrix4x4.TRS(new Vector3(0, -0.3f, 0), Quaternion.Euler(24, s.Yaw * Mathf.Rad2Deg, 14), Vector3.one);
+                    bmb.For(Mats.Get(Mats.Opaque, new Color(0.5f, 0.3f, 0.25f))).Cylinder(new Vector3(0, -0.5f, 0), 0.75f, 0.9f, 12, true, 0.6f);
+                    bmb.For(Mats.Get(Mats.Opaque, new Color(0.35f, 0.2f, 0.15f))).Beam(new Vector3(0, 0.4f, 0), new Vector3(0.1f, 1.2f, 0), 0.08f);
+                    bmb.For(Mats.Get(Mats.Opaque, new Color(0.35f, 0.2f, 0.15f))).Beam(new Vector3(0.1f, 1.2f, 0), new Vector3(0.7f, 1.0f, 0.2f), 0.08f);
+                    bmb.For(glassDark).Sphere(new Vector3(0.75f, 0.95f, 0.2f), 0.12f, 6, 4);
+                    NavBuoy(fmb, 1);
                 }
                 else
                 {
-                    Obj("pole", MeshKit.Cylinder, dark, new Vector3(0, 1.4f, 0), new Vector3(0.18f, 2.8f, 0.18f), Quaternion.Euler(0, 0, 25), broken.transform);
-                    Obj("spark", MeshKit.Cube, Mats.Get(Mats.Opaque, new Color(0.5f, 0.35f, 0.25f)), new Vector3(0.9f, 0.3f, 0), new Vector3(0.6f, 0.3f, 0.4f), Quaternion.identity, broken.transform);
-                    Obj("pole", MeshKit.Cylinder, dark, new Vector3(0, 1.8f, 0), new Vector3(0.18f, 3.6f, 0.18f), Quaternion.identity, fixedGo.transform);
                     var lit = Planet == "nivalis" ? new Color(1f, 0.5f, 0.2f) : Planet == "pyra" ? new Color(0.3f, 1f, 0.5f) : new Color(1f, 0.85f, 0.5f);
-                    Obj("head", MeshKit.Sphere, Mats.Get(Mats.Emissive, lit, lit * 2.2f), new Vector3(0, 3.8f, 0), Vector3.one * 0.6f, Quaternion.identity, fixedGo.transform, false);
+                    var pole = Mats.Get(Mats.Opaque, new Color(0.24f, 0.26f, 0.27f));
+                    var box = Mats.Get(Mats.Opaque, new Color(0.45f, 0.5f, 0.42f));
+                    // kaputt: umgeknickter Mast, Leuchte am Boden, heraushängendes Kabel, offener Schaltkasten
+                    bmb.For(plinthMat).Cylinder(Vector3.zero, 0.24f, 0.5f, 8, true, 0.2f);
+                    bmb.For(pole).Tube(new Vector3(0, 0.5f, 0), new Vector3(0.1f, 1.9f, 0), 0.1f, 8);
+                    bmb.For(pole).Tube(new Vector3(0.1f, 1.9f, 0), new Vector3(1.9f, 0.3f, 0.4f), 0.08f, 8);
+                    bmb.For(glassDark).BoxRot(new Vector3(2.2f, 0.15f, 0.5f), new Vector3(0.45f, 0.2f, 0.7f), new Vector3(10, 40, 70));
+                    bmb.For(darkMat).Tube(new Vector3(0.1f, 1.9f, 0), new Vector3(0.3f, 1.0f, -0.2f), 0.02f, 4);
+                    bmb.For(darkMat).Tube(new Vector3(0.3f, 1.0f, -0.2f), new Vector3(0.5f, 0.05f, -0.4f), 0.02f, 4);
+                    bmb.For(box).Box(new Vector3(0, 1.0f, -0.2f), new Vector3(0.4f, 0.55f, 0.22f));
+                    bmb.For(box).BoxRot(new Vector3(0.28f, 1.0f, -0.42f), new Vector3(0.04f, 0.5f, 0.38f), new Vector3(0, 55, 0));
+                    bmb.For(Mats.Get(Mats.Emissive, new Color(1f, 0.6f, 0.2f), new Color(2f, 1f, 0.3f))).Sphere(new Vector3(0.45f, 0.06f, -0.4f), 0.06f, 6, 4);
+                    // repariert: gerader Mast mit leuchtendem Kopf, geschlossener Kasten mit grüner Lampe
+                    fmb.For(plinthMat).Cylinder(Vector3.zero, 0.24f, 0.5f, 8, true, 0.2f);
+                    fmb.For(pole).Cylinder(new Vector3(0, 0.5f, 0), 0.1f, 3.1f, 8, true, 0.07f);
+                    fmb.For(pole).Cylinder(new Vector3(0, 3.55f, 0), 0.3f, 0.12f, 10, true, 0.36f);
+                    fmb.For(Mats.Get(Mats.Emissive, lit, lit * 2.2f)).Sphere(new Vector3(0, 3.85f, 0), 0.3f, 10, 6);
+                    fmb.For(pole).Cylinder(new Vector3(0, 4.1f, 0), 0.32f, 0.1f, 10, true, 0.05f);
+                    fmb.For(box).Box(new Vector3(0, 1.0f, -0.2f), new Vector3(0.4f, 0.55f, 0.22f));
+                    fmb.For(Mats.Get(Mats.Emissive, new Color(0.3f, 1f, 0.4f), new Color(0.4f, 2f, 0.6f))).Box(new Vector3(0, 1.15f, -0.32f), new Vector3(0.08f, 0.08f, 0.02f));
                 }
+                bmb.Build("RepairBrokenMesh", broken.transform, true);
+                fmb.Build("RepairFixedMesh", fixedGo.transform, true);
                 repairVisuals[s.Id] = new[] { broken, fixedGo };
             }
             foreach (var s in Layout.Eco)
