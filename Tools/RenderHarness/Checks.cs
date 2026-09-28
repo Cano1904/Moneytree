@@ -40,10 +40,13 @@ public static class Checks
         return m;
     }
 
+    public static readonly Dictionary<string, int> CallCounts = new Dictionary<string, int>();
     static void Call(Component c, string name)
     {
         var m = M(c.GetType(), name);
         if (m == null) return;
+        string key = c.GetType().Name + "." + name;
+        CallCounts.TryGetValue(key, out var cn); CallCounts[key] = cn + 1;
         try { m.Invoke(c, null); }
         catch (TargetInvocationException e)
         {
@@ -149,6 +152,7 @@ public static class Checks
         Directory.CreateDirectory(dir);
         World.OnAdded = OnAdded;
         Debug.Quiet = true;
+        Graphics.Record = false;
         Screen.width = 1920; Screen.height = 1080;
 
         Begin("Start");
@@ -166,6 +170,8 @@ public static class Checks
         CollectWarnings();
 
         Console.WriteLine();
+        Console.WriteLine("Aufrufe: " + string.Join(", ", CallCounts.Where(kv => !kv.Key.EndsWith(".OnGUI")).OrderBy(kv => kv.Key).Select(kv => kv.Key + " " + kv.Value)));
+        Console.WriteLine("Instanz-Draws: " + Graphics.Draws + " mit " + Graphics.Instances + " Instanzen");
         foreach (var kv in UnityWarnings.Counts) Console.WriteLine("Unity-Konsolenmeldung (" + kv.Value + "×): " + kv.Key);
         if (Problems.Count == 0) { Console.WriteLine("Laufzeitprüfung: keine Ausnahmen, keine Warnungen."); return 0; }
         Console.WriteLine("Laufzeitprüfung: " + Problems.Count + " Probleme");
@@ -276,12 +282,18 @@ public static class Checks
                 if (app.W.CurrentPlanet != planet) { Fail("Client nicht auf " + planet); continue; }
                 if (WorldView.I.Planet != planet) Fail("WorldView zeigt " + WorldView.I.Planet + " statt " + planet);
             }
+            var p0 = PlayerController.I.RenderPos;
             PlaySome(app, 4f, "Tag");
+            Info("MIKO bewegt: " + (PlayerController.I.RenderPos - p0).magnitude.ToString("0.0") + " m, Welt " + WorldView.I.Planet + ", Nacht " + Rules.IsNight(app.W, planet) + ", Sturm " + app.W.Cur.StormActive);
+            { var me = app.Me; var sp = g.S.Players[pid]; Info($"  Client: Pos {me.Pos.x:0.0},{me.Pos.z:0.0} Energie {me.Energy:0} Schlaf {me.Sleeping} Abschlepp {me.TowTimer:0.0} Fahrzeug {me.Vehicle}; Server: Pos {sp.Pos.x:0.0},{sp.Pos.z:0.0} Phase {Rules.DayPhase(g.S, planet):0.00} Client-Phase {Rules.DayPhase(app.W, planet):0.00} Pause {app.Paused} UI {UIState.BlocksGameplay}"); }
             SetPhase(g, planet, 0.95f);
             PlaySome(app, 7f, "Nacht");
             var ps = g.S.Planet(planet);
             ps.StormTimer = GameData.Planets[planet].StormEvery + 1f;
             PlaySome(app, 7f, "Sturm (Nacht)");
+            Info("Nacht " + Rules.IsNight(app.W, planet) + " (Phase " + Rules.DayPhase(app.W, planet).ToString("0.00") + "), Sturm " + app.W.Cur.StormActive + ", geöffnete Menüs " + menusOpened);
+            if (!Rules.IsNight(app.W, planet)) Fail("Nacht kam beim Client nicht an");
+            if (!app.W.Cur.StormActive) Fail("Sturm kam beim Client nicht an");
             SetPhase(g, planet, 0.5f);
             PlaySome(app, 7f, "Sturm (Tag)");
             // Fotomodus mit Vorher-Ansicht
@@ -314,6 +326,9 @@ public static class Checks
         var keys = new[] { KeyCode.W, KeyCode.A, KeyCode.S, KeyCode.D };
         Run(seconds, 1f / 30f, t =>
         {
+            CheckLiveCamera(what);
+            // Ersatz-Oberfläche: geöffnete Stations-/Spielmenüs sofort wieder schließen (wie ein Spieler mit Esc)
+            if (UIState.Screen == UIScreen.Menu || UIState.Screen == UIScreen.Map || UIState.Screen == UIScreen.Pause || UIState.Screen == UIScreen.Travel) { menusOpened++; UIState.Open(UIScreen.None); }
             Input.Held.Clear();
             int seg = (int)(t / 0.8f);
             Input.Held.Add(keys[seg % 4]);
@@ -328,31 +343,65 @@ public static class Checks
     }
 
     // ================================================================== Kamera: nie in Wänden/Gebäuden
+    /// <summary>Feste Box nach denselben Regeln wie die Bewegung (Tore offen/zu, aktive Dünen, gebaute Anlagen).</summary>
+    static bool SolidForCam(MotorEnv env, Box b) => b.Kind != "gateblock" && (env != null ? env.Solid(b) : b.Solid && b.Gate < 0 && b.DuneSet < 0);
+
+    static bool InsideBox(MotorEnv env, PlanetLayout l, Vector3 pos, float margin, List<Box> tmp, out Box hit)
+    {
+        hit = null;
+        if (env != null) env.Query(pos.x, pos.z, margin + 0.5f, tmp); else l.Query(pos.x, pos.z, margin + 0.5f, tmp);
+        foreach (var k in tmp)
+        {
+            if (!SolidForCam(env, k)) continue;
+            if (k.Contains(pos.x, pos.z, margin) && pos.y > k.Y0 - margin && pos.y < k.Y0 + k.H + margin) { hit = k; return true; }
+        }
+        return false;
+    }
+
+    /// <summary>Während des Spielens: die echte Kamera darf nie in einer festen Box oder unter dem Gelände stehen.</summary>
+    static void CheckLiveCamera(string what)
+    {
+        var rig = CameraRig.I; var wv = WorldView.I;
+        if (rig == null || wv == null || wv.Layout == null || rig.Cinematic || PhotoMode.Active) return;
+        var pos = rig.Cam.transform.position;
+        var env = PlayerController.I?.Env;
+        Box b;
+        if (InsideBox(env, wv.Layout, pos, 0.1f, new List<Box>(), out b)) liveInside.Add(what + ": Kamera " + pos + " in " + k0(b) + ", MIKO " + PlayerController.I?.RenderPos);
+        float g = RePlanet.Core.Terrain.HeightAt(wv.Planet, pos.x, pos.z);
+        if (pos.y < g + 0.1f) liveInside.Add(what + ": Kamera " + pos + " unter dem Gelände (" + g.ToString("0.00") + ")");
+    }
+    static readonly List<string> liveInside = new List<string>();
+    static int menusOpened;
+
     static void CameraSurvey(GameApp app, string planet)
     {
+        if (liveInside.Count > 0) { Fail("Kamera im Spiel " + liveInside.Count + "× in Hindernis/Gelände, z. B. " + liveInside[0]); liveInside.Clear(); }
         var rig = CameraRig.I; var pc = PlayerController.I; var wv = WorldView.I;
         if (rig == null || pc == null || wv == null) return;
-        var cam = rig.Cam;
+        var env = pc.Env;
         var collide = typeof(CameraRig).GetMethod("Collide", BF);
         var tmp = new List<Box>();
-        int tested = 0, inside = 0, below = 0, behindWall = 0;
-        string example = null;
+        int tested = 0, inside = 0, below = 0, behindWall = 0, tooClose = 0;
+        string example = null, exampleSight = null;
         var l = wv.Layout;
         var rng = new System.Random(3);
-        // Stichproben entlang von Wänden: Spieler neben jede feste Box, Kamera aus allen Richtungen
-        foreach (var b in l.Colliders)
+        var boxes = new List<Box>(l.Colliders);
+        if (env != null) boxes.AddRange(env.Extra);
+        // Stichproben entlang von Wänden: MIKO neben eine feste Box, Kamera aus allen Richtungen und Neigungen
+        foreach (var b in boxes)
         {
-            if (!b.Solid || b.Kind == "gateblock" || b.DuneSet >= 0) continue;
+            if (!SolidForCam(env, b)) continue;
             if (rng.NextDouble() > 0.35) continue;
             for (int side = 0; side < 4; side++)
             {
-                // Punkt knapp außerhalb der Box (lokale Achsen der Box)
-                float ox = side == 0 ? b.Hx + 0.6f : side == 1 ? -b.Hx - 0.6f : 0f, oz = side == 2 ? b.Hz + 0.6f : side == 3 ? -b.Hz - 0.6f : 0f;
+                float ox = side == 0 ? b.Hx + 0.85f : side == 1 ? -b.Hx - 0.85f : 0f, oz = side == 2 ? b.Hz + 0.85f : side == 3 ? -b.Hz - 0.85f : 0f;
                 float px = b.Cx + ox, pz = b.Cz + oz;
                 float gy = RePlanet.Core.Terrain.HeightAt(planet, px, pz);
+                float water = RePlanet.Core.Terrain.WaterLevel(planet);
+                if (water > -50f && gy < water - 0.6f) gy = water - 0.35f; // schwimmt
                 var target = new Vector3(px, gy + 1.4f, pz);
-                l.Query(px, pz, 0.3f, tmp);
-                if (tmp.Any(k => k.Solid && k.Contains(px, pz, 0f) && gy + 1.4f > k.Y0 && gy + 1.4f < k.Y0 + k.H)) continue;
+                Box hb;
+                if (InsideBox(env, l, new Vector3(px, gy + 0.5f, pz), 0.8f, tmp, out hb)) continue; // dort kann MIKO nicht stehen
                 for (int yaw = 0; yaw < 360; yaw += 30)
                     foreach (float pitch in new[] { -20f, 10f, 45f })
                     {
@@ -360,32 +409,24 @@ public static class Checks
                         var wanted = target - rot * Vector3.forward * 6.5f;
                         var pos = (Vector3)collide.Invoke(rig, new object[] { target, wanted });
                         tested++;
-                        // Kamera selbst und die Nahebene (±0,2 m) dürfen in keiner festen Box liegen
-                        bool hit = false;
-                        l.Query(pos.x, pos.z, 0.5f, tmp);
-                        foreach (var k in tmp)
-                        {
-                            if (!k.Solid || k.Kind == "gateblock" || k.DuneSet >= 0) continue;
-                            if (k.Contains(pos.x, pos.z, 0.12f) && pos.y > k.Y0 - 0.12f && pos.y < k.Y0 + k.H + 0.12f) { hit = true; break; }
-                        }
-                        if (hit) { inside++; if (example == null) example = $"Box {k0(b)} Ziel {target} Kamera {pos}"; }
+                        if (InsideBox(env, l, pos, 0.15f, tmp, out hb)) { inside++; if (example == null) example = $"{k0(hb)} Ziel {target} Kamera {pos}"; }
                         float g2 = RePlanet.Core.Terrain.HeightAt(planet, pos.x, pos.z);
-                        if (pos.y < g2 + 0.2f && !(RePlanet.Core.Terrain.WaterLevel(planet) > -50 && pos.y < RePlanet.Core.Terrain.WaterLevel(planet))) below++;
-                        // Sichtlinie Kamera → Spieler frei?
+                        if (pos.y < g2 + 0.2f) below++;
+                        if ((pos - target).magnitude < 0.9f) tooClose++;
+                        // Sichtlinie Kamera → MIKO frei?
                         var dir = target - pos; float len = dir.magnitude; dir /= Math.Max(1e-4f, len);
-                        for (float t = 0.3f; t < len - 0.3f; t += 0.25f)
+                        for (float t = 0.05f; t < len - 0.3f; t += 0.1f)
                         {
                             var p = pos + dir * t;
-                            l.Query(p.x, p.z, 0.1f, tmp);
-                            if (tmp.Any(k => k.Solid && k.Kind != "gateblock" && k.DuneSet < 0 && k.Contains(p.x, p.z, 0f) && p.y > k.Y0 && p.y < k.Y0 + k.H)) { behindWall++; break; }
+                            if (InsideBox(env, l, p, 0f, tmp, out hb)) { behindWall++; if (exampleSight == null) exampleSight = $"{k0(hb)} Ziel {target} Kamera {pos}"; break; }
                         }
                     }
             }
         }
-        Info($"Kamera-Stichproben {planet}: {tested} Stellungen, {inside} in Wänden, {below} unter Gelände, {behindWall} mit verdeckter Sicht");
+        Info($"Kamera-Stichproben {planet}: {tested} Stellungen, {inside} in Wänden, {below} unter Gelände, {behindWall} mit verdeckter Sicht, {tooClose} näher als 0,9 m");
         if (inside > 0) Fail($"Kamera {inside}× in Wand/Gebäude ({planet}), z. B. {example}");
         if (below > 0) Fail($"Kamera {below}× unter dem Gelände ({planet})");
-        if (behindWall > 0) Fail($"Sicht Kamera→MIKO {behindWall}× durch Wand verdeckt ({planet})");
+        if (behindWall > 0) Fail($"Sicht Kamera→MIKO {behindWall}× durch Wand verdeckt ({planet}), z. B. {exampleSight}");
     }
     static string k0(Box b) => $"{b.Kind} ({b.Cx:0.0}, {b.Cz:0.0}) {b.Hx * 2:0.0}×{b.Hz * 2:0.0}×{b.H:0.0}";
 

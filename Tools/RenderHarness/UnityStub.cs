@@ -1012,8 +1012,10 @@ namespace UnityEngine
         public struct Call { public Mesh Mesh; public int Sub; public Material Mat; public Matrix4x4[] M; public int Count; }
         public static readonly List<Call> Calls = new List<Call>();
         public static bool Record = true;
+        public static long Draws, Instances;
         static void Check(Mesh m, int sub, Material mat, int count, int arrLen, string what)
         {
+            Draws++; Instances += count;
             if (m == null) throw new ArgumentNullException(what + ": mesh");
             if (mat == null) throw new ArgumentNullException(what + ": material");
             if (sub < 0 || sub >= m.subMeshCount) throw new IndexOutOfRangeException(what + ": Untermesh " + sub + " / " + m.subMeshCount + " (" + m.name + ")");
