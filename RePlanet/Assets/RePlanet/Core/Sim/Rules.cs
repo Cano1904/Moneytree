@@ -447,11 +447,39 @@ namespace RePlanet.Core
             return M.Clamp01(w);
         }
 
-        /// <summary>0 = ungeschützt, 1 = Stützpunkt, 2 = Unterschlupf im Gelände (vorhanden oder selbst gebaut).</summary>
+        /// <summary>Arten von Schutz (Rückgabe von <see cref="ShelterKind"/>).</summary>
+        public const int ShelterNone = 0, ShelterBase = 1, ShelterField = 2, ShelterHangar = 3, ShelterShip = 4;
+
+        /// <summary>Innenraum (Hangar, Schiff)? Dort ist man geschützt, kann schlafen, aber keine Werkzeuge benutzen.</summary>
+        public static bool Indoors(int shelterKind) { return shelterKind >= ShelterHangar; }
+
+        /// <summary>Kurze Meldung für abgelehnte Werkzeug-/Sammelaktionen im Innenraum.</summary>
+        public const string IndoorsDenied = "Im Unterschlupf – hier drinnen wird nicht gesammelt.";
+
+        /// <summary>Aktionen, die in Innenräumen nicht gehen (Sammeln, Werkzeuge, Kran).</summary>
+        public static readonly HashSet<string> IndoorsBlockedActions = new HashSet<string>
+        {
+            "grab", "vacuum", "magnet", "cut", "thaw", "filter", "plant", "vcollect", "boatnet", "clift", "cdrop", "help",
+        };
+
+        /// <summary>Begehbarer Schutzraum an dieser Stelle (Hangar, Laderaum) oder null.</summary>
+        public static ShelterRoom RoomAt(PlanetLayout l, V3 pos)
+        {
+            var rooms = l.Base.Rooms;
+            for (int i = 0; i < rooms.Count; i++) if (rooms[i].Contains(pos)) return rooms[i];
+            return null;
+        }
+
+        /// <summary>
+        /// 0 = ungeschützt, 1 = Stützpunkt (im Freien), 2 = Unterschlupf im Gelände (vorhanden oder selbst gebaut),
+        /// 3 = im Hangar des Hauptgebäudes, 4 = im Laderaum des Transportschiffs.
+        /// </summary>
         public static int ShelterKind(WorldState s, PlanetState ps, V3 pos)
         {
             var l = WorldGen.Get(ps.Id);
             var b = l.Base;
+            var room = RoomAt(l, pos);
+            if (room != null) return room.Kind;
             if (V3.DistXZ(pos, b.Stations["storage"]) < 8f || V3.DistXZ(pos, b.Stations["garage"]) < 7f || V3.DistXZ(pos, b.Stations["charge"]) < 5f) return 1;
             foreach (var sh in l.Shelters) if (V3.DistXZ(pos, sh.Pos) < 3.6f && Math.Abs(pos.y - sh.Pos.y) < 3f) return 2;
             foreach (var sh in ps.Shelters) if (V3.DistXZ(pos, sh) < 3.6f && Math.Abs(pos.y - sh.y) < 3f) return 2;

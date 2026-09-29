@@ -446,7 +446,7 @@ namespace RePlanet
             var b = wv.Layout.Base;
             var pad = new Vector3(b.ShipPad.x, b.Center.y + 0.2f, b.ShipPad.z);
             ground = pad;
-            yaw = Quaternion.Euler(0f, -30f, 0f); // wie WorldViewBase.BuildShip
+            yaw = Quaternion.Euler(0f, b.ShipYaw, 0f); // wie WorldViewBase.BuildShip (Nase nach +X)
             scenePlanet = app.W.CurrentPlanet;
 
             if (landPivot == null)
@@ -461,6 +461,9 @@ namespace RePlanet
             landClone.transform.SetPositionAndRotation(shipT.position, shipT.rotation);
             landClone.transform.SetParent(landPivot, true);
             landClone.SetActive(true);
+            // Heckrampe beim Anflug geschlossen
+            var ramp = landClone.transform.Find("Rampe");
+            if (ramp != null) ramp.localRotation = WorldView.ShipRampRotation(b.ShipYaw, 0f);
             hiddenOriginal = shipT.gameObject;
             hiddenOriginal.SetActive(false);
             BuildLandingEngines();
@@ -540,17 +543,17 @@ namespace RePlanet
 
         void BuildLandingEngines()
         {
-            // Die Engine-Objekte hängen am Klon (werden mit ihm zerstört). Lage wie in WorldViewBase.BuildShip (Wurzel = Landeplatz + yaw·(0,0,1,4)).
+            // Die Engine-Objekte hängen am Klon (werden mit ihm zerstört). Lage wie in WorldViewBase.BuildShip (Wurzel = Landeplatz, Drehung yaw).
             lLift.Clear(); lMain.Clear();
             var holder = new GameObject("Triebwerke").transform;
             holder.SetParent(landClone.transform, false);
-            holder.position = ground + yaw * new Vector3(0f, 0f, 1.4f);
+            holder.position = ground;
             holder.rotation = yaw;
-            const float bodyY = 3.6f;
+            var le = WorldView.ShipLiftEngine; var me = WorldView.ShipMainEngine;
             for (int s = -1; s <= 1; s += 2)
             {
-                lLift.Add(MakeEngine(holder, new Vector3(s * 4.6f, bodyY - 1.1f, -2.0f), Vector3.down, 0.5f, 2.6f));
-                lMain.Add(MakeEngine(holder, new Vector3(s * 1.1f, bodyY + 0.2f, -6.2f), Vector3.back, 0.5f, 3.2f));
+                lLift.Add(MakeEngine(holder, new Vector3(s * le.x, le.y - 0.1f, le.z), Vector3.down, 0.5f, 2.6f));
+                lMain.Add(MakeEngine(holder, new Vector3(s * me.x, me.y, me.z), Vector3.back, 0.5f, 3.2f));
             }
             var lg = new GameObject("Triebwerkslicht");
             lg.transform.SetParent(holder, false);

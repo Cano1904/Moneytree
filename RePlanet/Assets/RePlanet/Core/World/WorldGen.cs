@@ -148,7 +148,8 @@ namespace RePlanet.Core
             b.Stations["garage"] = new V3(-26, gy, -139);
             b.Stations["build"] = new V3(0, gy, -114);
 
-            AddBox(c, 0, -145.5f, 8, 4, 7, "core", 0, 0xE8E2D0);
+            BuildHangar(c, gy);
+            BuildShipHold(c, gy);
             AddBox(c, -26, -146, 5, 3.5f, 5, "garage", 0, 0xBFB6A0);
             foreach (var kv in b.Stations)
             {
@@ -156,6 +157,94 @@ namespace RePlanet.Core
                 AddBox(c, kv.Value.x, kv.Value.z - 1.2f, 0.7f, 0.5f, 2.0f, "terminal", 0, 0xFF8C2E);
             }
             c.KeepOut.Add(new float[] { 0, -125, 0 }); // Platzhalter (Basisrechteck wird separat geprüft)
+        }
+
+        /// <summary>Box aus Kanten (x0..x1, z0..z1) mit fester Unterkante (nicht ans Gelände angepasst).</summary>
+        static Box AddWall(Ctx c, float x0, float x1, float z0, float z1, float y0, float h, string kind, int style, uint color)
+        {
+            var b = new Box { Cx = (x0 + x1) * 0.5f, Cz = (z0 + z1) * 0.5f, Hx = Math.Abs(x1 - x0) * 0.5f, Hz = Math.Abs(z1 - z0) * 0.5f, Y0 = y0, H = h, Kind = kind, Style = style, Color = color };
+            b.Area = PlanetLayout.AreaOf(b.Cz);
+            c.L.Colliders.Add(b);
+            return b;
+        }
+
+        static Box Rect(float x0, float x1, float z0, float z1, float y0, float h)
+        {
+            return new Box { Cx = (x0 + x1) * 0.5f, Cz = (z0 + z1) * 0.5f, Hx = Math.Abs(x1 - x0) * 0.5f, Hz = Math.Abs(z1 - z0) * 0.5f, Y0 = y0, H = h, Kind = "room", Solid = false };
+        }
+
+        /// <summary>
+        /// Hauptgebäude als befahrbarer Hangar: Halle x −8…3,6 / z −149,5…−141,5 (Silos rechts daneben bis x 8), Wände 0,4 m,
+        /// Rolltor-Öffnung x ±2,6 in der Vorderwand (Sturz ab 4,3 m, blockiert nur die Kamera). Innen feste Werkbank (Rückwand),
+        /// Regalwand (links) und Ladesäule (rechts hinten). Alle Wandteile heißen „core“ (werden separat gezeichnet).
+        /// </summary>
+        static void BuildHangar(Ctx c, float gy)
+        {
+            const uint col = 0xE8E2D0;
+            float y0 = gy - 0.5f, h = 7.5f;
+            AddWall(c, -8f, 3.6f, -149.5f, -149.1f, y0, h, "core", 0, col);      // Rückwand
+            AddWall(c, -8f, -7.6f, -149.1f, -141.5f, y0, h, "core", 0, col);     // linke Wand
+            AddWall(c, 2.6f, 8f, -149.5f, -141.5f, y0, h + 3.5f, "core", 0, col); // rechte Wand + Lager-Silos
+            AddWall(c, -7.6f, -2.6f, -141.9f, -141.5f, y0, h, "core", 0, col);   // Vorderwand links vom Tor
+            AddWall(c, -2.6f, 2.6f, -141.9f, -141.5f, gy + 4.3f, 3.2f, "core", 0, col); // Torsturz
+            // Einrichtung (fest): Werkbank, Regalwand, Ladesäule
+            AddWall(c, -6.0f, 1.0f, -149.1f, -148.3f, y0, 1.6f, "core", 0, col);
+            AddWall(c, -7.6f, -6.9f, -148.3f, -143.0f, y0, 3.1f, "core", 0, col);
+            AddWall(c, 2.05f, 2.6f, -147.6f, -146.4f, y0, 2.6f, "core", 0, col);
+            var r = new ShelterRoom
+            {
+                Kind = Rules.ShelterHangar, Id = "hangar", Name = "Hangar",
+                Inner = Rect(-7.6f, 2.6f, -149.1f, -141.9f, gy, 6.6f),
+                Door = Rect(-2.6f, 2.6f, -141.9f, -141.5f, gy, 4.3f),
+                Spot = new V3(-2.5f, gy, -145.2f),
+                Outside = new V3(0, gy, -138.8f),
+                OutX = 0, OutZ = 1,
+            };
+            c.L.Base.Hangar = r;
+            c.L.Base.Rooms.Add(r);
+        }
+
+        /// <summary>
+        /// Transportschiff auf dem Landeplatz (Nase nach +X): Laderaum x 20,4…30 / z ±2,7 um die Padmitte, Boden 0,9 m über dem
+        /// Stützpunkt, Heckrampe nach −X (x 16,4…20,4, Breite 5 m). Seitenwände, Bug mit Cockpit, Container und Landebeine
+        /// sind fest; Flügel und Triebwerke hängen über Kopfhöhe (keine Kollision). Wandteile heißen „core“ (Stil 1).
+        /// </summary>
+        static void BuildShipHold(Ctx c, float gy)
+        {
+            const uint col = 0xD8DBE2;
+            var b = c.L.Base;
+            float px = b.ShipPad.x, pz = b.ShipPad.z;
+            float floorY = gy + 0.9f;
+            b.ShipYaw = 90f;
+            b.ShipFloorY = floorY;
+            float y0 = gy - 0.5f;
+            float rear = px - 5.6f, front = px + 4.0f, hw = 2.7f, wall = 0.4f;
+            AddWall(c, rear, front + wall, pz - hw - wall, pz - hw, y0, 5.6f, "core", 1, col);
+            AddWall(c, rear, front + wall, pz + hw, pz + hw + wall, y0, 5.6f, "core", 1, col);
+            AddWall(c, front, px + 8.6f, pz - 3.1f, pz + 3.1f, y0, 5.6f, "core", 1, col); // Bugschott, Cockpit, Nase
+            // Rahmen über der Heckluke (nur Kamera)
+            AddWall(c, rear - 0.3f, rear + 0.1f, pz - hw, pz + hw, floorY + 3.1f, 1.6f, "core", 1, col);
+            // Container vorn im Laderaum
+            AddWall(c, front - 1.4f, front, pz - hw, pz - 1.5f, floorY, 1.6f, "core", 1, col);
+            AddWall(c, front - 1.4f, front, pz + 1.5f, pz + hw, floorY, 1.6f, "core", 1, col);
+            // Landebeine
+            foreach (float lx in new[] { px + 3.0f, px - 4.4f })
+                foreach (float sz in new[] { -1f, 1f })
+                    AddWall(c, lx - 0.45f, lx + 0.45f, pz + sz * 3.8f - 0.45f, pz + sz * 3.8f + 0.45f, y0, 3.0f, "core", 1, col);
+            // Boden: Laderaum eben, Rampe steigt vom Stützpunktboden zum Laderaum
+            c.L.Floors.Add(new FloorPatch { X0 = rear, X1 = front, Z0 = pz - hw, Z1 = pz + hw, Y0 = floorY, Y1 = floorY, Axis = 0 });
+            c.L.Floors.Add(new FloorPatch { X0 = rear - 4.0f, X1 = rear, Z0 = pz - 2.5f, Z1 = pz + 2.5f, Y0 = gy + 0.05f, Y1 = floorY, Axis = 0 });
+            var r = new ShelterRoom
+            {
+                Kind = Rules.ShelterShip, Id = "ship", Name = "Transportschiff",
+                Inner = Rect(rear, front, pz - hw, pz + hw, floorY, 3.1f),
+                Door = Rect(rear - 4.0f, rear, pz - 2.5f, pz + 2.5f, gy, 4f),
+                Spot = new V3(px - 1.0f, floorY, pz),
+                Outside = new V3(rear - 5.2f, gy, pz),
+                OutX = -1, OutZ = 0,
+            };
+            b.Ship = r;
+            b.Rooms.Add(r);
         }
 
         // ------------------------------------------------------------------ Zonen & Projektplätze

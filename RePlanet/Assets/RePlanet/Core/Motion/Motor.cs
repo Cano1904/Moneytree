@@ -61,7 +61,8 @@ namespace RePlanet.Core
             foreach (var b in Extra) if (b.Contains(x, z, r)) result.Add(b);
         }
 
-        public float Ground(float x, float z) { return Terrain.HeightAt(Planet, x, z); }
+        /// <summary>Bodenhöhe: Gelände oder begehbare Fläche darüber (Schiffsrampe, Laderaum).</summary>
+        public float Ground(float x, float z) { return L.GroundAt(x, z); }
 
         public List<Box> Tmp { get { return tmp; } }
     }
