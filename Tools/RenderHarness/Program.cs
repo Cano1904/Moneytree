@@ -75,6 +75,8 @@ public static class Program
 
     public static int Main(string[] args)
     {
+        // RP_EIGENE_SHADER=1: eigene Shader gelten als unterstützt UND der (standardmäßig abgeschaltete) Oberflächen-Shader ist erlaubt
+        SurfaceLook.ForceDetailShaders = Environment.GetEnvironmentVariable("RP_EIGENE_SHADER") == "1";
         // Laufzeitprüfung (Intro, Spiel auf allen Planeten, Abspann): dotnet run -- run [intro|game|ending|all]
         if (args.Length > 0 && args[0] == "run") return Checks.Main(args.Length > 1 ? args[1] : "all");
         if (args.Length > 0 && args[0] == "check")
@@ -175,6 +177,17 @@ public static class Program
             }
             Console.WriteLine($"Wicklung: {seen.Count} Meshes, {allTris} Dreiecke geprüft, {badTris} verkehrt in {badMeshes} Meshes");
         }
+        // Farbpalette: zeigen die Paletten-UVs (UV0) auf belegte Texel, und sind die Teile farbig statt weiß?
+        {
+            var palScene = new List<(Mesh, Matrix4x4, Material[])>(scene);
+            var miko = RobotModel.Create(null, "MIKO_Pruefung");
+            foreach (var mf in miko.gameObject.GetComponentsInChildren<MeshFilter>(true))
+            {
+                var mr = mf.gameObject.GetComponent<MeshRenderer>();
+                if (mr != null && mf.sharedMesh != null) palScene.Add((mf.sharedMesh, Matrix4x4.identity, mr.sharedMaterials));
+            }
+            CheckPalette(palScene);
+        }
         // Flora
         var flora = wvGo.AddComponent<FloraRenderer>();
         var floraUpdate = typeof(FloraRenderer).GetMethod("Update", BindingFlags.NonPublic | BindingFlags.Instance);
@@ -202,6 +215,48 @@ public static class Program
             vi++;
         }
         return 0;
+    }
+
+    /// <summary>
+    /// Prüft alle Untermeshes mit Paletten-Material (Hauptextur „RP_Palette…“/„MIKO_Palette“): UV0 muss auf die Mitte eines
+    /// belegten Texels zeigen; gezählt wird, wie viele Ecken (nahezu) reinweiß wären. Meldet Auffälligkeiten.
+    /// </summary>
+    static void CheckPalette(List<(Mesh mesh, Matrix4x4 m, Material[] mats)> list)
+    {
+        int verts = 0, white = 0, empty = 0, offCenter = 0, noUv = 0, subs = 0;
+        var colors = new HashSet<Color>();
+        var shaders = new SortedDictionary<string, int>();
+        foreach (var (mesh, m, mats) in list)
+        {
+            for (int s = 0; s < mesh.subMeshCount && s < mats.Length; s++)
+            {
+                var mat = mats[s];
+                if (mat == null || !(mat.mainTexture is Texture2D pt) || pt.name == null) continue;
+                if (!pt.name.StartsWith("RP_Palette") && pt.name != "MIKO_Palette") continue;
+                subs++;
+                string sn = (mat.shader != null && !string.IsNullOrEmpty(mat.shader.name) ? mat.shader.name + ":" : "") + (mat.name ?? "?");
+                shaders[sn] = shaders.TryGetValue(sn, out var c0) ? c0 + 1 : 1;
+                if (mesh.UV.Count != mesh.V.Count) { noUv++; continue; }
+                var seenIdx = new HashSet<int>();
+                foreach (var i in mesh.T[s])
+                {
+                    if (!seenIdx.Add(i)) continue;
+                    verts++;
+                    var uv = mesh.UV[i];
+                    float fx = uv.x * pt.W, fy = uv.y * pt.H;
+                    if (Math.Abs(fx - Math.Floor(fx) - 0.5f) > 0.01f || Math.Abs(fy - Math.Floor(fy) - 0.5f) > 0.01f) offCenter++;
+                    var c = pt.Sample(uv) * mat.color;
+                    if (c.r == 0 && c.g == 0 && c.b == 0 && c.a == 0) { empty++; continue; }
+                    if (c.r > 0.95f && c.g > 0.95f && c.b > 0.95f) white++;
+                    colors.Add(new Color((float)Math.Round(c.r, 2), (float)Math.Round(c.g, 2), (float)Math.Round(c.b, 2), 1));
+                }
+            }
+        }
+        var sh = new List<string>(); foreach (var kv in shaders) sh.Add(kv.Key + " x" + kv.Value);
+        Console.WriteLine($"Palette: {subs} Untermeshes ({string.Join(", ", sh)}), {verts} Ecken, {colors.Count} Farben, {white} weiß, {empty} auf unbelegtem Texel, {offCenter} neben der Texelmitte, {noUv} ohne UV0");
+        if (subs == 0 || verts == 0) Console.WriteLine("  FEHLER: keine Paletten-Teile gefunden");
+        if (empty > 0 || offCenter > 0 || noUv > 0) Console.WriteLine("  FEHLER: Paletten-UVs fehlerhaft");
+        if (verts > 0 && white > verts * 0.05f) Console.WriteLine("  FEHLER: mehr als 5 % der Paletten-Ecken reinweiß");
     }
 
     static List<(string name, Vector3 pos, Vector3 target)> Views(string planet)
