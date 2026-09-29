@@ -879,7 +879,8 @@ namespace RePlanet
             IconSign(mb, new Vector3(-1.7f, 2.7f, SFront - 0.03f), 180f, 0.6f, SurfaceLook.Icon.Ship, new Color(0.3f, 0.75f, 1f), false);
             // Cockpit hinter dem Schott (nur durch den Durchgang sichtbar): Boden, Seitenwände, Decke, Sitze, Konsolen, Frontscheibe
             float ck0 = SFront + 0.4f, ck1 = 7.0f;
-            mb.For(dark).Box(new Vector3(0, SFloor + 0.1f, (ck0 + ck1) * 0.5f - 0.2f), new Vector3(3.0f, 0.2f, ck1 - ck0 + 0.4f)); // Stufe im Durchgang + Cockpitboden
+            mb.For(dark).Box(new Vector3(0, SFloor + 0.1f, (ck0 + ck1) * 0.5f), new Vector3(3.0f, 0.2f, ck1 - ck0));  // Cockpitboden
+            mb.For(dark).Box(new Vector3(0, SFloor + 0.1f, SFront + 0.2f), new Vector3(1.28f, 0.2f, 0.4f));          // Stufe im Durchgang
             mb.For(lining).Box(new Vector3(0, 3.3f, (ck0 + ck1) * 0.5f - 0.2f), new Vector3(3.0f, 0.08f, ck1 - ck0 - 0.4f));
             foreach (var sx in new[] { -1f, 1f })
             {
