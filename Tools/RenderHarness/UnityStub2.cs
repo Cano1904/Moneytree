@@ -10,7 +10,7 @@ namespace UnityEngine
 
     public class DefaultExecutionOrderAttribute : Attribute { public readonly int order; public DefaultExecutionOrderAttribute(int o) { order = o; } }
     public enum RuntimeInitializeLoadType { AfterSceneLoad, BeforeSceneLoad }
-    public class RuntimeInitializeOnLoadMethodAttribute : Attribute { public RuntimeInitializeOnLoadMethodAttribute(RuntimeInitializeLoadType t) { } public RuntimeInitializeOnLoadMethodAttribute() { } }
+    public class RuntimeInitializeOnLoadMethodAttribute : Attribute { public readonly RuntimeInitializeLoadType loadType = RuntimeInitializeLoadType.AfterSceneLoad; public RuntimeInitializeOnLoadMethodAttribute(RuntimeInitializeLoadType t) { loadType = t; } public RuntimeInitializeOnLoadMethodAttribute() { } }
     public class SerializeField : Attribute { }
     public class RequireComponent : Attribute { public RequireComponent(Type t) { } }
     public class ExecuteAlways : Attribute { }

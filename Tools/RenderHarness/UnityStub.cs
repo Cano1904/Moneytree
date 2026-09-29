@@ -97,6 +97,13 @@ namespace UnityEngine
         public static Vector3 Min(Vector3 a, Vector3 b) => new Vector3(Math.Min(a.x, b.x), Math.Min(a.y, b.y), Math.Min(a.z, b.z));
         public static Vector3 Max(Vector3 a, Vector3 b) => new Vector3(Math.Max(a.x, b.x), Math.Max(a.y, b.y), Math.Max(a.z, b.z));
         public static Vector3 ClampMagnitude(Vector3 v, float m) => v.magnitude > m ? v.normalized * m : v;
+        public static Vector3 SmoothDamp(Vector3 c, Vector3 t, ref Vector3 vel, float time, float maxSpeed, float dt)
+        {
+            float vx = vel.x, vy = vel.y, vz = vel.z;
+            var r = new Vector3(Mathf.SmoothDamp(c.x, t.x, ref vx, time, maxSpeed, dt), Mathf.SmoothDamp(c.y, t.y, ref vy, time, maxSpeed, dt), Mathf.SmoothDamp(c.z, t.z, ref vz, time, maxSpeed, dt));
+            vel = new Vector3(vx, vy, vz); return r;
+        }
+        public static Vector3 SmoothDamp(Vector3 c, Vector3 t, ref Vector3 vel, float time) => SmoothDamp(c, t, ref vel, time, float.PositiveInfinity, Time.deltaTime);
         public static Vector3 Project(Vector3 v, Vector3 n) { float d = Dot(n, n); return d < 1e-12f ? zero : n * (Dot(v, n) / d); }
         public static Vector3 ProjectOnPlane(Vector3 v, Vector3 n) => v - Project(v, n);
         public static Vector3 Reflect(Vector3 v, Vector3 n) => v - 2f * Dot(v, n) * n;
@@ -525,7 +532,32 @@ namespace UnityEngine
             o.destroyedObj = true;
         }
         public static void DontDestroyOnLoad(Object o) { }
-        public static T Instantiate<T>(T o) where T : Object => o;
+        public static T Instantiate<T>(T o) where T : Object => Instantiate(o, null);
+        public static T Instantiate<T>(T o, Transform parent) where T : Object
+        {
+            if (o is null || o.IsDead) throw new ArgumentException("The Object you want to instantiate is null.");
+            GameObject src = o as GameObject ?? (o as Component)?.gameObject;
+            if (src == null) return o; // Assets (Mesh, Material) – Kopie ohne Prüfwert
+            var copy = CloneTree(src);
+            copy.name = src.name + "(Clone)";
+            if (parent != null) copy.transform.SetParent(parent, false);
+            if (o is GameObject) return copy as T;
+            return copy.GetComponent(o.GetType()) as T;
+        }
+        static readonly System.Reflection.MethodInfo memberwise = typeof(object).GetMethod("MemberwiseClone", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic);
+        static GameObject CloneTree(GameObject src)
+        {
+            var g = new GameObject(src.name) { activeSelf = src.activeSelf, tag = src.tag, layer = src.layer };
+            g.transform.localPosition = src.transform.localPosition; g.transform.localRotation = src.transform.localRotation; g.transform.localScale = src.transform.localScale;
+            foreach (var c in src.comps)
+            {
+                if (c is Transform) continue;
+                var k = (Component)memberwise.Invoke(c, null);
+                k.gameObject = g; g.comps.Add(k); World.Register(k); World.OnAdded?.Invoke(k);
+            }
+            foreach (var ch in new List<Transform>(src.transform.children)) CloneTree(ch.gameObject).transform.SetParent(g.transform, false);
+            return g;
+        }
         public static T FindObjectOfType<T>() where T : Object { foreach (var c in World.All) if (c is T t && !c.destroyedObj) return t; return null; }
         public static T[] FindObjectsOfType<T>() where T : Object { var l = new List<T>(); foreach (var c in World.All) if (c is T t && !c.destroyedObj) l.Add(t); return l.ToArray(); }
         public virtual bool IsDead => destroyedObj;

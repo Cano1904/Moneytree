@@ -156,8 +156,18 @@ public static class Checks
         Screen.width = 1920; Screen.height = 1080;
 
         Begin("Start");
-        var go = new GameObject("RE:PLANET");
-        var app = go.AddComponent<GameApp>();
+        // Wie Unity beim Start: alle [RuntimeInitializeOnLoadMethod] (erst BeforeSceneLoad, dann AfterSceneLoad; GameApp.Boot ist dabei)
+        foreach (var lt in new[] { RuntimeInitializeLoadType.BeforeSceneLoad, RuntimeInitializeLoadType.AfterSceneLoad })
+            foreach (var t in typeof(GameApp).Assembly.GetTypes())
+                foreach (var m in t.GetMethods(BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic))
+                {
+                    var at = m.GetCustomAttribute<RuntimeInitializeOnLoadMethodAttribute>();
+                    if (at == null || at.loadType != lt || m.GetParameters().Length != 0) continue;
+                    try { m.Invoke(null, null); }
+                    catch (TargetInvocationException e) { Report(t.Name + "." + m.Name, e.InnerException ?? e); }
+                }
+        var app = Object.FindObjectOfType<GameApp>();
+        if (app == null) { Console.WriteLine("GameApp wurde nicht erzeugt"); return 2; }
         Run(1.5f);
         if (app.Mode != AppMode.Menu) Fail("Nach dem Start nicht im Hauptmenü: " + app.Mode);
         if (Camera.main == null) Fail("Keine Hauptkamera");
