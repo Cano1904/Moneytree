@@ -1,0 +1,21 @@
+# .NET
+bin/
+obj/
+*.user
+TestResults/
+
+# Unity
+Glasscore/[Ll]ibrary/
+Glasscore/[Tt]emp/
+Glasscore/[Oo]bj/
+Glasscore/[Bb]uild/
+Glasscore/[Bb]uilds/
+Glasscore/[Ll]ogs/
+Glasscore/[Uu]ser[Ss]ettings/
+Glasscore/*.csproj
+Glasscore/*.sln
+Glasscore/.vs/
+Glasscore/.vscode/
+
+# Build output from scripts/build_and_shutdown.ps1
+Build/

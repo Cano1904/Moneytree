@@ -1,0 +1,28 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!--
+    Compiles every Unity script against UnityEngine/UnityEditor reference assemblies from NuGet so
+    API mistakes are caught without a Unity installation. Nothing here ships; it is a CI-style check.
+    Runtime: UnityEngine.Modules 2021.3 (API subset shared with Unity 6); Editor: Unity3D.SDK.
+  -->
+  <PropertyGroup>
+    <TargetFramework>netstandard2.1</TargetFramework>
+    <LangVersion>9.0</LangVersion>
+    <Nullable>disable</Nullable>
+    <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
+    <NoWarn>CS0618;CS0414;CS0649</NoWarn>
+    <DefineConstants>$(DefineConstants);UNITY_STANDALONE;UNITY_STANDALONE_WIN</DefineConstants>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="../../Glasscore/Assets/Scripts/**/*.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="UnityEngine.Modules" Version="2021.3.33" ExcludeAssets="runtime" />
+    <PackageReference Include="Unity3D.SDK" Version="2021.1.14.1" ExcludeAssets="all" GeneratePathProperty="true" />
+  </ItemGroup>
+  <ItemGroup>
+    <Reference Include="UnityEditor">
+      <HintPath>$(PkgUnity3D_SDK)/lib/UnityEditor.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+  </ItemGroup>
+</Project>
