@@ -20,9 +20,10 @@ RePlanet/Assets/RePlanet/
 │   │              ActorsView (Roboter, Fahrzeuge, Drohnen, Anlagen), FxView (Effekte), FloraRenderer,
 │   │              RobotModel (MIKO), MeshKit (prozedurale Formen), Mats (Materialien),
 │   │              ShipArrival (Containerfrachter bei Lieferungen, Landeanflug; Geometrie: FreighterModel),
-│   │              PlanetSelectScene (Planetenwahl als Weltall-Szene mit Anflug)
+│   │              PlanetSelectScene (Planetenwahl als Weltall-Szene mit Anflug),
+│   │              MapCamera (3D-Karte: eigene Kamera schräg von oben in eine RenderTexture, nur bei offener Karte)
 │   ├── Audio/     AudioManager (Clips aus Core/Audio, Musikschichten, 3D-Effekte, Ambience)
-│   └── UI/        UIRoot (IMGUI: Hauptmenü, Einstellungen, HUD, Spielmenü, Karte, Bau-/Fotomodus);
+│   └── UI/        UIRoot (IMGUI: Hauptmenü, Einstellungen, HUD, Spielmenü, Karte (3D mit Symbolen, 2D-Rückfall), Bau-/Fotomodus);
 │                  HudHints: ruhiges HUD je Einstellung „Hinweise“ (Aus / Minimal / Ausführlich)
 ├── Editor/      Projekt-Setup (Material-Vorlagen, Szene, Build-Einstellungen) und Build-Menü
 └── Resources/   RePlanetSky.shader (eigener Himmel) + vom Setup erzeugte Material-Vorlagen

@@ -107,6 +107,14 @@ public static class Checks
             }
         }
         foreach (var b in live) if (Active(b)) Call(b, "LateUpdate");
+        // Kamera-Rückrufe wie im Built-in-RP: nur für Skripte an einer eingeschalteten Kamera (z. B. MapCamera)
+        foreach (var b in live)
+        {
+            if (!Active(b)) continue;
+            var cm = b.gameObject.GetComponent<Camera>();
+            if (cm == null || !cm.enabled) continue;
+            Call(b, "OnPreCull"); Call(b, "OnPreRender"); Call(b, "OnPostRender");
+        }
         foreach (var t in new[] { EventType.Layout, EventType.Repaint })
         {
             Event.current.type = t;
@@ -484,8 +492,66 @@ public static class Checks
             PhotoMode.Active = false;
             Run(0.5f);
             CameraSurvey(app, planet);
+            MapChecks(app, planet);
             CollectWarnings();
         }
+    }
+
+    // ================================================================== 3D-Karte
+    /// <summary>
+    /// Kartenkamera wie aus der Oberfläche (UIRoot.Update fordert sie jedes Bild an): rendert nur bei offener Karte, Neigung
+    /// 55–65°, MIKO in der Bildmitte, Drehen/Zoomen/Verschieben/Zentrieren, Höhenlinien nur im Kartenbild, Wetter und
+    /// Nebel/Schattenweite danach unverändert, nach dem Schließen Kamera aus und RenderTexture freigegeben.
+    /// </summary>
+    static void MapChecks(GameApp app, string planet)
+    {
+        Info("3D-Karte …");
+        var mc = MapCamera.Ensure();
+        if (mc == null) { Fail("MapCamera fehlt"); return; }
+        Transform weather = Atmosphere.I != null ? Atmosphere.I.transform.Find("Weather") : null;
+        var wr = weather != null ? weather.GetComponent<ParticleSystemRenderer>() : null;
+        bool weatherOn = wr != null && wr.enabled;
+        float shadowDist = QualitySettings.shadowDistance;
+        UIState.Open(UIScreen.Map);
+        Action<float> req = t => mc.Request(1920, 1080);
+        Run(1f, 1f / 30f, req);
+        if (!mc.Rendering || mc.Texture == null || !mc.HasFrame) { Fail("3D-Karte rendert nicht (Kamera an " + mc.Rendering + ", Textur " + (mc.Texture != null) + ")"); UIState.Open(UIScreen.None); return; }
+        float pitch = mc.Cam.transform.eulerAngles.x;
+        if (pitch < 55f || pitch > 65f) Fail("Kartenneigung " + pitch.ToString("0.0") + "° (erwartet 55–65°)");
+        var miko = PlayerController.I.RenderPos;
+        Vector2 uv;
+        if (!mc.Project(miko, out uv) || Math.Abs(uv.x - 0.5f) > 0.08f || Math.Abs(uv.y - 0.5f) > 0.08f) Fail("MIKO nicht in der Kartenmitte (" + uv + ")");
+        var ov = GameObject.Find("MapOverlay");
+        var ovMesh = ov != null ? ov.GetComponent<MeshFilter>()?.sharedMesh : null;
+        int ovVerts = ovMesh != null ? ovMesh.vertexCount : 0;
+        if (ovVerts == 0) Fail("Höhenlinien/Grenzen der Karte fehlen");
+        if (ov != null && ov.GetComponent<MeshRenderer>().enabled) Fail("Kartenlinien außerhalb des Kartenbilds sichtbar");
+        if (wr != null && wr.enabled != weatherOn) Fail("Wetterpartikel nach dem Kartenbild nicht wiederhergestellt");
+        if (RenderSettings.fogColor == MapCamera.Background || Math.Abs(QualitySettings.shadowDistance - shadowDist) > 0.01f) Fail("Nebel/Schattenweite nach dem Kartenbild nicht zurückgesetzt");
+        // Drehen, Zoomen, Verschieben, Zentrieren
+        float d0 = mc.Distance;
+        mc.Rotate(90f); mc.Zoom(0.5f);
+        Run(1.2f, 1f / 30f, req);
+        if (Math.Abs(Mathf.DeltaAngle(mc.Yaw, mc.TargetYaw)) > 2f) Fail("Karte dreht nicht (Blick " + mc.Yaw.ToString("0") + "°, Ziel " + mc.TargetYaw.ToString("0") + "°)");
+        if (Math.Abs(mc.Distance - Math.Max(MapCamera.MinDistance, d0 * 0.5f)) > 2f) Fail("Karte zoomt nicht (" + d0.ToString("0") + " → " + mc.Distance.ToString("0") + " m)");
+        var p0 = mc.Pivot;
+        mc.Pan(new Vector2(0f, 30f));
+        Run(1.2f, 1f / 30f, req);
+        var moved = mc.Pivot - p0; moved.y = 0f;
+        if (mc.Following || moved.magnitude < 10f) Fail("Karte lässt sich nicht verschieben (" + moved.magnitude.ToString("0.0") + " m)");
+        mc.Recenter();
+        Run(1.2f, 1f / 30f, req);
+        var back = mc.Pivot - PlayerController.I.RenderPos; back.y = 0f;
+        if (!mc.Following || back.magnitude > 2f) Fail("Karte zentriert nicht auf MIKO (" + back.magnitude.ToString("0.0") + " m)");
+        mc.Rotate(-90f); mc.Zoom(2f);
+        Run(0.5f, 1f / 30f, req);
+        Info($"  Karte: Neigung {pitch:0}°, Abstand {mc.Distance:0} m, Linien {ovVerts / 4} Stücke, Textur {mc.Texture.width}×{mc.Texture.height}");
+        // Schließen: Kamera aus, Textur nach einigen Sekunden frei
+        UIState.Open(UIScreen.None);
+        Run(0.3f);
+        if (mc.Rendering) Fail("Kartenkamera rendert nach dem Schließen weiter");
+        Run(6f);
+        if (mc.Texture != null) Fail("RenderTexture der Karte wird nach dem Schließen nicht freigegeben");
     }
 
     /// <summary>Aktion direkt auf dem Server an einer bestimmten Stelle (wie ein Spieler, der dort steht).</summary>

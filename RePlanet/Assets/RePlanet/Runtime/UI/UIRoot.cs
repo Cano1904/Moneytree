@@ -97,6 +97,7 @@ namespace RePlanet
             UpdateBuildInput(app);
             UpdateSettingsApply(app);
             UpdateMapBuild(app);
+            UpdateMap3D(app);
             UpdateCursor(app);
         }
 
@@ -251,7 +252,7 @@ namespace RePlanet
                 case UIScreen.Map:
                     if (back || start || KeyDown(GameAction.Map) || Input.GetKeyDown(KeyCode.JoystickButton6)) { Back(); return; }
                     if (KeyDown(GameAction.Menu)) { OpenMenu("map"); return; }
-                    if (Input.GetKeyDown(KeyCode.KeypadPlus) || Input.GetKeyDown(KeyCode.Equals) || Input.GetKeyDown(KeyCode.JoystickButton5)) ZoomMap(1);
+                    if (Input.GetKeyDown(KeyCode.KeypadPlus) || Input.GetKeyDown(KeyCode.Equals) || Input.GetKeyDown(KeyCode.Plus) || Input.GetKeyDown(KeyCode.JoystickButton5)) ZoomMap(1);
                     if (Input.GetKeyDown(KeyCode.KeypadMinus) || Input.GetKeyDown(KeyCode.Minus) || Input.GetKeyDown(KeyCode.JoystickButton4)) ZoomMap(-1);
                     return;
                 case UIScreen.Pause:
