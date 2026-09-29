@@ -61,6 +61,6 @@ stammen sie aus `Core/Data/GameData.cs` bzw. `Core/Sim/*`.
 ## Allgemeine Hinweise für den Dreh
 
 - Intro-Zwischensequenz und Musik sind prozedural erzeugt und dürfen im Trailer genutzt werden (siehe [LIZENZEN.md](LIZENZEN.md)).
-- WALL·E nicht im Trailer nennen oder zitieren; keine Filmbilder.
+- Keine fremden Filme, Figuren oder Filmbilder im Trailer nennen oder zeigen.
 - Einblendungen immer aus dem tatsächlichen Spieltext übernehmen (Toasts, Projekt- und Planetennamen), damit der Trailer
   nichts verspricht, was das Spiel nicht zeigt.

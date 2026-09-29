@@ -347,7 +347,7 @@ namespace RePlanet
             }
         }
 
-        /// <summary>Turm aus gepressten Müllwürfeln (WALL·E-Skyline): 2×2 Würfel je Lage, leicht versetzt und verbeult.</summary>
+        /// <summary>Turm aus gepressten Müllwürfeln (Müll-Skyline): 2×2 Würfel je Lage, leicht versetzt und verbeult.</summary>
         void CubeTower(MultiBuilder mb, Vector3 at, Rng rng, float height)
         {
             float c = rng.Range(3.2f, 4.2f);

@@ -9,8 +9,8 @@ namespace RePlanet
 {
     /// <summary>
     /// Intro als Echtzeit-Zwischensequenz (~100 s), synchron zum Intro-Score und zur Erzählerstimme (<see cref="Narrator"/>).
-    /// Die Handlung folgt der Grundidee von WALL·E – vermüllte Erde, ein Konsumkonzern, die Menschen fliehen auf Archen,
-    /// die Roboter geben auf, nur einer arbeitet weiter und findet einen Keimling – mit eigenen Figuren, Namen und Bildern.
+    /// Die Handlung: vermüllte Erde, ein Konsumkonzern, die Menschen fliehen auf Archen,
+    /// die Roboter geben auf, nur einer arbeitet weiter und findet einen Keimling.
     /// <para>Die Bühne entsteht vollständig zur Laufzeit (Origin 3000/0/3000, je Einstellung ein eigener Satz):</para>
     /// <list type="bullet">
     /// <item>Skyline: Türme aus hunderten gepressten Müllwürfeln, Hochhausruinen mit Fensterreihen, KONSUMA-Tafeln,

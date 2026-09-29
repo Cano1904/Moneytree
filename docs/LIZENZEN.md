@@ -44,21 +44,15 @@ Der Titel wurde **nicht** auf Marken-, Firmen- oder Domainkonflikte geprüft. Vo
 („eSearch plus“/TMview) und der WIPO sowie in den großen Spiele-Stores, und bei Bedarf rechtlich beraten lassen.
 Gleiches gilt für die Namen MIKO, KONSUMA, HORIZONT und „Programm ZWEITE CHANCE“.
 
-### WALL·E
+### Figuren, Namen und Designs
 
-**WALL·E ist ein Film und eine Marke von Disney/Pixar.** RE:PLANET ist davon lediglich in der Grundstimmung
-inspiriert (vermüllte Erde, Menschen verlassen den Planeten, ein einzelner Roboter räumt weiter auf und findet einen
-Keimling). Übernommen wurden **keine** Figuren, Namen, Designs, Dialoge, Musik, Bilder oder Filmausschnitte:
+Alle Figuren, Namen, Designs, Texte, Bilder und Musik von RE:PLANET sind eigene Schöpfungen des Projekts:
 
-- Der Roboter heißt **MIKO** und hat ein eigenes Design: türkise Hülle, orange Akzente, breites leuchtendes Visier,
-  drei Räder, faltbarer Arm und sichtbarer Rückenbehälter (keine Kettenlaufwerke, keine Fernglas-Augen, kein Würfelkörper).
-- Der Konzern heißt **KONSUMA**, die Arche **HORIZONT**, das Rückkehrprogramm **ZWEITE CHANCE**.
-- Es gibt keine Nachbildung von Filmszenen, Filmfiguren oder bekannten Filmmotiven über die allgemeine Handlungsidee hinaus.
-
-In Beschreibungen des Spiels sollte WALL·E höchstens als Inspiration erwähnt und nicht zur Vermarktung genutzt werden
-(keine Formulierungen wie „das WALL·E-Spiel“, keine Filmbilder).
+- Der Roboter **MIKO**: türkise Hülle, orange Akzente, breites leuchtendes Visier, drei Räder, faltbarer Arm und
+  sichtbarer Rückenbehälter.
+- Der Konzern **KONSUMA**, die Arche **HORIZONT**, das Rückkehrprogramm **ZWEITE CHANCE**.
 
 ### Weitere Marken
 
-Erwähnte Produkt- und Firmennamen (Windows, Xbox, Unity, Tailscale, ZeroTier, Disney, Pixar) sind Marken ihrer
+Erwähnte Produkt- und Firmennamen (Windows, Xbox, Unity, Tailscale, ZeroTier) sind Marken ihrer
 jeweiligen Inhaber und werden nur beschreibend genannt.

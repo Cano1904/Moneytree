@@ -160,7 +160,7 @@ namespace RePlanet
                 string[] credits =
                 {
                     "RE:PLANET – Eine zweite Chance", "", "Idee und Auftrag: das RE:PLANET-Team", "Spielentwurf, Programmierung, Grafik und Musik: prozedural erzeugt im Projekt",
-                    "Inspiriert von WALL·E (Pixar) – eigene Figuren, Welten und Namen", "", "Die Welten gehören jetzt dir. Freies Spiel beginnt …"
+                    "", "Die Welten gehören jetzt dir. Freies Spiel beginnt …"
                 };
                 for (int i = 0; i < credits.Length; i++)
                     GUI.Label(new Rect(0, Screen.height * 0.75f - scroll + i * 44 * scale, Screen.width, 44 * scale), credits[i], small);

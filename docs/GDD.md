@@ -11,8 +11,8 @@ und etwas wächst. Jede Handlung ist sichtbar: Müll verschwindet wirklich, Mate
 leuchten wieder auf. Kein Kampf, kein Zeitdruck außer Nacht und Wetter – dafür das Gefühl, etwas Kaputtes heil zu machen.
 Allein oder mit bis zu drei Freunden.
 
-**Ton:** goldene Melancholie, die in Hoffnung umschlägt. Inspiriert von der Grundstimmung von WALL·E, aber mit eigenen
-Figuren, eigener Welt und eigenen Namen (siehe [LIZENZEN.md](LIZENZEN.md)).
+**Ton:** goldene Melancholie, die in Hoffnung umschlägt. Eigene Figuren, eigene Welt und eigene Namen
+(siehe [LIZENZEN.md](LIZENZEN.md)).
 
 ## 2. Die Spielschleife
 
@@ -163,8 +163,7 @@ die ökologischen Aktionen des Bereichs möglich. Großprojekte schalten Kosmeti
 
 ## 10. Geschichte
 
-**Intro (ca. 100 s Echtzeit-Zwischensequenz, überspringbar).** Die Handlung folgt der Grundidee von WALL·E – mit eigenen
-Figuren, Namen und Bildern:
+**Intro (ca. 100 s Echtzeit-Zwischensequenz, überspringbar).** Die Handlung:
 
 1. *Es gab einmal eine Welt, die alles hatte. Und alles, was sie hatte, warf sie fort.* – Skyline aus Müllwürfel-Türmen.
 2. *KONSUMA versprach uns das Glück: „Alles. Sofort. Immer neu.“ … bis der Müll unsere Städte überragte.* – Megastore.
