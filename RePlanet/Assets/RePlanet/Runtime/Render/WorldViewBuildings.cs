@@ -986,8 +986,9 @@ namespace RePlanet
                 float hh = top + rng.Range(-1.5f, 2.5f);
                 var c = alongX ? new Vector3(mid, (bx.Y0 + hh) * 0.5f, bx.Cz) : new Vector3(bx.Cx, (bx.Y0 + hh) * 0.5f, mid);
                 var mb = cb.At(c.x, c.z);
-                var e = new Vector3(rng.Range(-4f, 4f), rng.Range(-6f, 6f), rng.Range(-4f, 4f));
-                var size = alongX ? new Vector3(w + 0.8f, hh - bx.Y0, depth + rng.Range(0f, 1.2f)) : new Vector3(depth + rng.Range(0f, 1.2f), hh - bx.Y0, w + 0.8f);
+                // innerhalb der Kollisionsbox bleiben (siehe RockWall)
+                var e = new Vector3(rng.Range(-1.5f, 1.5f), rng.Range(-1.5f, 1.5f), rng.Range(-1.5f, 1.5f));
+                var size = alongX ? new Vector3(w + 0.8f, hh - bx.Y0, depth * 0.9f) : new Vector3(depth * 0.9f, hh - bx.Y0, w + 0.8f);
                 mb.For(rng.Chance(0.5f) ? iceA : iceB).BoxJ(c, size, e, Mathf.Min(0.6f, w * 0.08f), rng.Range(0, 9999));
                 mb.For(snowM).BoxJ(new Vector3(c.x, hh + 0.15f, c.z), new Vector3(size.x * 0.95f, 0.5f, size.z * 0.95f), e, 0.15f, rng.Range(0, 9999));
                 for (int k = 0; k < 3; k++)
@@ -1022,8 +1023,9 @@ namespace RePlanet
                 var p = alongX ? new Vector3(bx.Cx - bx.Hx + f * len, 0, bx.Cz) : new Vector3(bx.Cx, 0, bx.Cz - bx.Hz + f * len);
                 var mb = cb.At(p.x, p.z);
                 float hh = (top - bx.Y0) * (0.72f + rng.Next() * 0.4f);
-                var size = alongX ? new Vector3(len / k * 1.35f, hh, depth * 1.3f) : new Vector3(depth * 1.3f, hh, len / k * 1.35f);
-                var e = new Vector3(rng.Range(-6f, 6f), rng.Range(-20f, 20f), rng.Range(-6f, 6f));
+                // Sichtbare Wand bleibt innerhalb der Kollisionsbox (sonst fährt MIKO optisch in den Fels): wenig Neigung, etwas schmaler
+                var size = alongX ? new Vector3(len / k * 1.35f, hh, depth * 0.88f) : new Vector3(depth * 0.88f, hh, len / k * 1.35f);
+                var e = new Vector3(rng.Range(-1.5f, 1.5f), rng.Range(-1.5f, 1.5f), rng.Range(-1.5f, 1.5f));
                 mb.For(rocks[i % 3]).BoxJ(new Vector3(p.x, bx.Y0 + hh * 0.5f, p.z), size, e, Mathf.Min(1.2f, size.y * 0.06f), rng.Range(0, 9999));
                 for (float y = bx.Y0 + hh * 0.35f; y < bx.Y0 + hh - 1f; y += rng.Range(2.5f, 4.5f))
                     mb.For(strata).BoxRot(new Vector3(p.x, y, p.z), new Vector3(size.x * 1.02f, rng.Range(0.3f, 0.7f), size.z * 1.02f), e);
