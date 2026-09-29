@@ -14,6 +14,8 @@ Dieses Dokument ist eine sachliche Bestandsaufnahme und keine Rechtsberatung.
 | Materialien | Unitys eingebaute Shader (Standard, Particles/Standard Unlit, Unlit/*, Sprites/Default, Skybox/Procedural) mit vom Setup erzeugten Material-Vorlagen |
 | Soundeffekte, Umgebungsgeräusche, Musik, Intro-Score | prozedurale Klangsynthese in C# (`Core/Audio/Synth.cs`) |
 | Oberfläche | Unity IMGUI mit Unitys Standardschrift (Teil der Engine) |
+| Hauptmenü-Schriften | `Resources/Fonts/`: „RePlanet Logo“ (aus **Orbitron** abgeleitet, feste Strichstärke 800, wegen des reservierten Schriftnamens umbenannt) und **Exo 2** (Medium, Bold) – beide SIL Open Font License 1.1, Lizenztexte liegen bei (`OFL-RePlanetLogo.txt`, `OFL-Exo2.txt`) |
+| Erzählerstimme (`Resources/Voice/`) | mit ElevenLabs erzeugt (Stimme „Helmut“ aus der Voice Library). Nutzungsrechte richten sich nach dem ElevenLabs-Tarif: für eine kommerzielle Veröffentlichung ist ein bezahlter Tarif nötig; Bedingungen vorher prüfen |
 | Texte, Geschichte, Namen | selbst geschrieben |
 | Konzeptkunst in `docs/concept/` | handgeschriebene SVG-Dateien, als „KONZEPTKUNST – keine Spielszene“ beschriftet |
 
