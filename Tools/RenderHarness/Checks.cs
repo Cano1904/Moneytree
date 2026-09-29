@@ -302,6 +302,11 @@ public static class Checks
         Run(1.3f);
         Input.Held.Clear();
         if (app.Mode != AppMode.PlanetSelect) Fail("Nach dem Intro keine Planetenwahl: " + app.Mode);
+        Run(0.5f);
+        {
+            var ps = PlanetSelectScene.I;
+            Info("Planetenwahl-Bühne aktiv: " + (ps != null && ps.Active) + ", Belichtung (fest im All): " + (Atmosphere.I != null ? Atmosphere.I.Look.Exposure.ToString("0.00") + (Atmosphere.I.Look.AutoExposure ? " (automatisch)" : " (fest)") : "–"));
+        }
         foreach (var p in GameData.PlanetOrder) { WorldView.I?.PreviewPlanet(p); Run(0.2f); }
         app.StartNewWorld("terra");
         Run(2f);

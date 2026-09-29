@@ -91,7 +91,8 @@ Shader "Hidden/RePlanet/PostFX"
     }
 
     // ------------------------------------------------------------ Tiefe / Sichtraum
-    float EyeDepthAt(float2 uvd) { return LinearEyeDepth(SAMPLE_DEPTH_TEXTURE(_CameraDepthTexture, uvd)); }
+    // Abfragen mit fester Mip-Stufe (tex2Dlod): erlaubt in Schleifen und Verzweigungen, die vom Pixel abhängen
+    float EyeDepthAt(float2 uvd) { return LinearEyeDepth(SAMPLE_DEPTH_TEXTURE_LOD(_CameraDepthTexture, float4(uvd, 0.0, 0.0))); }
 
     // Sichtraum-Position: x rechts, y oben, z = Sichttiefe (vorwärts)
     float3 ViewPos(float2 uvd, float eye) { return float3((uvd * 2.0 - 1.0) * _ViewInfo.xy * eye, eye); }
@@ -100,7 +101,7 @@ Shader "Hidden/RePlanet/PostFX"
     float3 ViewNormal(float2 uvd)
     {
         float d; float3 n;
-        DecodeDepthNormal(tex2D(_CameraDepthNormalsTexture, uvd), d, n);
+        DecodeDepthNormal(tex2Dlod(_CameraDepthNormalsTexture, float4(uvd, 0.0, 0.0)), d, n);
         return normalize(float3(n.x, n.y, -n.z) + float3(0.0, 0.0, -1e-4));
     }
 
@@ -316,8 +317,8 @@ Shader "Hidden/RePlanet/PostFX"
                 if (_AOParams2.x > 0.5)
                 {
                     float2 h = _AOTex_TexelSize.xy * 0.5;
-                    float ao = (tex2D(_AOTex, i.uv + float2(-h.x, -h.y)).r + tex2D(_AOTex, i.uv + float2(h.x, -h.y)).r +
-                                tex2D(_AOTex, i.uv + float2(-h.x, h.y)).r + tex2D(_AOTex, i.uv + float2(h.x, h.y)).r) * 0.25;
+                    float ao = (tex2Dlod(_AOTex, float4(i.uv + float2(-h.x, -h.y), 0.0, 0.0)).r + tex2Dlod(_AOTex, float4(i.uv + float2(h.x, -h.y), 0.0, 0.0)).r +
+                                tex2Dlod(_AOTex, float4(i.uv + float2(-h.x, h.y), 0.0, 0.0)).r + tex2Dlod(_AOTex, float4(i.uv + float2(h.x, h.y), 0.0, 0.0)).r) * 0.25;
                     col *= ao;
                 }
                 if (_EdgeParams.x > 0.001)

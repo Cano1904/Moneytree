@@ -45,6 +45,9 @@ float3 ShadeSH9(float4 n) { return float3(dot(unity_SHAr, n), dot(unity_SHAg, n)
 #define UNITY_DECLARE_DEPTH_TEXTURE(tex) sampler2D tex
 #define SAMPLE_DEPTH_TEXTURE(tex, uv) (tex2D(tex, uv).r)
 #define SAMPLE_DEPTH_TEXTURE_PROJ(tex, uv) (tex2Dproj(tex, uv).r)
+// glslang kennt tex2Dlod (DX9-Stil) nicht: für die Syntaxprüfung auf tex2D abbilden (Mip-Stufe spielt hier keine Rolle)
+#define tex2Dlod(tex, uv) tex2D(tex, (uv).xy)
+#define SAMPLE_DEPTH_TEXTURE_LOD(tex, uv) (tex2Dlod(tex, uv).r)
 #define UNITY_PROJ_COORD(a) a
 float Linear01Depth(float z) { return 1.0 / (_ZBufferParams.x * z + _ZBufferParams.y); }
 float LinearEyeDepth(float z) { return 1.0 / (_ZBufferParams.z * z + _ZBufferParams.w); }
