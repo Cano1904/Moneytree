@@ -1,3 +1,7 @@
+Die Schrift „RePlanet Logo“ (RePlanetLogo-ExtraBold.ttf) ist eine abgeleitete Fassung von Orbitron:
+feste Instanz der Strichstärke 800 aus der variablen Schrift, umbenannt, weil „Orbitron“ ein reservierter
+Schriftname (Reserved Font Name) ist. Lizenz: SIL Open Font License 1.1 (unverändert, siehe unten).
+
 Copyright 2018 The Orbitron Project Authors (https://github.com/theleagueof/orbitron), with Reserved Font Name: "Orbitron"
 
 This Font Software is licensed under the SIL Open Font License, Version 1.1.

@@ -23,6 +23,13 @@ namespace RePlanet
         public static GUIStyle Label, LabelSmall, LabelTiny, LabelBold, LabelCenter, LabelRight, H1, H2, H3, Title, Subtitle, Button, ButtonSmall, ButtonSel, ButtonOff, Tab, TabSel,
             PanelStyle, PanelLightStyle, Field, Wrap, WrapSmall, WrapCenter, Toast, Mono, Key;
 
+        // ------------------------------------------------------------ Hauptmenü-Schriften (Resources/Fonts, SIL Open Font License)
+        /// <summary>Logo-Schrift „RePlanet Logo“ (aus Orbitron abgeleitet) und Exo 2 für Menü-Knöpfe; null = Unity-Standardschrift.</summary>
+        public static Font LogoFont, MenuFont, MenuFontBold;
+        public static GUIStyle Logo, Tagline, MenuButton, MenuButtonSel, MenuButtonOff;
+        static bool fontsLoaded;
+        static readonly Dictionary<char, string> charStr = new Dictionary<char, string>();
+
         static bool built;
         static bool builtContrast;
 
@@ -104,6 +111,13 @@ namespace RePlanet
             H1 = Style(FontH1, Text, TextAnchor.MiddleCenter, false); H1.fontStyle = FontStyle.Bold;
             Title = Style(110, Text, TextAnchor.MiddleCenter, false); Title.fontStyle = FontStyle.Bold;
             Subtitle = Style(34, Accent, TextAnchor.MiddleCenter, false); Subtitle.fontStyle = FontStyle.Italic;
+            LoadFonts();
+            Logo = Style(110, Text, TextAnchor.MiddleLeft, false);
+            Logo.richText = false;
+            if (LogoFont != null) Logo.font = LogoFont; else Logo.fontStyle = FontStyle.Bold;
+            Tagline = Style(20, TextDim, TextAnchor.MiddleLeft, false);
+            Tagline.richText = false;
+            if (MenuFont != null) Tagline.font = MenuFont;
             Wrap = Style(FontNormal, Text, TextAnchor.UpperLeft, true);
             WrapSmall = Style(FontSmall, TextDim, TextAnchor.UpperLeft, true);
             WrapCenter = Style(FontNormal, Text, TextAnchor.UpperCenter, true);
@@ -120,6 +134,29 @@ namespace RePlanet
             ButtonSel = ButtonStyle(BtnSel, BtnSel, BtnActive, FontNormal);
             ButtonOff = ButtonStyle(BtnOff, BtnOff, BtnOff, FontNormal);
             ButtonOff.normal.textColor = ButtonOff.hover.textColor = ButtonOff.active.textColor = new Color(TextDim.r, TextDim.g, TextDim.b, 0.75f);
+            // Hauptmenü-Knöpfe: kantiger, dunkles Glas mit feiner Türkis-Kontur (Hoher Kontrast: normale Knopf-Texturen)
+            if (hc)
+            {
+                MenuButton = ButtonStyle(Btn, BtnHover, BtnActive, FontNormal + 2);
+                MenuButtonSel = ButtonStyle(BtnSel, BtnSel, BtnActive, FontNormal + 2);
+                MenuButtonOff = ButtonStyle(BtnOff, BtnOff, BtnOff, FontNormal + 2);
+            }
+            else
+            {
+                MenuButton = ButtonStyle(Rounded(Hex(0x06181D, 0.66f), Hex(0x2EC4B6, 0.32f), 4, 1.2f), Rounded(Hex(0x0E3A43, 0.9f), Hex(0x6FF0E4, 0.95f), 4, 1.6f),
+                    Rounded(Hex(0x1F7470, 0.96f), Hex(0xFF8C2E, 1f), 4, 2f), FontNormal + 2);
+                MenuButtonSel = ButtonStyle(Rounded(Hex(0x4A2A10, 0.92f), Hex(0xFF8C2E, 1f), 4, 1.8f), Rounded(Hex(0x6A3C16, 0.96f), Hex(0xFFB070, 1f), 4, 2f),
+                    Rounded(Hex(0x8A4E1C, 1f), Hex(0xFFD0A0, 1f), 4, 2f), FontNormal + 2);
+                MenuButtonOff = ButtonStyle(Rounded(Hex(0x06161A, 0.45f), Hex(0x3C5A5E, 0.3f), 4, 1f), Rounded(Hex(0x06161A, 0.45f), Hex(0x3C5A5E, 0.3f), 4, 1f),
+                    Rounded(Hex(0x06161A, 0.45f), Hex(0x3C5A5E, 0.3f), 4, 1f), FontNormal + 2);
+                MenuButtonOff.normal.textColor = MenuButtonOff.hover.textColor = new Color(TextDim.r, TextDim.g, TextDim.b, 0.45f);
+            }
+            foreach (var mb in new[] { MenuButton, MenuButtonSel, MenuButtonOff })
+            {
+                mb.border = new RectOffset(6, 6, 6, 6);
+                if (MenuFontBold != null) mb.font = MenuFontBold; else mb.fontStyle = FontStyle.Bold;
+            }
+
             Tab = ButtonStyle(PanelDark, BtnHover, BtnActive, FontSmall + 1);
             TabSel = ButtonStyle(BtnSel, BtnSel, BtnActive, FontSmall + 1);
             TabSel.fontStyle = FontStyle.Bold;
@@ -138,6 +175,50 @@ namespace RePlanet
             Field.padding = new RectOffset(10, 10, 6, 6);
             Field.alignment = TextAnchor.MiddleLeft;
             Field.clipping = TextClipping.Clip;
+        }
+
+        static void LoadFonts()
+        {
+            if (fontsLoaded) return;
+            fontsLoaded = true;
+            LogoFont = Resources.Load<Font>("Fonts/RePlanetLogo-ExtraBold");
+            MenuFont = Resources.Load<Font>("Fonts/Exo2-Medium");
+            MenuFontBold = Resources.Load<Font>("Fonts/Exo2-Bold");
+            if (LogoFont == null || MenuFont == null || MenuFontBold == null)
+                Debug.Log("[RE:PLANET] Menü-Schriften nicht gefunden (Resources/Fonts) – Standardschrift wird benutzt.");
+        }
+
+        /// <summary>Einzelnes Zeichen als (zwischengespeicherter) String, für gesperrten Text ohne Speicher-Müll.</summary>
+        public static string Chr(char c)
+        {
+            string s;
+            if (!charStr.TryGetValue(c, out s)) { s = c.ToString(); charStr[c] = s; }
+            return s;
+        }
+
+        /// <summary>Breite eines Texts mit Sperrung (IMGUI kennt keine Laufweite, daher Zeichen für Zeichen).</summary>
+        public static float TrackedWidth(GUIStyle st, string text, float spacing)
+        {
+            float w = 0f;
+            for (int i = 0; i < text.Length; i++) w += st.CalcSize(Tmp(Chr(text[i]))).x + (i < text.Length - 1 ? spacing : 0f);
+            return w;
+        }
+
+        /// <summary>Gesperrten Text zeichnen (links ab x); gibt die Breite zurück.</summary>
+        public static float Tracked(float x, float y, float h, string text, GUIStyle st, float spacing, Color c)
+        {
+            var old = st.normal.textColor;
+            st.normal.textColor = c;
+            float x0 = x;
+            for (int i = 0; i < text.Length; i++)
+            {
+                string ch = Chr(text[i]);
+                float cw = st.CalcSize(Tmp(ch)).x;
+                if (text[i] != ' ') GUI.Label(new Rect(x, y, cw + 4f, h), ch, st);
+                x += cw + spacing;
+            }
+            st.normal.textColor = old;
+            return x - x0 - spacing;
         }
 
         static GUIStyle Style(int size, Color c, TextAnchor a, bool wrap)
