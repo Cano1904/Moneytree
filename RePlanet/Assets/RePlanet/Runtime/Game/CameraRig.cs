@@ -120,7 +120,8 @@ namespace RePlanet
                 pos += UnityEngine.Random.insideUnitSphere * shake * 0.35f;
             }
             Cam.transform.position = pos;
-            Cam.transform.rotation = Quaternion.LookRotation(target - pos);
+            var lookDir = target - pos;
+            if (lookDir.sqrMagnitude > 1e-6f) Cam.transform.rotation = Quaternion.LookRotation(lookDir); // Kamera direkt am Blickpunkt: alte Richtung behalten
             ApplyRenderScale(app);
         }
 
