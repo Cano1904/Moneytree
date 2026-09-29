@@ -328,6 +328,7 @@ public static class Checks
             if (!app.W.Cur.StormActive) Fail("Sturm kam beim Client nicht an");
             SetPhase(g, planet, 0.5f);
             PlaySome(app, 7f, "Sturm (Tag)");
+            BuildOut(app, g, pid, planet);
             // Fotomodus mit Vorher-Ansicht
             PhotoMode.Active = true; PhotoMode.ShowBefore = true;
             Run(1.5f);
@@ -340,6 +341,108 @@ public static class Checks
             CameraSurvey(app, planet);
             CollectWarnings();
         }
+    }
+
+    /// <summary>Aktion direkt auf dem Server an einer bestimmten Stelle (wie ein Spieler, der dort steht).</summary>
+    static ActResult At(Game g, string pid, V3 pos, JObj a)
+    {
+        g.S.Players[pid].Pos = pos;
+        return g.Apply(pid, a.Set("rid", "h" + (++rid)), true);
+    }
+    static int rid;
+
+    /// <summary>Spieler an eine Stelle versetzen – auf dem Server und in der Vorhersage des Clients (sonst korrigiert einer den anderen).</summary>
+    static void Teleport(Game g, string pid, V3 pos)
+    {
+        g.S.Players[pid].Pos = pos;
+        var pc = PlayerController.I;
+        var f = typeof(PlayerController).GetField("ms", BF);
+        object ms = f.GetValue(pc);
+        ms.GetType().GetField("Pos").SetValue(ms, pos);
+        ms.GetType().GetField("Vel").SetValue(ms, new V3(0, 0, 0));
+        f.SetValue(pc, ms);
+    }
+
+    /// <summary>Ausbau: Upgrades, Fahrzeuge, Schiff, Anlagen, Lieferung, Fahren in jedem Fahrzeug, Schlafen, Notabschaltung.</summary>
+    static void BuildOut(GameApp app, Game g, string pid, string planet)
+    {
+        Info("Ausbau …");
+        var l = WorldGen.Get(planet); var b = l.Base;
+        g.S.Credits = 10_000_000;
+        foreach (var mat in GameData.Materials.Keys) { var e = g.S.Cur.Store(mat); e.U += 400; e.B += 40; }
+        int ok = 0;
+        foreach (var t in GameData.Tech.Keys) for (int i = 0; i < 6; i++) if (At(g, pid, b.Spawn, new JObj().Set("a", "buytech").Set("id", t)).Ok) ok++;
+        foreach (var v in GameData.Vehicles.Keys) if (At(g, pid, b.Spawn, new JObj().Set("a", "buyveh").Set("id", v)).Ok) ok++;
+        for (int i = 0; i < 4; i++) if (At(g, pid, b.Spawn, new JObj().Set("a", "buyship")).Ok) ok++;
+        int built = 0;
+        foreach (var kv in GameData.Buildings)
+            for (int x = 0; x < b.GridW && built < 40; x += 2)
+            {
+                bool placed = false;
+                for (int z = 0; z < b.GridH; z += 2)
+                    if (At(g, pid, b.Spawn, new JObj().Set("a", "build").Set("t", kv.Key).Set("x", x).Set("z", z).Set("r", (x + z) % 4)).Ok) { built++; placed = true; break; }
+                if (placed) break;
+            }
+        At(g, pid, b.Spawn, new JObj().Set("a", "delivery"));
+        Info($"  {ok} Käufe, {built} Anlagen gebaut, Fahrzeuge: {string.Join(", ", g.S.Cur.Vehicles.Keys)}");
+        PlaySome(app, 3f, "Stützpunkt ausgebaut");
+        // jedes Fahrzeug: einsteigen, fahren, aussteigen
+        foreach (var vid in new List<string>(g.S.Cur.Vehicles.Keys))
+        {
+            var v = g.S.Cur.Vehicles[vid];
+            Teleport(g, pid, v.Pos); // Client und Server gemeinsam, sonst schiebt die alte Client-Position das Fahrzeug weg
+            Run(0.3f);
+            var r = At(g, pid, v.Pos, new JObj().Set("a", "venter").Set("v", vid));
+            if (!r.Ok) { Info("  Einsteigen in " + vid + ": " + r.Err); continue; }
+            // Client übernimmt die Position vom Server (sonst korrigiert er zurück)
+            Run(0.5f);
+            if (app.Me.Vehicle != vid) { Info("  Client sitzt nicht in " + vid); continue; }
+            var v0 = PlayerController.I.RenderPos;
+            Run(4f, 1f / 30f, t =>
+            {
+                CheckLiveCamera("Fahren " + vid);
+                Input.Held.Clear(); Input.Held.Add(KeyCode.W);
+                if (t > 1.5f) Input.Held.Add(t < 3f ? KeyCode.A : KeyCode.D);
+                if ((int)(t * 30) % 25 == 0) { Input.Down.Add(KeyCode.Mouse0); Input.Held.Add(KeyCode.Mouse0); }
+            });
+            Input.Held.Clear();
+            float drove = (PlayerController.I.RenderPos - v0).magnitude;
+            Info("  gefahren mit " + vid + ": " + drove.ToString("0.0") + " m");
+            if (drove < 3f)
+            {
+                var vs = g.S.Cur.Vehicles[vid]; var def = GameData.Vehicles[vid];
+                var sb = new System.Text.StringBuilder();
+                for (int k = -8; k <= 8; k += 2) sb.Append(RePlanet.Core.Terrain.HeightAt(planet, vs.Pos.x, vs.Pos.z + k).ToString("0.0")).Append(' ');
+                Fail($"{vid} kommt vom Abstellplatz nicht weg: Pos {vs.Pos.x:0.0}/{vs.Pos.z:0.0}, Blick {vs.Yaw:0.00}, Wasser {RePlanet.Core.Terrain.WaterLevel(planet):0.0}, Boden z−8…z+8: {sb}");
+            }
+            g.Apply(pid, new JObj().Set("a", "vexit").Set("rid", "x" + (++rid)), true);
+            Run(0.5f);
+        }
+        // Schlafen im Stützpunkt (nachts) und Notabschaltung draußen
+        SetPhase(g, planet, 0.9f);
+        Run(6f);
+        var st = b.Stations["storage"];
+        Teleport(g, pid, new V3(st.x + 2f, st.y, st.z + 2f));
+        Run(0.5f);
+        var sr = g.Apply(pid, new JObj().Set("a", "sleep").Set("rid", "s" + (++rid)), true);
+        Run(1.5f);
+        Info("  Schlafen: " + (sr.Ok ? "ok, Client schläft " + app.Me.Sleeping : sr.Err));
+        Run(3f);
+        g.Apply(pid, new JObj().Set("a", "wake").Set("rid", "w" + (++rid)), true);
+        // Notabschaltung draußen: Akku leer → Abschleppdrohne → Ladestation
+        var p = g.S.Players[pid];
+        SetPhase(g, planet, 0.9f);
+        var outside = new V3(b.Spawn.x, b.Spawn.y, b.Spawn.z + 40f);
+        outside.y = RePlanet.Core.Terrain.HeightAt(planet, outside.x, outside.z);
+        Teleport(g, pid, outside);
+        p.Energy = 0.3f;
+        bool towed = false;
+        Run(12f, 1f / 30f, t => { if (p.TowTimer > 0) towed = true; });
+        Info("  Notabschaltung: " + (towed ? "abgeschleppt" : "nicht ausgelöst") + ", jetzt bei " + p.Pos.x.ToString("0") + "/" + p.Pos.z.ToString("0") + ", Energie " + p.Energy.ToString("0"));
+        if (!towed) Fail("Notabschaltung wurde nicht ausgelöst");
+        Run(4f);
+        SetPhase(g, planet, 0.45f);
+        Run(6f);
     }
 
     /// <summary>Tageszeit auf dem Server setzen (Versatz) – kommt mit dem nächsten Wetterabgleich beim Client an.</summary>

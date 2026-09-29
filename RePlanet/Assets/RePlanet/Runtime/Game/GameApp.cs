@@ -128,8 +128,10 @@ namespace RePlanet
 
         /// <summary>
         /// Gast im Koop, der das Intro auf diesem Profil noch nie gesehen hat: nach dem Beitritt zuerst das Intro.
-        /// Die Welt läuft beim Host weiter; der Gast steht so lange am Stützpunkt (Unterschlupf, Ladestation) – Nacht
-        /// und Sturm führen dort nicht zur Notabschaltung. Der Weltaufbau läuft bereits im Hintergrund.
+        /// Die Welt läuft beim Host weiter; der Gast steht so lange am Startpunkt des Stützpunkts (kein Unterschlupf – der
+        /// zählt erst an Lager/Garage/Ladestation). Tagsüber passiert dort nichts; nachts im Sturm (−1,45 Energie/s) kann
+        /// gegen Ende des Intros eine Notabschaltung auslösen – folgenlos: die Drohne bringt MIKO zur Ladestation, der
+        /// Behälter eines neuen Gastes ist leer. Ein Schutzstatus bräuchte eine neue Core-Regel. Der Weltaufbau läuft im Hintergrund.
         /// </summary>
         void PlayGuestIntro()
         {
