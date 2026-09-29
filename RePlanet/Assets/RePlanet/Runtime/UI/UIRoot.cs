@@ -97,6 +97,7 @@ namespace RePlanet
             UpdateBuildInput(app);
             UpdateSettingsApply(app);
             UpdateMapBuild(app);
+            UpdateMap3D(app);
             UpdateCursor(app);
         }
 
@@ -251,7 +252,7 @@ namespace RePlanet
                 case UIScreen.Map:
                     if (back || start || KeyDown(GameAction.Map) || Input.GetKeyDown(KeyCode.JoystickButton6)) { Back(); return; }
                     if (KeyDown(GameAction.Menu)) { OpenMenu("map"); return; }
-                    if (Input.GetKeyDown(KeyCode.KeypadPlus) || Input.GetKeyDown(KeyCode.Equals) || Input.GetKeyDown(KeyCode.JoystickButton5)) ZoomMap(1);
+                    if (Input.GetKeyDown(KeyCode.KeypadPlus) || Input.GetKeyDown(KeyCode.Equals) || Input.GetKeyDown(KeyCode.Plus) || Input.GetKeyDown(KeyCode.JoystickButton5)) ZoomMap(1);
                     if (Input.GetKeyDown(KeyCode.KeypadMinus) || Input.GetKeyDown(KeyCode.Minus) || Input.GetKeyDown(KeyCode.JoystickButton4)) ZoomMap(-1);
                     return;
                 case UIScreen.Pause:
@@ -417,7 +418,7 @@ namespace RePlanet
                 case UIScreen.Loading: DrawLoading(app); break;
                 case UIScreen.Message: DrawMessage(app); break;
                 case UIScreen.Travel: DrawTravelScreen(app); break;
-                case UIScreen.Credits: DrawCredits(app); break;
+                case UIScreen.Credits: UIState.Open(UIScreen.MainMenu); break; // Mitwirkende entfernt
                 case UIScreen.Intro:
                 case UIScreen.Ending:
                     // Die Regisseure zeichnen Untertitel und Überspringen-Hinweis selbst.

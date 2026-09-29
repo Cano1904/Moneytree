@@ -5,7 +5,7 @@ using UnityEngine;
 
 namespace RePlanet
 {
-    /// <summary>Hauptmenü, Neues Spiel, Planetenwahl, Spielstände, Pause, Mitwirkende, Laden, Meldungen.</summary>
+    /// <summary>Hauptmenü, Neues Spiel, Planetenwahl, Spielstände, Pause, Laden, Meldungen.</summary>
     public partial class UIRoot
     {
         // ------------------------------------------------------------ Zustand
@@ -85,7 +85,7 @@ namespace RePlanet
 
             bool canContinue = mainSlot != null;
             float y = top + titleH + 64f;
-            int n = 7;
+            int n = 6; // Fortsetzen, Neues Spiel, Koop, Spielstände, Einstellungen, Beenden
             float bh = Mathf.Clamp((VH - y - 110f) / n - 10f, 34f, 54f);
             float step = bh + 10f;
             float left = cx - bw * 0.5f;
@@ -110,8 +110,6 @@ namespace RePlanet
             y += step;
             if (UINav.Button(new Rect(left, y, bw, bh), L("Einstellungen"))) OpenSub(UIScreen.Settings, UIScreen.MainMenu);
             y += step;
-            if (UINav.Button(new Rect(left, y, bw, bh), "Mitwirkende")) UIState.Open(UIScreen.Credits);
-            y += step;
             if (confirm == "quit")
             {
                 float hw = (bw - 10) * 0.5f;
@@ -120,8 +118,8 @@ namespace RePlanet
             }
             else if (UINav.Button(new Rect(left, y, bw, bh), L("Beenden"))) confirm = "quit";
 
-            // Versionshinweis und Steuerung (klein, unten mittig)
-            string ver = "Version " + Application.version + " · Unity " + Application.unityVersion + " · Inspiriert von WALL·E – eigene Figuren und Welten";
+            // Steuerung und Versionsnummer (klein, unten mittig)
+            string ver = "Version " + Application.version;
             string hint = InputMap.UsingPad ? "Steuerkreuz/Stick · A: Bestätigen · B: Zurück" : "Pfeiltasten/Maus · Eingabe: Bestätigen · Esc: Zurück";
             GUI.Label(new Rect(0, VH - 58, VW, 24), UISkin.Col(hint, UISkin.TextDim), SmallCenter());
             GUI.Label(new Rect(0, VH - 34, VW, 24), UISkin.Col(ver, UISkin.TextDim * new Color(1, 1, 1, 0.7f)), SmallCenter());
@@ -541,41 +539,6 @@ namespace RePlanet
             if (UINav.Button(new Rect(x, y, w, bh), L("Hauptmenü"))) confirm = "menu";
             y += step;
             if (UINav.Button(new Rect(x, y, w, bh), L("Beenden"))) confirm = "quit";
-        }
-
-        // ================================================================== Mitwirkende
-        void DrawCredits(GameApp app)
-        {
-            Vignette();
-            var r = CenterRect(900, 760);
-            var inner = Window(r, "Mitwirkende");
-            string[] lines =
-            {
-                "<b>RE:PLANET – Eine zweite Chance</b>",
-                "",
-                UISkin.Col("Idee & Auftrag", UISkin.Accent),
-                "Ein Spiel über Aufräumen, Reparieren und Hoffnung – für alle, die Dinge lieber retten als wegwerfen.",
-                "",
-                UISkin.Col("Inspiration", UISkin.Accent),
-                "Inspiriert von WALL·E (Pixar) – eigene Figuren und Welten. MIKO und alle Planeten sind eigenständige Schöpfungen.",
-                "",
-                UISkin.Col("Technik", UISkin.Accent),
-                "Unity · prozedurale Grafik (Gelände, Himmel, Modelle, Texturen) · prozedurale Audiosynthese (Effekte, Musik, Intro)",
-                "Serverautoritative Simulation für Solo und Online-Koop (1–4 Spieler)",
-                "",
-                UISkin.Col("Inhalte", UISkin.Accent),
-                "Alle Inhalte – Modelle, Klänge, Musik, Texte – sind eigen erzeugt. Es werden keine fremden Assets verwendet.",
-                "",
-                UISkin.Col("Danke fürs Spielen!", UISkin.Good),
-            };
-            float y = inner.y + 4;
-            foreach (var l in lines)
-            {
-                if (l.Length == 0) { y += 12; continue; }
-                float th = UISkin.TextHeight(UISkin.Wrap, l, inner.width);
-                GUI.Label(new Rect(inner.x, y, inner.width, th + 4), l, UISkin.Wrap);
-                y += th + 4;
-            }
         }
 
         // ================================================================== Laden & Meldungen

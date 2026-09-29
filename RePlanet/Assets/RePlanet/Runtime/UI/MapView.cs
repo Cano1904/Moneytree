@@ -136,6 +136,7 @@ namespace RePlanet
 
         void ZoomMap(int d)
         {
+            if (Map3DActive) { MapCamera.I.Zoom(d > 0 ? 0.78f : 1f / 0.78f); AudioManager.Ui("ui_hover"); return; }
             int idx = 0;
             for (int i = 0; i < ZoomLevels.Length; i++) if (Mathf.Abs(ZoomLevels[i] - mapZoom) < 0.01f) idx = i;
             idx = Mathf.Clamp(idx + d, 0, ZoomLevels.Length - 1);
@@ -354,27 +355,7 @@ namespace RePlanet
                 UISkin.Tex(new Rect(r.xMax - 33, r.y + 30, 16, 16), UISkin.Arrow, UISkin.Accent);
             }
 
-            // Tooltip
-            if (rep && r.Contains(e.mousePosition))
-            {
-                float best = 16f * 16f; int bi = -1;
-                for (int i = 0; i < marks.Count; i++)
-                {
-                    float d = (marks[i].P - e.mousePosition).sqrMagnitude;
-                    if (d < best) { best = d; bi = i; }
-                }
-                if (bi >= 0)
-                {
-                    string t = marks[bi].Text;
-                    float tw = Mathf.Min(420f, UISkin.TextWidth(UISkin.LabelSmall, t) + 24);
-                    float th = UISkin.TextHeight(UISkin.WrapSmall, t, tw - 20) + 12;
-                    var tr = new Rect(e.mousePosition.x + 16, e.mousePosition.y + 12, tw, th);
-                    if (tr.xMax > VW - 10) tr.x = e.mousePosition.x - tw - 12;
-                    if (tr.yMax > VH - 10) tr.y = e.mousePosition.y - th - 12;
-                    UISkin.RoundRect(tr, new Color(0, 0, 0, 0.88f));
-                    GUI.Label(new Rect(tr.x + 10, tr.y + 6, tw - 20, th), t, UISkin.WrapSmall);
-                }
-            }
+            DrawMarkTooltip(r);
         }
 
         void MapBox(float x0, float z0, float x1, float z1, Color c)
@@ -408,8 +389,11 @@ namespace RePlanet
             }
         }
 
-        /// <summary>Seitenleiste: Wiederherstellung je Bereich, Legende, Zoom.</summary>
-        float DrawMapSide(GameApp app, Rect r)
+        /// <summary>
+        /// Seitenleiste: Wiederherstellung je Bereich, Legende, Zoom. mode: 0 = Spielmenü (2D), 1 = Kartenbildschirm 2D
+        /// (mit Umschalter zur 3D-Karte), 2 = Kartenbildschirm 3D (Zoom der Kartenkamera, Umschalter zur 2D-Karte).
+        /// </summary>
+        float DrawMapSide(GameApp app, Rect r, int mode = 0)
         {
             var w = app.W;
             var ps = w.Cur;
@@ -441,31 +425,45 @@ namespace RePlanet
                 GUI.Label(new Rect(r.x + 30, y, colW - 30, 24), LegendTexts[i], UISkin.LabelTiny);
                 y += 24;
             }
-            if (y < r.yMax - 100)
+            float legendEnd = mode == 0 ? r.yMax - 100 : r.yMax - 150;
+            if (y < legendEnd)
             {
                 DrawRotated(new Rect(r.x + 4, y + 3, 18, 18), UISkin.Arrow, 0, UISkin.Accent);
                 GUI.Label(new Rect(r.x + 30, y, colW - 30, 24), "Du (Blickrichtung) · Mitspieler in ihrer Farbe", UISkin.LabelTiny);
-                y += 28;
+                y += 24;
             }
-            // Zoom
-            float zy = r.yMax - 64;
-            GUI.Label(new Rect(r.x, zy, 120, 40), "Zoom " + mapZoom.ToString("0.#") + "×", UISkin.LabelSmall);
-            if (UINav.Button(new Rect(r.x + 120, zy, 60, 40), "−", mapZoom > 1.01f, UISkin.ButtonSmall)) ZoomMap(-1);
-            if (UINav.Button(new Rect(r.x + 186, zy, 60, 40), "+", mapZoom < 3.99f, UISkin.ButtonSmall)) ZoomMap(1);
-            GUI.Label(new Rect(r.x, zy + 42, r.width, 22), InputMap.UsingPad ? "LB/RB: Zoom" : "Mausrad oder +/−: Zoom", UISkin.LabelTiny);
+            if (mode == 2)
+            {
+                // Linien der 3D-Karte
+                if (y < legendEnd) { LegendLine(new Rect(r.x + 2, y, colW, 24), new Color(0.35f, 1f, 0.88f, 0.9f), 3f, "Bereichsgrenze"); y += 24; }
+                if (y < legendEnd) { LegendLine(new Rect(r.x + 2, y, colW, 24), new Color(0.85f, 0.97f, 1f, 0.6f), 1.5f, "Höhenlinien · Stützpunktfläche"); y += 24; }
+            }
+            y += 4;
+            // Zoom und Ansicht
+            float zy = r.yMax - (mode == 0 ? 64 : 112);
+            bool three = mode == 2 && MapCamera.I != null;
+            float zf = three ? MapCamera.I.ZoomFactor : mapZoom;
+            GUI.Label(new Rect(r.x, zy, 120, 40), "Zoom " + zf.ToString("0.#") + "×", UISkin.LabelSmall);
+            bool canOut = three ? MapCamera.I.TargetDistance < MapCamera.MaxDistance - 0.5f : mapZoom > 1.01f;
+            bool canIn = three ? MapCamera.I.TargetDistance > MapCamera.MinDistance + 0.5f : mapZoom < 3.99f;
+            if (UINav.Button(new Rect(r.x + 120, zy, 60, 40), "−", canOut, UISkin.ButtonSmall)) ZoomMap(-1);
+            if (UINav.Button(new Rect(r.x + 186, zy, 60, 40), "+", canIn, UISkin.ButtonSmall)) ZoomMap(1);
+            if (mode >= 1)
+            {
+                if (UINav.Button(new Rect(r.x, zy + 48, Mathf.Min(r.width, 246), 40), mode == 2 ? "2D-Karte zeigen" : "3D-Karte zeigen", true, UISkin.ButtonSmall))
+                {
+                    map2D = mode == 2;
+                    mapDragging = mapPanning = false;
+                }
+            }
+            else GUI.Label(new Rect(r.x, zy + 42, r.width, 22), InputMap.UsingPad ? "LB/RB: Zoom" : "Mausrad oder +/−: Zoom", UISkin.LabelTiny);
             return y;
         }
 
-        void DrawMapScreen(GameApp app)
+        void LegendLine(Rect r, Color c, float thick, string text)
         {
-            if (!app.InGame) { UIState.Open(UIScreen.MainMenu); return; }
-            Dim(0.6f);
-            var r = new Rect(30, 30, VW - 60, VH - 60);
-            var inner = Window(r, L("Karte") + "   " + UISkin.Col(KeyHint(GameAction.Map) + " schließen", UISkin.TextDim));
-            float side = Mathf.Min(380f, inner.width * 0.3f);
-            float ms = Mathf.Min(inner.height, inner.width - side - 30);
-            DrawMap(app, new Rect(inner.x, inner.y, ms, ms));
-            DrawMapSide(app, new Rect(inner.x + ms + 30, inner.y, inner.width - ms - 30, inner.height));
+            if (Event.current.type == EventType.Repaint) UISkin.Rect(new Rect(r.x + 2, r.y + 12 - thick * 0.5f, 20, thick), c);
+            GUI.Label(new Rect(r.x + 28, r.y, r.width - 30, 24), text, UISkin.LabelTiny);
         }
     }
 }
