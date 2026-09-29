@@ -65,10 +65,7 @@ namespace RePlanet
                             var go = new GameObject("ZoneLamp" + p.Style);
                             go.transform.SetParent(Root, false);
                             go.transform.localPosition = pos;
-                            Obj("pole", MeshKit.Cylinder, dark, new Vector3(0, 1.6f, 0), new Vector3(0.18f, 3.2f, 0.18f), Quaternion.identity, go.transform);
-                            Obj("globe", MeshKit.Sphere, m, new Vector3(0, 3.4f, 0), Vector3.one * 0.7f, Quaternion.identity, go.transform, false);
-                            Obj("cap", MeshKit.Cylinder, dark, new Vector3(0, 3.8f, 0), new Vector3(0.5f, 0.12f, 0.5f), Quaternion.identity, go.transform);
-                            Obj("base", MeshKit.Cylinder, dark, new Vector3(0, 0.15f, 0), new Vector3(0.5f, 0.3f, 0.5f), Quaternion.identity, go.transform);
+                            ZoneLampModel(go.transform, m);
                             zoneLamps[p.Style] = go;
                             break;
                         }
@@ -586,6 +583,28 @@ namespace RePlanet
                 // Projektzeichen (Stern) statt Schriftzug, dreht sich zur Kamera
                 IconBillboard(go.transform, new Vector3(0, 6.2f, 0), 1.1f, SurfaceLook.Icon.Star);
             }
+        }
+
+        /// <summary>
+        /// Lichtpunkt-Laterne (geht an, wenn die Zone aufgeräumt ist): Sockel mit Stufen, kannelierter Mast mit Zierringen,
+        /// Laternenkopf mit Streben um die Leuchtkugel, Dach mit Spitze. Ein Mesh (Palette + Leuchtkugel).
+        /// </summary>
+        void ZoneLampModel(Transform parent, Material globe)
+        {
+            var zmb = new MultiBuilder { UsePalette = true, GroundY = 0f };
+            var iron = Paint(new Color(0.16f, 0.2f, 0.2f), 0.5f);
+            var brass = Steel(new Color(0.7f, 0.58f, 0.32f));
+            zmb.For(Conc(new Color(0.5f, 0.49f, 0.46f))).BevelBox(new Vector3(0, 0.12f, 0), new Vector3(0.9f, 0.24f, 0.9f), 0.04f);
+            zmb.For(iron).Cylinder(new Vector3(0, 0.24f, 0), 0.3f, 0.35f, 16, true, 0.2f);
+            zmb.For(iron).Cylinder(new Vector3(0, 0.59f, 0), 0.12f, 2.6f, 12, true, 0.09f);
+            for (int k = 0; k < 8; k++) { float a = k * 45f; zmb.For(iron).Box(Quaternion.Euler(0, a, 0) * new Vector3(0, 1.4f, 0.11f), new Vector3(0.03f, 1.5f, 0.03f)); }
+            foreach (var y in new[] { 0.62f, 2.2f, 3.05f }) zmb.For(brass).Torus(new Vector3(0, y, 0), 0.13f, 0.035f, 14, 4);
+            zmb.For(iron).Cylinder(new Vector3(0, 3.0f, 0), 0.32f, 0.08f, 12);
+            for (int k = 0; k < 4; k++) { float a = k * 90f + 45f; zmb.For(iron).Beam(Quaternion.Euler(0, a, 0) * new Vector3(0, 3.05f, 0.3f), Quaternion.Euler(0, a, 0) * new Vector3(0, 3.78f, 0.3f), 0.03f); }
+            zmb.For(globe).Sphere(new Vector3(0, 3.4f, 0), 0.34f, 16, 10);
+            zmb.For(iron).Cylinder(new Vector3(0, 3.78f, 0), 0.42f, 0.18f, 12, true, 0.12f);
+            zmb.For(brass).Sphere(new Vector3(0, 4.02f, 0), 0.07f, 8, 5);
+            zmb.Build("ZoneLampMesh", parent, true);
         }
 
         /// <summary>Leuchtendes Piktogramm, das sich zur Kamera dreht (ersetzt schwebende Namensschilder).</summary>
