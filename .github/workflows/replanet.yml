@@ -1,0 +1,78 @@
+# RE:PLANET – automatische Prüfungen und Windows-Build
+#
+# Job „pruefen“: läuft bei jedem Push/PR ohne Unity-Lizenz (.NET-Tests, Kompilierprüfung gegen Unity-Referenzen,
+#               Shader-Syntaxprüfung).
+# Job „windows-build“: baut die Windows-Anwendung mit Unity (GameCI) und stellt sie als Download („Artifact“) bereit.
+#               Startet nur manuell (Actions → „RE:PLANET“ → „Run workflow“) oder bei einem Tag v*, und nur wenn
+#               die Unity-Zugangsdaten als Repository-Secrets hinterlegt sind. Anleitung: docs/BUILD_GITHUB.md
+name: RE:PLANET
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+    inputs:
+      unity_version:
+        description: "Unity-Version (leer = Repository-Variable UNITY_VERSION)"
+        required: false
+        default: ""
+
+jobs:
+  pruefen:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "8.0.x"
+      - name: Unity-Referenzen laden
+        run: UNITY_REF_DIR=/opt/unityref sudo -E bash Tools/CompileCheck/fetch-unity-refs.sh
+      - name: Kompilierprüfung (Core, Runtime, Editor)
+        run: |
+          for d in Core Runtime Editor; do
+            (cd Tools/CompileCheck/$d && dotnet build -nologo -v q)
+          done
+      - name: Tests
+        run: cd Tests && dotnet run -c Release
+      - name: Shader-Syntaxprüfung
+        run: |
+          sudo apt-get update -qq && sudo apt-get install -y -qq glslang-tools
+          python3 Tools/ShaderCheck/check_shaders.py
+
+  windows-build:
+    needs: pruefen
+    if: github.event_name == 'workflow_dispatch' || startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-latest
+    env:
+      UNITY_LICENSE: ${{ secrets.UNITY_LICENSE }}
+      UNITY_EMAIL: ${{ secrets.UNITY_EMAIL }}
+      UNITY_PASSWORD: ${{ secrets.UNITY_PASSWORD }}
+      UNITY_SERIAL: ${{ secrets.UNITY_SERIAL }}
+    steps:
+      - name: Zugangsdaten prüfen
+        run: |
+          if [ -z "$UNITY_EMAIL" ] || [ -z "$UNITY_PASSWORD" ] || { [ -z "$UNITY_LICENSE" ] && [ -z "$UNITY_SERIAL" ]; }; then
+            echo "::error::Unity-Zugangsdaten fehlen. Bitte UNITY_EMAIL, UNITY_PASSWORD und UNITY_LICENSE (oder UNITY_SERIAL) als Repository-Secrets anlegen – siehe docs/BUILD_GITHUB.md"
+            exit 1
+          fi
+      - uses: actions/checkout@v4
+        with:
+          lfs: false
+      - uses: actions/cache@v4
+        with:
+          path: RePlanet/Library
+          key: Library-RePlanet-Windows-${{ hashFiles('RePlanet/Assets/**', 'RePlanet/Packages/**', 'RePlanet/ProjectSettings/**') }}
+          restore-keys: Library-RePlanet-Windows-
+      - uses: game-ci/unity-builder@v4
+        with:
+          projectPath: RePlanet
+          targetPlatform: StandaloneWindows64
+          unityVersion: ${{ github.event.inputs.unity_version || vars.UNITY_VERSION || 'auto' }}
+          buildName: RePlanet
+          buildMethod: RePlanet.EditorTools.RePlanetBuild.BuildWindowsCI
+          customParameters: -rpOutput Builds/Windows/RePlanet.exe
+      - uses: actions/upload-artifact@v4
+        with:
+          name: RePlanet-Windows
+          path: RePlanet/Builds/Windows
+          if-no-files-found: error
