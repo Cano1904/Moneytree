@@ -417,7 +417,7 @@ namespace RePlanet
                 case UIScreen.Loading: DrawLoading(app); break;
                 case UIScreen.Message: DrawMessage(app); break;
                 case UIScreen.Travel: DrawTravelScreen(app); break;
-                case UIScreen.Credits: DrawCredits(app); break;
+                case UIScreen.Credits: UIState.Open(UIScreen.MainMenu); break; // Mitwirkende entfernt
                 case UIScreen.Intro:
                 case UIScreen.Ending:
                     // Die Regisseure zeichnen Untertitel und Überspringen-Hinweis selbst.
