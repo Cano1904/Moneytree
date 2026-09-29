@@ -39,6 +39,21 @@ public static class StoryTests
         Assert.True(Story.TrackById.ContainsKey("theme"), "Hauptthema vorhanden");
     }
 
+    /// <summary>Sprechertext (Tools/Voice, docs) und Untertitel im Spiel stimmen überein.</summary>
+    [Test]
+    public static void Sprechertext_stimmt_mit_Untertiteln_ueberein()
+    {
+        string root = TestKit.RepoRoot();
+        string py = System.IO.File.ReadAllText(System.IO.Path.Combine(root, "Tools", "Voice", "generate_elevenlabs.py"));
+        string md = System.IO.File.ReadAllText(System.IO.Path.Combine(root, "docs", "SPRECHERTEXT_ELEVENLABS.md"));
+        foreach (var l in Story.Lines)
+        {
+            Assert.True(py.Contains("(\"" + l.File + "\", " + l.MaxDuration.ToString("0.0", System.Globalization.CultureInfo.InvariantCulture) + ","), "Python-Liste enthält " + l.File + " mit gleicher Dauer");
+            Assert.True(py.Contains("\"" + l.Text + "\""), "Python-Liste: Text von " + l.File + " wie im Spiel");
+            Assert.True(md.Contains("`" + l.File + "`") && md.Contains(l.Text), "Sprechertext-Tabelle enthält " + l.File);
+        }
+    }
+
     [Test]
     public static void Erzaehlerzeile_laeuft_nur_einmal_pro_Spielstand()
     {

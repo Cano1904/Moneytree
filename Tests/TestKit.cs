@@ -46,6 +46,15 @@ public static class TestKit
         return l;
     }
 
+    /// <summary>Wurzel des Repositorys (enthält RePlanet/ und docs/), gesucht ab dem Arbeitsverzeichnis.</summary>
+    public static string RepoRoot()
+    {
+        var d = new System.IO.DirectoryInfo(System.IO.Directory.GetCurrentDirectory());
+        while (d != null && !(System.IO.Directory.Exists(System.IO.Path.Combine(d.FullName, "RePlanet")) && System.IO.Directory.Exists(System.IO.Path.Combine(d.FullName, "docs")))) d = d.Parent;
+        if (d == null) throw new System.Exception("Repository-Wurzel nicht gefunden");
+        return d.FullName;
+    }
+
     public static string TempDir(string name)
     {
         var d = Path.Combine(Path.GetTempPath(), "replanet-test-" + name + "-" + Guid.NewGuid().ToString("N").Substring(0, 8));

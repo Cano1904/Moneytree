@@ -1,7 +1,8 @@
 # RE:PLANET – Sprechertext für ElevenLabs
 
 Fertig zum Kopieren: Jede Zeile ist **eine eigene Datei**. Text in ElevenLabs einfügen, erzeugen, herunterladen und
-exakt so benennen wie angegeben (`intro_01.mp3` … `intro_14.mp3`, `ending_01.mp3` … `ending_05.mp3`).
+exakt so benennen wie angegeben (`intro_01.mp3` … `intro_14.mp3`, `ending_01.mp3` … `ending_05.mp3`,
+`game_01.mp3` … `game_21.mp3`).
 Ausführliche Regie und Szenenbeschreibung: `docs/SPRECHERTEXT.md`.
 
 ## 1. Stimme auswählen
@@ -67,9 +68,44 @@ Tipps:
 Hinweise zur Aussprache: „Konsuma“, „Miko“ und „Horizont“ sind hier bewusst klein geschrieben, damit die Stimme sie als
 Wort und nicht als Abkürzung liest. „…“ erzeugt eine kurze Pause.
 
-## 5. Ins Spiel bringen
+## 5. Im Spiel (21 Zeilen, Erzähler Helmut)
 
-1. Dateien genau so benennen (`intro_01.mp3` usw.; `.wav` oder `.ogg` gehen auch).
+Kurze Sätze zu besonderen Momenten im Spiel – **dieselbe Stimme und Regie wie im Intro** (ruhig, warm, leicht
+melancholisch, tiefer alter Erzähler). Jede Zeile läuft pro Spielstand nur einmal, die Musik wird dabei leicht abgesenkt.
+Ohne Aufnahme erscheint der Satz als Untertitel. Abschaltbar in den Einstellungen („Audio → Erzähler im Spiel“).
+Die Zeilen stehen im Code in `Core/Sim/Story.cs` (Untertitel) – bei Textänderungen beide Stellen anpassen.
+
+| Datei | max. | Anlass | Text v3 (mit Tags, zum Kopieren) | Text v2 (ohne Tags) |
+|---|---|---|---|---|
+| `game_01` | 5,5 s | Erste Landung auf TERRA | `[calm] Die alte Erde. [pause] Sie hat lange auf jemanden gewartet, der bleibt.` | Die alte Erde. Sie hat lange auf jemanden gewartet, der bleibt. |
+| `game_02` | 5,5 s | Erste Landung auf PYRA | `Pyra glühte einst vor Arbeit. [sad] Jetzt glüht nur noch der Sand.` | Pyra glühte einst vor Arbeit. Jetzt glüht nur noch der Sand. |
+| `game_03` | 5,0 s | Erste Landung auf PELAGIA | `[softly] Pelagia. Ein Meer, das sich nach klarem Wasser sehnt.` | Pelagia. Ein Meer, das sich nach klarem Wasser sehnt. |
+| `game_04` | 6,5 s | Erste Landung auf NIVALIS | `[quietly] Nivalis. Unter dem Eis schlafen die Server, die uns die Rückkehr versprachen.` | Nivalis. Unter dem Eis schlafen die Server, die uns die Rückkehr versprachen. |
+| `game_05` | 5,0 s | Erstes Mal Müll ins Lager gebracht | `[warmly] Das erste Stück ist heimgebracht. So fängt jede Heimkehr an.` | Das erste Stück ist heimgebracht. So fängt jede Heimkehr an. |
+| `game_06` | 4,5 s | Erster Verkauf | `Aus dem, was wir fortwarfen, [warmly] wird wieder etwas wert.` | Aus dem, was wir fortwarfen, wird wieder etwas wert. |
+| `game_07` | 5,0 s | Erste Schrottlieferung per Frachter | `Von fern kommt ein Frachter. [warmly] Du bist nicht mehr ganz allein.` | Von fern kommt ein Frachter. Du bist nicht mehr ganz allein. |
+| `game_08` | 5,0 s | Erster Lichtpunkt sauber | `[softly] Ein kleiner Platz, wieder sauber. Das Licht erinnert sich daran.` | Ein kleiner Platz, wieder sauber. Das Licht erinnert sich daran. |
+| `game_09` | 6,5 s | Erster Bereich: Hauptmüll entfernt (85 %) | `Der größte Berg ist abgetragen. [in awe] Darunter liegt eine Straße, die man fast vergessen hatte.` | Der größte Berg ist abgetragen. Darunter liegt eine Straße, die man fast vergessen hatte. |
+| `game_10` | 6,0 s | Erster Bereich zu 100 % gereinigt | `[quietly] Kein einziges Stück mehr. So sah es hier aus, bevor wir alles fortwarfen.` | Kein einziges Stück mehr. So sah es hier aus, bevor wir alles fortwarfen. |
+| `game_11` | 5,0 s | Erstes Projekt fertig – die Stadt erwacht | `[in awe] Die Lichter gehen wieder an. [softly] Leise, eines nach dem anderen.` | Die Lichter gehen wieder an. Leise, eines nach dem anderen. |
+| `game_12` | 5,5 s | Erster Planet komplett (Großprojekt) | `[moved] Diese Welt atmet wieder. Du hast ihr die zweite Chance gegeben.` | Diese Welt atmet wieder. Du hast ihr die zweite Chance gegeben. |
+| `game_13` | 4,5 s | Erster Sturm (nicht PYRA) | `[calm] Ein Sturm zieht auf. Such dir ein Dach, kleiner Freund.` | Ein Sturm zieht auf. Such dir ein Dach, kleiner Freund. |
+| `game_14` | 5,0 s | Erster Sandsturm auf PYRA | `Der Sand wandert wieder. [thoughtful] Morgen sehen die Wege anders aus.` | Der Sand wandert wieder. Morgen sehen die Wege anders aus. |
+| `game_15` | 6,0 s | Erste Nacht | `[softly] Die erste Nacht. Auch Maschinen brauchen einen Ort, an dem sie warten können.` | Die erste Nacht. Auch Maschinen brauchen einen Ort, an dem sie warten können. |
+| `game_16` | 5,5 s | Erster Morgen nach dem Schlafen | `[warmly] Ein neuer Morgen. Die Arbeit ist geduldig – sie hat auf dich gewartet.` | Ein neuer Morgen. Die Arbeit ist geduldig – sie hat auf dich gewartet. |
+| `game_17` | 5,0 s | Erste Notabschaltung | `[gently] Manchmal geht einem die Kraft aus. Das ist keine Schande.` | Manchmal geht einem die Kraft aus. Das ist keine Schande. |
+| `game_18` | 5,5 s | NIVALIS freigeschaltet | `[hopeful] Das Eis ruft. Auf Nivalis wartet das letzte Signal.` | Das Eis ruft. Auf Nivalis wartet das letzte Signal. |
+| `game_19` | 5,0 s | Erster Mitspieler im Koop | `[warmly] Du bist nicht mehr allein. Zu zweit trägt sich jede Last leichter.` | Du bist nicht mehr allein. Zu zweit trägt sich jede Last leichter. |
+| `game_20` | 5,0 s | Erstes Fundstück | `Ein Fundstück. [sad] Jemand hat es gewusst – und trotzdem nichts getan.` | Ein Fundstück. Jemand hat es gewusst – und trotzdem nichts getan. |
+| `game_21` | 6,0 s | Erste Ökologie wiederhergestellt | `[in awe] Hier wächst wieder etwas. Ganz von allein, als hätte es nur auf Platz gewartet.` | Hier wächst wieder etwas. Ganz von allein, als hätte es nur auf Platz gewartet. |
+
+Hinweise: Zwischen zwei Zeilen liegt mindestens eine knappe Sekunde; kommen zwei Anlässe gleichzeitig (z. B. Landung und
+Mitspieler), laufen sie nacheinander. Die maximale Dauer ist großzügiger als im Intro – trotzdem nicht darüber gehen,
+der Untertitel verschwindet danach.
+
+## 6. Ins Spiel bringen
+
+1. Dateien genau so benennen (`intro_01.mp3`, `game_01.mp3` usw.; `.wav` oder `.ogg` gehen auch).
 2. In Unity in den Ordner **`Resources/Voice`** kopieren – er liegt neben `Resources/RePlanetSky.shader`
    (bei dir: `Assets/Settings/RePlanet/Resources/Voice/`, sonst `Assets/RePlanet/Resources/Voice/`).
 3. Play drücken und „Neues Spiel“ starten: Die Zeilen laufen zeitgenau zur Musik, die Musik wird dabei leicht abgesenkt.

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Erzeugt die Erzählerstimme für Intro und Abspann mit ElevenLabs (Text-to-Speech-API).
+"""Erzeugt die Erzählerstimme für Intro, Abspann und die Zeilen im Spiel (game_01 … game_21) mit ElevenLabs (Text-to-Speech-API).
 
 Voraussetzungen (in den Umgebungseinstellungen, NICHT im Chat oder im Code):
   ELEVENLABS_API_KEY   API-Schlüssel (ElevenLabs → Profil → API Keys)
@@ -13,6 +13,7 @@ Aufruf:
   python3 Tools/Voice/generate_elevenlabs.py --force    # alles neu erzeugen
   python3 Tools/Voice/generate_elevenlabs.py --voices   # Stimmen auflisten
   python3 Tools/Voice/generate_elevenlabs.py intro_01   # nur bestimmte Zeilen
+  python3 Tools/Voice/generate_elevenlabs.py --game     # nur die Zeilen im Spiel (game_*)
 
 Ausgabe: RePlanet/Assets/RePlanet/Resources/Voice/<name>.mp3 und eine Längenprüfung gegen die maximale Dauer.
 """
@@ -43,6 +44,28 @@ LINES = [
     ("ending_03", 5.0, "Vier Welten. [proudly] Vier zweite Chancen.", "Vier Welten. Vier zweite Chancen."),
     ("ending_04", 3.5, "[moved] Danke, Miko.", "Danke, Miko."),
     ("ending_05", 6.5, "Was wir fortgeworfen hatten … [softly] hast du uns zurückgegeben.", "Was wir fortgeworfen hatten … hast du uns zurückgegeben."),
+    # Im Spiel (Erzähler Helmut, je Spielstand einmal) – Anlässe und Untertitel: Core/Sim/Story.cs
+    ("game_01", 5.5, "[calm] Die alte Erde. [pause] Sie hat lange auf jemanden gewartet, der bleibt.", "Die alte Erde. Sie hat lange auf jemanden gewartet, der bleibt."),  # Erste Landung auf TERRA
+    ("game_02", 5.5, "Pyra glühte einst vor Arbeit. [sad] Jetzt glüht nur noch der Sand.", "Pyra glühte einst vor Arbeit. Jetzt glüht nur noch der Sand."),  # Erste Landung auf PYRA
+    ("game_03", 5.0, "[softly] Pelagia. Ein Meer, das sich nach klarem Wasser sehnt.", "Pelagia. Ein Meer, das sich nach klarem Wasser sehnt."),  # Erste Landung auf PELAGIA
+    ("game_04", 6.5, "[quietly] Nivalis. Unter dem Eis schlafen die Server, die uns die Rückkehr versprachen.", "Nivalis. Unter dem Eis schlafen die Server, die uns die Rückkehr versprachen."),  # Erste Landung auf NIVALIS
+    ("game_05", 5.0, "[warmly] Das erste Stück ist heimgebracht. So fängt jede Heimkehr an.", "Das erste Stück ist heimgebracht. So fängt jede Heimkehr an."),  # Erstes Mal Müll ins Lager gebracht
+    ("game_06", 4.5, "Aus dem, was wir fortwarfen, [warmly] wird wieder etwas wert.", "Aus dem, was wir fortwarfen, wird wieder etwas wert."),  # Erster Verkauf
+    ("game_07", 5.0, "Von fern kommt ein Frachter. [warmly] Du bist nicht mehr ganz allein.", "Von fern kommt ein Frachter. Du bist nicht mehr ganz allein."),  # Erste Schrottlieferung per Frachter
+    ("game_08", 5.0, "[softly] Ein kleiner Platz, wieder sauber. Das Licht erinnert sich daran.", "Ein kleiner Platz, wieder sauber. Das Licht erinnert sich daran."),  # Erster Lichtpunkt sauber
+    ("game_09", 6.5, "Der größte Berg ist abgetragen. [in awe] Darunter liegt eine Straße, die man fast vergessen hatte.", "Der größte Berg ist abgetragen. Darunter liegt eine Straße, die man fast vergessen hatte."),  # Erster Bereich: Hauptmüll entfernt (85 %)
+    ("game_10", 6.0, "[quietly] Kein einziges Stück mehr. So sah es hier aus, bevor wir alles fortwarfen.", "Kein einziges Stück mehr. So sah es hier aus, bevor wir alles fortwarfen."),  # Erster Bereich zu 100 % gereinigt
+    ("game_11", 5.0, "[in awe] Die Lichter gehen wieder an. [softly] Leise, eines nach dem anderen.", "Die Lichter gehen wieder an. Leise, eines nach dem anderen."),  # Erstes Projekt fertig – die Stadt erwacht
+    ("game_12", 5.5, "[moved] Diese Welt atmet wieder. Du hast ihr die zweite Chance gegeben.", "Diese Welt atmet wieder. Du hast ihr die zweite Chance gegeben."),  # Erster Planet komplett (Großprojekt)
+    ("game_13", 4.5, "[calm] Ein Sturm zieht auf. Such dir ein Dach, kleiner Freund.", "Ein Sturm zieht auf. Such dir ein Dach, kleiner Freund."),  # Erster Sturm (nicht PYRA)
+    ("game_14", 5.0, "Der Sand wandert wieder. [thoughtful] Morgen sehen die Wege anders aus.", "Der Sand wandert wieder. Morgen sehen die Wege anders aus."),  # Erster Sandsturm auf PYRA
+    ("game_15", 6.0, "[softly] Die erste Nacht. Auch Maschinen brauchen einen Ort, an dem sie warten können.", "Die erste Nacht. Auch Maschinen brauchen einen Ort, an dem sie warten können."),  # Erste Nacht
+    ("game_16", 5.5, "[warmly] Ein neuer Morgen. Die Arbeit ist geduldig – sie hat auf dich gewartet.", "Ein neuer Morgen. Die Arbeit ist geduldig – sie hat auf dich gewartet."),  # Erster Morgen nach dem Schlafen
+    ("game_17", 5.0, "[gently] Manchmal geht einem die Kraft aus. Das ist keine Schande.", "Manchmal geht einem die Kraft aus. Das ist keine Schande."),  # Erste Notabschaltung
+    ("game_18", 5.5, "[hopeful] Das Eis ruft. Auf Nivalis wartet das letzte Signal.", "Das Eis ruft. Auf Nivalis wartet das letzte Signal."),  # NIVALIS freigeschaltet
+    ("game_19", 5.0, "[warmly] Du bist nicht mehr allein. Zu zweit trägt sich jede Last leichter.", "Du bist nicht mehr allein. Zu zweit trägt sich jede Last leichter."),  # Erster Mitspieler im Koop
+    ("game_20", 5.0, "Ein Fundstück. [sad] Jemand hat es gewusst – und trotzdem nichts getan.", "Ein Fundstück. Jemand hat es gewusst – und trotzdem nichts getan."),  # Erstes Fundstück
+    ("game_21", 6.0, "[in awe] Hier wächst wieder etwas. Ganz von allein, als hätte es nur auf Platz gewartet.", "Hier wächst wieder etwas. Ganz von allein, als hätte es nur auf Platz gewartet."),  # Erste Ökologie wiederhergestellt
 ]
 
 
@@ -89,6 +112,8 @@ def main(argv):
     model = os.environ.get("ELEVENLABS_MODEL", "eleven_multilingual_v2")
     use_tags = model.startswith("eleven_v3")
     wanted = [a for a in argv if not a.startswith("--")]
+    if "--game" in argv:
+        wanted += [n for n, _, _, _ in LINES if n.startswith("game_")]
     os.makedirs(OUT, exist_ok=True)
     report = []
     for name, maxlen, v3, plain in LINES:
