@@ -6,7 +6,7 @@ using UnityEngine;
 namespace RePlanet
 {
     /// <summary>
-    /// Erzählerstimme für Intro und Abspann.
+    /// Erzählerstimme für Intro, Abspann und kurze Zeilen im Spiel (<see cref="PlayGameLine"/>, game_01 … game_21).
     /// <list type="bullet">
     /// <item>Spielt Sprachaufnahmen ab, die als AudioClips in einem Ordner <c>Resources/Voice</c> liegen
     /// (<c>intro_01</c> … <c>intro_14</c>, <c>ending_01</c> … <c>ending_05</c>; .wav/.ogg/.mp3 – Unity importiert sie selbst).
@@ -161,6 +161,66 @@ namespace RePlanet
             };
         }
 
+        // ================================================================== Zeilen im Spiel (Helmut)
+        class Pending { public NarrationLine Line; public float Queued; }
+        static readonly List<Pending> gameQueue = new List<Pending>();
+        float gameLineUntil;
+
+        /// <summary>
+        /// Spielt eine Erzählerzeile im Spiel (<see cref="Story.Lines"/>, Aufnahme <c>Resources/Voice/game_NN</c>).
+        /// Zeilen warten, bis keine andere Sprache läuft und kein Menü/keine Zwischensequenz offen ist (höchstens 45 s).
+        /// Fehlt die Aufnahme, erscheint nur der Untertitel (auch wenn Untertitel sonst aus sind).
+        /// </summary>
+        public static void PlayGameLine(string id)
+        {
+            try
+            {
+                NarrationLine line;
+                if (id == null || !Story.LineById.TryGetValue(id, out line)) return;
+                foreach (var q in gameQueue) if (q.Line == line) return;
+                gameQueue.Add(new Pending { Line = line, Queued = Time.unscaledTime });
+                Ensure();
+            }
+            catch (Exception e) { Debug.LogWarning("[Erzähler] PlayGameLine: " + e.Message); }
+        }
+
+        /// <summary>Verwirft wartende Zeilen und beendet eine laufende Spielzeile (Sitzungsende, Einstellung aus).</summary>
+        public static void ClearGameLines()
+        {
+            gameQueue.Clear();
+            if (inst != null && inst.gameLineUntil > Time.unscaledTime && inst.cues.Length == 0) Stop(0.4f);
+            if (inst != null) inst.gameLineUntil = 0f;
+        }
+
+        /// <summary>true, solange eine Spielzeile gesprochen (oder als Untertitel gezeigt) wird.</summary>
+        public static bool GameLineActive { get { return inst != null && Time.unscaledTime < inst.gameLineUntil; } }
+
+        void UpdateGameLines()
+        {
+            if (gameQueue.Count == 0) return;
+            float now = Time.unscaledTime;
+            gameQueue.RemoveAll(q => now - q.Queued > 45f);
+            if (gameQueue.Count == 0) return;
+            if (next < cues.Length || (src != null && src.isPlaying) || now < gameLineUntil + 0.8f) return; // Sequenz oder andere Zeile läuft
+            var app = GameApp.I;
+            if (app == null || !app.InGame || UIState.Screen != UIScreen.None || ShipArrival.CinematicActive) return;
+            var line = gameQueue[0].Line;
+            gameQueue.RemoveAt(0);
+            var clip = Load(line.File);
+            float shown = line.MaxDuration + 0.5f;
+            if (clip != null && src != null)
+            {
+                src.Stop();
+                fadingOut = false; fade = 1f;
+                src.clip = clip;
+                src.time = 0f;
+                src.Play();
+                shown = Mathf.Min(clip.length, line.MaxDuration + 1.5f) + 0.4f;
+            }
+            gameLineUntil = now + shown;
+            Hud.Say(Loc.T(line.Text), shown, null, clip == null);
+        }
+
         // ================================================================== Aufbau
         static Narrator Ensure()
         {
@@ -268,6 +328,7 @@ namespace RePlanet
         void Update()
         {
             if (src == null) return;
+            try { UpdateGameLines(); } catch (Exception e) { Debug.LogWarning("[Erzähler] Spielzeile: " + e.Message); gameQueue.Clear(); }
             float dt = Mathf.Min(Time.unscaledDeltaTime, 0.1f);
             if (fadingOut)
             {

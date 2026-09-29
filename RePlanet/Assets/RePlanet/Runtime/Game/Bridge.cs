@@ -87,11 +87,15 @@ namespace RePlanet
             Blocked = full; BlockedShort = shortText; BlockedAt = at;
         }
 
-        public static void Say(string text, float duration, string speaker = null)
+        /// <summary>Untertitel auch bei ausgeschalteten Untertiteln zeigen (Erzählerzeile ohne Aufnahme).</summary>
+        public static bool SubtitleAlways;
+
+        public static void Say(string text, float duration, string speaker = null, bool always = false)
         {
             Subtitle = text;
             SubtitleSpeaker = speaker;
             SubtitleUntil = Time.unscaledTime + duration;
+            SubtitleAlways = always;
         }
 
         public static void ClearTransient()
@@ -161,5 +165,10 @@ namespace RePlanet
         public static string Reason;
         public static int HoverBuildingId = -1;
         public static bool RequestPlace, RequestDemolish;
+        /// <summary>Controller: Zielpunkt auf der Baufläche (Weltkoordinaten), per linkem Stick bewegt.</summary>
+        public static Vector3 PadCursor;
+        public static bool PadCursorInit;
+        /// <summary>Kategorie-Filter der Bauleiste (null = alle).</summary>
+        public static string Category;
     }
 }

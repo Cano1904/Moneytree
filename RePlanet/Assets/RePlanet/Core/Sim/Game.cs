@@ -69,6 +69,7 @@ namespace RePlanet.Core
             foreach (var ps in S.Planets.Values) ps.RecomputeDerived();
             OnPlanetEnter(false);
             EvaluateMissions();
+            InitStory();
         }
 
         public static WorldState NewWorld(string name, string startPlanet = "terra")
@@ -104,7 +105,7 @@ namespace RePlanet.Core
         void DW(string part) { dirtyWorld.Add(part); }
         void DP(string part) { dirtyPlanet.Add(part); }
         void DPl(string pid) { dirtyPlayers.Add(pid); }
-        void Fx(JObj f) { fx.Add(f); }
+        void Fx(JObj f) { fx.Add(f); OnStoryFx(f); }
         public void MarkAllDirty() { fullPlanet = true; foreach (var p in WorldState.Parts) DW(p); foreach (var p in S.Players.Keys) DPl(p); }
 
         /// <summary>Sammelt alle Änderungen seit dem letzten Aufruf als Patch für die Clients (null = nichts).</summary>
@@ -393,6 +394,7 @@ namespace RePlanet.Core
                         Fx(new JObj().Set("k", "areaclean").Set("a", t.Area).Set("name", GameData.Planets[ps.Id].AreaNames[t.Area]));
                         SaveReason = "Bereich gereinigt";
                     }
+                    CheckAreaFull(lastClean[t.Area], c);
                     lastClean[t.Area] = c;
                 }
             }

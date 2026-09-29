@@ -5,14 +5,14 @@ using UnityEngine;
 namespace RePlanet
 {
     /// <summary>
-    /// Spielmenü (Tab) mit Reitern: Inventar, Aufträge, Karte, Werkstatt, Lager, Archiv, Roboter, Koop.
+    /// Spielmenü (Tab) mit Reitern: Inventar, Aufträge, Karte, Werkstatt, Lager, Archiv, Roboter, Radio, Koop.
     /// Q/E bzw. LB/RB wechseln die Reiter. Käufe/Verkäufe laufen als Aktionen über den Server – der prüft
     /// Nähe zu Stationen und Berechtigungen; die UI zeigt die Gründe vorab an.
     /// </summary>
     public partial class UIRoot
     {
-        static readonly string[] MenuTabs = { "inventory", "missions", "map", "workshop", "storage", "archive", "robot", "coop" };
-        static readonly string[] MenuTabNames = { "Inventar", "Aufträge", "Karte", "Werkstatt", "Lager", "Archiv", "Roboter", "Koop" };
+        static readonly string[] MenuTabs = { "inventory", "missions", "map", "workshop", "storage", "archive", "robot", "radio", "coop" };
+        static readonly string[] MenuTabNames = { "Inventar", "Aufträge", "Karte", "Werkstatt", "Lager", "Archiv", "Roboter", "Radio", "Koop" };
         string menuTab = "inventory";
         string menuStation;
         int wsSub;
@@ -114,6 +114,7 @@ namespace RePlanet
                 case "storage": TabStorage(app, content); break;
                 case "archive": TabArchive(app, content); break;
                 case "robot": TabRobot(app, content); break;
+                case "radio": TabRadio(app, content); break;
                 case "coop":
                     {
                         const int key = 408;

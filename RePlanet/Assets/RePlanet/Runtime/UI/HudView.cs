@@ -47,6 +47,9 @@ namespace RePlanet
             }
 
             // ---------------------------------------------------- Oben links: Planet, Credits, Energie, Ladung
+            // (unter der Leistungsanzeige, falls eingeschaltet)
+            float perfH = PerfOverlayHeight(app);
+            if (perfH > 0f) GUI.BeginGroup(new Rect(0, perfH, VW, VH - perfH));
             if (!full) DrawStatusCompact(app, w, me, pd, s, level);
             else
             {
@@ -79,6 +82,7 @@ namespace RePlanet
                 else status = UISkin.Col(KeyHint(GameAction.Menu) + " Menü  " + KeyHint(GameAction.Map) + " Karte  " + KeyHint(GameAction.Build) + " Bauen", UISkin.TextDim);
                 GUI.Label(new Rect(tl.x + 18, tl.y + 136, tl.width - 30, 30), status, UISkin.LabelTiny);
             }
+            if (perfH > 0f) GUI.EndGroup();
 
             // ---------------------------------------------------- Oben Mitte: aktuelles Ziel
             if (!full) DrawObjectiveCompact(app, w, level);
@@ -119,7 +123,7 @@ namespace RePlanet
             }
 
             // Untertitel
-            if (s.Subtitles && !string.IsNullOrEmpty(Hud.Subtitle) && Time.unscaledTime < Hud.SubtitleUntil)
+            if ((s.Subtitles || Hud.SubtitleAlways) && !string.IsNullOrEmpty(Hud.Subtitle) && Time.unscaledTime < Hud.SubtitleUntil)
             {
                 string sub = (string.IsNullOrEmpty(Hud.SubtitleSpeaker) ? "" : UISkin.Col(Hud.SubtitleSpeaker + ": ", UISkin.Accent)) + Hud.Subtitle;
                 float sw = Mathf.Min(1100f, VW - 80f);
@@ -186,11 +190,6 @@ namespace RePlanet
                     py += 26;
                 }
                 y = pr.yMax + 8;
-            }
-            if (s.ShowFps)
-            {
-                GUI.Label(new Rect(r.x, y, r.width - 10, 24), UISkin.Col(fps.ToString("0") + " FPS", fps < 30 ? UISkin.Warn : UISkin.Good), UISkin.LabelRight);
-                y += 26;
             }
             toastTop = y + 6;
         }

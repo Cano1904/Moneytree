@@ -410,6 +410,10 @@ namespace RePlanet.Core
         public string WorldName = "Neue Welt";
         public string StartPlanet = "terra";
         public string Created = "";
+        /// <summary>Freigeschaltete Radio-Stücke (<see cref="Story.Tracks"/>) und bereits erzählte Zeilen (<see cref="Story.Lines"/>).</summary>
+        public HashSet<string> RadioUnlocked = new HashSet<string>(), Narrated = new HashSet<string>();
+        /// <summary>Laufzeit: Speicherteil „story“ war vorhanden (false = alter Spielstand, Erzählerzeilen werden abgeleitet).</summary>
+        public bool StoryLoaded = true;
 
         public PlanetState Planet(string id)
         {
@@ -427,7 +431,7 @@ namespace RePlanet.Core
         public float BinCapacity { get { return TechVal("bin") + TechVal("trailer"); } }
         public float MaxEnergy { get { return TechVal("battery"); } }
 
-        public static readonly string[] Parts = { "credits", "ship", "unlocked", "tech", "owned", "missions", "lore", "cosm", "stats", "flags" };
+        public static readonly string[] Parts = { "credits", "ship", "unlocked", "tech", "owned", "missions", "lore", "cosm", "stats", "flags", "story" };
 
         public object PartToJson(string part)
         {
@@ -447,6 +451,7 @@ namespace RePlanet.Core
                 case "lore": return new List<object>(Lore);
                 case "cosm": return new List<object>(CosmeticUnlocks);
                 case "stats": { var o = new JObj(); foreach (var kv in Stats) o[kv.Key] = kv.Value; return o; }
+                case "story": return new JObj().Set("radio", new List<object>(RadioUnlocked)).Set("told", new List<object>(Narrated));
                 case "flags": return new JObj().Set("cd", CampaignDone).Set("es", EndingSeen).Set("tg", TrustGuests).Set("is", IntroSeen).Set("pt", Math.Round(PlayTime, 2)).Set("nd", NextDyn).Set("wn", WorldName).Set("cr", Created).Set("sp", StartPlanet);
             }
             return null;
@@ -490,6 +495,16 @@ namespace RePlanet.Core
                     var so = v as JObj;
                     if (so != null) foreach (var kv in so) Stats[kv.Key] = (long)Json.ToDouble(kv.Value, 0);
                     break;
+                case "story":
+                    var sto = v as JObj;
+                    RadioUnlocked.Clear(); Narrated.Clear();
+                    if (sto != null)
+                    {
+                        foreach (var id in sto.Strs("radio")) if (Story.TrackById.ContainsKey(id)) RadioUnlocked.Add(id);
+                        foreach (var id in sto.Strs("told")) if (Story.LineById.ContainsKey(id)) Narrated.Add(id);
+                    }
+                    StoryLoaded = true;
+                    break;
                 case "flags":
                     var fo = v as JObj;
                     if (fo != null)
@@ -519,6 +534,7 @@ namespace RePlanet.Core
         {
             var w = new WorldState();
             w.Version = o.Int("version", CurrentVersion);
+            w.StoryLoaded = false; // wird durch den Teil „story“ gesetzt
             var planet = o.Str("planet", "terra");
             w.CurrentPlanet = GameData.Planets.ContainsKey(planet) ? planet : "terra";
             foreach (var p in Parts) if (o.ContainsKey(p)) w.PartFromJson(p, o[p]);

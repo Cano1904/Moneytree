@@ -103,7 +103,8 @@ namespace RePlanet
             if (InVehicle) w.Cur.Vehicles.TryGetValue(me.Vehicle, out veh);
 
             // ------------------------------------------------ Bewegung
-            var move = blocked || frozen || PhotoMode.Active ? Vector2.zero : InputMap.Move();
+            // In der Bauansicht steuert der linke Stick den Bau-Cursor, nicht MIKO
+            var move = blocked || frozen || PhotoMode.Active || (BuildMode.Active && InputMap.UsingPad) ? Vector2.zero : InputMap.Move();
             float camYaw = CameraRig.I != null ? CameraRig.I.Yaw * Mathf.Deg2Rad : 0f;
             bool sprint = !blocked && InputMap.Held(GameAction.Sprint) && me.Energy > 1f;
             if (veh != null)
@@ -155,6 +156,7 @@ namespace RePlanet
                 }
             }
             else if (!BuildMode.Active) DestroyPreview();
+            if (!BuildMode.Active) { HidePadMarker(); BuildMode.PadCursorInit = false; }
             if (TrashRenderer.I != null)
             {
                 TrashRenderer.I.HighlightKey = !blocked && target != null && veh == null ? target.Key : null;
@@ -640,11 +642,24 @@ namespace RePlanet
             var cam = Camera.main;
             BuildMode.HasCursor = false;
             if (cam == null) return;
-            var ray = cam.ScreenPointToRay(Input.mousePosition);
-            var plane = new Plane(Vector3.up, new Vector3(0, bl.Center.y, 0));
-            float enter;
-            if (!plane.Raycast(ray, out enter)) { DestroyPreview(); return; }
-            var hit = ray.GetPoint(enter);
+            Vector3 hit;
+            bool pad = InputMap.UsingPad;
+            if (pad)
+            {
+                hit = PadBuildCursor(bl);
+                ShowPadMarker(bl, hit);
+            }
+            else
+            {
+                HidePadMarker();
+                var ray = cam.ScreenPointToRay(Input.mousePosition);
+                var plane = new Plane(Vector3.up, new Vector3(0, bl.Center.y, 0));
+                float enter;
+                if (!plane.Raycast(ray, out enter)) { DestroyPreview(); return; }
+                hit = ray.GetPoint(enter);
+                BuildMode.PadCursor = hit; // Controller setzt dort fort, wo die Maus zuletzt war
+                BuildMode.PadCursorInit = true;
+            }
             int gx = Mathf.FloorToInt((hit.x - bl.GridX0) / bl.Cell), gz = Mathf.FloorToInt((hit.z - bl.GridZ0) / bl.Cell);
             // Überfahrenes Gebäude (für Umsetzen/Abreißen)
             BuildMode.HoverBuildingId = -1;
@@ -681,7 +696,7 @@ namespace RePlanet
             BuildMode.Valid = reason == null;
             BuildMode.Reason = reason;
             ShowPreview(type, bl, gx, gz, BuildMode.Rot, BuildMode.Valid);
-            bool click = (Input.GetMouseButtonDown(0) && !MouseOverUi()) || InputMap.Down(GameAction.Interact) || BuildMode.RequestPlace;
+            bool click = (!pad && Input.GetMouseButtonDown(0) && !MouseOverUi()) || InputMap.Down(GameAction.Interact) || BuildMode.RequestPlace;
             BuildMode.RequestPlace = false;
             if (click)
             {
@@ -692,8 +707,65 @@ namespace RePlanet
             if (Input.GetMouseButtonDown(1)) { BuildMode.MoveId = -1; BuildMode.Type = null; }
         }
 
-        /// <summary>Bauleiste der Oberfläche liegt am unteren Bildrand – dort keine Platzierung.</summary>
-        static bool MouseOverUi() { return Input.mousePosition.y < Screen.height * 0.22f; }
+        // ------------------------------------------------------------ Controller-Cursor in der Bauansicht
+        GameObject padMarker;
+
+        /// <summary>Bewegt den Bau-Cursor mit dem linken Stick (relativ zur Kamera), rastet im Stillstand auf die Zellmitte ein.</summary>
+        Vector3 PadBuildCursor(BaseLayout bl)
+        {
+            float y = bl.Center.y;
+            if (!BuildMode.PadCursorInit)
+            {
+                BuildMode.PadCursor = new Vector3(bl.GridX0 + bl.GridW * bl.Cell * 0.5f, y, bl.GridZ0 + bl.GridH * bl.Cell * 0.5f);
+                BuildMode.PadCursorInit = true;
+            }
+            var c = BuildMode.PadCursor;
+            var st = InputMap.PadStick();
+            float dt = Mathf.Min(Time.unscaledDeltaTime, 0.1f);
+            if (st.sqrMagnitude > 0.0001f)
+            {
+                float yaw = CameraRig.I != null ? CameraRig.I.Yaw * Mathf.Deg2Rad : 0f;
+                float fx = Mathf.Sin(yaw), fz = Mathf.Cos(yaw);
+                float speed = 16f * (0.35f + 0.65f * st.magnitude);
+                c.x += (st.x * fz + st.y * fx) * speed * dt;
+                c.z += (-st.x * fx + st.y * fz) * speed * dt;
+            }
+            else
+            {
+                // Einrasten: sanft auf die Mitte der aktuellen Zelle
+                float cx = bl.GridX0 + (Mathf.Floor((c.x - bl.GridX0) / bl.Cell) + 0.5f) * bl.Cell;
+                float cz = bl.GridZ0 + (Mathf.Floor((c.z - bl.GridZ0) / bl.Cell) + 0.5f) * bl.Cell;
+                float k = 1f - Mathf.Exp(-dt * 14f);
+                c.x += (cx - c.x) * k; c.z += (cz - c.z) * k;
+            }
+            c.x = Mathf.Clamp(c.x, bl.GridX0 + 0.01f, bl.GridX0 + bl.GridW * bl.Cell - 0.01f);
+            c.z = Mathf.Clamp(c.z, bl.GridZ0 + 0.01f, bl.GridZ0 + bl.GridH * bl.Cell - 0.01f);
+            c.y = y;
+            BuildMode.PadCursor = c;
+            return c;
+        }
+
+        /// <summary>Flache Markierung der Zelle unter dem Controller-Cursor (auch ohne gewähltes Bauwerk – zum Umsetzen/Abreißen).</summary>
+        void ShowPadMarker(BaseLayout bl, Vector3 at)
+        {
+            if (padMarker == null)
+            {
+                padMarker = new GameObject("BuildPadCursor");
+                padMarker.AddComponent<MeshFilter>().sharedMesh = MeshKit.Cube;
+                padMarker.AddComponent<MeshRenderer>().sharedMaterial = Mats.Get(Mats.Fade, new Color(1f, 1f, 1f, 0.45f));
+            }
+            if (!padMarker.activeSelf) padMarker.SetActive(true);
+            int gx = Mathf.FloorToInt((at.x - bl.GridX0) / bl.Cell), gz = Mathf.FloorToInt((at.z - bl.GridZ0) / bl.Cell);
+            var c = bl.CellCenter(gx, gz, 1, 1);
+            float pulse = 0.85f + 0.15f * Mathf.Sin(Time.unscaledTime * 6f);
+            padMarker.transform.position = new Vector3(c.x, bl.Center.y + 0.08f, c.z);
+            padMarker.transform.localScale = new Vector3(bl.Cell * pulse, 0.12f, bl.Cell * pulse);
+        }
+
+        void HidePadMarker() { if (padMarker != null && padMarker.activeSelf) padMarker.SetActive(false); }
+
+        /// <summary>Bauleiste (mit Kategorie-Reitern) liegt am unteren Bildrand – dort keine Platzierung.</summary>
+        static bool MouseOverUi() { return Input.mousePosition.y < Screen.height * 0.25f; }
 
         void ShowPreview(string type, BaseLayout bl, int gx, int gz, int rot, bool valid)
         {

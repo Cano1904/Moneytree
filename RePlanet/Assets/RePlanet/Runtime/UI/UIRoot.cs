@@ -38,7 +38,6 @@ namespace RePlanet
         string guiError;
         float guiErrorUntil;
         string confirm;          // offene Sicherheitsabfrage (Schlüssel)
-        float fps, fpsAcc; int fpsFrames;
         float textScaleUsed;
 
         static string L(string de) { return Loc.T(de); }
@@ -55,8 +54,7 @@ namespace RePlanet
             var app = GameApp.I;
             if (app == null) return;
 
-            fpsAcc += Time.unscaledDeltaTime; fpsFrames++;
-            if (fpsAcc >= 0.5f) { fps = fpsFrames / fpsAcc; fpsAcc = 0; fpsFrames = 0; }
+            UpdatePerf(app);
 
             var screen = UIState.Screen;
             bool fresh = false;
@@ -218,7 +216,16 @@ namespace RePlanet
                 if (!inGame) return;
                 if (BuildMode.Active)
                 {
-                    if (InputMap.Down(GameAction.Pause) || InputMap.Down(GameAction.Build) || back) { ExitBuild(); AudioManager.Ui("ui_back"); return; }
+                    if (InputMap.Down(GameAction.Pause) || InputMap.Down(GameAction.Build)) { ExitBuild(); AudioManager.Ui("ui_back"); return; }
+                    if (back)
+                    {
+                        // Zurück (B/Esc) bricht zuerst Nachfrage, Umsetzen oder Auswahl ab, erst dann wird die Bauansicht verlassen
+                        if (confirm != null) confirm = null;
+                        else if (BuildMode.MoveId >= 0 || BuildMode.Type != null) { BuildMode.MoveId = -1; BuildMode.Type = null; }
+                        else ExitBuild();
+                        AudioManager.Ui("ui_back");
+                        return;
+                    }
                     if (InputMap.Down(GameAction.Menu)) { ExitBuild(); OpenMenu(UIState.MenuTab); return; }
                     return;
                 }
@@ -230,6 +237,7 @@ namespace RePlanet
                 if (InputMap.Down(GameAction.Build)) { ToggleBuild(app); return; }
                 if (InputMap.Down(GameAction.Photo)) { EnterPhoto(); return; }
                 if (InputMap.Down(GameAction.QuickSave)) { app.SaveNow(); return; }
+                if (InputMap.Down(GameAction.Radio)) { ToggleRadio(); return; }
                 return;
             }
 
@@ -366,6 +374,7 @@ namespace RePlanet
             try
             {
                 DrawEntryOverlay();
+                DrawPerfOverlay(app);
                 bool photoClean = screen == UIScreen.Photo && PhotoMode.HideHud && !photoPanel;
                 if (screen != UIScreen.Intro && screen != UIScreen.Ending && screen != UIScreen.Loading && !photoClean) DrawToasts(app);
                 if (guiError != null && Time.unscaledTime < guiErrorUntil)

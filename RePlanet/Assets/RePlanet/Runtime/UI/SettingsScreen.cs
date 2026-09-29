@@ -32,7 +32,7 @@ namespace RePlanet
             GameAction.Press, GameAction.Vehicle, GameAction.VehicleReset, GameAction.DiveUp, GameAction.DiveDown,
             GameAction.Sleep, GameAction.Shelter, GameAction.Emote,
             GameAction.Menu, GameAction.Inventory, GameAction.Missions, GameAction.Map, GameAction.Build, GameAction.RotateBuild,
-            GameAction.Photo, GameAction.QuickSave, GameAction.Pause,
+            GameAction.Photo, GameAction.QuickSave, GameAction.Pause, GameAction.Radio, GameAction.PerfOverlay,
         };
 
         static readonly string[,] PadTable =
@@ -227,9 +227,10 @@ namespace RePlanet
             float fov = UINav.Slider(new Rect(0, y, w, RowH), "Sichtfeld", s.Fov, 45f, 90f, 1f, s.Fov.ToString("0") + "°");
             if (Mathf.Abs(fov - s.Fov) > 1e-4f) { s.Fov = fov; MarkSettings(); }
             y += RowStep;
-            bool sf = UINav.Toggle(new Rect(0, y, w, RowH), s.ShowFps, "Bildrate anzeigen");
+            bool sf = UINav.Toggle(new Rect(0, y, w, RowH), s.ShowFps, L("Leistungsanzeige") + " [" + InputMap.Label(GameAction.PerfOverlay) + "]");
             if (sf != s.ShowFps) { s.ShowFps = sf; MarkSettings(); }
             y += RowStep;
+            y = Note(L("Oben links: Bildrate (aktuell, Minimum und Mittel der letzten 5 Sekunden), Bildzeit, Draw-Calls, Qualitätsstufe und Auflösung."), w, y);
             return y;
         }
 
@@ -257,6 +258,10 @@ namespace RePlanet
             bool mu = UINav.Toggle(new Rect(0, y, w, RowH), s.MuteWhenUnfocused, "Stumm, wenn das Spiel nicht im Vordergrund ist");
             if (mu != s.MuteWhenUnfocused) { s.MuteWhenUnfocused = mu; MarkSettings(); }
             y += RowStep;
+            bool nig = UINav.Toggle(new Rect(0, y, w, RowH), s.NarratorInGame, L("Erzähler im Spiel"));
+            if (nig != s.NarratorInGame) { s.NarratorInGame = nig; if (!nig) Narrator.ClearGameLines(); MarkSettings(); }
+            y += RowStep;
+            y = Note(L("Der Erzähler spricht zu besonderen Momenten einen kurzen Satz – jeder nur einmal pro Spielstand. Ohne Aufnahme erscheint der Satz als Untertitel."), w, y);
             return y;
         }
 
@@ -355,16 +360,16 @@ namespace RePlanet
             bool rf = UINav.Toggle(new Rect(0, y, w, RowH), s.ReduceFlashing, "Blitze und Lichtblitze reduzieren");
             if (rf != s.ReduceFlashing) { s.ReduceFlashing = rf; MarkSettings(); }
             y += RowStep;
-            int li = Mathf.Max(0, Array.IndexOf(Loc.Languages, s.Language));
-            int nli = UINav.Choice(new Rect(0, y, w, RowH), L("Sprache"), li, Loc.LanguageNames);
-            if (nli != li) { s.Language = Loc.Languages[nli]; Loc.Lang = s.Language; MarkSettings(); }
-            y += RowStep;
             y = Note("Materialien werden immer mit Form-Symbol und Farbe gezeigt (z. B. ◯ Glas, △ Kunststoff, ⬡ Metall), damit sie auch ohne Farbsehen unterscheidbar sind. Hoher Kontrast nutzt schwarze Flächen, weiße Schrift und gelbe Fokusrahmen.", w, y);
             return y;
         }
 
         float SettingsMisc(GameApp app, Settings s, float w, float y)
         {
+            int li = Mathf.Max(0, Array.IndexOf(Loc.Languages, s.Language));
+            int nli = UINav.Choice(new Rect(0, y, w, RowH), L("Sprache") + " / Language", li, Loc.LanguageNames);
+            if (nli != li) { s.Language = Loc.Languages[nli]; Loc.Lang = s.Language; MarkSettings(); }
+            y += RowStep;
             GUI.Label(new Rect(10, y, w * 0.4f, RowH), L("Spielername"), UISkin.Label);
             string nm = UINav.TextField(new Rect(w * 0.42f, y + 2, w * 0.58f - 6, RowH - 4), s.PlayerName, 20, "set_name");
             if (nm != s.PlayerName) { s.PlayerName = nm; settingsSaveDirty = true; }

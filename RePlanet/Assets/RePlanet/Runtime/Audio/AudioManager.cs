@@ -15,10 +15,11 @@ namespace RePlanet
     /// <item>Intro-Score und Abspann mit vorgemerktem Start, falls die Erzeugung noch läuft; IntroTime ist DSP-genau.</item>
     /// <item>Sprachkanal: Lautstärke „Sprache“ (VoiceGain) und weiches Absenken der Musik (DuckMusic), solange der Erzähler (<see cref="Narrator"/>) spricht.</item>
     /// <item>3D-Effekte aus einem Quellen-Pool, Dauerklänge (Werkzeuge, Motor), planetentypische Ambience (Wind, Sturm, Wasser, Nacht) und Reaktion auf Spielereignisse (GameApp.OnFx).</item>
+    /// <item>Radio (AudioRadio.cs) und Stadtklänge, die mit der Wiederherstellung wachsen (AudioCity.cs).</item>
     /// </list>
     /// Öffentliche Aufrufe werfen nie Ausnahmen; fehlende Clips werden still übersprungen (und im Hintergrund nachgeladen).
     /// </summary>
-    public class AudioManager : MonoBehaviour
+    public partial class AudioManager : MonoBehaviour
     {
         public static AudioManager I { get; private set; }
 
@@ -622,6 +623,7 @@ namespace RePlanet
                 focusGain = Mathf.MoveTowards(focusGain, mute ? 0f : 1f, dt * 3f);
                 UpdateDuck(dt);
                 UpdateIntro();
+                UpdateRadio(dt);
                 UpdateMusic(dt);
                 UpdateAmbience(dt);
                 UpdateVoices(dt);
@@ -715,7 +717,12 @@ namespace RePlanet
                 case AppMode.PlanetSelect: return "menu";
                 case AppMode.Loading: return slots[cur].Set != null ? slots[cur].Set.Id : "menu";
                 default:
-                    if (app.InGame) return app.W.CurrentPlanet;
+                    if (app.InGame)
+                    {
+                        string radio;
+                        if (RadioOverride(out radio)) return radio;
+                        return app.W.CurrentPlanet;
+                    }
                     return slots[cur].Set != null ? slots[cur].Set.Id : "menu";
             }
         }
@@ -792,7 +799,8 @@ namespace RePlanet
             var t = new float[7];
             for (int k = 0; k < 7; k++) t[k] = 1f;
             var app = GameApp.I;
-            bool planetMusic = app != null && app.InGame && mc.Id == app.W.CurrentPlanet;
+            var radioMix = RadioMixFor(mc);
+            bool planetMusic = radioMix == null && app != null && app.InGame && mc.Id == app.W.CurrentPlanet;
             if (planetMusic)
             {
                 var w = app.W; var ps = w.Cur; string pl = w.CurrentPlanet;
@@ -828,6 +836,19 @@ namespace RePlanet
                 float makeup = now > 1e-9 ? Mathf.Clamp(Mathf.Sqrt((float)(0.45 * full / now)), 1f, 1.7f) : 1f;
                 for (int i = 0; i < 7; i++) t[i] *= makeup * 0.85f;
             }
+            else if (radioMix != null)
+            {
+                // Radio: feste Mischung des Stücks, gleicher Lautheitsausgleich wie bei der Planetenmusik
+                double full = 0, now = 0;
+                for (int i = 0; i < 7; i++)
+                {
+                    t[i] = i < radioMix.Length ? radioMix[i] : 0f;
+                    float r = mc.Rms != null && i < mc.Rms.Length ? mc.Rms[i] : 0.05f;
+                    full += r * r; now += (t[i] * r) * (t[i] * r);
+                }
+                float makeup = now > 1e-9 ? Mathf.Clamp(Mathf.Sqrt((float)(0.45 * full / now)), 1f, 1.7f) : 1f;
+                for (int i = 0; i < 7; i++) t[i] *= makeup * 0.85f;
+            }
             else if (mc.Id == "menu") { t[6] = 0.8f; }
             float a = snap ? 1f : 1f - Mathf.Exp(-dt / 1.6f);
             for (int i = 0; i < 7; i++) s.Vol[i] += (t[i] - s.Vol[i]) * a;
@@ -844,6 +865,7 @@ namespace RePlanet
                 AmbLoop("amb_storm", null, false, 0f, 0f);
                 AmbLoop("amb_water", null, false, 0f, 0f);
                 AmbLoop("amb_night", null, false, 0f, 0f);
+                CityOff();
                 return;
             }
             var w = app.W; var ps = w.Cur; string pl = w.CurrentPlanet;
@@ -874,6 +896,7 @@ namespace RePlanet
             }
             AmbLoop("amb_water", "water_loop", water > 0.01f, water * 0.7f, 0f);
             AmbLoop("amb_night", "night_ambience", dark > 0.05f, dark * (1f - storm) * 0.8f, 0f);
+            UpdateCity(dt, w, ps, pl, dark, storm, wind, shelter);
         }
 
         void AmbLoop(string key, string clip, bool on, float vol, float pan)

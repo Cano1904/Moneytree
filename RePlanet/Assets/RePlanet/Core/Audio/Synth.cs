@@ -1790,13 +1790,15 @@ namespace RePlanet.Core
             "engine_loop", "machine_loop", "wind_loop", "water_loop", "storm_loop", "mission", "lore", "wheels_loop", "mission_new",
             "crane", "unload", "grab", "zone",
             "wind_terra", "wind_pyra", "wind_pelagia", "wind_nivalis", "storm_terra", "storm_pyra", "storm_pelagia", "storm_nivalis",
-            "night_ambience", "thunder"
+            "night_ambience", "thunder",
+            "radio_jingle_1", "radio_jingle_2", "radio_jingle_3",
+            "city_birds", "city_gulls", "city_leaves", "city_fountain", "city_life"
         };
 
         /// <summary>true für lange Ambience-Loops (werden im Spiel erst bei Bedarf geladen).</summary>
         public static bool IsAmbience(string id)
         {
-            return id.StartsWith("wind_", StringComparison.Ordinal) || id.StartsWith("storm_", StringComparison.Ordinal) || id == "water_loop" || id == "night_ambience";
+            return id.StartsWith("wind_", StringComparison.Ordinal) || id.StartsWith("storm_", StringComparison.Ordinal) || id == "water_loop" || id == "night_ambience" || IsCity(id);
         }
 
         static int WindStyleOf(string id)
@@ -2296,7 +2298,7 @@ namespace RePlanet.Core
                         return o;
                     }
             }
-            return new float[64];
+            return SfxExtra(id, rng) ?? new float[64];
         }
 
         /// <summary>Planetentypische Sturmzutaten: Trümmerklappern (TERRA), Blechschlagen (PYRA), Regen/Gischt (PELAGIA), Graupel (NIVALIS).</summary>
