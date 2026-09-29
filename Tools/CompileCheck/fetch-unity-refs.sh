@@ -13,4 +13,6 @@ if [ ! -d sdk ]; then
   curl -sSL -o sdk.nupkg https://api.nuget.org/v3-flatcontainer/unity3d.sdk/2021.1.14.1/unity3d.sdk.2021.1.14.1.nupkg
   unzip -q -o sdk.nupkg -d sdk
 fi
+# Die NuGet-Pakete enthalten Dateien ohne Leserechte (0000) – ohne das findet dotnet als normaler Nutzer keine Typen.
+chmod -R a+rX "$DEST"
 echo "Unity-Referenzen bereit in $DEST"
