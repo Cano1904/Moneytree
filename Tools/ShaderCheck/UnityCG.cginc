@@ -65,5 +65,15 @@ struct appdata_img { float4 vertex : POSITION; float2 texcoord : TEXCOORD0; };
 struct v2f_img { float4 pos : SV_POSITION; float2 uv : TEXCOORD0; };
 v2f_img vert_img(appdata_img v) { v2f_img o; o.pos = UnityObjectToClipPos(v.vertex); o.uv = v.texcoord; return o; }
 float4 unity_ColorSpaceDielectricSpec;
+float DecodeFloatRG(float2 enc) { return dot(enc, float2(1.0, 1.0 / 255.0)); }
+float3 DecodeViewNormalStereo(float4 enc4)
+{
+    float kScale = 1.7777;
+    float3 nn = enc4.xyz * float3(2.0 * kScale, 2.0 * kScale, 0) + float3(-kScale, -kScale, 1);
+    float g = 2.0 / dot(nn.xyz, nn.xyz);
+    float3 n; n.xy = g * nn.xy; n.z = g - 1.0;
+    return n;
+}
+void DecodeDepthNormal(float4 enc, out float depth, out float3 normal) { depth = DecodeFloatRG(enc.zw); normal = DecodeViewNormalStereo(enc); }
 float3 GammaToLinearSpace(float3 c) { return c * (c * (c * 0.305306011 + 0.682171111) + 0.012522878); }
 #endif
