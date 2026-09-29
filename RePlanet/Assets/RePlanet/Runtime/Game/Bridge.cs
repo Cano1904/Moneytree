@@ -10,6 +10,17 @@ namespace RePlanet
         public string Text;
         public ToastKind Kind;
         public float Created, Duration;
+        // ---- Darstellung (vom HUD gesetzt, je nach Einstellung „Hinweise“)
+        /// <summary>Vom HUD bereits ausgewertet.</summary>
+        public bool Seen;
+        /// <summary>Wird in der aktuellen Hinweisstufe nicht gezeigt (unterdrückt oder in eine andere Meldung eingerechnet).</summary>
+        public bool Hidden;
+        /// <summary>Gekürzter Anzeigetext (null = <see cref="Text"/>).</summary>
+        public string Shown;
+        /// <summary>Gleichartige Meldungen werden zusammengefasst (z. B. „credits“ → Summe).</summary>
+        public string MergeKey;
+        public long Sum;
+        public int Count = 1;
     }
 
     /// <summary>
@@ -22,6 +33,15 @@ namespace RePlanet
         public static string Prompt;
         /// <summary>Warum die aktuelle Aktion nicht geht (konkreter Grund).</summary>
         public static string Blocked;
+        /// <summary>Kurzform für das ruhige HUD: Tastenbezeichnung (ohne Klammern, null = keine Taste) und ein Wort, z. B. „E“ + „Werkstatt“.</summary>
+        public static string PromptKey, PromptWord;
+        /// <summary>Taste muss gehalten werden.</summary>
+        public static bool PromptHold;
+        /// <summary>Ankerpunkt der Interaktion in der Welt (über dem Objekt); null = unten in der Mitte.</summary>
+        public static Vector3? PromptAt;
+        /// <summary>Kurzform von <see cref="Blocked"/> (wenige Wörter) und ihr Ankerpunkt.</summary>
+        public static string BlockedShort;
+        public static Vector3? BlockedAt;
         /// <summary>Fortschritt 0..1 einer laufenden Aktion (Schneiden, Tauen …), sonst −1.</summary>
         public static float Progress = -1f;
         public static string ProgressLabel;
@@ -50,9 +70,21 @@ namespace RePlanet
             if (string.IsNullOrEmpty(text)) return;
             // Gleiche Meldung nicht stapeln
             foreach (var t in Toasts)
-                if (t.Text == text && Time.unscaledTime - t.Created < t.Duration) { t.Created = Time.unscaledTime; return; }
+                if (t.Text == text && t.MergeKey == null && Time.unscaledTime - t.Created < t.Duration) { t.Created = Time.unscaledTime; t.Count++; return; }
             Toasts.Add(new Toast { Text = text, Kind = kind, Created = Time.unscaledTime, Duration = duration });
             if (Toasts.Count > 6) Toasts.RemoveAt(0);
+        }
+
+        /// <summary>Setzt den Interaktionshinweis in Lang- und Kurzform.</summary>
+        public static void SetPrompt(string full, string key, string word, Vector3? at = null, bool hold = false)
+        {
+            Prompt = full; PromptKey = key; PromptWord = word; PromptAt = at; PromptHold = hold;
+        }
+
+        /// <summary>Setzt den Grund, warum etwas nicht geht, in Lang- und Kurzform.</summary>
+        public static void SetBlocked(string full, string shortText, Vector3? at = null)
+        {
+            Blocked = full; BlockedShort = shortText; BlockedAt = at;
         }
 
         public static void Say(string text, float duration, string speaker = null)
@@ -64,7 +96,8 @@ namespace RePlanet
 
         public static void ClearTransient()
         {
-            Prompt = null; Blocked = null; Progress = -1f; ProgressLabel = null; MagnetCharge = -1f; NearStation = null; VehicleStuck = false;
+            Prompt = null; Blocked = null; PromptKey = null; PromptWord = null; PromptAt = null; PromptHold = false; BlockedShort = null; BlockedAt = null;
+            Progress = -1f; ProgressLabel = null; MagnetCharge = -1f; NearStation = null; VehicleStuck = false;
         }
     }
 
