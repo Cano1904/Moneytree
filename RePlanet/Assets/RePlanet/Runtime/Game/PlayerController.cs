@@ -17,6 +17,8 @@ namespace RePlanet
         public int Flags { get; private set; }
         public bool InVehicle { get; private set; }
         public string Tool { get { return tool; } }
+        /// <summary>Kollisionsumgebung (Tore, Dünen, gebaute Anlagen) – die Kamera nutzt sie, um nicht in Hindernisse zu rücken.</summary>
+        public MotorEnv Env { get { return env; } }
 
         MoverState ms;
         MotorEnv env;

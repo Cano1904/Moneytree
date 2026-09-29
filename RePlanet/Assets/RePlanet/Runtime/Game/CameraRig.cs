@@ -21,6 +21,9 @@ namespace RePlanet
         /// <summary>Zwischensequenz steuert die Kamera direkt.</summary>
         public bool Cinematic;
         float shake, menuT;
+        // Nachführen hinter MIKO: Zeit seit der letzten eigenen Kameradrehung, letzte Zielposition
+        float lookIdle = 10f;
+        Vector3 lastTarget; bool hasLastTarget;
         Vector3 photoPos; float photoYaw, photoPitch; bool photoInit;
         RenderTexture scaled;
         readonly List<Box> tmp = new List<Box>();
@@ -82,6 +85,7 @@ namespace RePlanet
             photoInit = false;
             var target = PlayerController.I.RenderPos + Vector3.up * (PlayerController.I.InVehicle ? 2.4f : 1.4f);
             bool look = !UIState.BlocksGameplay && !BuildMode.Active;
+            float dt = Mathf.Min(Time.deltaTime, 0.1f);
             if (look)
             {
                 var d = InputMap.Look(app.Settings.MouseSensitivity, app.Settings.PadSensitivity, app.Settings.InvertY);
@@ -89,7 +93,9 @@ namespace RePlanet
                 Pitch = Mathf.Clamp(Pitch - d.y, -25f, 70f);
                 float sc = InputMap.Scroll();
                 if (Mathf.Abs(sc) > 0.001f) Distance = Mathf.Clamp(Distance - sc * 6f, 3f, PlayerController.I.InVehicle ? 18f : 12f);
+                lookIdle = d.sqrMagnitude > 0.0004f ? 0f : lookIdle + dt;
             }
+            FollowBehind(target, dt);
             if (PlayerController.I.InVehicle && Distance < 8f) Distance = Mathf.Lerp(Distance, 9f, Time.deltaTime * 2f);
             float dist = Distance;
             float pitch = Pitch;
@@ -108,7 +114,40 @@ namespace RePlanet
             ApplyRenderScale(app);
         }
 
-        /// <summary>Hält die Kamera vor Wänden und über dem Gelände.</summary>
+        /// <summary>
+        /// Schwenkt die Kamera langsam hinter MIKO, solange er vorwärts/schräg läuft und die Kamera eine Weile nicht selbst
+        /// gedreht wurde – so bleibt sie hinter ihm, statt nach Kurven allmählich seitlich oder vor ihm zu stehen. Läuft MIKO
+        /// seitwärts oder auf die Kamera zu (Steuerung relativ zur Kamera), bleibt sie stehen, sonst würde sie im Kreis drehen.
+        /// Im Fahrzeug folgt sie zügiger (außer beim Rückwärtsfahren).
+        /// </summary>
+        void FollowBehind(Vector3 target, float dt)
+        {
+            var pc = PlayerController.I;
+            if (pc == null || BuildMode.Active || dt <= 0f) { hasLastTarget = false; return; }
+            var v = hasLastTarget ? (target - lastTarget) / dt : Vector3.zero;
+            lastTarget = target; hasLastTarget = true;
+            float speed = new Vector2(v.x, v.z).magnitude;
+            if (speed > 40f) return; // Sprung (Teleport, Abschleppen, Planetenwechsel)
+            bool vehicle = pc.InVehicle;
+            if (lookIdle < (vehicle ? 0.8f : 1.5f) || speed < 1f) return;
+            float robotYaw = pc.RenderYaw * Mathf.Rad2Deg;
+            float delta = Mathf.DeltaAngle(Yaw, robotYaw);
+            // Seitwärtslaufen (90°) dreht nicht mit – sonst liefe MIKO bei gehaltener Seitwärtstaste im Kreis
+            if (Mathf.Abs(delta) > (vehicle ? 150f : 75f)) return;
+            float rate = (vehicle ? 70f : 32f) * Mathf.Clamp01(speed / 5f);
+            Yaw = Mathf.MoveTowardsAngle(Yaw, robotYaw, rate * dt);
+        }
+
+        /// <summary>Kameraradius für die Kollision: Nahebene (0,15 m, Bildecken ≈ 0,18 m) plus Rand.</summary>
+        const float CamRadius = 0.3f;
+        /// <summary>Näher als so an MIKO heran nur, wenn es keine freie Stellung gibt.</summary>
+        const float MinDist = 1.1f;
+
+        /// <summary>
+        /// Hält die Kamera aus Wänden, Gebäuden (auch selbst gebauten Anlagen), Müllbergen und dem Gelände.
+        /// Liegt direkt hinter MIKO eine Wand, schaut die Kamera steiler von oben statt in die Wand zu rücken;
+        /// nur wenn gar keine Stellung frei ist, rückt sie bis an MIKO heran – aber nie in ein Hindernis.
+        /// </summary>
         Vector3 Collide(Vector3 from, Vector3 to)
         {
             var wv = WorldView.I;
@@ -117,26 +156,217 @@ namespace RePlanet
             float len = dir.magnitude;
             if (len < 0.01f) return to;
             dir /= len;
-            float safe = len;
-            for (float t = 0.5f; t <= len; t += 0.4f)
+            EnsureDeco(wv);
+            // Steckt MIKOs Kopfpunkt selbst in Deko-Geometrie (z. B. unter einem Vordach), zählt sie in diesem Bild nicht
+            decoActive = deco != null && deco.Root == wv.Root && !deco.Hit(from, DecoRadius);
+            Vector3 pos;
+            float free = FreeDistance(wv, from, dir, len, out pos);
+            if (free >= Mathf.Min(len, MinDist)) return pos;
+            // Alternative: gleiche Richtung, aber steiler von oben
+            float yaw = Mathf.Atan2(-dir.x, -dir.z);
+            float pitch = Mathf.Asin(Mathf.Clamp(dir.y, -1f, 1f));
+            float bestFree = free; Vector3 bestPos = pos;
+            for (float add = 12f; add <= 70f; add += 12f)
             {
-                var p = from + dir * t;
-                float g = Terrain.HeightAt(wv.Planet, p.x, p.z);
-                if (p.y < g + 0.35f && !(Terrain.WaterLevel(wv.Planet) > -50 && p.y < Terrain.WaterLevel(wv.Planet))) { safe = t - 0.4f; break; }
-                wv.Layout.Query(p.x, p.z, 0.3f, tmp);
-                bool hit = false;
-                foreach (var b in tmp)
-                {
-                    if (!b.Solid || b.Kind == "gateblock" || b.DuneSet >= 0) continue;
-                    if (b.Contains(p.x, p.z, 0.25f) && p.y > b.Y0 && p.y < b.Y0 + b.H) { hit = true; break; }
-                }
-                if (hit) { safe = t - 0.4f; break; }
+                float p = Mathf.Min(pitch + add * Mathf.Deg2Rad, 80f * Mathf.Deg2Rad);
+                var d2 = new Vector3(-Mathf.Sin(yaw) * Mathf.Cos(p), Mathf.Sin(p), -Mathf.Cos(yaw) * Mathf.Cos(p));
+                Vector3 p2;
+                float f2 = FreeDistance(wv, from, d2, len, out p2);
+                if (f2 >= Mathf.Min(len, MinDist)) return p2;
+                if (f2 > bestFree + 0.05f) { bestFree = f2; bestPos = p2; }
             }
-            safe = Mathf.Max(1.2f, safe);
-            var res = from + dir * safe;
-            float gy = Terrain.HeightAt(wv.Planet, res.x, res.z);
-            if (res.y < gy + 0.35f && !(Terrain.WaterLevel(wv.Planet) > -50 && from.y < Terrain.WaterLevel(wv.Planet))) res.y = gy + 0.35f;
-            return res;
+            return bestPos;
+        }
+
+        /// <summary>Wie weit die Kamera (als Kugel) von <paramref name="from"/> in Richtung <paramref name="dir"/> frei ist; Gelände/Wasser heben sie an.</summary>
+        float FreeDistance(WorldView wv, Vector3 from, Vector3 dir, float len, out Vector3 pos)
+        {
+            const float step = 0.1f;
+            pos = Lift(wv, from, from);
+            float free = 0f;
+            for (float t = step; t <= len + 1e-3f; t += step)
+            {
+                var p = Lift(wv, from + dir * Mathf.Min(t, len), from);
+                if (Blocked(wv, p)) return free;
+                free = Mathf.Min(t, len); pos = p;
+            }
+            return free;
+        }
+
+        /// <summary>Über Gelände und (wenn MIKO nicht taucht) über der Wasseroberfläche halten.</summary>
+        static Vector3 Lift(WorldView wv, Vector3 p, Vector3 target)
+        {
+            float floor = Terrain.HeightAt(wv.Planet, p.x, p.z);
+            float water = Terrain.WaterLevel(wv.Planet);
+            bool diving = water > -50f && target.y < water;
+            if (water > -50f && !diving) floor = Mathf.Max(floor, water);
+            if (p.y < floor + CamRadius) p.y = floor + CamRadius;
+            return p;
+        }
+
+        bool Blocked(WorldView wv, Vector3 p)
+        {
+            var env = PlayerController.I != null ? PlayerController.I.Env : null;
+            if (env != null && env.Planet == wv.Planet) env.Query(p.x, p.z, CamRadius + 0.05f, tmp);
+            else wv.Layout.Query(p.x, p.z, CamRadius + 0.05f, tmp);
+            foreach (var b in tmp)
+            {
+                if (b.Kind == "gateblock") continue; // unsichtbare Sperre vor dem Müllwall
+                if (env != null && env.Planet == wv.Planet ? !env.Solid(b) : (!b.Solid || b.DuneSet >= 0 || b.Gate >= 0)) continue;
+                if (b.Contains(p.x, p.z, CamRadius) && p.y > b.Y0 - CamRadius && p.y < b.Y0 + b.H + CamRadius) return true;
+            }
+            // Müllberge (schrumpfen mit der Reinigung)
+            var w = wv.World;
+            if (w != null && wv.Layout.Mounds.Count > 0 && w.Planets.ContainsKey(wv.Planet))
+            {
+                var ps = w.Planet(wv.Planet);
+                foreach (var m in wv.Layout.Mounds)
+                {
+                    float s = PhotoMode.Active && PhotoMode.ShowBefore ? 1f : WorldView.MoundScale(ps, m.Area);
+                    if (s < 0.06f) continue;
+                    // Form wie MeshKit.Mound: Halbkugel mit Rauschen (±25 %) und Gerümpel auf der Oberfläche
+                    float r = m.Radius * s * 1.25f, dx = p.x - m.Pos.x, dz = p.z - m.Pos.z;
+                    float d2 = dx * dx + dz * dz;
+                    if (d2 > (r + CamRadius) * (r + CamRadius)) continue;
+                    float k = Mathf.Sqrt(Mathf.Clamp01(1f - d2 / (r * r)));
+                    if (p.y < m.Pos.y + m.Height * s * 1.2f * k + CamRadius) return true;
+                }
+            }
+            // Gezeichnete Deko, die über die Kollisionsboxen hinausragt (Balkone, Vordächer, Markisen, Stützpunkt, Schiff)
+            return decoActive && deco.Hit(p, DecoRadius);
+        }
+
+        // ------------------------------------------------------------ Deko-Geometrie
+        /// <summary>Abstand der Kamera zu gezeichneter Deko (Nahebene 0,15 m; Bildecken ≈ 0,18 m).</summary>
+        const float DecoRadius = 0.22f;
+        static readonly string[] DecoGroups = { "Buildings", "Base", "Backdrop", "TransportShip", "Unterschlupf" };
+        DecoGrid deco, decoPending;
+        bool decoActive;
+
+        /// <summary>
+        /// Baut das Dreiecksraster neu, sobald die Welt neu aufgebaut wurde (Planetenwechsel, Sitzungsstart). Die Meshdaten
+        /// werden im Hauptthread gelesen, das Einsortieren läuft im Hintergrund (kein Ruckler); bis dahin gelten nur die Boxen.
+        /// </summary>
+        void EnsureDeco(WorldView wv)
+        {
+            var root = wv.Root;
+            if (root == null) { deco = null; decoPending = null; return; }
+            if (deco != null && deco.Root == root) return;
+            if (decoPending != null && decoPending.Root == root)
+            {
+                if (decoPending.Ready) { deco = decoPending.Failed ? null : decoPending; if (decoPending.Failed) Debug.LogWarning("[Kamera] Deko-Raster: " + decoPending.Error); decoPending = null; }
+                return;
+            }
+            var grid = new DecoGrid(root);
+            var parts = new List<KeyValuePair<Mesh, Matrix4x4>>();
+            try
+            {
+                foreach (Transform ch in root)
+                {
+                    bool use = false;
+                    foreach (var g in DecoGroups) if (ch.gameObject.name.StartsWith(g, StringComparison.Ordinal)) { use = true; break; }
+                    if (!use) continue;
+                    foreach (var mf in ch.GetComponentsInChildren<MeshFilter>(false))
+                        if (mf.sharedMesh != null) grid.Take(mf.sharedMesh, mf.transform.localToWorldMatrix);
+                }
+            }
+            catch (Exception e) { Debug.LogException(e); return; }
+            decoPending = grid;
+            if (!System.Threading.ThreadPool.QueueUserWorkItem(_ => grid.BuildNow())) grid.BuildNow();
+        }
+
+        /// <summary>Dreiecke der Welt-Deko in einem 1-m-Raster (XZ) für schnelle Kugelprüfungen der Kamera.</summary>
+        sealed class DecoGrid
+        {
+            public readonly Transform Root;
+            public volatile bool Ready, Failed;
+            public string Error;
+            const float Cell = 1f, Pad = 0.3f, Range = 170f;
+            const int MaxCells = 900; // riesige Flächen (Wände der Kollisionsboxen) decken die Boxen schon ab
+            readonly List<float> t = new List<float>(); // je Dreieck: 9 Koordinaten + Min/Max-Y
+            readonly Dictionary<int, List<int>> cells = new Dictionary<int, List<int>>();
+            readonly List<Vector3[]> srcV = new List<Vector3[]>();
+            readonly List<int[]> srcT = new List<int[]>();
+            readonly List<Matrix4x4> srcM = new List<Matrix4x4>();
+            public DecoGrid(Transform root) { Root = root; }
+            static int Key(int x, int z) { return (x + 2048) * 4096 + (z + 2048); }
+
+            /// <summary>Hauptthread: Meshdaten kopieren (Unity-API).</summary>
+            public void Take(Mesh m, Matrix4x4 mx) { srcV.Add(m.vertices); srcT.Add(m.triangles); srcM.Add(mx); }
+
+            /// <summary>Beliebiger Thread: einsortieren (nur eigene Daten und reine Mathematik).</summary>
+            public void BuildNow()
+            {
+                try { for (int i = 0; i < srcV.Count; i++) Add(srcV[i], srcT[i], srcM[i]); }
+                catch (Exception e) { Error = e.Message; Failed = true; }
+                srcV.Clear(); srcT.Clear(); srcM.Clear();
+                Ready = true;
+            }
+
+            void Add(Vector3[] v, int[] tri, Matrix4x4 mx)
+            {
+                var w = new Vector3[v.Length];
+                for (int i = 0; i < v.Length; i++) w[i] = mx.MultiplyPoint3x4(v[i]);
+                for (int k = 0; k + 2 < tri.Length; k += 3)
+                {
+                    Vector3 a = w[tri[k]], b = w[tri[k + 1]], c = w[tri[k + 2]];
+                    float x0 = Mathf.Min(a.x, Mathf.Min(b.x, c.x)), x1 = Mathf.Max(a.x, Mathf.Max(b.x, c.x));
+                    float z0 = Mathf.Min(a.z, Mathf.Min(b.z, c.z)), z1 = Mathf.Max(a.z, Mathf.Max(b.z, c.z));
+                    float y0 = Mathf.Min(a.y, Mathf.Min(b.y, c.y)), y1 = Mathf.Max(a.y, Mathf.Max(b.y, c.y));
+                    if (x1 < -Range || x0 > Range || z1 < -Range || z0 > Range || y0 > 80f) continue;
+                    int gx0 = Mathf.FloorToInt((Mathf.Max(x0, -Range) - Pad) / Cell), gx1 = Mathf.FloorToInt((Mathf.Min(x1, Range) + Pad) / Cell);
+                    int gz0 = Mathf.FloorToInt((Mathf.Max(z0, -Range) - Pad) / Cell), gz1 = Mathf.FloorToInt((Mathf.Min(z1, Range) + Pad) / Cell);
+                    if ((gx1 - gx0 + 1) * (gz1 - gz0 + 1) > MaxCells) continue;
+                    int id = t.Count;
+                    t.Add(a.x); t.Add(a.y); t.Add(a.z); t.Add(b.x); t.Add(b.y); t.Add(b.z); t.Add(c.x); t.Add(c.y); t.Add(c.z); t.Add(y0); t.Add(y1);
+                    for (int gx = gx0; gx <= gx1; gx++)
+                        for (int gz = gz0; gz <= gz1; gz++)
+                        {
+                            List<int> l;
+                            int key = Key(gx, gz);
+                            if (!cells.TryGetValue(key, out l)) { l = new List<int>(); cells[key] = l; }
+                            l.Add(id);
+                        }
+                }
+            }
+
+            public bool Hit(Vector3 p, float r)
+            {
+                List<int> l;
+                if (!cells.TryGetValue(Key(Mathf.FloorToInt(p.x / Cell), Mathf.FloorToInt(p.z / Cell)), out l)) return false;
+                float r2 = r * r;
+                foreach (int i in l)
+                {
+                    if (p.y < t[i + 9] - r || p.y > t[i + 10] + r) continue;
+                    var a = new Vector3(t[i], t[i + 1], t[i + 2]); var b = new Vector3(t[i + 3], t[i + 4], t[i + 5]); var c = new Vector3(t[i + 6], t[i + 7], t[i + 8]);
+                    if ((ClosestOnTriangle(p, a, b, c) - p).sqrMagnitude < r2) return true;
+                }
+                return false;
+            }
+
+            /// <summary>Nächster Punkt auf einem Dreieck (Ericson, Real-Time Collision Detection 5.1.5).</summary>
+            static Vector3 ClosestOnTriangle(Vector3 p, Vector3 a, Vector3 b, Vector3 c)
+            {
+                Vector3 ab = b - a, ac = c - a, ap = p - a;
+                float d1 = Vector3.Dot(ab, ap), d2 = Vector3.Dot(ac, ap);
+                if (d1 <= 0f && d2 <= 0f) return a;
+                Vector3 bp = p - b;
+                float d3 = Vector3.Dot(ab, bp), d4 = Vector3.Dot(ac, bp);
+                if (d3 >= 0f && d4 <= d3) return b;
+                float vc = d1 * d4 - d3 * d2;
+                if (vc <= 0f && d1 >= 0f && d3 <= 0f) return a + ab * (d1 / (d1 - d3));
+                Vector3 cp = p - c;
+                float d5 = Vector3.Dot(ab, cp), d6 = Vector3.Dot(ac, cp);
+                if (d6 >= 0f && d5 <= d6) return c;
+                float vb = d5 * d2 - d1 * d6;
+                if (vb <= 0f && d2 >= 0f && d6 <= 0f) return a + ac * (d2 / (d2 - d6));
+                float va = d3 * d6 - d5 * d4;
+                if (va <= 0f && (d4 - d3) >= 0f && (d5 - d6) >= 0f) return b + (c - b) * ((d4 - d3) / ((d4 - d3) + (d5 - d6)));
+                float denom = va + vb + vc;
+                if (Mathf.Abs(denom) < 1e-12f) return a; // entartetes Dreieck
+                float v = vb / denom, w2 = vc / denom;
+                return a + ab * v + ac * w2;
+            }
         }
 
         void MenuCamera()

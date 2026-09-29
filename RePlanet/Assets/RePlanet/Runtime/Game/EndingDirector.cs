@@ -29,7 +29,9 @@ namespace RePlanet
             if (CameraRig.I != null) CameraRig.I.Cinematic = true;
             AudioManager.PlayEnding();
             Narrator.Begin(Narrator.EndingCues());
-            Build();
+            // Ein Fehler beim Bühnenbau darf den Abspann nicht verhindern (Tafeln und Rückblick laufen trotzdem)
+            try { Build(); }
+            catch (Exception e) { Debug.LogException(e); }
         }
 
         void Build()
@@ -67,7 +69,8 @@ namespace RePlanet
             if (stage != null) Destroy(stage.gameObject);
             stage = null;
             var d = done; done = null;
-            d?.Invoke();
+            try { d?.Invoke(); }
+            catch (Exception e) { Debug.LogException(e); }
         }
 
         void Update()
@@ -78,6 +81,12 @@ namespace RePlanet
             bool hold = Input.GetKey(KeyCode.Escape) || Input.GetKey(KeyCode.Return) || Input.GetKey(KeyCode.Space) || Input.GetKey(KeyCode.JoystickButton0) || Input.GetMouseButton(0);
             skipHold = hold ? skipHold + Time.unscaledDeltaTime : 0f;
             if (skipHold > 1f || t > Length) { Finish(); return; }
+            try { Animate(); }
+            catch (Exception e) { Debug.LogException(e); Finish(); }
+        }
+
+        void Animate()
+        {
             if (Atmosphere.I != null) Atmosphere.I.ForcePhase = Mathf.Lerp(0.7f, 0.78f, t / Length);
             // Archen sinken herab
             for (int i = 0; i < ships.Count; i++)

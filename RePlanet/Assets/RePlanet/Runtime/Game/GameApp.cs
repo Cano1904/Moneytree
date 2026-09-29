@@ -86,12 +86,15 @@ namespace RePlanet
         }
 
         // ================================================================== Abläufe
-        /// <summary>Neues Spiel: Intro → Planetenwahl → Welt erzeugen.</summary>
-        public void BeginNewGame(string worldName, string slot, bool playIntro)
+        /// <summary>
+        /// Neues Spiel: Intro → Planetenwahl → Welt erzeugen. Das Intro gehört zu jedem neuen Spiel und läuft immer
+        /// (überspringbar durch Gedrückthalten); <paramref name="playIntro"/> wird nur noch aus Kompatibilität angenommen.
+        /// </summary>
+        public void BeginNewGame(string worldName, string slot, bool playIntro = true)
         {
             PendingWorldName = string.IsNullOrEmpty(worldName) ? "Meine Welt" : worldName.Trim();
             PendingSlot = string.IsNullOrEmpty(slot) ? "auto" : slot;
-            if (playIntro && OnIntroRequested != null)
+            if (OnIntroRequested != null)
             {
                 Mode = AppMode.Intro;
                 UIState.Open(UIScreen.Intro);
@@ -100,6 +103,7 @@ namespace RePlanet
             else IntroFinished();
         }
 
+        /// <summary>Nur für interne Zwecke (Tests, Entwicklung): Intro ohne Spielstart, danach zurück ins Hauptmenü.</summary>
         public void PlayIntroOnly()
         {
             if (OnIntroRequested == null) return;
@@ -110,9 +114,46 @@ namespace RePlanet
 
         void IntroFinished()
         {
-            if (!Settings.IntroSeenOnce) { Settings.IntroSeenOnce = true; Settings.Save(); }
+            MarkIntroSeen();
             Mode = AppMode.PlanetSelect;
             UIState.Open(UIScreen.PlanetSelect);
+        }
+
+        void MarkIntroSeen()
+        {
+            if (Settings.IntroSeenOnce) return;
+            Settings.IntroSeenOnce = true;
+            Settings.Save();
+        }
+
+        /// <summary>
+        /// Gast im Koop, der das Intro auf diesem Profil noch nie gesehen hat: nach dem Beitritt zuerst das Intro.
+        /// Die Welt läuft beim Host weiter; der Gast steht so lange am Startpunkt des Stützpunkts (kein Unterschlupf – der
+        /// zählt erst an Lager/Garage/Ladestation). Tagsüber passiert dort nichts; nachts im Sturm (−1,45 Energie/s) kann
+        /// gegen Ende des Intros eine Notabschaltung auslösen – folgenlos: die Drohne bringt MIKO zur Ladestation, der
+        /// Behälter eines neuen Gastes ist leer. Ein Schutzstatus bräuchte eine neue Core-Regel. Der Weltaufbau läuft im Hintergrund.
+        /// </summary>
+        void PlayGuestIntro()
+        {
+            Mode = AppMode.Intro;
+            UIState.Open(UIScreen.Intro);
+            OnIntroRequested(() =>
+            {
+                MarkIntroSeen();
+                // Sitzung inzwischen beendet (Host weg, Verbindung verloren)? Dann steht die Meldung schon im Menü.
+                if (Client == null || !Client.Joined || W == null)
+                {
+                    if (Mode == AppMode.Intro) { Mode = AppMode.Menu; UIState.Open(UIScreen.MainMenu); }
+                    return;
+                }
+                Mode = AppMode.Playing;
+                UIState.Open(UIScreen.None);
+                // Planetenwechsel während des Intros wurde von der Darstellung nicht übernommen (nur im Spiel/Laden) → nachholen
+                if (WorldView.I != null && WorldView.I.Planet != W.CurrentPlanet)
+                {
+                    try { OnPlanetChanged?.Invoke(W.CurrentPlanet); } catch (Exception e) { Debug.LogException(e); }
+                }
+            });
         }
 
         /// <summary>Von der Planetenwahl aufgerufen: erzeugt die Welt und startet sie.</summary>
@@ -341,19 +382,24 @@ namespace RePlanet
                     if (f.Int("n") < f.Int("of")) Hud.Show("Warte auf Mitspieler (" + f.Int("n") + "/" + f.Int("of") + " schlafen) …", ToastKind.Info, 4f);
                     break;
                 case "sheltered": Hud.Show("Notunterschlupf gebaut – hier kannst du schlafen.", ToastKind.Success); break;
-                case "lore": if (IsMe(f) && GameData.Lore.ContainsKey(f.Str("id"))) Hud.Show("Fundstück entdeckt: " + GameData.Lore[f.Str("id")].Title + " (Archiv)", ToastKind.Story, 5f); break;
+                case "lore": if (IsMe(f) && GameData.Lore.ContainsKey(f.Str("id") ?? "")) Hud.Show("Fundstück entdeckt: " + GameData.Lore[f.Str("id")].Title + " (Archiv)", ToastKind.Story, 5f); break;
                 case "sell": if (IsMe(f)) Hud.Show("+" + f.Long("c") + " Credits", ToastKind.Success, 2.5f); break;
                 case "dispose": if (IsMe(f)) Hud.Show("Gefahrstoffe fachgerecht entsorgt: +" + f.Long("c") + " Credits", ToastKind.Success); break;
                 case "contract": Hud.Show("Recyclingauftrag erfüllt: +" + f.Long("c") + " Credits", ToastKind.Success); break;
                 case "upgrade":
                     {
                         TechDef t;
-                        if (GameData.Tech.TryGetValue(f.Str("id"), out t)) Hud.Show("Eingebaut: " + t.Name + " – " + t.Levels[Mathf.Clamp(f.Int("lvl"), 0, t.MaxLevel)].Label, ToastKind.Success);
+                        if (GameData.Tech.TryGetValue(f.Str("id") ?? "", out t) && t.Levels.Count > 0) Hud.Show("Eingebaut: " + t.Name + " – " + t.Levels[Mathf.Clamp(f.Int("lvl"), 0, t.MaxLevel)].Label, ToastKind.Success);
                         break;
                     }
-                case "vehicle": Hud.Show("Neues Fahrzeug in der Garage: " + GameData.Vehicles[f.Str("id")].Name, ToastKind.Success); break;
+                case "vehicle":
+                    {
+                        VehicleDef vd;
+                        if (GameData.Vehicles.TryGetValue(f.Str("id") ?? "", out vd)) Hud.Show("Neues Fahrzeug in der Garage: " + vd.Name, ToastKind.Success);
+                        break;
+                    }
                 case "ship": Hud.Show("Sprungantrieb eingebaut!", ToastKind.Success); break;
-                case "build": if (GameData.Buildings.ContainsKey(f.Str("t"))) Hud.Show("Gebaut: " + GameData.Buildings[f.Str("t")].Name, ToastKind.Success, 2.5f); break;
+                case "build": if (GameData.Buildings.ContainsKey(f.Str("t") ?? "")) Hud.Show("Gebaut: " + GameData.Buildings[f.Str("t")].Name, ToastKind.Success, 2.5f); break;
                 case "join": if (!IsMe(f)) Hud.Show(name + " ist der Sitzung beigetreten.", ToastKind.Info); break;
                 case "leave": if (!IsMe(f)) Hud.Show(name + " hat die Sitzung verlassen.", ToastKind.Info); break;
                 case "delivery": Hud.Show("Schrottlieferung am Abladeplatz eingetroffen (" + f.Int("n") + " Teile).", ToastKind.Info); break;
@@ -365,7 +411,7 @@ namespace RePlanet
                 case "arrive":
                     {
                         PlanetDef pd;
-                        if (GameData.Planets.TryGetValue(f.Str("planet"), out pd)) Hud.Show(pd.Name + " – " + pd.Subtitle, ToastKind.Story, 5f);
+                        if (GameData.Planets.TryGetValue(f.Str("planet") ?? "", out pd)) Hud.Show(pd.Name + " – " + pd.Subtitle, ToastKind.Story, 5f);
                         break;
                     }
                 case "ending":
@@ -375,6 +421,8 @@ namespace RePlanet
                         UIState.Open(UIScreen.Ending);
                         OnEndingRequested(() =>
                         {
+                            // Sitzung während des Abspanns beendet (Verbindung verloren)? Dann bleibt es beim Menü.
+                            if (Client == null || !Client.Joined) { if (Mode == AppMode.Ending) { Mode = AppMode.Menu; UIState.Open(UIScreen.MainMenu); } return; }
                             Mode = AppMode.Playing;
                             UIState.Open(UIScreen.None);
                             Act(new JObj().Set("a", "endingSeen"));
@@ -410,9 +458,10 @@ namespace RePlanet
                     UIState.Open(UIScreen.None);
                     if (joinCode != null && Client.Token != null) { Profile.Tokens[joinCode] = Client.Token; Profile.Save(); }
                     joinCode = null;
-                    OnSessionStarted?.Invoke();
+                    try { OnSessionStarted?.Invoke(); } catch (Exception e) { Debug.LogException(e); }
+                    if (IsGuest && !Settings.IntroSeenOnce && OnIntroRequested != null) PlayGuestIntro();
                     // Abspann nachholen, falls das Spiel während des Abspanns beendet wurde
-                    if (IsHost && !W.EndingSeen && W.CampaignDone) FxToast(new JObj().Set("k", "ending"));
+                    else if (IsHost && W != null && !W.EndingSeen && W.CampaignDone) FxToast(new JObj().Set("k", "ending"));
                 }
                 else
                 {
