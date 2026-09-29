@@ -1,6 +1,7 @@
 // Laufzeitprüfung ohne Unity: startet das Spiel wie Unity (GameApp → alle Bausteine), treibt Awake/Start/Update/
 // LateUpdate/OnGUI Bild für Bild und meldet jede Ausnahme mit Stacktrace. Szenarien:
-//   intro   – kompletter Intro-Ablauf 0…102 s (Bühnenaufbau aller Einstellungen, jede Qualitätsstufe), Überspringen
+//   menu    – Menüweg ins Intro („Los geht's!“ per Maus/Tastatur/Controller, langer Aufbau, gehaltene Tasten, Musik später fertig)
+//   intro   – Menüweg + kompletter Intro-Ablauf 0…102 s (Bühnenaufbau aller Einstellungen, jede Qualitätsstufe), Überspringen
 //   game    – neues Spiel, alle vier Planeten (Planetenwechsel, Tag, Nacht, Sturm, Fotomodus-Vorher, Fahren/Laufen)
 //   ending  – Abspann komplett
 //   all     – alles nacheinander (Standard)
@@ -174,6 +175,7 @@ public static class Checks
         CollectWarnings();
 
         bool all = what == "all";
+        if (all || what == "intro" || what == "menu") MenuPathChecks(app);
         if (all || what == "intro") IntroChecks(app);
         if (all || what == "game") GameChecks(app, all || what == "game");
         if (all || what == "ending") EndingCheck(app);
@@ -206,6 +208,7 @@ public static class Checks
             app.Settings.Quality = q;
             AudioManager.FakeIntroTime = 0;
             app.PlayIntroOnly();
+            Run(0.1f); // Aufbau im Bild nach dem Aufruf (vorher schwarzes Bild mit Hinweis)
             var shots = (Dictionary<string, Transform>)shotsField.GetValue(intro);
             foreach (var s in IntroTimeline.Shots)
             {
@@ -280,6 +283,138 @@ public static class Checks
         if ((bool)playingField.GetValue(intro)) Fail("Überspringen beendet das Intro nicht");
         if (app.Mode != AppMode.Menu) Fail("Nach dem Überspringen nicht im Menü: " + app.Mode);
         CollectWarnings();
+    }
+
+    // ================================================================== Menüweg: „Neues Spiel“ → „Los geht's!“ wie beim Spieler
+    /// <summary>
+    /// Der echte Weg ins Intro: Die Oberfläche ruft <see cref="GameApp.BeginNewGame"/> aus OnGUI auf (Maus: beim Loslassen,
+    /// Tastatur/Controller: im Bild des Drückens). Der Bühnenaufbau blockiert ein Bild (gemessen; Faktor für Unitys Mono bzw.
+    /// feste Dauer), das Bild danach hat deshalb eine lange Bildzeit. Der Score wird erst nach dem Aufbau vorgemerkt gestartet
+    /// (wie im AudioManager) und läuft danach in Echtzeit. Tasten bleiben so lange gedrückt, wie der Spieler sie hält – auch
+    /// über das eingefrorene Bild hinweg; „erneut geklickt“ = ungeduldiger Klick während des Einfrierens, beim Weiterlaufen gehalten.
+    /// Erwartet: Das Intro läuft danach mindestens 6 s von vorn, mit Musik (sofern rechtzeitig erzeugt), und lässt sich erst nach
+    /// dem Loslassen durch erneutes Halten überspringen; ohne Eingabe läuft es ganz durch und endet in der Planetenwahl.
+    /// </summary>
+    static void MenuPathChecks(GameApp app)
+    {
+        var intro = Object.FindObjectOfType<IntroDirector>();
+        if (intro == null) { Fail("IntroDirector fehlt"); return; }
+        var playingF = typeof(IntroDirector).GetField("playing", BF);
+        var buildingF = typeof(IntroDirector).GetField("pendingBuild", BF); // neuer Ablauf: Aufbau im Bild nach dem Klick
+        var tF = typeof(IntroDirector).GetField("t", BF);
+        var freeF = typeof(IntroDirector).GetField("freeRun", BF);
+        var cases = new (string name, KeyCode key, bool onRelease, float hold, float slow, float scoreIn, float reclick)[]
+        {
+            ("Maus-Klick", KeyCode.Mouse0, true, 0f, 1f, 0f, 0f),
+            ("Maus-Klick, langsamer Aufbau (Mono ×4)", KeyCode.Mouse0, true, 0f, 4f, 0f, 0f),
+            ("Maus-Klick, Aufbau 12 s", KeyCode.Mouse0, true, 0f, 0f, 0f, 0f),
+            ("Maus-Klick, während des Einfrierens erneut geklickt (0,3 s gehalten)", KeyCode.Mouse0, true, 0f, 3f, 0f, 0.3f),
+            ("Eingabetaste kurz", KeyCode.Return, false, 0.15f, 1f, 0f, 0f),
+            ("Eingabetaste 2 s gehalten", KeyCode.Return, false, 2f, 1f, 0f, 0f),
+            ("Leertaste 2 s gehalten, langsamer Aufbau", KeyCode.Space, false, 2f, 4f, 0f, 0f),
+            ("Controller A, Musik wird noch erzeugt (6 s)", KeyCode.JoystickButton0, false, 0.2f, 3f, 6f, 0f),
+        };
+        AudioManager.SimulateScore = true;
+        foreach (var c in cases)
+        {
+            Begin("Menüweg: " + c.name);
+            AudioManager.ScoreReadyIn = c.scoreIn;
+            int stops0 = AudioManager.IntroStops;
+            app.Mode = AppMode.Menu;
+            UIState.Open(UIScreen.NewGame);
+            Input.Held.Clear(); Input.Down.Clear();
+            Run(0.5f);
+            // Drücken: Maus löst beim Loslassen aus (vorher einige Bilder gedrückt), Tastatur/Controller im Bild des Drückens
+            Input.Down.Add(c.key); Input.Held.Add(c.key);
+            if (c.onRelease) { Frame(1f / 60f); Run(0.1f, 1f / 60f); Input.Held.Remove(c.key); }
+            Frame(1f / 60f);
+            Input.Down.Clear();
+            var sw = System.Diagnostics.Stopwatch.StartNew();
+            app.BeginNewGame("Prüfwelt", "slot2", true); // wie aus UIRoot.OnGUI („Los geht's!“)
+            double wall = sw.Elapsed.TotalSeconds;
+            if (app.Mode != AppMode.Intro) { Fail("„Los geht's!“ startet kein Intro (Modus " + app.Mode + ")"); continue; }
+            float since = 0f; // Echtzeit seit dem Auslösen
+            if (buildingF != null && (bool)buildingF.GetValue(intro))
+            {
+                // neuer Ablauf: schwarzes Bild mit Hinweis, der Aufbau folgt im nächsten Bild
+                // (in Unity folgt das Repaint noch im Bild des Klicks; hier im nächsten Bild – deshalb bis zu drei Bilder)
+                wall = 0;
+                for (int i = 0; i < 3 && (bool)buildingF.GetValue(intro); i++)
+                {
+                    since += 1f / 60f;
+                    if (since >= c.hold) Input.Held.Remove(c.key);
+                    sw.Restart();
+                    Frame(1f / 60f);
+                    wall = Math.Max(wall, sw.Elapsed.TotalSeconds);
+                }
+                if ((bool)buildingF.GetValue(intro)) Fail("Intro-Bühne wird nach dem Klick nicht aufgebaut");
+            }
+            float build = c.slow > 0f ? (float)wall * c.slow : 12f;
+            AudioManager.DelayScore(build); // Score wurde erst nach dem Aufbau vorgemerkt
+            since += build;
+            if (since >= c.hold) Input.Held.Remove(c.key);
+            if (c.reclick > 0f) { Input.Held.Add(KeyCode.Mouse0); Input.Down.Add(KeyCode.Mouse0); }
+            Frame(build + 1f / 60f); // erstes Bild nach dem Aufbau: lange Bildzeit
+            float reclickLeft = c.reclick;
+            bool endedEarly = false; float endedAt = -1f; float sinceBuild = 0f;
+            Run(6f, 1f / 30f, tt =>
+            {
+                since += 1f / 30f; sinceBuild += 1f / 30f;
+                if (since >= c.hold && (c.reclick <= 0f || c.key != KeyCode.Mouse0)) Input.Held.Remove(c.key);
+                if (c.reclick > 0f && sinceBuild >= reclickLeft) Input.Held.Remove(KeyCode.Mouse0);
+                if (!endedEarly && !(bool)playingF.GetValue(intro)) { endedEarly = true; endedAt = tt; }
+            });
+            Input.Held.Clear();
+            float it = (float)tF.GetValue(intro);
+            bool free = (bool)freeF.GetValue(intro);
+            double score = AudioManager.IntroTime;
+            Info($"Aufbau {build:0.00} s, Taste {c.hold:0.0} s gehalten → Intro läuft {(bool)playingF.GetValue(intro)}, Introzeit {it:0.0} s (Score {score:0.0} s), ohne Musik {free}, Musik gestoppt {AudioManager.IntroStops - stops0}×, Modus {app.Mode}");
+            if (endedEarly) Fail($"Intro endet sofort ({endedAt:0.0} s nach dem Aufbau) – Modus danach {app.Mode}");
+            else
+            {
+                float expect = Math.Max(0f, 6f - c.scoreIn - 0.2f);
+                if (it > expect + 0.6f) Fail($"Intro springt beim Start vor (Introzeit {it:0.0} s, erwartet ≈ {expect:0.0} s)");
+                if (it < expect - 0.6f) Fail($"Intro hängt (Introzeit {it:0.0} s, erwartet ≈ {expect:0.0} s)");
+                if (free) Fail("Intro läuft ohne Musik weiter, obwohl der Score rechtzeitig fertig war");
+            }
+            // Überspringen: 1,3 s halten
+            if ((bool)playingF.GetValue(intro))
+            {
+                Input.Held.Add(KeyCode.Escape);
+                Run(1.3f);
+                Input.Held.Clear();
+                if ((bool)playingF.GetValue(intro)) Fail("Überspringen (1,3 s halten) beendet das Intro nicht");
+            }
+            if (app.Mode != AppMode.PlanetSelect) Fail("Nach dem Intro keine Planetenwahl: " + app.Mode);
+            BackToMenu(app);
+            CollectWarnings();
+        }
+        // Einmal komplett ohne Eingabe: Intro läuft durch und endet in der Planetenwahl
+        Begin("Menüweg: Intro komplett ohne Eingabe");
+        AudioManager.ScoreReadyIn = 0f;
+        UIState.Open(UIScreen.NewGame);
+        Run(0.3f);
+        app.BeginNewGame("Prüfwelt", "slot2", true);
+        float maxT = 0f, planetAt = -1f;
+        Run(IntroTimeline.Total + 4f, 1f / 15f, tt =>
+        {
+            maxT = Math.Max(maxT, (float)tF.GetValue(intro));
+            if (planetAt < 0 && app.Mode == AppMode.PlanetSelect) planetAt = tt;
+        });
+        Info($"Intro bis {maxT:0.0} s, Planetenwahl nach {planetAt:0.0} s");
+        if (planetAt < IntroTimeline.Total - 1f) Fail($"Intro endet nicht regulär (Planetenwahl nach {planetAt:0.0} s)");
+        BackToMenu(app);
+        AudioManager.SimulateScore = false; AudioManager.ScoreReadyIn = 0f;
+        CollectWarnings();
+    }
+
+    /// <summary>Zurück ins Hauptmenü wie „Zurück“ in der Planetenwahl.</summary>
+    static void BackToMenu(GameApp app)
+    {
+        app.Mode = AppMode.Menu;
+        WorldView.I?.BuildMenuBackdrop();
+        UIState.Open(UIScreen.MainMenu);
+        Run(0.3f);
     }
 
     static void ClearVoiceCache()

@@ -34,9 +34,18 @@ namespace RePlanet
         Transform stage;
         Action done;
         bool playing, freeRun;
+        /// <summary>Bühne wird im nächsten Bild aufgebaut (bis dahin schwarzes Bild mit Hinweis).</summary>
+        bool pendingBuild, blackShown;
+        int waitFrames;
+        /// <summary>Musik lief schon (endet sie, läuft das Bild frei weiter statt 10 s zu warten).</summary>
+        bool musicSeen;
+        /// <summary>Überspringen erst, nachdem alle Überspringen-Eingaben seit dem Start einmal losgelassen waren.</summary>
+        bool skipArmed;
+        int stepErrors;
+        readonly HashSet<string> reported = new HashSet<string>();
         /// <summary>Einstellungen, deren Animation einmal fehlschlug – nur diese bleiben danach stehen, die übrigen laufen weiter.</summary>
         readonly HashSet<string> animFailed = new HashSet<string>();
-        float t, skipHold, startDelay;
+        float t, skipHold, startDelay, runTime;
         string activeShot;
         float detail = 1f;
         readonly Dictionary<string, Transform> shots = new Dictionary<string, Transform>();
@@ -84,26 +93,46 @@ namespace RePlanet
 
         public void Play(Action onDone)
         {
+            // Läuft noch ein Intro (doppelter Aufruf), wird es ersetzt – ohne den alten Rückruf auszulösen.
+            if (playing) { done = null; Cleanup(); }
             done = onDone;
-            t = 0; skipHold = 0; startDelay = 0; freeRun = false; animFailed.Clear();
+            t = 0; skipHold = 0; startDelay = 0; runTime = 0; freeRun = false; musicSeen = false; skipArmed = false; stepErrors = 0; animFailed.Clear();
+            reported.Clear();
             activeShot = null;
             fired.Clear();
             var cam = Camera.main;
             if (cam != null) { oldClear = cam.clearFlags; oldBg = cam.backgroundColor; oldNear = cam.nearClipPlane; oldFar = cam.farClipPlane; savedCam = true; }
             oldFog = RenderSettings.fog;
             oldFogMode = RenderSettings.fogMode;
-            try { Build(); }
-            catch (Exception e) { LogError("Bühnenbau", e); }
+            // Der Bühnenaufbau dauert einige Sekunden. Er läuft deshalb nicht im Klick (OnGUI), sondern im nächsten Bild,
+            // nachdem ein schwarzes Bild mit Hinweis gezeigt wurde – sonst stünde das Menü eingefroren da und ein ungeduldiger
+            // zweiter Klick würde nach dem Einfrieren als „gehalten“ gelten und das Intro sofort überspringen.
+            pendingBuild = true;
+            blackShown = false;
             playing = true;
             if (CameraRig.I != null) CameraRig.I.Cinematic = true;
-            Narrator.Begin(Narrator.IntroCues());
-            AudioManager.PlayIntro();
+        }
+
+        /// <summary>Baut die Bühne und startet Musik und Erzähler (einmal, im Bild nach <see cref="Play"/>).</summary>
+        void BuildAndStart()
+        {
+            pendingBuild = false;
+            try { Build(); }
+            catch (Exception e) { LogError("Bühnenbau", e); }
+            try { Narrator.Begin(Narrator.IntroCues()); }
+            catch (Exception e) { LogError("Erzähler", e); }
+            try { AudioManager.PlayIntro(); }
+            catch (Exception e) { LogError("Musik", e); }
+            // Uhren ab jetzt: Das Bild nach dem Aufbau hat eine lange Bildzeit (wird unten begrenzt); Eingaben, die während
+            // des Aufbaus gedrückt wurden, zählen erst nach dem Loslassen.
+            t = 0; skipHold = 0; startDelay = 0; runTime = 0; skipArmed = false;
         }
 
         void Finish()
         {
             if (!playing) return;
             playing = false;
+            pendingBuild = false;
             AudioManager.StopIntro();
             Narrator.Stop(0.35f);
             AudioManager.Loop("intro_wind", "wind_loop", false);
@@ -135,57 +164,100 @@ namespace RePlanet
         }
 
         // ================================================================== Ablauf
+        /// <summary>Bildzeit, begrenzt: Das Bild nach dem Bühnenaufbau (oder nach einem Ruckler) zählt höchstens 0,1 s.</summary>
+        static float Dt { get { return Mathf.Min(Time.unscaledDeltaTime, 0.1f); } }
+
+        static bool SkipInput()
+        {
+            return Input.GetKey(KeyCode.Escape) || Input.GetKey(KeyCode.Return) || Input.GetKey(KeyCode.KeypadEnter) || Input.GetKey(KeyCode.Space)
+                || Input.GetKey(KeyCode.JoystickButton0) || Input.GetMouseButton(0);
+        }
+
         void Update()
         {
-            if (!playing) return;
-            // Überspringen: Esc/Eingabe/Leertaste/A/Maus gedrückt halten
-            bool hold = Input.GetKey(KeyCode.Escape) || Input.GetKey(KeyCode.Return) || Input.GetKey(KeyCode.Space) || Input.GetKey(KeyCode.JoystickButton0) || Input.GetMouseButton(0);
-            skipHold = hold ? skipHold + Time.unscaledDeltaTime : 0f;
-            if (skipHold > 1.0f) Finish();
+            if (!playing || pendingBuild) return;
+            // Überspringen: Esc/Eingabe/Leertaste/A/Maus 1 s gedrückt halten – erst nachdem alle diese Eingaben seit dem Start
+            // einmal losgelassen waren (der Klick auf „Los geht's!“ oder ein Klick während des Aufbaus zählt nicht) und
+            // frühestens nach 1 s Laufzeit.
+            bool hold = SkipInput();
+            if (!hold) skipArmed = true;
+            float dt = Dt;
+            runTime += dt;
+            skipHold = hold && skipArmed ? skipHold + dt : 0f;
+            if (skipHold > 1.0f && runTime > 1.0f) Finish();
         }
 
         void LateUpdate()
         {
             if (!playing) return;
-            try { Step(); }
-            catch (Exception e) { LogError("Ablauf", e); Finish(); }
+            if (pendingBuild)
+            {
+                // erst aufbauen, wenn das schwarze Bild mit Hinweis zu sehen war (bzw. spätestens nach einigen Bildern)
+                if (blackShown || ++waitFrames > 3) { waitFrames = 0; BuildAndStart(); }
+                return;
+            }
+            try { Step(); stepErrors = 0; }
+            catch (Exception e)
+            {
+                // Einzelne Fehler beenden das Intro nicht (sonst stünde man ohne Intro in der Planetenwahl);
+                // erst wenn der Ablauf dauerhaft scheitert (≈ 2 s lang jedes Bild), wird abgebrochen.
+                Report("Ablauf", e);
+                if (++stepErrors > 60) Finish();
+            }
+        }
+
+        /// <summary>Fehler einmal je Stelle melden (nicht jedes Bild).</summary>
+        void Report(string what, Exception e)
+        {
+            if (reported.Add(what + ":" + e.GetType().Name + ":" + e.Message)) LogError(what, e);
         }
 
         void Step()
         {
             // Warten, bis der Score läuft (max. 10 s), dann synchron zur Musik. Kommt die Musik nicht rechtzeitig,
             // läuft die Sequenz ohne sie weiter – ein verspäteter Start würde sonst zeitversetzt spielen.
+            // Endet die Musik (Clip zu Ende, Audio gestoppt), läuft das Bild ab der letzten Musikzeit frei weiter.
+            float dt = Dt;
             double at = freeRun ? -1 : AudioManager.IntroTime;
-            if (at >= 0) t = (float)at;
+            if (at >= 0) { t = (float)at; musicSeen = true; }
             else
             {
-                startDelay += Time.unscaledDeltaTime;
+                if (!freeRun && musicSeen) freeRun = true;
+                startDelay += dt;
                 if (!freeRun && startDelay > 10f) { freeRun = true; AudioManager.StopIntro(); }
-                if (freeRun) t += Time.unscaledDeltaTime;
+                if (freeRun) t += dt;
             }
             if (t >= IntroTimeline.Total + 2f) { Finish(); return; }
             if (stage == null) return;
 
             IntroTimeline.Shot cur = IntroTimeline.Shots[0];
             foreach (var s in IntroTimeline.Shots) if (t >= s.Start) cur = s;
-            if (cur.Id != activeShot) Enter(cur.Id);
+            if (cur.Id != activeShot)
+            {
+                try { Enter(cur.Id); }
+                catch (Exception e) { activeShot = cur.Id; Report("Einstellung " + cur.Id, e); }
+            }
             float local = t - cur.Start, len = cur.End - cur.Start, k = Mathf.Clamp01(local / len);
 
             // Erzähler und Untertitel (mit Aufnahme nur, wenn Untertitel eingeschaltet sind)
-            Narrator.Tick(t);
-            var app = GameApp.I;
-            bool subs = !Narrator.HasRecordings || app == null || app.Settings == null || app.Settings.Subtitles;
-            string line = subs ? Narrator.SubtitleAt(t) : null;
-            if (line != null) Hud.Say(line, 0.3f); else Hud.Subtitle = null;
+            try
+            {
+                Narrator.Tick(t);
+                var app = GameApp.I;
+                bool subs = !Narrator.HasRecordings || app == null || app.Settings == null || app.Settings.Subtitles;
+                string line = subs ? Narrator.SubtitleAt(t) : null;
+                if (line != null) Hud.Say(line, 0.3f); else Hud.Subtitle = null;
+            }
+            catch (Exception e) { Report("Untertitel", e); }
 
             if (!animFailed.Contains(cur.Id))
             {
                 try { AnimateShot(cur.Id, local, k); }
                 catch (Exception e) { animFailed.Add(cur.Id); LogError("Animation " + cur.Id, e); }
             }
-            ApplyCamera();
-            ApplyLook();
-            UpdateSuns();
+            try { ApplyCamera(); } catch (Exception e) { Report("Kamera", e); }
+            try { ApplyLook(); } catch (Exception e) { Report("Licht", e); }
+            try { UpdateSuns(); } catch (Exception e) { Report("Sonne", e); }
             for (int i = glows.Count - 1; i >= 0; i--)
             {
                 try { glows[i].Refresh(); }
@@ -2908,6 +2980,19 @@ namespace RePlanet
         {
             if (!playing) return;
             GUI.depth = -500;
+            if (pendingBuild)
+            {
+                // Bühnenaufbau steht bevor: schwarzes Bild mit Hinweis (bleibt während des Aufbaus stehen)
+                GUI.color = Color.black;
+                GUI.DrawTexture(new Rect(0, 0, Screen.width, Screen.height), Texture2D.whiteTexture);
+                float sc = Screen.height / 1080f * (GameApp.I != null && GameApp.I.Settings != null ? GameApp.I.Settings.TextScale : 1f);
+                var ps = new GUIStyle(GUI.skin.label) { fontSize = (int)(26 * sc), alignment = TextAnchor.MiddleCenter };
+                GUI.color = new Color(1f, 1f, 1f, 0.55f);
+                GUI.Label(new Rect(0, Screen.height * 0.5f - 20 * sc, Screen.width, 40 * sc), "Intro wird vorbereitet …", ps);
+                GUI.color = Color.white;
+                if (Event.current.type == EventType.Repaint) blackShown = true;
+                return;
+            }
             float bar = Screen.height * 0.1f;
             // Vignette und feines Filmkorn (unter den Balken)
             if (texVignette != null)
