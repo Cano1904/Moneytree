@@ -36,3 +36,4 @@ Tools/RenderHarness/out/
 # Python-Zwischendateien
 __pycache__/
 *.pyc
+graphify-out/20*/
