@@ -32,3 +32,7 @@ graphify-out/manifest.json
 # Ausgaben der Render-Prüfumgebung
 Tools/RenderHarness/*.ppm
 Tools/RenderHarness/out/
+
+# Python-Zwischendateien
+__pycache__/
+*.pyc
