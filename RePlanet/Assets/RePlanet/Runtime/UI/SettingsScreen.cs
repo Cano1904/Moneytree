@@ -230,6 +230,9 @@ namespace RePlanet
             bool sf = UINav.Toggle(new Rect(0, y, w, RowH), s.ShowFps, "Bildrate anzeigen");
             if (sf != s.ShowFps) { s.ShowFps = sf; MarkSettings(); }
             y += RowStep;
+            bool ds = UINav.Toggle(new Rect(0, y, w, RowH), s.DetailShaders, "Detail-Shader (experimentell, wirkt nach Neustart)");
+            if (ds != s.DetailShaders) { s.DetailShaders = ds; MarkSettings(); }
+            y += RowStep;
             return y;
         }
 

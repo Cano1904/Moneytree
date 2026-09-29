@@ -445,6 +445,11 @@ public static class Checks
         Run(1.3f);
         Input.Held.Clear();
         if (app.Mode != AppMode.PlanetSelect) Fail("Nach dem Intro keine Planetenwahl: " + app.Mode);
+        Run(0.5f);
+        {
+            var ps = PlanetSelectScene.I;
+            Info("Planetenwahl-Bühne aktiv: " + (ps != null && ps.Active) + ", Belichtung (fest im All): " + (Atmosphere.I != null ? Atmosphere.I.Look.Exposure.ToString("0.00") + (Atmosphere.I.Look.AutoExposure ? " (automatisch)" : " (fest)") : "–"));
+        }
         foreach (var p in GameData.PlanetOrder) { WorldView.I?.PreviewPlanet(p); Run(0.2f); }
         app.StartNewWorld("terra");
         Run(2f);
@@ -469,10 +474,12 @@ public static class Checks
             }
             var p0 = PlayerController.I.RenderPos;
             PlaySome(app, 4f, "Tag");
+            ExposureInfo("Tag");
             Info("MIKO bewegt: " + (PlayerController.I.RenderPos - p0).magnitude.ToString("0.0") + " m, Welt " + WorldView.I.Planet + ", Nacht " + Rules.IsNight(app.W, planet) + ", Sturm " + app.W.Cur.StormActive);
             { var me = app.Me; var sp = g.S.Players[pid]; Info($"  Client: Pos {me.Pos.x:0.0},{me.Pos.z:0.0} Energie {me.Energy:0} Schlaf {me.Sleeping} Abschlepp {me.TowTimer:0.0} Fahrzeug {me.Vehicle}; Server: Pos {sp.Pos.x:0.0},{sp.Pos.z:0.0} Phase {Rules.DayPhase(g.S, planet):0.00} Client-Phase {Rules.DayPhase(app.W, planet):0.00} Pause {app.Paused} UI {UIState.BlocksGameplay}"); }
             SetPhase(g, planet, 0.95f);
             PlaySome(app, 7f, "Nacht");
+            ExposureInfo("Nacht");
             var ps = g.S.Planet(planet);
             ps.StormTimer = GameData.Planets[planet].StormEvery + 1f;
             PlaySome(app, 7f, "Sturm (Nacht)");
@@ -481,6 +488,7 @@ public static class Checks
             if (!app.W.Cur.StormActive) Fail("Sturm kam beim Client nicht an");
             SetPhase(g, planet, 0.5f);
             PlaySome(app, 7f, "Sturm (Tag)");
+            ExposureInfo("Sturm (Tag)");
             BuildOut(app, g, pid, planet);
             // Fotomodus mit Vorher-Ansicht
             PhotoMode.Active = true; PhotoMode.ShowBefore = true;
@@ -552,6 +560,15 @@ public static class Checks
         if (mc.Rendering) Fail("Kartenkamera rendert nach dem Schließen weiter");
         Run(6f);
         if (mc.Texture != null) Fail("RenderTexture der Karte wird nach dem Schließen nicht freigegeben");
+    }
+
+    /// <summary>Automatische Belichtung (aus Sonne und Umgebung) melden und auf Plausibilität prüfen.</summary>
+    static void ExposureInfo(string what)
+    {
+        var sun = RenderSettings.sun;
+        float x = Atmosphere.AutoExposureFor(1f);
+        Info($"  Belichtung {what}: {x:0.00} (Sonne {(sun != null ? sun.intensity : 0f):0.00}, Umgebung Horizont {RenderSettings.ambientEquatorColor.r:0.00}/{RenderSettings.ambientEquatorColor.g:0.00}/{RenderSettings.ambientEquatorColor.b:0.00})");
+        if (float.IsNaN(x) || x < Atmosphere.ExposureMin - 1e-4f || x > Atmosphere.ExposureMax + 1e-4f) Fail("Belichtung außerhalb des Bereichs: " + x);
     }
 
     /// <summary>Aktion direkt auf dem Server an einer bestimmten Stelle (wie ein Spieler, der dort steht).</summary>
