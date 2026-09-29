@@ -113,6 +113,7 @@ namespace RePlanet
         void AnimateBaseLights(float dark)
         {
             if (baseLampMat != null) Mats.SetEmission(baseLampMat, new Color(1f, 0.8f, 0.55f) * Mathf.Lerp(0.3f, 3.2f, dark));
+            AnimateShelters();
         }
 
         // ================================================================== Stützpunkt
@@ -125,6 +126,7 @@ namespace RePlanet
             float gy = b.Center.y;
             mb.GroundY = gy;
             CoreBuilding(mb, gy);
+            HangarInterior(mb, gy);
             GarageBuilding(mb, gy);
             // Ladeplatz
             var ch = b.Stations["charge"];
@@ -176,6 +178,7 @@ namespace RePlanet
             mb.For(Rubber(new Color(0.1f, 0.1f, 0.11f))).Box(new Vector3(st.x, gy + 0.15f, st.z - 0.9f), new Vector3(4.2f, 0.02f, 0.9f));
             HazardBand(mb, new Vector3(st.x, gy + 0.075f, st.z + 1.35f), 0, 4.8f, 0.03f, 0.18f);
             mb.Build("Base", Root, true);
+            BuildHangarDoor(gy);
         }
 
         // ------------------------------------------------------------------ Hauptgebäude mit Lager-Silos
@@ -187,27 +190,32 @@ namespace RePlanet
             var steelD = Steel(new Color(0.24f, 0.25f, 0.27f));
             var conc = Conc(new Color(0.46f, 0.45f, 0.43f));
             const float fz = -141.5f; // Vorderseite (z −149,5 … −141,5)
-            // Halle (x −8 … 3.6) mit gefasten Kanten, Betonsockel, Attika mit Blechabdeckung
-            mb.For(white).BevelBox(new Vector3(-2.2f, gy + 3.5f, -145.5f), new Vector3(11.6f, 7f, 8f), 0.12f);
-            mb.For(conc).BevelBox(new Vector3(-2.2f, gy + 0.4f, -145.5f), new Vector3(11.8f, 0.8f, 8.15f), 0.04f);
+            // Halle (x −8 … 3.6) als Hangar: Wandscheiben (innen begehbar, Kollision wie WorldGen.BuildHangar), Betonsockel
+            // außen, Attika mit Blechabdeckung (ihre Unterseite ist zugleich die Hallendecke)
+            mb.For(white).BevelBox(new Vector3(-2.2f, gy + 3.5f, -149.3f), new Vector3(11.6f, 7f, 0.4f), 0.1f);   // Rückwand
+            mb.For(white).BevelBox(new Vector3(-7.8f, gy + 3.5f, -145.5f), new Vector3(0.4f, 7f, 8f), 0.1f);      // links
+            mb.For(white).BevelBox(new Vector3(3.1f, gy + 3.5f, -145.5f), new Vector3(1.0f, 7f, 8f), 0.1f);       // rechts (zu den Silos)
+            mb.For(white).BevelBox(new Vector3(-5.1f, gy + 3.5f, fz - 0.2f), new Vector3(5.0f, 7f, 0.4f), 0.06f); // vorn links
+            mb.For(white).Box(new Vector3(0f, gy + 5.65f, fz - 0.2f), new Vector3(5.2f, 2.7f, 0.4f));           // über dem Tor
+            mb.For(conc).BevelBox(new Vector3(-2.2f, gy + 0.4f, -149.55f), new Vector3(11.8f, 0.8f, 0.2f), 0.03f);
+            mb.For(conc).BevelBox(new Vector3(-8.05f, gy + 0.4f, -145.5f), new Vector3(0.2f, 0.8f, 8.15f), 0.03f);
+            mb.For(conc).BevelBox(new Vector3(-5.3f, gy + 0.4f, fz + 0.05f), new Vector3(5.4f, 0.8f, 0.14f), 0.03f);
             mb.For(tealP).BevelBox(new Vector3(-2.2f, gy + 7.2f, -145.5f), new Vector3(12.2f, 0.5f, 8.6f), 0.06f);
             mb.For(steelD).Box(new Vector3(-2.2f, gy + 6.93f, fz - 0.28f), new Vector3(12.2f, 0.06f, 0.1f)); // Tropfkante
             mb.For(orange).Box(new Vector3(-2.2f, gy + 2.6f, fz + 0.03f), new Vector3(11.6f, 0.35f, 0.08f));
             // Lisenen (Wandpfeiler) gliedern die Fassade
             foreach (var x in new[] { -7.9f, -5.2f, 2.9f })
                 mb.For(Conc(new Color(0.8f, 0.78f, 0.73f))).BevelBox(new Vector3(x, gy + 3.5f, fz + 0.06f), new Vector3(0.36f, 6.2f, 0.14f), 0.03f);
-            // Rolltor hinter der Lager-Annahme (halb offen, innen beleuchtet) mit Zarge und Warnkante
-            mb.For(darkMat).Box(new Vector3(0, gy + 2.1f, fz + 0.02f), new Vector3(4.6f, 4.2f, 0.06f));
-            mb.For(Glow(new Color(1f, 0.85f, 0.6f), 0.6f)).Box(new Vector3(0, gy + 0.7f, fz - 0.05f), new Vector3(4.4f, 1.2f, 0.04f));
-            mb.For(Steel(new Color(0.7f, 0.72f, 0.74f))).Box(new Vector3(0, gy + 3.3f, fz + 0.08f), new Vector3(4.6f, 1.9f, 0.08f));
-            for (int k = 0; k < 7; k++) mb.For(steelD).Box(new Vector3(0, gy + 2.36f + k * 0.29f, fz + 0.13f), new Vector3(4.6f, 0.035f, 0.03f));
-            HazardBand(mb, new Vector3(0, gy + 2.32f, fz + 0.14f), 0, 4.6f, 0.12f, 0.03f);
-            foreach (var sx in new[] { -2.42f, 2.42f })
+            // Rolltor-Öffnung (x ±2,6, 4,3 m hoch) hinter der Lager-Annahme: Zarge mit Führungsschienen, Warnkante,
+            // Wickelkasten; das Torblatt selbst ist beweglich (HangarDoor) und fährt nachts/bei Sturm hoch
+            foreach (var sx in new[] { -2.74f, 2.74f })
             {
-                mb.For(steelD).BevelBox(new Vector3(sx, gy + 2.2f, fz + 0.12f), new Vector3(0.22f, 4.4f, 0.2f), 0.03f);
-                mb.For(Paint(new Color(0.95f, 0.75f, 0.15f))).Box(new Vector3(sx, gy + 0.55f, fz + 0.23f), new Vector3(0.23f, 1.1f, 0.02f));
+                mb.For(steelD).BevelBox(new Vector3(sx, gy + 2.2f, fz + 0.12f), new Vector3(0.26f, 4.4f, 0.2f), 0.03f);
+                mb.For(Paint(new Color(0.95f, 0.75f, 0.15f))).Box(new Vector3(sx, gy + 0.55f, fz + 0.23f), new Vector3(0.27f, 1.1f, 0.02f));
+                mb.For(Glow(new Color(1f, 0.7f, 0.25f), 1.4f)).Box(new Vector3(sx, gy + 3.9f, fz + 0.23f), new Vector3(0.1f, 0.1f, 0.02f)); // Torleuchte
             }
-            mb.For(steelD).BevelBox(new Vector3(0, gy + 4.45f, fz + 0.2f), new Vector3(5.1f, 0.4f, 0.36f), 0.04f); // Wickelkasten
+            HazardBand(mb, new Vector3(0, gy + 0.02f, fz - 0.2f), 0, 5.2f, 0.03f, 0.4f); // Schwelle
+            mb.For(steelD).BevelBox(new Vector3(0, gy + 4.5f, fz + 0.22f), new Vector3(5.8f, 0.46f, 0.4f), 0.04f); // Wickelkasten
             // Fensterreihe oben mit Faschen, Bänken und Stürzen
             foreach (var x in new[] { -4.0f, 2.4f })
             {
@@ -587,18 +595,194 @@ namespace RePlanet
                 mb.For(yel).BoxRot(p + d * new Vector3(-0.35f, 0.16f, 4.4f), new Vector3(0.9f, 0.02f, 0.22f), new Vector3(0, k * 90 + 15 + 35, 0));
                 mb.For(yel).BoxRot(p + d * new Vector3(0.35f, 0.16f, 4.4f), new Vector3(0.9f, 0.02f, 0.22f), new Vector3(0, k * 90 + 15 - 35, 0));
             }
-            // Piktogramm-Schild am Rand (zeigt zur Basis)
-            var sp = p + new Vector3(-6.9f, 0, 3.4f);
+            // Piktogramm-Schild am Rand (zeigt zur Basis; neben der Rampe, nicht im Weg)
+            var sp = p + new Vector3(-7.5f, 0, 5.5f);
             mb.For(Steel(new Color(0.3f, 0.31f, 0.33f))).Cylinder(sp, 0.06f, 2.6f, 8);
             IconSign(mb, sp + new Vector3(0, 2.9f, 0), -60f, 0.8f, SurfaceLook.Icon.Ship, new Color(0.3f, 0.75f, 1f));
         }
 
-        // ------------------------------------------------------------------ Transportschiff
+        // ------------------------------------------------------------------ Hangar (Innenraum des Hauptgebäudes)
+        Transform hangarDoor, shipRamp;
+        Light hangarLight, shipLight;
+        float hangarOpen, rampOpen;
+        bool hangarMoving, rampMoving;
+        Quaternion shipYawQ = Quaternion.identity;
+
         /// <summary>
-        /// Frachtraumschiff: abgeflachter Rumpf mit Nase und Cockpitkanzel (Rahmen), Stummelflügel mit Triebwerksgondeln,
-        /// zwei Haupttriebwerke mit Düsenlamellen und Leuchtringen, vier Landebeine mit Hydraulik und Tellern, abgesenkte
-        /// Laderampe mit Warnstreifen und beleuchtetem Frachtraum, Positions- und Bullaugenlichter, Antenne, Lüftungsgitter,
-        /// Wärmetauscher-Rippen, Steuerdüsen und Akzentstreifen. Der Rumpf hängt hoch genug, dass MIKO darunter durchpasst.
+        /// Einrichtung des Hangars (x −7,6…2,6 / z −149,1…−141,9, lichte Höhe bis zur Attika): Betonboden mit Stellplatz-
+        /// Markierung, Werkbank mit Lochwand (Rückwand), Regalwand mit Kisten und Fässern (links), Ladesäule mit Ladering
+        /// (rechts hinten), Fachwerkbinder mit warmen Hängeleuchten, Sockelband. Werkbank, Regal und Ladesäule stehen genau in
+        /// ihren Kollisionsboxen (WorldGen.BuildHangar); die Mitte bleibt für MIKO und den Rover frei.
+        /// </summary>
+        void HangarInterior(MultiBuilder mb, float gy)
+        {
+            var steelD = Steel(new Color(0.24f, 0.25f, 0.27f));
+            var steelL = Steel(new Color(0.62f, 0.64f, 0.66f));
+            var yellow = Paint(new Color(0.95f, 0.78f, 0.18f), 0.35f);
+            var teal = Paint(new Color(0.18f, 0.72f, 0.68f));
+            var wood = Mats.Surface(SurfKind.Wood, new Color(0.55f, 0.4f, 0.26f), 0.3f);
+            var warm = Glow(new Color(1f, 0.86f, 0.62f), 2.2f);
+            const float x0 = -7.6f, x1 = 2.6f, z0 = -149.1f, z1 = -141.9f, cx = -2.5f, cz = -145.5f;
+            // Boden: glatter Beton, Stellplatz (gelbe Linien) und Fahrgasse vom Tor
+            mb.For(Conc(new Color(0.52f, 0.52f, 0.5f))).Box(new Vector3(cx, gy + 0.015f, cz + 0.2f), new Vector3(x1 - x0, 0.03f, z1 - z0 + 0.4f));
+            foreach (var sx in new[] { -1f, 1f })
+            {
+                mb.For(yellow).Box(new Vector3(-3.2f + sx * 2.3f, gy + 0.035f, -145.9f), new Vector3(0.1f, 0.01f, 4.6f));
+                mb.For(yellow).Box(new Vector3(-3.2f, gy + 0.035f, -145.9f + sx * 2.3f), new Vector3(4.7f, 0.01f, 0.1f));
+                mb.For(Paint(new Color(0.85f, 0.87f, 0.88f), 0.3f)).Box(new Vector3(sx * 1.6f, gy + 0.035f, -142.9f), new Vector3(0.12f, 0.01f, 1.8f));
+            }
+            // Sockelband und Leuchtleiste an den Innenwänden
+            mb.For(teal).Box(new Vector3(cx, gy + 1.0f, z0 + 0.02f), new Vector3(x1 - x0, 0.22f, 0.04f));
+            mb.For(teal).Box(new Vector3(x0 + 0.02f, gy + 1.0f, cz), new Vector3(0.04f, 0.22f, z1 - z0));
+            mb.For(teal).Box(new Vector3(x1 - 0.02f, gy + 1.0f, cz), new Vector3(0.04f, 0.22f, z1 - z0));
+            mb.For(Conc(new Color(0.38f, 0.38f, 0.37f))).Box(new Vector3(cx, gy + 0.15f, z0 + 0.03f), new Vector3(x1 - x0, 0.3f, 0.06f));
+            // Innenseite der Torwand: Zarge und Torantrieb
+            foreach (var sx in new[] { -2.7f, 2.7f }) mb.For(steelD).Box(new Vector3(sx, gy + 2.15f, z1 - 0.06f), new Vector3(0.2f, 4.3f, 0.12f));
+            mb.For(steelD).BevelBox(new Vector3(0, gy + 4.45f, z1 - 0.12f), new Vector3(5.6f, 0.3f, 0.2f), 0.03f);
+            mb.For(Paint(new Color(0.3f, 0.32f, 0.35f))).BevelBox(new Vector3(2.35f, gy + 4.45f, z1 - 0.25f), new Vector3(0.4f, 0.4f, 0.3f), 0.03f); // Motor
+            mb.For(Glow(new Color(0.3f, 1f, 0.5f), 1.5f)).Box(new Vector3(2.35f, gy + 4.45f, z1 - 0.41f), new Vector3(0.06f, 0.06f, 0.01f));
+            // Fachwerkbinder unter der Decke mit Hängeleuchten
+            for (int k = 0; k < 4; k++)
+            {
+                float z = -148.2f + k * 1.75f;
+                mb.For(steelD).Box(new Vector3(cx, gy + 6.75f, z), new Vector3(x1 - x0, 0.3f, 0.16f));
+                mb.For(steelD).Box(new Vector3(cx, gy + 6.2f, z), new Vector3(x1 - x0, 0.1f, 0.12f));
+                for (float x = x0 + 0.8f; x < x1 - 0.5f; x += 1.3f)
+                    mb.For(steelD).BoxRot(new Vector3(x, gy + 6.47f, z), new Vector3(0.06f, 0.62f, 0.06f), new Vector3(0, 0, (int)((x - x0) / 1.3f) % 2 == 0 ? 35 : -35));
+                if (k % 2 == 1) continue;
+                foreach (float lx in new[] { -5.3f, -0.4f })
+                {
+                    mb.For(steelD).Cylinder(new Vector3(lx, gy + 5.55f, z), 0.015f, 0.65f, 4);
+                    mb.For(Paint(new Color(0.2f, 0.36f, 0.34f))).Cylinder(new Vector3(lx, gy + 5.3f, z), 0.45f, 0.25f, 14, true, 0.12f);
+                    mb.For(warm).Disc(new Vector3(lx, gy + 5.29f, z), 0.4f, 14, false);
+                }
+            }
+            // Werkbank an der Rückwand (Kollision x −6…1, z −149,1…−148,3, Höhe 1,1 m) mit Lochwand, Schraubstock, Kisten
+            var bench = new Vector3(-2.5f, gy, -148.7f);
+            mb.For(wood).BevelBox(bench + new Vector3(0, 0.95f, 0), new Vector3(7.0f, 0.08f, 0.8f), 0.02f);
+            mb.For(steelD).Box(bench + new Vector3(0, 0.3f, 0), new Vector3(6.9f, 0.04f, 0.7f));
+            foreach (float lx in new[] { -3.4f, 0f, 3.4f })
+                foreach (float lz in new[] { -0.33f, 0.33f })
+                    mb.For(steelD).Box(bench + new Vector3(lx, 0.46f, lz), new Vector3(0.06f, 0.92f, 0.06f));
+            mb.For(Paint(new Color(0.55f, 0.6f, 0.62f))).Box(bench + new Vector3(0, 1.95f, -0.37f), new Vector3(5.2f, 1.5f, 0.03f)); // Lochwand
+            for (int i = 0; i < 12; i++)
+            {
+                float tx = -2.3f + i * 0.42f, ty = 1.55f + (i % 3) * 0.33f;
+                mb.For(i % 4 == 0 ? Paint(new Color(0.9f, 0.3f, 0.2f)) : steelL).Box(bench + new Vector3(tx, ty, -0.33f), new Vector3(0.06f, 0.3f + (i % 2) * 0.12f, 0.04f));
+            }
+            mb.For(Paint(new Color(0.85f, 0.25f, 0.18f))).BevelBox(bench + new Vector3(-2.6f, 1.14f, 0.05f), new Vector3(0.7f, 0.3f, 0.36f), 0.03f); // Werkzeugkiste
+            mb.For(steelD).BevelBox(bench + new Vector3(1.6f, 1.1f, 0.2f), new Vector3(0.36f, 0.22f, 0.3f), 0.03f);      // Schraubstock
+            mb.For(teal).BevelBox(bench + new Vector3(0.2f, 1.2f, 0f), new Vector3(0.9f, 0.4f, 0.5f), 0.04f);            // Ersatzteilkasten
+            mb.For(Paint(new Color(0.2f, 0.2f, 0.22f))).BevelBox(bench + new Vector3(2.7f, 0.62f, 0f), new Vector3(0.8f, 0.55f, 0.6f), 0.04f); // Kiste unten
+            for (int k = 0; k < 2; k++)
+            {
+                var lp = bench + new Vector3(-1.2f + k * 2.6f, 2.95f, -0.2f);
+                mb.For(steelD).Box(lp + new Vector3(0, 0.05f, -0.1f), new Vector3(0.06f, 0.06f, 0.25f));
+                mb.For(warm).Box(lp, new Vector3(0.9f, 0.04f, 0.14f));
+            }
+            IconSign(mb, new Vector3(-2.5f, gy + 4.3f, z0 + 0.06f), 0, 1.3f, SurfaceLook.Icon.Recycle, new Color(0.18f, 0.72f, 0.68f), false);
+            // Regalwand links (Kollision x −7,6…−6,9, z −148,3…−143, Höhe 2,6 m): Stützen, Böden, Kisten und Fässer
+            foreach (float uz in new[] { -148.2f, -145.65f, -143.1f })
+                foreach (float ux in new[] { -7.52f, -6.98f })
+                    mb.For(Paint(new Color(0.2f, 0.4f, 0.75f))).Box(new Vector3(ux, gy + 1.3f, uz), new Vector3(0.07f, 2.6f, 0.07f));
+            for (int s = 0; s < 3; s++)
+            {
+                float y = 0.3f + s * 0.9f;
+                mb.For(Paint(new Color(0.95f, 0.55f, 0.18f))).Box(new Vector3(-7.25f, gy + y, -145.65f), new Vector3(0.62f, 0.05f, 5.2f));
+                for (int i = 0; i < 7; i++)
+                {
+                    float z = -147.9f + i * 0.72f;
+                    int kind = (i * 3 + s * 5) % 4;
+                    if (kind == 0) mb.For(Paint(new Color(0.3f, 0.45f, 0.35f))).Cylinder(new Vector3(-7.25f, gy + y + 0.03f, z), 0.22f, 0.55f, 12);
+                    else if (kind == 1) mb.For(wood).BevelBox(new Vector3(-7.25f, gy + y + 0.24f, z), new Vector3(0.5f, 0.42f, 0.55f), 0.03f);
+                    else if (kind == 2) mb.For(Paint(new Color(0.85f, 0.85f, 0.8f))).BevelBox(new Vector3(-7.25f, gy + y + 0.17f, z), new Vector3(0.45f, 0.28f, 0.6f), 0.03f);
+                }
+            }
+            // Ladesäule rechts hinten (Kollision x 2,05…2,6, z −147,6…−146,4) mit Anzeige, Kabel und Ladering davor
+            var mint = new Color(0.35f, 1f, 0.75f);
+            var cp = new Vector3(2.33f, gy, -147.0f);
+            mb.For(Paint(new Color(0.9f, 0.88f, 0.82f), 0.5f)).BevelBox(cp + new Vector3(0, 1.0f, 0), new Vector3(0.5f, 2.0f, 1.1f), 0.06f);
+            mb.For(teal).BevelBox(cp + new Vector3(0, 2.05f, 0), new Vector3(0.55f, 0.12f, 1.15f), 0.02f);
+            mb.For(steelD).BevelBox(cp + new Vector3(-0.26f, 1.45f, 0), new Vector3(0.05f, 0.5f, 0.7f), 0.02f);
+            mb.For(Glow(new Color(0.12f, 0.45f, 0.35f), 1.1f)).Box(cp + new Vector3(-0.29f, 1.45f, 0), new Vector3(0.01f, 0.4f, 0.6f));
+            mb.For(Glow(mint, 1.6f)).BoxRot(cp + new Vector3(-0.3f, 1.47f, 0), new Vector3(0.005f, 0.24f, 0.07f), new Vector3(25, 0, 0));
+            mb.For(Rubber(new Color(0.1f, 0.1f, 0.1f))).Tube(cp + new Vector3(-0.26f, 0.8f, 0.3f), cp + new Vector3(-0.6f, 0.05f, 0.7f), 0.04f, 8);
+            mb.For(Rubber(new Color(0.1f, 0.1f, 0.1f))).Tube(cp + new Vector3(-0.6f, 0.05f, 0.7f), cp + new Vector3(-1.3f, 0.05f, 0.4f), 0.04f, 8);
+            IconSign(mb, cp + new Vector3(-0.28f, 2.8f, 0), -90f, 0.6f, SurfaceLook.Icon.Bolt, mint, false);
+            var ringC = new Vector3(0.6f, gy, -147.0f);
+            for (int k = 0; k < 16; k++)
+            {
+                float ang = (k + 0.5f) / 16f * 360f;
+                mb.For(Glow(mint, 0.6f)).BoxRot(ringC + Quaternion.Euler(0, ang, 0) * new Vector3(0, 0.04f, 1.1f), new Vector3(0.36f, 0.02f, 0.04f), new Vector3(0, ang, 0));
+            }
+            // Wandleuchten innen über dem Tor und an den Seiten
+            mb.For(warm).Box(new Vector3(-5.2f, gy + 3.6f, z1 - 0.05f), new Vector3(1.0f, 0.06f, 0.08f));
+            mb.For(warm).Box(new Vector3(x0 + 0.05f, gy + 3.6f, -146.0f), new Vector3(0.08f, 0.06f, 1.0f));
+        }
+
+        /// <summary>Rolltor des Hangars (eigenes Objekt; Drehpunkt an der Oberkante, rollt zum Öffnen in den Wickelkasten).</summary>
+        void BuildHangarDoor(float gy)
+        {
+            const float fz = -141.5f, w = 5.4f, h = 4.3f;
+            var mb = new MultiBuilder { UsePalette = true };
+            var slat = Steel(new Color(0.72f, 0.74f, 0.76f));
+            var steelD = Steel(new Color(0.24f, 0.25f, 0.27f));
+            int n = 15;
+            for (int k = 0; k < n; k++)
+            {
+                float y = -h + (k + 0.5f) * h / n;
+                mb.For(k == 9 ? WindowMat(0) : slat).Box(new Vector3(0, y, 0.03f), new Vector3(w, h / n - 0.02f, 0.05f));
+                mb.For(steelD).Box(new Vector3(0, y + h / n * 0.5f - 0.01f, 0.06f), new Vector3(w, 0.025f, 0.02f));
+            }
+            mb.For(Rubber(new Color(0.1f, 0.1f, 0.1f))).Box(new Vector3(0, -h + 0.04f, 0.03f), new Vector3(w, 0.08f, 0.09f));
+            HazardBand(mb, new Vector3(0, -h + 0.22f, 0.07f), 0, w, 0.16f, 0.02f);
+            mb.For(steelD).Box(new Vector3(-1.6f, -h + 0.9f, 0.08f), new Vector3(0.3f, 0.06f, 0.05f)); // Griff
+            var go = mb.Build("HangarTor", Root, true);
+            go.transform.localPosition = new Vector3(0, gy + h, fz + 0.02f);
+            hangarDoor = go.transform;
+            hangarOpen = 0f;
+            hangarDoor.localScale = Vector3.one;
+            var lg = new GameObject("HangarLicht");
+            lg.transform.SetParent(Root, false);
+            lg.transform.localPosition = new Vector3(-2.5f, gy + 5.0f, -145.5f);
+            hangarLight = lg.AddComponent<Light>();
+            hangarLight.type = LightType.Point; hangarLight.range = 11f; hangarLight.color = new Color(1f, 0.8f, 0.58f); hangarLight.intensity = 1.6f;
+            hangarLight.shadows = LightShadows.None;
+        }
+
+        // ------------------------------------------------------------------ Transportschiff
+        /// <summary>Lage der Hub- und Haupttriebwerke im Schiffsrahmen (x gespiegelt; für die Anflugszene).</summary>
+        public static readonly Vector3 ShipLiftEngine = new Vector3(5.6f, 2.05f, -1.5f), ShipMainEngine = new Vector3(3.45f, 3.4f, -6.6f);
+        /// <summary>Laderaum im Schiffsrahmen: Heck z −5,6, Bugschott z 4,0, halbe Breite 2,7, Boden 0,7 über dem Landeplatz, Decke 3,8.</summary>
+        const float SRear = -5.6f, SFront = 4.0f, SHalf = 2.7f, SFloor = 0.7f, SCeil = 3.8f, RampLen = 4.09f;
+        const float RampOpenAngle = -12f, RampClosedAngle = 88f;
+
+        /// <summary>Drehung der Heckrampe (lokal zum Schiffsobjekt): open 0 = zu (senkrecht), 1 = abgesenkt auf den Boden.</summary>
+        public static Quaternion ShipRampRotation(float shipYaw, float open)
+        {
+            return Quaternion.Euler(0, shipYaw, 0) * Quaternion.Euler(Mathf.Lerp(RampClosedAngle, RampOpenAngle, M.Smooth(Mathf.Clamp01(open))), 0, 0);
+        }
+
+        /// <summary>Kegelstumpf mit rechteckigem Querschnitt entlang z (für Bug und Nase), Flächen nach außen.</summary>
+        static void Frustum(MeshBuilder b, float z0, float hx0, float yb0, float yt0, float z1, float hx1, float yb1, float yt1, bool cap0, bool cap1)
+        {
+            Vector3 a0 = new Vector3(-hx0, yb0, z0), b0 = new Vector3(hx0, yb0, z0), c0 = new Vector3(hx0, yt0, z0), d0 = new Vector3(-hx0, yt0, z0);
+            Vector3 a1 = new Vector3(-hx1, yb1, z1), b1 = new Vector3(hx1, yb1, z1), c1 = new Vector3(hx1, yt1, z1), d1 = new Vector3(-hx1, yt1, z1);
+            b.Face(a0, b0, b1, a1, Vector3.down);
+            b.Face(d0, c0, c1, d1, Vector3.up);
+            b.Face(a0, d0, d1, a1, Vector3.left);
+            b.Face(b0, c0, c1, b1, Vector3.right);
+            if (cap0) b.Face(a0, b0, c0, d0, Vector3.back);
+            if (cap1) b.Face(a1, b1, c1, d1, Vector3.forward);
+        }
+
+        /// <summary>
+        /// Kastenförmiger Frachter, Nase nach +X (Layout.Base.ShipYaw): begehbarer Laderaum (Boden 0,7 m über dem Landeplatz,
+        /// Kollision WorldGen.BuildShipHold) mit Spanten, Deckenleuchten, Zurrschienen und verzurrten Containern, Bugschott mit
+        /// halb offenem Durchgang zum beleuchteten Cockpit (Sitze, Konsolen, Frontscheibe), abgeschrägter Bug mit Kanzel,
+        /// Stummelflügel mit Hubtriebwerken, zwei Haupttriebwerke an den Schultern, vier Landebeine und eine Heckrampe
+        /// (eigenes Objekt „Rampe“, senkt sich nachts/bei Sturm, sobald MIKO sich nähert). Alle Wände sind Scheiben, damit man
+        /// sie auch von innen sieht.
         /// </summary>
         void BuildShip(Vector3 at)
         {
@@ -608,119 +792,244 @@ namespace RePlanet
             var dark = Paint(new Color(0.16f, 0.17f, 0.2f));
             var accent = Paint(new Color(1f, 0.55f, 0.18f), 0.55f);
             var teal = Paint(new Color(0.18f, 0.72f, 0.68f), 0.55f);
+            var lining = Mats.Surface(SurfKind.Cladding, new Color(0.7f, 0.72f, 0.74f), 0.4f);
             var glass = Mats.Get(Mats.Emissive, new Color(0.08f, 0.16f, 0.24f), new Color(0.06f, 0.22f, 0.32f), 0.95f);
             var engineGlow = Glow(new Color(0.4f, 0.85f, 1f), 2.2f);
-            float bodyY = 3.6f;
-            var yaw = Quaternion.Euler(0, -30, 0);
-            mb.M = Matrix4x4.TRS(at + yaw * new Vector3(0, 0, 1.4f), yaw, Vector3.one);
+            var lamp = Glow(new Color(1f, 0.9f, 0.75f), 2.4f);
+            float yawDeg = Layout.Base.ShipYaw;
+            shipYawQ = Quaternion.Euler(0, yawDeg, 0);
+            mb.M = Matrix4x4.TRS(at, shipYawQ, Vector3.one);
             mb.GroundY = at.y - 0.2f;
-            var root = mb.M;
-            // Rumpf (entlang +Z, Nase vorn): Rotationskörper, abgeflacht
-            mb.M = root * Matrix4x4.TRS(new Vector3(0, bodyY, -5.2f), Quaternion.Euler(90, 0, 0), new Vector3(1f, 1f, 0.68f));
-            mb.For(hull).Lathe(Vector3.zero, new[] { new Vector2(0f, 0f), new Vector2(1.9f, 0.05f), new Vector2(2.2f, 0.4f), new Vector2(2.32f, 1.0f), new Vector2(2.35f, 6.5f), new Vector2(2.2f, 7.8f), new Vector2(1.9f, 9.0f), new Vector2(1.4f, 9.9f), new Vector2(0.7f, 10.6f), new Vector2(0f, 10.9f) }, 28);
-            mb.M = root;
-            // Rückwand, Frachtraum und Laderampe (mit Riffelblech und Warnstreifen)
-            mb.For(dark).Box(new Vector3(0, bodyY - 0.2f, -5.2f), new Vector3(2.6f, 1.9f, 0.1f));
-            mb.For(Glow(new Color(1f, 0.85f, 0.6f), 0.9f)).Box(new Vector3(0, bodyY + 0.65f, -5.1f), new Vector3(2.2f, 0.06f, 0.2f));
-            float rampAng = -Mathf.Atan2(bodyY - 1.2f, 3.8f) * Mathf.Rad2Deg;
-            var rampC = new Vector3(0, (bodyY - 1.2f) * 0.5f + 0.05f, -5.2f - 1.9f);
-            float rampL = Mathf.Sqrt(3.8f * 3.8f + (bodyY - 1.2f) * (bodyY - 1.2f));
-            mb.For(Mats.Surface(SurfKind.Tiles, new Color(0.4f, 0.42f, 0.45f), 0.5f, true)).BoxRot(rampC, new Vector3(2.4f, 0.12f, rampL), new Vector3(rampAng, 0, 0));
-            for (int s = -1; s <= 1; s += 2)
-            {
-                mb.For(accent).BoxRot(new Vector3(s * 1.15f, rampC.y + 0.13f, rampC.z), new Vector3(0.08f, 0.14f, 4.4f), new Vector3(rampAng, 0, 0));
-                mb.For(hullDark).Beam(new Vector3(s * 1.0f, bodyY - 1.2f, -5.3f), new Vector3(s * 1.0f, rampC.y + 0.3f, rampC.z + 0.2f), 0.09f); // Rampenzylinder
-            }
-            for (int k = 0; k < 6; k++) mb.For(Paint(new Color(0.95f, 0.8f, 0.2f))).BoxRot(new Vector3(0, (bodyY - 1.2f) * (0.12f + k * 0.15f) + 0.1f, -5.2f - 3.6f + k * 0.62f), new Vector3(1.6f, 0.02f, 0.12f), new Vector3(rampAng, 0, 0));
-            // Cockpitkanzel mit Rahmen
-            mb.M = root * Matrix4x4.TRS(new Vector3(0, bodyY + 1.05f, 3.2f), Quaternion.Euler(-8, 0, 0), new Vector3(1f, 0.55f, 1.6f));
-            mb.For(glass).Sphere(Vector3.zero, 1.2f, 20, 10);
-            mb.For(hullDark).TorusRot(Vector3.zero, new Vector3(90, 0, 0), 1.2f, 0.05f, 20, 4);
-            mb.For(hullDark).TorusRot(Vector3.zero, new Vector3(0, 0, 90), 1.2f, 0.05f, 20, 4);
-            mb.M = root;
-            // Akzentstreifen
+            float midZ = (SRear + SFront + 0.4f) * 0.5f, len = SFront + 0.4f - SRear;
+            // ---- Rumpf: Bodenwanne, Seitenwände, Schultern, Dach (Scheiben)
+            mb.For(hullDark).Box(new Vector3(0, 0.5f, midZ), new Vector3(6.2f, 0.4f, len));
+            mb.For(Mats.Surface(SurfKind.Tiles, new Color(0.14f, 0.15f, 0.17f), 0.3f)).Box(new Vector3(0, 0.27f, midZ), new Vector3(5.8f, 0.06f, len - 0.4f));
             foreach (var sx in new[] { -1f, 1f })
             {
-                mb.For(accent).Box(new Vector3(sx * 2.32f, bodyY + 0.2f, -0.3f), new Vector3(0.06f, 0.35f, 6.4f));
-                mb.For(teal).Box(new Vector3(sx * 2.33f, bodyY - 0.25f, -0.3f), new Vector3(0.05f, 0.15f, 6.4f));
-                // Bullaugen (warm beleuchtet) und Lüftungsgitter
+                mb.For(hull).BevelBox(new Vector3(sx * 2.9f, 2.15f, midZ), new Vector3(0.4f, 3.3f, len), 0.08f);
+                mb.For(hull).BevelBoxRot(new Vector3(sx * 2.65f, 4.2f, midZ), new Vector3(1.2f, 0.3f, len), new Vector3(0, 0, -sx * 42f), 0.06f);
+                // Akzentstreifen, Bullaugen, Lüftungsgitter, Piktogramm
+                mb.For(accent).Box(new Vector3(sx * 3.12f, 3.1f, midZ), new Vector3(0.04f, 0.3f, len - 0.6f));
+                mb.For(teal).Box(new Vector3(sx * 3.12f, 1.0f, midZ), new Vector3(0.04f, 0.14f, len - 0.6f));
                 for (int k = 0; k < 4; k++)
                 {
-                    var wp = new Vector3(sx * 2.34f, bodyY + 0.62f, -2.6f + k * 1.3f);
-                    mb.For(hullDark).CylinderX(wp, 0.19f, 0.06f, 12);
-                    mb.For(Glow(new Color(1f, 0.8f, 0.55f), 0.9f)).CylinderX(wp + new Vector3(sx * 0.02f, 0, 0), 0.14f, 0.05f, 12);
+                    var wp = new Vector3(sx * 3.12f, 2.4f, -3.9f + k * 1.9f);
+                    mb.For(hullDark).CylinderX(wp, 0.22f, 0.06f, 12);
+                    mb.For(Glow(new Color(1f, 0.8f, 0.55f), 0.9f)).CylinderX(wp + new Vector3(sx * 0.02f, 0, 0), 0.16f, 0.05f, 12);
                 }
-                for (int k = 0; k < 6; k++) mb.For(dark).Box(new Vector3(sx * 2.34f, bodyY - 0.6f, 1.2f + k * 0.18f), new Vector3(0.04f, 0.28f, 0.07f));
-                // Steuerdüsen-Blöcke
-                mb.For(hullDark).BevelBox(new Vector3(sx * 2.25f, bodyY + 0.9f, 4.2f), new Vector3(0.3f, 0.3f, 0.4f), 0.04f);
-                mb.For(dark).CylinderX(new Vector3(sx * 2.42f, bodyY + 0.9f, 4.2f), 0.08f, 0.06f, 8);
+                for (int k = 0; k < 6; k++) mb.For(dark).Box(new Vector3(sx * 3.12f, 1.6f, 2.4f + k * 0.2f), new Vector3(0.03f, 0.35f, 0.08f));
+                IconSign(mb, new Vector3(sx * 3.16f, 2.4f, -4.9f), sx * 90f, 0.7f, SurfaceLook.Icon.Ship, new Color(0.3f, 0.75f, 1f), false);
             }
-            // Plattenfugen als Ringe um den abgeflachten Rumpf
-            for (int k = 0; k < 5; k++)
+            mb.For(hull).BevelBox(new Vector3(0, 4.45f, midZ), new Vector3(4.6f, 0.3f, len), 0.06f);
+            // Dachaufbauten: Wärmetauscher, Antenne, Rundumleuchte
+            mb.For(hullDark).BevelBox(new Vector3(0, 4.65f, -2.4f), new Vector3(1.8f, 0.12f, 2.6f), 0.03f);
+            for (int k = 0; k < 8; k++) mb.For(dark).Box(new Vector3(0, 4.85f, -3.5f + k * 0.32f), new Vector3(1.6f, 0.3f, 0.05f));
+            mb.For(hullDark).Cylinder(new Vector3(0.9f, 4.6f, 1.6f), 0.05f, 1.6f, 6);
+            for (int k = 0; k < 3; k++) mb.For(hullDark).Box(new Vector3(0.9f, 5.35f + k * 0.3f, 1.6f), new Vector3(0.5f - k * 0.12f, 0.02f, 0.02f));
+            mb.For(Glow(new Color(1f, 0.25f, 0.1f), 3f)).Sphere(new Vector3(0.9f, 6.25f, 1.6f), 0.1f, 6, 4);
+            // ---- Heckrahmen um die Ladeluke, Scharniere
+            mb.For(hullDark).BevelBox(new Vector3(0, 4.2f, SRear - 0.1f), new Vector3(6.3f, 0.85f, 0.3f), 0.05f);
+            mb.For(accent).Box(new Vector3(0, 3.95f, SRear - 0.26f), new Vector3(5.4f, 0.12f, 0.02f));
+            foreach (var sx in new[] { -1f, 1f })
             {
-                mb.M = root * Matrix4x4.TRS(new Vector3(0, bodyY, -4.0f + k * 1.8f), Quaternion.identity, new Vector3(1f, 0.68f, 1f));
-                mb.For(hullDark).TorusRot(Vector3.zero, new Vector3(90, 0, 0), 2.36f, 0.025f, 28, 3);
-                mb.M = root;
+                mb.For(hullDark).BevelBox(new Vector3(sx * 2.95f, 2.2f, SRear - 0.1f), new Vector3(0.5f, 3.6f, 0.3f), 0.05f);
+                mb.For(Paint(new Color(0.95f, 0.75f, 0.15f))).Box(new Vector3(sx * 2.72f, 2.2f, SRear - 0.26f), new Vector3(0.05f, 3.2f, 0.02f));
+                mb.For(Glow(new Color(1f, 0.6f, 0.2f), 2f)).Box(new Vector3(sx * 2.95f, 3.6f, SRear - 0.27f), new Vector3(0.18f, 0.18f, 0.02f)); // Ladeleuchte
+                mb.For(hullDark).CylinderX(new Vector3(sx * 2.15f, SFloor - 0.02f, SRear - 0.05f), 0.13f, 0.6f, 10);
             }
-            // Wärmetauscher-Rippen, Antenne und Rückenleuchte
-            mb.For(hullDark).BevelBox(new Vector3(0, bodyY + 1.5f, -2.9f), new Vector3(1.6f, 0.1f, 2.4f), 0.03f);
-            for (int k = 0; k < 7; k++) mb.For(dark).Box(new Vector3(0, bodyY + 1.68f, -3.9f + k * 0.33f), new Vector3(1.4f, 0.3f, 0.05f));
-            mb.For(hullDark).Cylinder(new Vector3(0.6f, bodyY + 1.55f, 0.8f), 0.05f, 1.6f, 6);
-            for (int k = 0; k < 3; k++) mb.For(hullDark).Box(new Vector3(0.6f, bodyY + 2.3f + k * 0.3f, 0.8f), new Vector3(0.5f - k * 0.12f, 0.02f, 0.02f));
-            mb.For(Glow(new Color(1f, 0.25f, 0.1f), 3f)).Sphere(new Vector3(0.6f, bodyY + 3.2f, 0.8f), 0.1f, 6, 4);
-            // Stummelflügel mit Triebwerksgondeln
+            // ---- Laderaum innen: Verkleidung, Spanten, Boden, Zurrschienen, Decke mit Leuchten
+            float inMid = (SRear + SFront) * 0.5f, inLen = SFront - SRear;
+            mb.For(lining).Box(new Vector3(0, SCeil + 0.05f, inMid), new Vector3(SHalf * 2f, 0.1f, inLen));
+            foreach (var sx in new[] { -1f, 1f })
+            {
+                mb.For(lining).Box(new Vector3(sx * (SHalf - 0.02f), 2.25f, inMid), new Vector3(0.04f, 3.1f, inLen));
+                mb.For(teal).Box(new Vector3(sx * (SHalf - 0.05f), 1.25f, inMid), new Vector3(0.03f, 0.18f, inLen));
+                mb.For(Rubber(new Color(0.15f, 0.15f, 0.16f))).Box(new Vector3(sx * (SHalf - 0.04f), SFloor + 0.15f, inMid), new Vector3(0.05f, 0.3f, inLen));
+                for (int k = 0; k < 3; k++) mb.For(lamp).Box(new Vector3(sx * 1.6f, SCeil - 0.03f, -4.2f + k * 2.7f), new Vector3(0.22f, 0.04f, 1.3f));
+                mb.For(hullDark).Box(new Vector3(sx * 1.4f, SFloor + 0.04f, inMid), new Vector3(0.08f, 0.04f, inLen - 0.4f)); // Zurrschiene
+            }
+            for (float z = SRear + 0.4f; z < SFront - 1.5f; z += 1.6f)
+            {
+                foreach (var sx in new[] { -1f, 1f }) mb.For(hullDark).Box(new Vector3(sx * (SHalf - 0.07f), 2.25f, z), new Vector3(0.14f, 3.1f, 0.16f));
+                mb.For(hullDark).Box(new Vector3(0, SCeil - 0.07f, z), new Vector3(SHalf * 2f - 0.2f, 0.14f, 0.16f));
+            }
+            mb.For(Mats.Surface(SurfKind.Tiles, new Color(0.36f, 0.38f, 0.4f), 0.5f, true)).Box(new Vector3(0, SFloor + 0.01f, inMid), new Vector3(SHalf * 2f, 0.02f, inLen));
+            HazardBand(mb, new Vector3(0, SFloor + 0.02f, SRear + 0.2f), 0, SHalf * 2f, 0.02f, 0.3f);
+            // Container vorn in den Ecken (Kollision z 2,6…4,0, |x| 1,5…2,7, Höhe 1,6 m), verzurrt, mit Kisten obenauf
+            foreach (var sx in new[] { -1f, 1f })
+            {
+                var cc = new Vector3(sx * 2.1f, SFloor + 0.78f, SFront - 0.7f);
+                var cm = sx < 0 ? accent : teal;
+                mb.For(cm).BevelBox(cc, new Vector3(1.15f, 1.55f, 1.35f), 0.04f);
+                for (int k = 0; k < 5; k++) mb.For(hullDark).Box(cc + new Vector3(-sx * 0.585f, 0, -0.55f + k * 0.275f), new Vector3(0.02f, 1.45f, 0.06f));
+                mb.For(Paint(new Color(0.95f, 0.95f, 0.92f))).Box(cc + new Vector3(-sx * 0.59f, 0.35f, 0), new Vector3(0.01f, 0.25f, 0.6f));
+                mb.For(Rubber(new Color(0.9f, 0.55f, 0.12f))).Box(cc + new Vector3(0, 0.78f, 0), new Vector3(1.2f, 0.02f, 0.06f));
+                mb.For(Rubber(new Color(0.9f, 0.55f, 0.12f))).Box(cc + new Vector3(-sx * 0.6f, 0, 0), new Vector3(0.02f, 1.56f, 0.06f));
+                mb.For(Mats.Surface(SurfKind.Wood, new Color(0.55f, 0.42f, 0.28f), 0.3f)).BevelBox(cc + new Vector3(0.1f * sx, 1.1f, 0.1f), new Vector3(0.7f, 0.6f, 0.7f), 0.03f);
+            }
+            // Bugschott mit Durchgang (x ±0,65, Höhe 2,2 m) und halb aufgeschobener Tür
+            float bz = SFront + 0.2f;
+            mb.For(lining).Box(new Vector3(-(SHalf + 0.65f) * 0.5f, 2.25f, bz), new Vector3(SHalf - 0.65f, 3.1f, 0.4f));
+            mb.For(lining).Box(new Vector3((SHalf + 0.65f) * 0.5f, 2.25f, bz), new Vector3(SHalf - 0.65f, 3.1f, 0.4f));
+            mb.For(lining).Box(new Vector3(0, 3.35f, bz), new Vector3(1.3f, 0.9f, 0.4f));
+            foreach (var sx in new[] { -1f, 1f }) mb.For(hullDark).Box(new Vector3(sx * 0.7f, 1.8f, SFront - 0.02f), new Vector3(0.1f, 2.2f, 0.06f));
+            mb.For(hullDark).Box(new Vector3(0, 2.92f, SFront - 0.02f), new Vector3(1.5f, 0.1f, 0.06f));
+            mb.For(Paint(new Color(0.3f, 0.34f, 0.38f))).Box(new Vector3(0.62f, 1.8f, SFront + 0.2f), new Vector3(0.9f, 2.18f, 0.06f));
+            mb.For(Glow(new Color(0.3f, 1f, 0.6f), 1.4f)).Box(new Vector3(0.9f, 1.95f, SFront - 0.03f), new Vector3(0.08f, 0.14f, 0.02f));
+            IconSign(mb, new Vector3(-1.7f, 2.7f, SFront - 0.03f), 180f, 0.6f, SurfaceLook.Icon.Ship, new Color(0.3f, 0.75f, 1f), false);
+            // Cockpit hinter dem Schott (nur durch den Durchgang sichtbar): Boden, Seitenwände, Decke, Sitze, Konsolen, Frontscheibe
+            float ck0 = SFront + 0.4f, ck1 = 7.0f;
+            mb.For(dark).Box(new Vector3(0, SFloor + 0.1f, (ck0 + ck1) * 0.5f - 0.2f), new Vector3(3.0f, 0.2f, ck1 - ck0 + 0.4f)); // Stufe im Durchgang + Cockpitboden
+            mb.For(lining).Box(new Vector3(0, 3.3f, (ck0 + ck1) * 0.5f - 0.2f), new Vector3(3.0f, 0.08f, ck1 - ck0 - 0.4f));
+            foreach (var sx in new[] { -1f, 1f })
+            {
+                mb.For(lining).Box(new Vector3(sx * 1.5f, 2.1f, (ck0 + ck1) * 0.5f), new Vector3(0.06f, 2.4f, ck1 - ck0));
+                var seat = new Vector3(sx * 0.65f, SFloor + 0.2f, 5.4f);
+                mb.For(dark).Cylinder(seat, 0.08f, 0.45f, 8);
+                mb.For(Paint(new Color(0.85f, 0.4f, 0.15f))).BevelBox(seat + new Vector3(0, 0.55f, 0), new Vector3(0.55f, 0.12f, 0.55f), 0.04f);
+                mb.For(Paint(new Color(0.85f, 0.4f, 0.15f))).BevelBoxRot(seat + new Vector3(0, 0.95f, -0.25f), new Vector3(0.55f, 0.75f, 0.1f), new Vector3(-10, 0, 0), 0.04f);
+            }
+            var console = new Vector3(0, SFloor + 0.2f, 6.55f);
+            mb.For(hullDark).BevelBoxRot(console + new Vector3(0, 0.55f, 0), new Vector3(2.8f, 0.9f, 0.6f), new Vector3(-20, 0, 0), 0.05f);
+            for (int k = 0; k < 3; k++)
+                mb.For(Glow(k == 1 ? new Color(0.3f, 0.9f, 1f) : new Color(0.35f, 1f, 0.6f), 1.5f)).BoxRot(console + new Vector3(-0.9f + k * 0.9f, 1.02f, 0.02f), new Vector3(0.7f, 0.02f, 0.4f), new Vector3(-20, 0, 0));
+            mb.For(glass).BoxRot(new Vector3(0, 2.55f, 6.75f), new Vector3(2.9f, 0.04f, 1.6f), new Vector3(55, 0, 0)); // Frontscheibe innen
+            // ---- Bug mit Kanzel (Kegelstumpf-Segmente), Scheiben und Rahmen
+            var nb = mb.For(hull);
+            Frustum(nb, SFront + 0.4f, 3.1f, 0.3f, 4.6f, 7.0f, 2.3f, 0.7f, 3.5f, false, false);
+            Frustum(nb, 7.0f, 2.3f, 0.7f, 3.5f, 8.6f, 1.1f, 1.25f, 2.6f, false, true);
+            mb.For(glass).BoxRot(new Vector3(0, 3.91f, 6.1f), new Vector3(3.2f, 0.04f, 1.5f), new Vector3(22.9f, 0, 0));
+            mb.For(glass).BoxRot(new Vector3(0, 3.22f, 7.55f), new Vector3(2.4f, 0.04f, 1.0f), new Vector3(29.4f, 0, 0));
+            foreach (var sx in new[] { -0.6f, 0.6f }) mb.For(hullDark).BoxRot(new Vector3(sx, 3.94f, 6.1f), new Vector3(0.07f, 0.06f, 1.55f), new Vector3(22.9f, 0, 0));
+            foreach (var sx in new[] { -1f, 1f })
+            {
+                var sw = new Vector3(sx * 2.68f, 2.9f, 6.0f);
+                mb.For(glass).BoxRot(sw, new Vector3(0.04f, 0.7f, 1.2f), new Vector3(0, sx * 17f, 0));
+                mb.For(Glow(sx < 0 ? new Color(1f, 0.15f, 0.1f) : new Color(0.2f, 1f, 0.3f), 3f)).Sphere(new Vector3(sx * 2.1f, 1.6f, 7.4f), 0.1f, 6, 4);
+            }
+            mb.For(accent).Box(new Vector3(0, 1.9f, 8.62f), new Vector3(1.4f, 0.3f, 0.04f));
+            // ---- Stummelflügel mit Hubtriebwerken, Haupttriebwerke an den Schultern
             for (int s = -1; s <= 1; s += 2)
             {
-                mb.For(hull).BevelBoxRot(new Vector3(s * 3.3f, bodyY - 0.2f, -1.6f), new Vector3(2.6f, 0.28f, 3.4f), new Vector3(0, s * -8, s * -6), 0.1f);
-                mb.For(accent).BoxRot(new Vector3(s * 3.9f, bodyY - 0.05f, -0.2f), new Vector3(1.2f, 0.06f, 0.5f), new Vector3(0, s * -8, s * -6));
-                var pod = new Vector3(s * 4.6f, bodyY - 0.45f, -2.0f);
-                mb.For(hullDark).CylinderZ(pod, 0.62f, 3.6f, 18);
-                mb.For(hull).CylinderZ(pod + new Vector3(0, 0, 1.6f), 0.66f, 0.5f, 18);
-                mb.For(dark).CylinderZ(pod + new Vector3(0, 0, -1.95f), 0.5f, 0.35f, 18);
-                for (int k = 0; k < 8; k++) // Düsenlamellen
-                {
-                    float ang = k * 45f;
-                    mb.For(hullDark).BoxRot(pod + new Vector3(0, 0, -2.1f) + Quaternion.Euler(0, 0, ang) * new Vector3(0, 0.45f, 0), new Vector3(0.18f, 0.06f, 0.3f), new Vector3(0, 0, ang));
-                }
-                mb.For(engineGlow).CylinderZ(pod + new Vector3(0, 0, -2.14f), 0.34f, 0.04f, 18);
-                mb.For(accent).CylinderZ(pod + new Vector3(0, 0, 1.4f), 0.64f, 0.3f, 18);
-                mb.For(Glow(s < 0 ? new Color(1f, 0.15f, 0.1f) : new Color(0.2f, 1f, 0.3f), 3f)).Sphere(pod + new Vector3(s * 0.65f, 0, 0.5f), 0.12f, 6, 4);
-                mb.For(Glow(new Color(1f, 1f, 1f), 2.4f)).Sphere(new Vector3(s * 4.55f, bodyY - 0.13f, -3.25f), 0.07f, 6, 4); // Heckleuchte am Flügel
-            }
-            // Haupttriebwerke hinten
-            for (int s = -1; s <= 1; s += 2)
-            {
-                var n = new Vector3(s * 1.1f, bodyY + 0.2f, -5.4f);
-                mb.For(dark).CylinderZ(n + new Vector3(0, 0, -0.35f), 0.75f, 0.7f, 20);
-                mb.For(hullDark).CylinderZ(n + new Vector3(0, 0, -0.1f), 0.82f, 0.25f, 20);
-                mb.For(engineGlow).CylinderZ(n + new Vector3(0, 0, -0.72f), 0.52f, 0.04f, 20);
-                mb.For(Glow(new Color(0.4f, 0.85f, 1f), 1.2f)).TorusRot(n + new Vector3(0, 0, -0.7f), new Vector3(90, 0, 0), 0.64f, 0.04f, 20, 4);
+                mb.For(hull).BevelBoxRot(new Vector3(s * 4.7f, 2.55f, -1.6f), new Vector3(3.2f, 0.26f, 3.4f), new Vector3(0, 0, s * 6f), 0.08f);
+                mb.For(accent).BoxRot(new Vector3(s * 4.9f, 2.72f, -0.1f), new Vector3(2.2f, 0.06f, 0.4f), new Vector3(0, 0, s * 6f));
+                var pod = new Vector3(s * ShipLiftEngine.x, ShipLiftEngine.y, ShipLiftEngine.z);
+                mb.For(hullDark).Cylinder(pod, 0.72f, 1.0f, 18);
+                mb.For(accent).Cylinder(pod + Vector3.up * 0.75f, 0.74f, 0.15f, 18, false);
+                mb.For(dark).Cylinder(pod + Vector3.down * 0.05f, 0.55f, 0.08f, 18);
+                mb.For(engineGlow).Disc(pod + Vector3.down * 0.06f, 0.4f, 18, false);
+                mb.For(Glow(s < 0 ? new Color(1f, 0.15f, 0.1f) : new Color(0.2f, 1f, 0.3f), 3f)).Sphere(pod + new Vector3(s * 0.78f, 0.5f, 0), 0.1f, 6, 4);
+                var n = new Vector3(s * ShipMainEngine.x, ShipMainEngine.y, 0);
+                mb.For(hull).CylinderZ(new Vector3(n.x, n.y, -3.6f), 0.72f, 4.6f, 20);
+                mb.For(accent).CylinderZ(new Vector3(n.x, n.y, -1.4f), 0.74f, 0.3f, 20);
+                mb.For(dark).CylinderZ(new Vector3(n.x, n.y, -1.25f), 0.5f, 0.04f, 16);
+                mb.For(hullDark).CylinderZ(new Vector3(n.x, n.y, -6.1f), 0.66f, 0.4f, 20);
+                mb.For(engineGlow).CylinderZ(new Vector3(n.x, n.y, -6.32f), 0.44f, 0.04f, 20);
+                mb.For(Glow(new Color(0.4f, 0.85f, 1f), 1.2f)).TorusRot(new Vector3(n.x, n.y, -6.3f), new Vector3(90, 0, 0), 0.55f, 0.04f, 20, 4);
                 for (int k = 0; k < 10; k++)
                 {
                     float ang = k * 36f;
-                    mb.For(hullDark).BoxRot(n + new Vector3(0, 0, -0.62f) + Quaternion.Euler(0, 0, ang) * new Vector3(0, 0.7f, 0), new Vector3(0.22f, 0.05f, 0.25f), new Vector3(0, 0, ang));
+                    mb.For(hullDark).BoxRot(new Vector3(n.x, n.y, -6.22f) + Quaternion.Euler(0, 0, ang) * new Vector3(0, 0.6f, 0), new Vector3(0.2f, 0.05f, 0.22f), new Vector3(0, 0, ang));
                 }
             }
-            // Landebeine mit Hydraulik und Tellern (Fuß auf dem Landeplatz)
-            var legs = new[] { new Vector3(-2.2f, 0, 2.6f), new Vector3(2.2f, 0, 2.6f), new Vector3(-2.6f, 0, -3.4f), new Vector3(2.6f, 0, -3.4f) };
-            foreach (var l in legs)
+            // ---- Landebeine (Kollision je 0,9 m um die Füße bei x ±3,8, z 3,0 / −4,4)
+            foreach (var lz in new[] { 3.0f, -4.4f })
+                foreach (var sx in new[] { -1f, 1f })
+                {
+                    var foot = new Vector3(sx * 3.8f, 0.0f, lz);
+                    var hip = new Vector3(sx * 3.1f, 1.4f, lz);
+                    var knee = new Vector3(sx * 3.75f, 0.9f, lz);
+                    mb.For(hullDark).Beam(hip, knee, 0.24f);
+                    mb.For(acMat).Tube(knee, foot + Vector3.up * 0.18f, 0.09f, 10);
+                    mb.For(Steel(new Color(0.8f, 0.82f, 0.85f))).Tube(hip + new Vector3(0, 0.3f, 0.2f), knee + new Vector3(0, 0.15f, 0.2f), 0.045f, 8);
+                    mb.For(dark).Cylinder(foot, 0.42f, 0.18f, 16, true, 0.3f);
+                    mb.For(Rubber(new Color(0.1f, 0.1f, 0.1f))).Cylinder(foot + Vector3.down * 0.03f, 0.44f, 0.05f, 16);
+                    mb.For(Paint(new Color(0.95f, 0.75f, 0.15f))).BevelBox(knee, new Vector3(0.32f, 0.3f, 0.32f), 0.04f);
+                }
+            var go = mb.Build("TransportShip", Root, true);
+            // ---- Heckrampe (eigenes Objekt unter dem Schiff; Drehpunkt am Scharnier)
+            var rb = new MultiBuilder { UsePalette = true };
+            rb.For(Mats.Surface(SurfKind.Tiles, new Color(0.4f, 0.42f, 0.45f), 0.5f, true)).Box(new Vector3(0, -0.08f, -RampLen * 0.5f), new Vector3(5.0f, 0.16f, RampLen));
+            rb.For(hullDark).Box(new Vector3(0, -0.2f, -RampLen * 0.5f), new Vector3(4.6f, 0.08f, RampLen - 0.3f));
+            foreach (var sx in new[] { -1f, 1f }) rb.For(accent).Box(new Vector3(sx * 2.45f, 0.02f, -RampLen * 0.5f), new Vector3(0.1f, 0.12f, RampLen));
+            for (int k = 0; k < 6; k++) rb.For(Paint(new Color(0.95f, 0.8f, 0.2f))).Box(new Vector3(0, 0.005f, -0.4f - k * 0.62f), new Vector3(3.6f, 0.02f, 0.12f));
+            rb.For(hullDark).CylinderX(new Vector3(0, -0.06f, 0), 0.11f, 4.4f, 10);
+            rb.For(dark).Box(new Vector3(0, -0.04f, -RampLen + 0.08f), new Vector3(5.0f, 0.1f, 0.16f)); // Auflagekante
+            var ramp = rb.Build("Rampe", go.transform, true);
+            ramp.transform.localPosition = at + shipYawQ * new Vector3(0, SFloor, SRear);
+            rampOpen = 0f;
+            ramp.transform.localRotation = ShipRampRotation(yawDeg, rampOpen);
+            shipRamp = ramp.transform;
+            var lg = new GameObject("SchiffLicht");
+            lg.transform.SetParent(go.transform, false);
+            lg.transform.localPosition = at + shipYawQ * new Vector3(0, 3.2f, -0.8f);
+            shipLight = lg.AddComponent<Light>();
+            shipLight.type = LightType.Point; shipLight.range = 9f; shipLight.color = new Color(1f, 0.9f, 0.78f); shipLight.intensity = 1.5f;
+            shipLight.shadows = LightShadows.None;
+        }
+
+        // ------------------------------------------------------------------ Tor und Rampe bewegen
+        /// <summary>
+        /// Rolltor und Heckrampe: nachts, bei Sturmwarnung und im Sturm öffnen sie, sobald jemand (MIKO oder ein Mitspieler)
+        /// auf 13 m herankommt; tagsüber erst direkt davor (6 m). Solange jemand drinnen ist, bleiben sie offen. Innenlicht
+        /// nur in Kameranähe (Punktlichter kosten).
+        /// </summary>
+        void AnimateShelters()
+        {
+            var w = World;
+            var b = Layout != null ? Layout.Base : null;
+            if (w == null || b == null || b.Hangar == null || b.Ship == null || !w.Planets.ContainsKey(Planet)) return;
+            var ps = w.Planet(Planet);
+            bool danger = Rules.IsNight(w, Planet) || ps.StormActive || ps.StormWarn;
+            float dt = Mathf.Min(Time.deltaTime, 0.1f);
+            float near = danger ? 13f : 6f;
+            var cam = Camera.main;
+            if (hangarDoor != null)
             {
-                var foot = new Vector3(l.x * 1.35f, 0.05f, l.z * 1.05f);
-                var hip = new Vector3(l.x * 0.8f, bodyY - 0.9f, l.z);
-                var knee = new Vector3(l.x * 1.3f, 1.3f, l.z * 1.03f);
-                mb.For(hullDark).Beam(hip, knee, 0.26f);
-                mb.For(acMat).Tube(knee, foot + Vector3.up * 0.2f, 0.09f, 10);
-                mb.For(hullDark).Tube(knee + Vector3.down * 0.1f, knee + (foot - knee) * 0.45f, 0.14f, 10);
-                mb.For(Steel(new Color(0.8f, 0.82f, 0.85f))).Tube(hip + Vector3.down * 0.2f + new Vector3(0, 0, 0.4f), knee + new Vector3(0, 0.3f, 0.2f), 0.045f, 8);
-                mb.For(dark).Tube(hip + Vector3.down * 0.2f + new Vector3(0, 0, 0.4f), Vector3.Lerp(hip, knee, 0.5f) + new Vector3(0, 0, 0.3f), 0.08f, 8);
-                mb.For(dark).Cylinder(foot, 0.55f, 0.18f, 16, true, 0.4f);
-                mb.For(Rubber(new Color(0.1f, 0.1f, 0.1f))).Cylinder(foot + Vector3.down * 0.04f, 0.57f, 0.05f, 16);
-                mb.For(Paint(new Color(0.95f, 0.75f, 0.15f))).BevelBox(knee, new Vector3(0.36f, 0.32f, 0.36f), 0.04f);
-                mb.For(Rubber(new Color(0.1f, 0.1f, 0.1f))).Tube(hip + new Vector3(0.1f, -0.3f, 0), knee + new Vector3(0.15f, 0.1f, 0), 0.02f, 4); // Hydraulikschlauch
+                float prev = hangarOpen;
+                hangarOpen = Mathf.MoveTowards(hangarOpen, WantOpen(w, b.Hangar, near) ? 1f : 0f, dt * 0.85f);
+                hangarDoor.localScale = new Vector3(1f, Mathf.Lerp(1f, 0.04f, M.Smooth(hangarOpen)), 1f);
+                var dp = new Vector3(b.Hangar.Door.Cx, b.Hangar.Door.Y0 + 3f, b.Hangar.Door.Cz);
+                hangarMoving = MoveSound("hangar_door", hangarOpen != prev, hangarMoving, dp);
             }
-            // Unterseite: Hitzeschild-Kacheln
-            mb.For(Mats.Surface(SurfKind.Tiles, new Color(0.14f, 0.15f, 0.17f), 0.3f)).Box(new Vector3(0, bodyY - 1.45f, 0.2f), new Vector3(2.6f, 0.08f, 8.4f));
-            mb.Build("TransportShip", Root, true);
+            if (shipRamp != null)
+            {
+                float prev = rampOpen;
+                rampOpen = Mathf.MoveTowards(rampOpen, WantOpen(w, b.Ship, near) ? 1f : 0f, dt * 0.7f);
+                shipRamp.localRotation = ShipRampRotation(b.ShipYaw, rampOpen);
+                var rp = new Vector3(b.Ship.Door.Cx, b.ShipFloorY, b.Ship.Door.Cz);
+                rampMoving = MoveSound("ship_ramp", rampOpen != prev, rampMoving, rp);
+            }
+            if (hangarLight != null) hangarLight.enabled = cam != null && (cam.transform.position - hangarLight.transform.position).sqrMagnitude < 45f * 45f;
+            if (shipLight != null) shipLight.enabled = cam != null && (cam.transform.position - shipLight.transform.position).sqrMagnitude < 40f * 40f && (rampOpen > 0.05f || b.Ship.Contains(new V3(cam.transform.position.x, cam.transform.position.y - 1f, cam.transform.position.z)));
+        }
+
+        static bool MoveSound(string key, bool moving, bool wasMoving, Vector3 at)
+        {
+            AudioManager.Loop(key, "machine_loop", moving, at, 0.35f, 0.7f);
+            if (wasMoving && !moving) AudioManager.Play("metal", at, 0.3f, 0.6f);
+            return moving;
+        }
+
+        /// <summary>Jemand (online, nicht abgeschaltet) drinnen oder nahe am Eingang?</summary>
+        static bool WantOpen(WorldState w, ShelterRoom r, float near)
+        {
+            var app = GameApp.I;
+            if (app != null && app.InGame && PlayerController.I != null)
+            {
+                var rp = PlayerController.I.RenderPos;
+                if (NearRoom(r, new V3(rp.x, rp.y, rp.z), near)) return true;
+            }
+            foreach (var p in w.Players.Values)
+                if (p.Online && p.TowTimer <= 0 && NearRoom(r, p.Pos, near)) return true;
+            return false;
+        }
+
+        static bool NearRoom(ShelterRoom r, V3 p, float near)
+        {
+            if (r.Contains(p, 0.3f)) return true;
+            float dx = p.x - r.Door.Cx, dz = p.z - r.Door.Cz;
+            return dx * dx + dz * dz < near * near;
         }
     }
 }

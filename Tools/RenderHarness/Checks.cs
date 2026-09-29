@@ -428,6 +428,10 @@ public static class Checks
             g.Apply(pid, new JObj().Set("a", "vexit").Set("rid", "x" + (++rid)), true);
             Run(0.5f);
         }
+        // Nachts in den Hangar und ins Transportschiff fahren (Tor/Rampe öffnen sich), dort schlafen, wieder hinaus
+        SetPhase(g, planet, 0.9f);
+        Run(6f);
+        ShelterRooms(app, g, pid, planet);
         // Schlafen im Stützpunkt (nachts) und Notabschaltung draußen
         SetPhase(g, planet, 0.9f);
         Run(6f);
@@ -453,6 +457,49 @@ public static class Checks
         Run(4f);
         SetPhase(g, planet, 0.45f);
         Run(6f);
+    }
+
+    /// <summary>
+    /// Nachts zu Hangar und Transportschiff: vor den Eingang stellen, Kamera Richtung Eingang drehen, mit W hineinlaufen
+    /// (echte Steuerung und Kollision), prüfen, dass Tor bzw. Rampe offen sind und MIKO als drinnen gilt, schlafen, hinauslaufen.
+    /// </summary>
+    static void ShelterRooms(GameApp app, Game g, string pid, string planet)
+    {
+        var l = WorldGen.Get(planet);
+        var wvT = typeof(WorldView);
+        foreach (var room in l.Base.Rooms)
+        {
+            var outside = new V3(room.Outside.x, l.GroundAt(room.Outside.x, room.Outside.z), room.Outside.z);
+            Teleport(g, pid, outside);
+            Run(0.5f);
+            float yawIn = Mathf.Atan2(-room.OutX, -room.OutZ) * Mathf.Rad2Deg;
+            CameraRig.I.Yaw = yawIn;
+            Run(3.5f, 1f / 30f, t => { CheckLiveCamera("Hineinfahren " + room.Id); CameraRig.I.Yaw = yawIn; Input.Held.Clear(); Input.Held.Add(KeyCode.W); });
+            Input.Held.Clear();
+            Run(1.5f, 1f / 30f, t => CheckLiveCamera("Drinnen " + room.Id));
+            var sp = g.S.Players[pid];
+            int kind = Rules.ShelterKind(g.S, g.S.Cur, sp.Pos);
+            float open = (float)wvT.GetField(room.Kind == Rules.ShelterShip ? "rampOpen" : "hangarOpen", BF).GetValue(WorldView.I);
+            Info($"  {room.Name}: MIKO bei {sp.Pos.x:0.0}/{sp.Pos.y:0.00}/{sp.Pos.z:0.0}, Schutz {kind}, ausgesetzt {app.Me.Exposed}, Tor/Rampe offen {open:0.00}, Prompt „{Hud.PromptWord}“");
+            if (kind != room.Kind) { Fail(room.Name + ": MIKO kommt nicht hinein (Schutz " + kind + ", Pos " + sp.Pos + ")"); continue; }
+            if (open < 0.9f) Fail(room.Name + ": Tor/Rampe öffnet sich nachts nicht (" + open.ToString("0.00") + ")");
+            if (app.Me.Exposed) Fail(room.Name + ": drinnen noch als ungeschützt gemeldet");
+            var gr = g.Apply(pid, new JObj().Set("a", "grab").Set("o", "s0").Set("rid", "gi" + (++rid)), true);
+            if (gr.Ok || gr.Err == null || !gr.Err.StartsWith("Im Unterschlupf")) Fail(room.Name + ": Sammeln drinnen nicht abgelehnt (" + gr.Err + ")");
+            var sr = g.Apply(pid, new JObj().Set("a", "sleep").Set("rid", "si" + (++rid)), true);
+            Run(2f);
+            Info("  " + room.Name + ": Schlafen " + (sr.Ok ? "ok" : sr.Err) + ", Nacht danach " + Rules.IsNight(app.W, planet));
+            if (!sr.Ok) Fail(room.Name + ": Schlafen abgelehnt: " + sr.Err);
+            SetPhase(g, planet, 0.9f);
+            Run(6f);
+            // wieder hinaus
+            float yawOut = Mathf.Atan2(room.OutX, room.OutZ) * Mathf.Rad2Deg;
+            Run(4f, 1f / 30f, t => { CheckLiveCamera("Hinausfahren " + room.Id); CameraRig.I.Yaw = yawOut; Input.Held.Clear(); Input.Held.Add(KeyCode.W); });
+            Input.Held.Clear();
+            Run(0.5f);
+            if (Rules.RoomAt(l, g.S.Players[pid].Pos) != null) Fail(room.Name + ": MIKO kommt nicht wieder hinaus (" + g.S.Players[pid].Pos + ")");
+        }
+        CollectWarnings();
     }
 
     /// <summary>Tageszeit auf dem Server setzen (Versatz) – kommt mit dem nächsten Wetterabgleich beim Client an.</summary>

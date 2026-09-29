@@ -211,6 +211,9 @@ public static class Program
         l.Add(("basis", new Vector3(2, gy + 9, -112), new Vector3(2, gy + 1, -138)));
         l.Add(("stationen", new Vector3(-6, gy + 2.5f, -120), new Vector3(-16, gy + 1.5f, -132)));
         l.Add(("schiff", new Vector3(14, gy + 3, -128), new Vector3(27, gy + 3, -143)));
+        l.Add(("hangar", new Vector3(-1.5f, gy + 2.2f, -142.8f), new Vector3(-4.5f, gy + 1.2f, -148.5f)));
+        l.Add(("laderaum", new Vector3(21.2f, gy + 2.6f, -143.8f), new Vector3(30f, gy + 1.8f, -142.6f)));
+        l.Add(("heck", new Vector3(8f, gy + 4f, -136f), new Vector3(24f, gy + 2f, -143f)));
         l.Add(("strasse", new Vector3(3, gy + 2.2f, -100), new Vector3(3, gy + 7, -60)));
         l.Add(("luft", new Vector3(-60, 110, -260), new Vector3(0, 0, -20)));
         l.Add(("horizont", new Vector3(0, gy + 8f, -60), new Vector3(-150, 20, 60)));
@@ -274,7 +277,27 @@ public static class Program
         {
             Vector3 P(Vector3 p) { var d = p - pos; return new Vector3(Vector3.Dot(d, r), Vector3.Dot(d, u), Vector3.Dot(d, f)); }
             var va = P(a); var vb = P(b); var vc = P(c);
-            if (va.z < 0.3f || vb.z < 0.3f || vc.z < 0.3f) return;
+            const float near = 0.3f;
+            if (va.z < near && vb.z < near && vc.z < near) return;
+            if (va.z < near || vb.z < near || vc.z < near)
+            {
+                // An der Nahebene abschneiden (sonst fehlen große Flächen, die hinter die Kamera reichen – z. B. Innenräume)
+                var poly = new List<Vector3>();
+                var src = new[] { va, vb, vc };
+                for (int e = 0; e < 3; e++)
+                {
+                    var p0 = src[e]; var p1 = src[(e + 1) % 3];
+                    bool in0 = p0.z >= near, in1 = p1.z >= near;
+                    if (in0) poly.Add(p0);
+                    if (in0 != in1) poly.Add(Vector3.Lerp(p0, p1, (near - p0.z) / (p1.z - p0.z)));
+                }
+                for (int e = 1; e + 1 < poly.Count; e++) RasterView(poly[0], poly[e], poly[e + 1], col);
+                return;
+            }
+            RasterView(va, vb, vc, col);
+        }
+        void RasterView(Vector3 va, Vector3 vb, Vector3 vc, Color col)
+        {
             float ax = W * 0.5f + va.x / va.z * foc, ay = H * 0.5f - va.y / va.z * foc;
             float bx = W * 0.5f + vb.x / vb.z * foc, by = H * 0.5f - vb.y / vb.z * foc;
             float cx = W * 0.5f + vc.x / vc.z * foc, cy = H * 0.5f - vc.y / vc.z * foc;

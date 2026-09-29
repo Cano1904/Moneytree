@@ -99,10 +99,20 @@ namespace RePlanet
             if (PlayerController.I.InVehicle && Distance < 8f) Distance = Mathf.Lerp(Distance, 9f, Time.deltaTime * 2f);
             float dist = Distance;
             float pitch = Pitch;
+            // Innenraum (Hangar, Laderaum): näher heran und flacher, damit die Kamera unter der Decke bleibt
+            var room = BuildMode.Active ? null : IndoorRoom();
+            indoorBlend = Mathf.MoveTowards(indoorBlend, room != null ? 1f : 0f, dt * 2.5f);
+            if (indoorBlend > 0f && !BuildMode.Active)
+            {
+                dist = Mathf.Lerp(dist, Mathf.Min(dist, PlayerController.I.InVehicle ? 5.2f : 3.4f), indoorBlend);
+                pitch = Mathf.Lerp(pitch, Mathf.Clamp(pitch, -12f, 22f), indoorBlend);
+            }
             if (BuildMode.Active) { pitch = 55f; dist = 26f; target = new Vector3(0, target.y, -104); }
             var rot = Quaternion.Euler(pitch, Yaw, 0);
             var wanted = target - rot * Vector3.forward * dist;
             wanted = Collide(target, wanted);
+            if (room != null && room.Inner.Contains(wanted.x, wanted.z, 0f))
+                wanted.y = Mathf.Min(wanted.y, room.Inner.Y0 + room.Inner.H - 0.4f); // nie in die Decke
             var pos = wanted;
             if (shake > 0)
             {
@@ -136,6 +146,17 @@ namespace RePlanet
             if (Mathf.Abs(delta) > (vehicle ? 150f : 75f)) return;
             float rate = (vehicle ? 70f : 32f) * Mathf.Clamp01(speed / 5f);
             Yaw = Mathf.MoveTowardsAngle(Yaw, robotYaw, rate * dt);
+        }
+
+        float indoorBlend;
+
+        /// <summary>Schutzraum (Hangar, Laderaum), in dem MIKO gerade ist, oder null.</summary>
+        static ShelterRoom IndoorRoom()
+        {
+            var wv = WorldView.I; var pc = PlayerController.I;
+            if (wv == null || wv.Layout == null || pc == null) return null;
+            var p = pc.RenderPos;
+            return Rules.RoomAt(wv.Layout, new V3(p.x, p.y, p.z));
         }
 
         /// <summary>Kameraradius für die Kollision: Nahebene (0,15 m, Bildecken ≈ 0,18 m) plus Rand.</summary>
@@ -196,7 +217,7 @@ namespace RePlanet
         /// <summary>Über Gelände und (wenn MIKO nicht taucht) über der Wasseroberfläche halten.</summary>
         static Vector3 Lift(WorldView wv, Vector3 p, Vector3 target)
         {
-            float floor = Terrain.HeightAt(wv.Planet, p.x, p.z);
+            float floor = wv.Layout != null ? wv.Layout.GroundAt(p.x, p.z) : Terrain.HeightAt(wv.Planet, p.x, p.z); // auch Rampe/Laderaumboden
             float water = Terrain.WaterLevel(wv.Planet);
             bool diving = water > -50f && target.y < water;
             if (water > -50f && !diving) floor = Mathf.Max(floor, water);
