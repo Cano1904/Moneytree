@@ -17,7 +17,7 @@ using UnityEngine;
 using Object = UnityEngine.Object;
 using Random = UnityEngine.Random;
 
-public static class Checks
+public static partial class Checks
 {
     // ================================================================== Bildtakt wie Unity
     const BindingFlags BF = BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic;
@@ -501,6 +501,7 @@ public static class Checks
             Run(0.5f);
             CameraSurvey(app, planet);
             MapChecks(app, planet);
+            LifeChecks(app, g, pid, planet);
             CollectWarnings();
         }
     }
