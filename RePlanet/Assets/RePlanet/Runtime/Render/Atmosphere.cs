@@ -22,6 +22,11 @@ namespace RePlanet
         float lightning, nextLightning = 5f;
         string weatherKind;
         public float Darkness { get; private set; }
+        /// <summary>Wolkendecke 0..1 und Sturmanteil 0..1 des aktuellen Himmels (für Wolkenschatten).</summary>
+        public float CloudCover { get; private set; }
+        public float StormBlend { get { return stormBlend; } }
+        /// <summary>Sonnenhöhe −1..1 (Sinus der Tagesphase; &lt; 0 = Nacht).</summary>
+        public float SunElevation { get; private set; }
         public bool Underwater { get; private set; }
         /// <summary>Zeitliche Übersteuerung (Menü/Intro): Tageszeit 0..1, &lt;0 = aus.</summary>
         public float ForcePhase = -1f;
@@ -312,6 +317,8 @@ namespace RePlanet
             var pal = Lerp(ps.Day, ps.Dusk, duskAmt);
             pal = Lerp(pal, ps.Night, dark);
             pal = Lerp(pal, ps.Storm, stormBlend * (1f - dark * 0.6f));
+            CloudCover = pal.Cover;
+            SunElevation = elev;
             float elevDeg = Mathf.Lerp(-12f, 62f, (elev + 1f) * 0.5f);
             var sunRot = Quaternion.Euler(Mathf.Max(elevDeg, 3f), ps.SunAzimuth, 0);
             Vector3 sunDir = sunRot * Vector3.back; // Richtung ZUR Sonne

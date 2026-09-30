@@ -101,6 +101,28 @@ Alles serverautoritativ in `Core/Sim/GameFeatures.cs` (Aktionen `wait`, `fasttra
 * **Müll:** alle Objekte per GPU-Instancing (`TrashRenderer`), Sichtweiten-Culling, Schatten nur in der Nähe.
 * **Stadt erwacht:** Nach einem Projekt schalten sich Fenster und Laternen des Bereichs nacheinander ein,
   Brunnen laufen, Feuerwerk über dem Projektplatz.
+* **Belebte Welt** (reine Darstellung, liest nur den replizierten Zustand, Core-Regeln unverändert; Grundlage:
+  `LifeCommon` – Wiederherstellungsgrad je Bereich = Sauberkeit 40 % + Projekt 35 % + Ökologie 25 %, Qualitätsfaktor,
+  Kollisionstest, `InstanceBatch` für Instancing in 1023er-Blöcken):
+  * `Wildlife` + `AnimalMeshes`: Tiere kehren mit dem Wiederherstellungsgrad zurück (TERRA Spatzen, Hasen, Füchse ·
+    PYRA Echsen, Falken, Sandfinken · PELAGIA Möwen, Krabben, zwei Fischarten · NIVALIS Pinguinvögel, Polarfüchse,
+    Schneeammern). Heimatplätze deterministisch aus dem Planeten-Seed, Anzahl aus Zustand und Qualität → Mitspieler sehen
+    dieselben Tiere an denselben Orten. Umherstreifen, Schwärme (Boids, Kreisen, Landen auf Dächern/Boden), Flucht vor
+    Robotern und Fahrzeugen, nachts/im Sturm verstecken. Simulation/Zeichnung nur in Kameranähe.
+  * `GroundMarks`: Reifen-/Kettenspuren auf Sand, Schnee, Erde (Ringpuffer 300–2000 Stücke je Qualität, verblassen in
+    5 Transparenzstufen, Wind/Sturm verwehen), Staubwolken bei schneller Fahrt (über `FxView.Burst`), Pfützen nach
+    Regen (PELAGIA; Nässe aus Sturmzustand und Sturmzeit – synchron für alle).
+  * `WindLook`: Wolkenschatten (globale Shader-Werte `_RP_CloudShadow*`, ausgewertet im Zusammensetzen-Pass von
+    `RePlanetPostFX.shader`; ohne Nachbearbeitung kein Effekt = sicherer Rückfall) und Wiegen der Ökologie-Pflanzen.
+    `FloraRenderer` schert die Instanzmatrizen je Bild mit Windstärke/-richtung (CPU, kein Shader nötig).
+  * `CityLife` („Stadt erwacht 2.0“): Anteil beleuchteter Fenster (`_LitShare` des Fenster-Shaders) und Brunnenstärke
+    je Wiederherstellung, Elektroautos und (TERRA) Straßenbahnen auf vorab berechneten freien Straßenabschnitten
+    (halten vor Robotern, Fahrzeugen, Autos, liegendem großem Müll; wenden), wehende Fahnen, Hologramme, Lichthöfe
+    um Laternen. `WorldViewLife` stellt dafür schmale Zugänge auf WorldView bereit.
+  * `MikoFace` (Teil von `RobotModel`) + `MikoGestures`: Stimmungen (fröhlich, neugierig, müde, ängstlich, schläfrig,
+    frierend) verändern Augenform, Lider, Augenfarbe und Blick; Gesten (Winken, Freudensprung, Kopfneigen, Zittern,
+    Gähnen) aus Serverereignissen (`OnFx`), dem verteilten Roboterlaut (`GameApp.OnEmote`) und Annäherung von
+    Mitspielern – dadurch auch beim Mitspieler sichtbar.
 
 ## Erzähler im Spiel und Radio (`Core/Sim/Story.cs`)
 

@@ -45,6 +45,15 @@ namespace RePlanet
             return vehicles.TryGetValue(id, out g) && g != null ? g.transform.position : Vector3.zero;
         }
 
+        /// <summary>Lage eines dargestellten Fahrzeugs (Position, Blickrichtung in Grad) – für Spuren und Staub.</summary>
+        public bool VehiclePose(string id, out Vector3 pos, out float yawDeg)
+        {
+            GameObject g;
+            if (id != null && vehicles.TryGetValue(id, out g) && g != null) { pos = g.transform.position; yawDeg = g.transform.eulerAngles.y; return true; }
+            pos = Vector3.zero; yawDeg = 0f;
+            return false;
+        }
+
         void ClearAll()
         {
             foreach (var r in robots.Values) if (r != null) Destroy(r.gameObject);

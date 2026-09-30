@@ -82,6 +82,23 @@ Shader-Prüfung OK, Server-Rauchtest 17/17.
 - Nicht in Unity getestet: Klangbild von Radio/Stadtklängen, Controller-Bedienung der Bauansicht, Textlängen auf Englisch,
   ProfilerRecorder-Zähler im Release-Build (zeigen sonst „–“).
 
+## Belebte Welt (Tiere, Spuren, Wind, Stadt erwacht 2.0, MIKOs Mimik)
+- Neue Darstellungsbausteine ohne Änderung der Spielregeln: `Wildlife`/`AnimalMeshes`, `GroundMarks`, `WindLook`
+  (+ Wolkenschatten im PostFX-Shader, Wiegen in `FloraRenderer`), `CityLife`, `MikoFace`/`MikoGestures`, gemeinsame
+  Hilfen `LifeCommon`, Zugänge `WorldViewLife`. Kleine Eingriffe: `RobotModel` (partial + drei Aufrufe),
+  `Atmosphere` (Wolkendecke/Sturmanteil/Sonnenhöhe öffentlich), `ActorsView.VehiclePose`, `GameApp.OnEmote`
+  (Roboterlaut der Mitspieler wird jetzt dargestellt).
+- Synchronität: alles aus repliziertem Zustand (Wiederherstellung, Wetter, Sturmzeit, Positionen, Akku, Schutz) und
+  Serverereignissen; Heimatplätze/Straßenabschnitte/Fahnen deterministisch aus dem Layout. Bewegungen der Tiere und
+  Autos laufen je Client und sind nur ähnlich, nicht gleich.
+- Leistung: Instancing je Art/Teil (Tiere 7–17 Aufrufe, Stadt ≈ 35, Spuren ≤ 13), Zeichnen/Simulieren nur in
+  Kameranähe, Mengen nach Qualitätsstufe (Tiere ×0,35…1, Spuren 300…2000, Straßenbahnen und Lichthöfe ab „Mittel“).
+- Prüfumgebung: neue Prüfung `ChecksLife` je Planet (vollständige Wiederherstellung simuliert: Tierzahlen, keine Tiere in
+  Wänden/unter dem Gelände/außerhalb des Wassers, Flucht, Stadtfahrzeuge 20 s lang nie in Gebäuden oder neben der
+  Straße, Spuren, Pfützen, Wind, Gesten, Nacht, Sturm, Vorher-Ansicht).
+- Offen/ungetestet in Unity: Aussehen und Größe der Tiere, Wolkenschatten-Stärke, Spurtransparenz auf dem
+  Gelände-Shader (Z-Kämpfe?), Pfützen-Glanz, Fahrverhalten an Kreuzungen, echte Bildrate.
+
 ## Grenzen (Stand dieser Umgebung)
 - Kein Unity-Editor, kein Unity-Laufzeittest, keine echten Spiel-Screenshots, keine gebaute .exe.
 - Shader wurden nicht mit Unitys Compiler übersetzt (nur glslang-Prüfung).

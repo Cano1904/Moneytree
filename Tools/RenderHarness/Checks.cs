@@ -502,6 +502,7 @@ public static partial class Checks
             Run(0.5f);
             CameraSurvey(app, planet);
             MapChecks(app, planet);
+            LifeChecks(app, g, pid, planet);
             CollectWarnings();
         }
     }
