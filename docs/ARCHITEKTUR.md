@@ -68,6 +68,27 @@ Eingang, Schlafplatz, Vorplatz). `Rules.ShelterKind` liefert dafür 3 (Hangar) b
 Sammelaktionen serverseitig. Rampe und Laderaumboden sind begehbare Böden (`FloorPatch`, `PlanetLayout.GroundAt`), die
 der Motor, die Kamera und der Kampagnen-Bot gleichermaßen nutzen. Tor und Rampe sind reine Darstellung (`WorldViewBase`).
 
+## Zusatzsysteme (Lieferlimit, Sturm abwarten, Helfer, Erfolge, Schnellreise, Ereignisse)
+
+Alles serverautoritativ in `Core/Sim/GameFeatures.cs` (Aktionen `wait`, `fasttravel`, `botfix`, `botfollow`, `botstay`;
+`TickFeatures` aus `Game.Tick`), Regeln für Server und Anzeige in `Core/Sim/FeatureRules.cs`, Daten und Balancing-Werte in
+`Core/Data/GameDataFeatures.cs`, Zustandsklassen (`HelperBot`, `AchievementDef`) in `Core/Sim/FeatureState.cs`.
+
+* **Speicherung (abwärtskompatibel, Format bleibt v3):** neue Planetenteile `bots` (reparierte Helfer: Arbeitsort,
+  Position, Ladung) und `ev` (nächstes Ereignis, Zähler), `misc.dn` (Lieferabklingzeit), `DynObj.ev` (Ereignisfund),
+  Weltteil `ach` (Erfolge). Fehlen sie in alten Ständen, gelten Standardwerte; bereits erfüllte Erfolge werden beim Laden
+  still nachgetragen.
+* **Zeitraffer:** `Game.TimeScale` ist 4, solange alle verbundenen Spieler einen Sturm geschützt abwarten;
+  `Session.Update` rechnet damit Echtzeit in Spielzeit um. Stürme laufen dabei unverändert ab.
+* **Helferroboter:** Fundorte `PlanetLayout.Bots` (erzeugt am Ende von `WorldGen.Generate` mit eigenem Zufallsgenerator,
+  damit alle übrigen Objekt-IDs gleich bleiben). Positionen im Positionspaket (`"b"` → `GameClient.Bots`).
+* **Schnellreise:** `pinnedPos` in `Game` lehnt Positionsmeldungen fern der neuen Stelle ab (Korrektur an den Client), bis der
+  Client die Serverposition übernommen hat.
+* **Darstellung/Oberfläche:** `Runtime/Render/FeaturesView.cs` (Helfer als kleine MIKO-Modelle, Leuchtspuren, Rohrpost-Kapseln,
+  Lichtsäulen, Rauchzeichen), `Runtime/UI/FeaturesUI.cs` (Reiter „Erfolge“, Schnellreise-Liste in der Kartenseitenleiste,
+  Kartensymbole, Abwarten-Anzeige), `Runtime/Game/FeatureToasts.cs` (Hinweise), `Runtime/Game/PlayerControllerFeatures.cs`
+  (Interaktion mit Helfern).
+
 ## Darstellung
 
 * **Himmel:** eigener Shader (`Resources/RePlanetSky.shader`) mit Farbverläufen, Dunstband, Sonne, animierten Wolken

@@ -163,7 +163,7 @@ namespace RePlanet
             foreach (var z in l.Zones)
             {
                 bool clean = Rules.ZoneCleared(ps, z.Index);
-                Mark3(mc, planet, z.Center.x, z.Center.z, clean ? "dot" : "ring", clean ? UISkin.Good : UISkin.Warn, (clean ? 15 : 19) * isz, "Lichtpunkt „" + z.Name + "“" + (clean ? " – sauber" : " – verschmutzt"));
+                Mark3(mc, planet, z.Center.x, z.Center.z, clean ? "dot" : "ring", clean ? UISkin.Good : UISkin.Warn, (clean ? 15 : 19) * isz, "Lichtpunkt „" + z.Name + "“" + (clean ? " – leuchtet (Schnellreise-Ziel)" : " – verschmutzt"));
             }
             foreach (var s in l.Repairs)
             {
@@ -189,6 +189,7 @@ namespace RePlanet
             }
             foreach (var s in l.Shelters) Mark3(mc, planet, s.Pos.x, s.Pos.z, "house", UISkin.Story, 18 * isz, pd.ShelterName);
             foreach (var s in ps.Shelters) Mark3(mc, planet, s.x, s.z, "house", new Color(0.6f, 0.95f, 1f), 16 * isz, "Notunterschlupf (selbst gebaut)");
+            FeatureMarks3D(app, mc, isz);
             // Fahrzeuge
             foreach (var v in ps.Vehicles.Values)
             {

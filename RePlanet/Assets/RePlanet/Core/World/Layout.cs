@@ -153,6 +153,8 @@ namespace RePlanet.Core
         public List<Spot> LoreSpots = new List<Spot>();
         public List<Spot> Viewpoints = new List<Spot>();
         public List<Spot> Shelters = new List<Spot>();
+        /// <summary>Fundorte defekter Helferroboter (einer je Bereich; reparierbar, siehe <see cref="HelperBot"/>).</summary>
+        public List<Spot> Bots = new List<Spot>();
         public V3[] ProjectSites = new V3[3];
         public List<Mound> Mounds = new List<Mound>();
         public BaseLayout Base = new BaseLayout();

@@ -51,7 +51,11 @@ public static class BalanceRun
                 l.Add(GameData.Planets[pl].Name + ": " + ((b - a) / 3600).ToString("0.00") + " h (Ankunft " + CampaignBot.Clock(a) + ", fertig " + CampaignBot.Clock(b) + ")");
         }
         l.Add("Notabschaltungen: " + bot.Shutdowns + ", Schlafpausen: " + bot.Sleeps + " (davon Sturm am Tag: " + bot.StormSleeps + "), Unterschlupf-Wege: " + bot.ShelterTrips + ", Notunterschlüpfe gebaut: " + bot.SheltersBuilt);
-        l.Add("Kranbergungen: " + bot.CraneHauls + ", Lieferungen bestellt: " + bot.Deliveries + " (Erlös " + bot.DeliveryCredits + " Credits), Reisen: " + bot.Travels);
+        l.Add("Kranbergungen: " + bot.CraneHauls + ", Lieferungen bestellt: " + bot.Deliveries + " (Erlös " + bot.DeliveryCredits + " Credits, Gebühren " + bot.DeliveryFees + ", Wartezeit Abklingzeit " + Min(bot.DeliveryWaitTime) + "), Reisen: " + bot.Travels);
+        l.Add("Stürme abgewartet: " + Min(bot.StormWaitTime) + " Spielzeit (bei ×" + Game.WaitTimeScale + " Zeitraffer ≈ " + Min(bot.StormWaitTime / Game.WaitTimeScale) + " Echtzeit)");
+        l.Add("Geschätzte Echtzeit (Spielzeit abzüglich Zeitraffer beim Abwarten): " + ((S.PlayTime - bot.StormWaitTime * (1 - 1 / Game.WaitTimeScale)) / 3600).ToString("0.00") + " h");
+        l.Add("Erfolge: " + S.Achievements.Count + "/" + GameData.Achievements.Count + " (" + string.Join(", ", GameData.Achievements.Where(a => S.Achievements.Contains(a.Id)).Select(a => a.Name)) + ")");
+        l.Add("Ereignisse: " + S.Stat("events") + ", Ereignisfunde geborgen: " + S.Stat("eventItems"));
         l.Add("Credits am Ende: " + S.Credits + ", insgesamt verdient: " + S.Stat("credEarned") + ", Objekte gesammelt: " + S.Stat("collected"));
         l.Add("Aktionen: " + bot.Actions + ", abgelehnt: " + bot.Rejections);
         l.Add("Credits-Verlauf (alle 10 Spielminuten: Zeit → Kontostand / verdient):");

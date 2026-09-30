@@ -100,8 +100,13 @@ Der Vertrauensmodus (`TrustGuests`) wird mit der Welt gespeichert.
 ## 5. Gemeinsam spielen – was sich im Koop ändert
 
 - **Keine Pause:** Im Solo-Spiel steht die Welt still, solange ein Menü offen ist. Im Koop läuft sie weiter.
-- **Schlafen:** Die Nacht (bzw. ein Sturm) wird erst übersprungen, wenn **alle** verbundenen Spieler geschützt schlafen
-  („Warte auf Mitspieler (1/2 schlafen) …“).
+- **Schlafen:** Die Nacht wird erst übersprungen, wenn **alle** verbundenen Spieler geschützt schlafen
+  („Warte auf Mitspieler (1/2 schlafen) …“). Stürme lassen sich nicht verschlafen: Warten **alle** einen Sturm im
+  Unterschlupf ab, läuft die Zeit auf dem Server ×4 (`Game.TimeScale`, angewandt in `Session.Update`), bis er vorbei ist.
+- **Helferroboter, Ereignisse, Erfolge:** Helfer laufen auf dem Server; ihre Positionen stehen im Positionspaket (`"b"`),
+  Arbeitsort/Ladung im Planetenteil `bots`. Ereignisfunde sind normale dynamische Objekte mit Markierung `ev`, Erfolge ein
+  Weltteil `ach` – alles kommt wie gewohnt per Patch bei allen an. Schnellreise ist eine Aktion wie jede andere
+  (`fasttravel`); der Server hält die neue Position fest, bis der Client sie übernommen hat.
 - **Notabschaltung:** Leert sich der Akku ungeschützt in Nacht oder Sturm, schleppt eine Drohne den Roboter zum Stützpunkt.
   Nur allein im Spiel vergeht dabei die Nacht; im Koop läuft die Zeit für alle normal weiter.
 - **Wracks gemeinsam anheben:** Mitspieler in der Nähe eines Wracks können „helfen“ – jeder Helfer beschleunigt das Anheben

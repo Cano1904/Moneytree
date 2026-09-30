@@ -54,6 +54,8 @@ namespace RePlanet.Core
         public readonly Dictionary<string, Interp> Players = new Dictionary<string, Interp>();
         public readonly Dictionary<string, Interp> Vehicles = new Dictionary<string, Interp>();
         public readonly List<float[]> Drones = new List<float[]>();
+        /// <summary>Helferroboter des aktuellen Planeten: ID → x, y, z, Blickrichtung, Zustand (aus den Positionspaketen).</summary>
+        public readonly Dictionary<string, float[]> Bots = new Dictionary<string, float[]>();
         readonly Dictionary<string, Action<ActResult>> pending = new Dictionary<string, Action<ActResult>>();
         readonly List<JObj> unsentActs = new List<JObj>();
         int ridCounter;
@@ -179,6 +181,7 @@ namespace RePlanet.Core
                 W.CurrentPlanet = o.Str("planet", ps.Id);
                 Vehicles.Clear();
                 Drones.Clear();
+                Bots.Clear();
                 PlanetChanged?.Invoke(W.CurrentPlanet);
             }
             var w = o.Obj("w");
@@ -251,6 +254,15 @@ namespace RePlanet.Core
                     var a = o as List<object>;
                     if (a == null || a.Count < 4) continue;
                     Drones.Add(new[] { (float)Json.ToDouble(a[0], 0), (float)Json.ToDouble(a[1], 0), (float)Json.ToDouble(a[2], 0), (float)Json.ToDouble(a[3], 0) });
+                }
+            Bots.Clear();
+            var bl = m.Arr("b");
+            if (bl != null)
+                foreach (var o in bl)
+                {
+                    var a = o as List<object>;
+                    if (a == null || a.Count < 6 || !(a[0] is string)) continue;
+                    Bots[(string)a[0]] = new[] { (float)Json.ToDouble(a[1], 0), (float)Json.ToDouble(a[2], 0), (float)Json.ToDouble(a[3], 0), (float)Json.ToDouble(a[4], 0), (float)Json.ToDouble(a[5], 0) };
                 }
         }
 

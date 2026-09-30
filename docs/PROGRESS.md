@@ -53,6 +53,22 @@ Alle Bereiche umgesetzt (Spiellogik, Koop, Speichern, Darstellung, Oberfläche, 
 Konzeptkunst). Prüfungen: 40/40 .NET-Tests, Kompilierprüfungen Core/Runtime/Editor ohne Fehler und Warnungen,
 Shader-Prüfung OK, Server-Rauchtest 17/17.
 
+## Zusatzsysteme (Lieferlimit, Sturm abwarten, Helferroboter, Erfolge, Schnellreise, Weltereignisse)
+- **Lieferungen:** Gebühr je Planet (15/30/20/45 Credits ≈ 9 % des sortierten Werts) und 60 s Abklingzeit je Planet.
+- **Sturm/Schlafen:** Schlafen überspringt nur die Nacht. Stürme werden im Unterschlupf abgewartet; warten alle, läuft die
+  Zeit ×4 (Sturm bleibt, dauert seine volle Zeit).
+- **Helferroboter:** 3 defekte Helfer je Planet, reparierbar (Credits + Material), sammeln langsam im Umkreis von 14 m und
+  schicken die Ladung per Rohrpost-Kapsel ins Lager; mitnehmen und neu absetzen möglich.
+- **Erfolge:** 20 Erfolge aus der Statistik, je ein neues kosmetisches Teil als Belohnung; Reiter „Erfolge“, Hinweis beim Erreichen.
+- **Schnellreise:** zwischen leuchtenden Lichtpunkten und dem Stützpunkt über die Karte (2D/3D); nicht im Sturm, nicht im
+  Fahrzeug, höchstens ein Viertel Ladung; kostet 4 + 0,04 Energie je Meter.
+- **Weltereignisse:** Meteoritenschauer, Versorgungsabwurf, freigelegte Deponie nach Stürmen – mit Hinweis, Kartensymbol und Effekten.
+- **Balancing (Kampagnen-Bot, Spielzeit):** vorher 7,41 h (Bot) / 14,39 h (Mensch-Modell); nachher 9,83 h / 17,24 h.
+  Davon Stürme abwarten 95 bzw. 162 min Spielzeit, die dank Zeitraffer nur ≈ 24 bzw. 41 min Echtzeit kosten →
+  geschätzte Echtzeit 8,64 h / 15,21 h. Lieferungen: 151 → 126 (Bot), Abklingzeit-Wartezeit 38 min.
+- Nicht in Unity getestet: Darstellung (Helfermodelle, Leuchtspuren, Kapseln), Oberfläche (Reiter, Schnellreise-Liste),
+  Zeitraffer-Gefühl beim Abwarten, Koop mit mehreren Rechnern.
+
 ## Grenzen (Stand dieser Umgebung)
 - Kein Unity-Editor, kein Unity-Laufzeittest, keine echten Spiel-Screenshots, keine gebaute .exe.
 - Shader wurden nicht mit Unitys Compiler übersetzt (nur glslang-Prüfung).
@@ -60,5 +76,5 @@ Shader-Prüfung OK, Server-Rauchtest 17/17.
 ## Nächste Schritte
 - Projekt in Unity öffnen (Unity 6 LTS oder 2022.3 LTS), Konsole auf Fehler prüfen, Play-Test, Windows-Build erstellen.
 - Die von Unity beim ersten Öffnen erzeugten `.meta`-Dateien und Resources-Materialien committen.
-- Offene Designfragen: Schrottlieferungen kostenlos/unbegrenzt; Schlafen beendet Stürme auch tagsüber (siehe `docs/TESTBERICHT.md`).
+- Erledigt (siehe unten): Schrottlieferungen haben Gebühr + Abklingzeit; Stürme lassen sich nicht mehr verschlafen.
 - Echte Screenshots und Spieltests (Controller, Koop mit mehreren Rechnern, 60-FPS-Messung auf Referenzhardware).

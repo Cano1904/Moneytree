@@ -362,7 +362,7 @@ namespace RePlanet
                 case "mission_done": Hud.Show("Auftrag erledigt: " + f.Str("title") + (f.Int("reward") > 0 ? " (+" + f.Int("reward") + " Credits)" : ""), ToastKind.Success, 4.5f); break;
                 case "mission_new": Hud.Show("Neuer Auftrag: " + f.Str("title"), ToastKind.Info, 4f); break;
                 case "cosmetic":
-                    Hud.Show("Kosmetik freigeschaltet: " + name, ToastKind.Success, 4f);
+                    if (!f.Bool("quiet")) Hud.Show("Kosmetik freigeschaltet: " + name, ToastKind.Success, 4f);
                     if (Profile.Unlocks.Add(f.Str("id"))) Profile.Save();
                     break;
                 case "stormwarn": Hud.Show((name ?? "Ein Sturm") + " zieht auf! Suche einen Unterschlupf.", ToastKind.Warning, 6f); break;
@@ -372,7 +372,10 @@ namespace RePlanet
                     break;
                 case "nightfall": Hud.Show("Die Nacht bricht herein. Suche einen Unterschlupf und schlafe [" + InputMap.Label(GameAction.Sleep) + "].", ToastKind.Warning, 7f); break;
                 case "daybreak": Hud.Show("Ein neuer Morgen bricht an.", ToastKind.Info, 3f); break;
-                case "morning": Hud.Show("Ausgeschlafen! Ein neuer Morgen – Akku voll.", ToastKind.Success, 4f); break;
+                case "morning":
+                    if (f.Bool("storm")) Hud.Show("Ausgeschlafen – aber der Sturm tobt noch. MIKO wartet ihn im Unterschlupf ab.", ToastKind.Warning, 5f);
+                    else Hud.Show("Ausgeschlafen! Ein neuer Morgen – Akku voll.", ToastKind.Success, 4f);
+                    break;
                 case "shutdown":
                     if (IsMe(f)) Hud.Show("Notabschaltung! Eine Abschleppdrohne bringt MIKO zum Stützpunkt …", ToastKind.Error, 6f);
                     else Hud.Show(PlayerName(f.Str("pid")) + " hatte eine Notabschaltung und wird abgeschleppt.", ToastKind.Warning);
@@ -402,7 +405,7 @@ namespace RePlanet
                 case "build": if (GameData.Buildings.ContainsKey(f.Str("t") ?? "")) Hud.Show("Gebaut: " + GameData.Buildings[f.Str("t")].Name, ToastKind.Success, 2.5f); break;
                 case "join": if (!IsMe(f)) Hud.Show(name + " ist der Sitzung beigetreten.", ToastKind.Info); break;
                 case "leave": if (!IsMe(f)) Hud.Show(name + " hat die Sitzung verlassen.", ToastKind.Info); break;
-                case "delivery": Hud.Show("Schrottlieferung am Abladeplatz eingetroffen (" + f.Int("n") + " Teile).", ToastKind.Info); break;
+                case "delivery": Hud.Show("Schrottlieferung am Abladeplatz eingetroffen (" + f.Int("n") + " Teile" + (f.Int("fee") > 0 ? ", Gebühr " + f.Int("fee") + " Credits" : "") + ").", ToastKind.Info); break;
                 case "wreckdone": Hud.Show("Wrack verwertet: +" + f.Int("units") + " Einheiten im Lager.", ToastKind.Success); break;
                 case "repaired": Hud.Show("Repariert! (+15 Credits)", ToastKind.Success, 2.5f); break;
                 case "eco": Hud.Show(name + ": Ökologie wiederhergestellt – hier lebt es wieder!", ToastKind.Story, 6f); break;
@@ -414,6 +417,7 @@ namespace RePlanet
                         if (GameData.Planets.TryGetValue(f.Str("planet") ?? "", out pd)) Hud.Show(pd.Name + " – " + pd.Subtitle, ToastKind.Story, 5f);
                         break;
                     }
+                default: FeatureToasts.Show(this, f); break;
                 case "ending":
                     if (OnEndingRequested != null)
                     {

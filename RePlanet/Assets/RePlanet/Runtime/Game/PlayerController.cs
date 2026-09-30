@@ -9,7 +9,7 @@ namespace RePlanet
     /// Steuerung des eigenen Roboters: Bewegung (lokal vorhergesagt, vom Server geprüft), Fahrzeuge, Werkzeuge,
     /// kontextabhängige Interaktion, Bauansicht und HUD-Hinweise. Alle Zustandsänderungen gehen als Aktion an den Server.
     /// </summary>
-    public class PlayerController : MonoBehaviour
+    public partial class PlayerController : MonoBehaviour
     {
         public static PlayerController I { get; private set; }
         public Vector3 RenderPos { get; private set; }
@@ -529,12 +529,18 @@ namespace RePlanet
                         current = new Interaction { Kind = "help", Id = o.Key, Hold = true, Label = "[" + InputMap.Label(GameAction.Interact) + " halten] Beim Anheben helfen (Kran nötig)", Key = InputMap.Label(GameAction.Interact), Word = "Mitheben", At = AboveObj(o) };
                         break;
                     }
+            // Helferroboter (reparieren, mitnehmen, absetzen)
+            if (current == null) current = BotInteraction(w, me);
             // Unterschlupf: drinnen Schlafen anbieten, draußen am Tor/an der Rampe auf den Schutzraum hinweisen
             bool night = Rules.IsNight(w, w.CurrentPlanet);
             int shelterKind = Rules.ShelterKind(w, w.Cur, ms.Pos);
             bool passive = current == null || current.Kind == "none" || (current.Kind == "deposit" && me.Bin.Count == 0);
             if (shelterKind > 0 && (night || w.Cur.StormActive) && (current == null || Rules.Indoors(shelterKind) && passive))
-                current = new Interaction { Kind = "sleep", Label = "[" + InputMap.Label(GameAction.Sleep) + "] Schlafen", Key = InputMap.Label(GameAction.Sleep), Word = "Schlafen" };
+            {
+                // Tagsüber im Sturm wird nicht geschlafen, sondern abgewartet (Zeitraffer, der Sturm läuft weiter)
+                string sw = !night && w.Cur.StormActive ? "Sturm abwarten" : "Schlafen";
+                current = new Interaction { Kind = "sleep", Label = "[" + InputMap.Label(GameAction.Sleep) + "] " + sw, Key = InputMap.Label(GameAction.Sleep), Word = sw };
+            }
             else if (passive && !Rules.Indoors(shelterKind) && (night || w.Cur.StormActive || w.Cur.StormWarn))
             {
                 var room = EntranceNear(l, ms.Pos);
@@ -558,9 +564,10 @@ namespace RePlanet
                     actTimer = 0.25f;
                     var a = current.Kind == "sort" ? new JObj().Set("a", "sortm").Set("dt", 0.25f)
                           : current.Kind == "repair" ? new JObj().Set("a", "repair").Set("s", current.Id).Set("dt", 0.25f)
+                          : current.Kind == "botfix" ? new JObj().Set("a", "botfix").Set("s", current.Id).Set("dt", 0.25f)
                           : new JObj().Set("a", "help").Set("o", current.Id);
                     pending = true;
-                    string label = current.Kind == "repair" ? "Reparieren" : current.Kind == "sort" ? "Sortieren" : null;
+                    string label = current.Kind == "repair" || current.Kind == "botfix" ? "Reparieren" : current.Kind == "sort" ? "Sortieren" : null;
                     Act(a, r =>
                     {
                         pending = false;
@@ -628,6 +635,8 @@ namespace RePlanet
             {
                 case "deposit": Act(new JObj().Set("a", "deposit")); break;
                 case "dispose": Act(new JObj().Set("a", "dispose")); break;
+                case "botfollow": Act(new JObj().Set("a", "botfollow").Set("s", current.Id)); break;
+                case "botstay": Act(new JObj().Set("a", "botstay").Set("s", current.Id)); break;
                 case "vload": Act(new JObj().Set("a", "vload").Set("v", "rover")); break;
                 case "project": Act(new JObj().Set("a", "project").Set("area", int.Parse(current.Id))); break;
                 case "lore": Act(new JObj().Set("a", "lore").Set("s", current.Id), r => { if (r.Ok) { UIState.MenuTab = "archive"; } }); break;
@@ -656,7 +665,7 @@ namespace RePlanet
                 }
             }
             if (InputMap.Down(GameAction.Press) && veh == null) Act(new JObj().Set("a", "press"));
-            if (InputMap.Down(GameAction.Sleep)) Act(new JObj().Set("a", me.Sleeping ? "wake" : "sleep"));
+            if (InputMap.Down(GameAction.Sleep)) Act(new JObj().Set("a", me.Sleeping || me.Waiting ? "wake" : "sleep"));
             if (InputMap.Down(GameAction.Shelter)) Act(new JObj().Set("a", "shelter"));
             if (InputMap.Down(GameAction.Emote))
             {

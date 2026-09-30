@@ -144,8 +144,14 @@ die ökologischen Aktionen des Bereichs möglich. Großprojekte schalten Kosmeti
   schon ab 13 m) und in den **Laderaum des Transportschiffs** (Heckrampe) kann MIKO zu Fuß oder mit dem Rover hineinfahren.
   Drinnen ist man vor Nacht und Sturm geschützt, kann schlafen und im Hangar laden – gesammelt wird drinnen nichts.
   Wer nicht hineinfahren will, muss nicht: die übrigen Unterschlüpfe gelten weiter.
-- **Schlafen** geht nachts oder im Sturm in einem Unterschlupf. Schlafen alle verbundenen Spieler, wird die Nacht
-  übersprungen bzw. der Sturm beendet – Akku voll, Spielstand gesichert.
+- **Schlafen** geht nur nachts in einem Unterschlupf (auch im Hangar und im Laderaum). Schlafen alle verbundenen Spieler,
+  wird **nur die Nacht** übersprungen – Akku voll, Spielstand gesichert.
+- **Stürme lassen sich nicht verschlafen.** Man wartet sie im Unterschlupf ab: Die Schlaftaste heißt im Sturm am Tag
+  „Sturm abwarten“. Warten **alle** verbundenen Spieler geschützt (Unterschlupf, Stützpunkt, Hangar, Laderaum), läuft die
+  Zeit **×4** schneller, bis der Sturm vorbei ist – der Sturm selbst bleibt und dauert seine volle Zeit. Wer hinausgeht oder
+  sich bewegt, steht auf; im Koop läuft der Zeitraffer erst, wenn alle abwarten. Endet eine durchschlafene Nacht mitten im
+  Sturm, wachen alle auf und warten den Rest automatisch ab. Helferroboter pausieren im Sturm, das Lichtnetz (Schnellreise)
+  ist gestört.
 - **Notabschaltung:** Ist der Akku ungeschützt leer, schaltet MIKO ab; nach wenigen Sekunden bringt eine Abschleppdrohne
   ihn mit 40 % Akku zum Ladeplatz. Allein im Spiel vergeht dabei die Nacht. Keine Strafe außer Zeit und Weg.
 - Auf **PYRA** verschieben Sandstürme die Dünen: Nach jedem Sturm sind andere Wege offen.
@@ -156,10 +162,51 @@ die ökologischen Aktionen des Bereichs möglich. Großprojekte schalten Kosmeti
   erstes Upgrade, Sortieren.
 - **Nebenaufträge** je Planet (Material sammeln, Ballen verkaufen, Reparaturen, Gefahrstoffe entsorgen, Ölteppiche,
   Auftauen, Archiv) mit Credits und teils Kosmetik als Belohnung.
-- **Recyclingaufträge** an der Auftragstafel (endlos, 20 % über dem Verkaufspreis) und kostenlose **Schrottlieferungen**
-  am Abladeplatz sorgen dafür, dass Projektmaterial nie ausgeht.
+- **Recyclingaufträge** an der Auftragstafel (endlos, 20 % über dem Verkaufspreis) und **Schrottlieferungen**
+  am Abladeplatz sorgen dafür, dass Projektmaterial nie ausgeht. Eine Lieferung (14 Teile) kostet eine kleine
+  **Liefergebühr** (TERRA 15, PYRA 30, PELAGIA 20, NIVALIS 45 Credits ≈ 9 % des sortierten Werts) und danach startet der
+  nächste Frachter frühestens nach **60 s** (je Planet; zusätzlich wie bisher erst, wenn die letzte Lieferung abgeräumt
+  ist). So bleiben Lieferungen eine verlässliche Reserve, aber keine Endlos-Geldquelle.
 - **Fundstücke** (16 Stück, 4 je Planet) erzählen in kurzen Texten, wie es zur Vermüllung kam – im Archiv nachlesbar.
 - **Kosmetik** ohne Spielvorteil: Farben, Akzentfarben, Aufkleber und Anbauteile (z. B. Antenne, Blume, Strickmütze).
+- **Erfolge** (20 Stück, Reiter „Erfolge“ im Spielmenü mit Fortschrittsbalken): serverseitig aus der Statistik gezählt
+  (Sammeln, Strecke, Verkäufe, Ballen, Sortieren, Entsorgen, Zerlegen, Kran, Reparaturen, Fundstücke, Begrünung,
+  abgewartete Stürme, durchschlafene Nächte, Helferroboter, Ereignisfunde, Schnellreisen, Lieferungen). Jeder Erfolg
+  schaltet genau ein kosmetisches Teil frei (6 Farben, 5 Akzente, 6 Aufkleber, 3 Anbauteile wie Rundumleuchte, Glühbirne,
+  Propellermütze) und meldet sich mit einem Hinweis. Beim Laden älterer Spielstände werden bereits erfüllte Erfolge still
+  nachgetragen.
+
+### Helferroboter
+
+Auf jedem Planeten stehen **drei defekte Helferroboter** (einer je Bereich, Zahnrad-Symbol auf der Karte). Reparieren
+(Interaktion halten, 3 s) kostet Credits und Material aus dem Lager (TERRA 140 Cr + 8 Metall + 2 Elektronik, PYRA 260 Cr +
+8 Stahl + 3 Kupfer, PELAGIA 380 Cr + 8 Kunststoff + 3 Elektronik, NIVALIS 520 Cr + 6 Kupfer + 4 Elektronik). Ein reparierter
+Helfer sammelt **langsam** kleinen, ungefährlichen Müll (bis 2,5 kg, an Land, kein Gefahrgut) im Umkreis von **14 m** um
+seinen Arbeitsort (2,2 m/s, 2,5 s Pause je Teil) und schickt je 5 Teile per **Rohrpost-Kapsel** ins Lager des Stützpunkts
+(bei vollem Lager wartet er). Mit der Interaktion nimmt man ihn mit („folgt dir“) und setzt ihn an einer neuen Stelle ab –
+nicht am Stützpunkt, nicht drinnen, nicht im Wasser. Mehr als drei Helfer je Planet gibt es nicht. Helfer sind im Spielstand
+gespeichert (Arbeitsort, Position, Ladung) und im Koop für alle sichtbar.
+
+### Schnellreise über Lichtpunkte
+
+Komplett geräumte **Lichtpunkte leuchten** und bilden zusammen mit dem Stützpunkt ein **Lichtnetz**. Über die Karte
+(2D und 3D, Schaltfläche „Schnellreise“ in der Seitenleiste) reist MIKO von einem leuchtenden Lichtpunkt bzw. vom
+Stützpunkt zu einem anderen auf demselben Planeten. Kosten: 4 Energie + 0,04 je Meter Luftlinie (quer über die Karte
+≈ 12–15). **Nicht** im Sturm, **nicht** im Fahrzeug und **nicht mit mehr als einem Viertel Ladung** im Behälter
+(Entscheidung: das Lichtnetz überträgt MIKO, aber keine Müllfracht – sonst würde die Schnellreise den Behälter-Engpass
+aushebeln). Folgende Helferroboter reisen mit.
+
+### Weltereignisse
+
+Ab 15 Minuten Spielzeit passiert auf dem aktuellen Planeten alle 12–18 Minuten etwas (nicht während eines Sturms):
+- **Meteoritenschauer** (60 %): 6–9 wertvolle Meteoritensplitter (Seltene Metalle + Metall) gehen mit sichtbaren
+  Leuchtspuren in einem zugänglichen Bereich nieder; sie glimmen, bis man sie aufsammelt.
+- **Versorgungsabwurf** (40 %): eine (selten zwei) Kiste der Arche-Flotte mit Elektronik, Kupfer und Kunststoff
+  landet mit Rauchspur und qualmt, bis sie geborgen ist.
+- **Freigelegte Deponie**: Nach 40 % der Stürme liegt in einem zugänglichen Bereich ein verschüttetes Müllfeld frei
+  (10–14 Teile aus der Müllliste des Bereichs).
+Jedes Ereignis wird per Hinweis angekündigt; die Funde sind als Stern auf der Karte markiert. Höchstens 40 Ereignisfunde
+liegen gleichzeitig herum.
 
 ## 10. Geschichte
 

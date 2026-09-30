@@ -141,6 +141,7 @@ namespace RePlanet
             // ---------------------------------------------------- Vollbild-Overlays
             if (me.TowTimer > 0) DrawTowOverlay(me);
             else if (me.Sleeping) DrawSleepOverlay(app, w);
+            else if (me.Waiting) DrawWaitOverlay(app, w);
         }
 
         void DrawClockWeather(GameApp app, WorldState w, PlanetDef pd, Settings s)

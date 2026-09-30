@@ -7,7 +7,7 @@ namespace RePlanet.Core
     /// Zentrale, datengetriebene Spieldaten. Alle Preise, Werte und Aufträge stehen hier,
     /// damit Balancing ohne Codeänderung an anderer Stelle möglich ist (siehe docs/WIRTSCHAFT.md).
     /// </summary>
-    public static class GameData
+    public static partial class GameData
     {
         public const int StartCredits = 60;
         public const float UnsortedFactor = 0.5f;
@@ -56,6 +56,7 @@ namespace RePlanet.Core
             DefineMissions();
             DefineLore();
             DefineCosmetics();
+            DefineFeatures();
             Validate();
         }
 

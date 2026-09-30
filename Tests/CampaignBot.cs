@@ -50,6 +50,10 @@ public class CampaignBot
     /// <summary>Nächte/Stürme im Hangar bzw. im Laderaum des Transportschiffs verbracht.</summary>
     public int HangarSleeps, ShipSleeps;
     public long DeliveryCredits;
+    /// <summary>Spielzeit, die der Bot auf die Abklingzeit einer Lieferung gewartet hat, bzw. im Unterschlupf einen Sturm abgewartet hat (s).</summary>
+    public double DeliveryWaitTime, StormWaitTime;
+    /// <summary>Gezahlte Liefergebühren.</summary>
+    public long DeliveryFees;
     public int Shutdowns { get { return (int)S.Stat("shutdowns"); } }
     public double TimeLimit = 60 * 3600;     // Spielzeit
     public double RealTimeLimit = 600;       // Sekunden Echtzeit
@@ -245,13 +249,18 @@ public class CampaignBot
                 if (kind != 0)
                 {
                     bool night = Rules.IsNight(S, S.CurrentPlanet), storm = PS.StormActive;
+                    // Nachts schlafen (überspringt die Nacht); tagsüber im Sturm „schlafen“ = abwarten (der Sturm läuft weiter)
                     if ((night || storm) && Act(new JObj().Set("a", "sleep")))
                     {
                         Sleeps++; if (storm && !night) StormSleeps++;
                         if (kind == Rules.ShelterHangar) HangarSleeps++;
                         if (kind == Rules.ShelterShip) ShipSleeps++;
                         int g = 0;
-                        while (P.Sleeping && g++ < 40) Step(Dt);
+                        while ((P.Sleeping || P.Waiting) && g++ < 800)
+                        {
+                            if (P.Waiting) StormWaitTime += Dt;
+                            Step(Dt);
+                        }
                     }
                     else Step(Dt); // Sturmwarnung: im Unterschlupf abwarten, bis der Sturm beginnt
                     continue;
@@ -626,8 +635,18 @@ public class CampaignBot
         if (!pending)
         {
             MoveTo(Station("contracts"), 3f);
+            // Abklingzeit: am Stützpunkt warten (ein Spieler würde sortieren, verkaufen oder aufräumen)
+            float wait;
+            if (Rules.DeliveryCheck(S, PS, out wait) != null && wait > 0)
+            {
+                float w = Math.Min(wait + 0.5f, 60f);
+                DeliveryWaitTime += w;
+                Wait(w);
+                return true;
+            }
             if (!Act(new JObj().Set("a", "delivery"))) return false;
             Deliveries++;
+            DeliveryFees += GameData.DeliveryFee(S.CurrentPlanet);
         }
         int guard = 0, got = 0;
         while (PS.Dyn.Values.Any(d => d.Delivery && d.CarriedBy == null) && guard++ < 200)
