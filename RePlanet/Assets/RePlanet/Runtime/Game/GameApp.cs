@@ -31,6 +31,8 @@ namespace RePlanet
         string joinCode;
 
         public event Action<JObj> OnFx;
+        /// <summary>Roboterlaut/Geste eines Spielers (pid, Art) – vom Server an alle verteilt (auch an den Absender).</summary>
+        public event Action<string, string> OnEmote;
         public event Action<string> OnPlanetChanged;
         public event Action OnSessionStarted, OnSessionEnded;
         /// <summary>Intro abspielen; Parameter = Rückruf nach Ende/Überspringen.</summary>
@@ -338,7 +340,7 @@ namespace RePlanet
             c.Notice += msg => Hud.Show(msg, ToastKind.Warning, 5f);
             c.ActionFailed += (r, a) => { if (!string.IsNullOrEmpty(r.Err)) Hud.Show(r.Err, ToastKind.Warning, 3.5f); };
             c.PlanetChanged += p => { try { OnPlanetChanged?.Invoke(p); } catch (Exception e) { Debug.LogException(e); } };
-            c.Emote += (pid, e) => { };
+            c.Emote += (pid, e) => { try { OnEmote?.Invoke(pid, e); } catch (Exception ex) { Debug.LogException(ex); } };
         }
 
         string PlayerName(string pid)

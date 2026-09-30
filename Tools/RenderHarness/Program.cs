@@ -158,6 +158,8 @@ public static class Program
         Console.WriteLine("Sammelbare Objekte: " + trashN);
         { var types = new HashSet<string>(); int before = 0, after = 0; foreach (var t in WorldGen.Get(planet).Trash) if (types.Add(t.Type)) { var src = MeshKit.Trash(t.Def.Shape); for (int q = 0; q < src.subMeshCount; q++) if (src.T[q].Count > 0) before++; after += TrashRenderer.MeshFor(t.Def).subMeshCount; }
           Console.WriteLine($"Müll-Typen: {types.Count}, Untermeshes vorher {before}, nachher {after}"); }
+        // Formen der belebten Welt (Tiere, Stadtleben, Spuren) mitprüfen
+        AnimalMeshes.PrewarmAll(); CityLife.PrewarmMeshes(); GroundMarks.QuadMesh(); for (int ps = 0; ps < 3; ps++) GroundMarks.PuddleMesh(ps);
         // Wicklungsprüfung aller Meshes dieser Welt (Szene + gemeinsamer Zwischenspeicher)
         {
             var seen = new HashSet<Mesh>();

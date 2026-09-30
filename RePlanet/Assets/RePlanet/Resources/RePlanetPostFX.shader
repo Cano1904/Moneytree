@@ -2,7 +2,7 @@
 // Pässe: 0 Bloom-Vorfilter (mit Luftperspektive), 1 Bloom-Verkleinern (Dual-Filter), 2 Bloom-Vergrößern (Zelt + Stufe),
 //        3 Sonnenstrahlen-Maske, 4 Sonnenstrahlen-Radialunschärfe, 5 Zusammensetzen (Umgebungsverdeckung, Konturen, Nebel,
 //        Bloom, Strahlen, Belichtung, Kontrast, ACES-Tonemapping, Split-Toning, Sättigung/Vibrance, Vignette, Korn,
-//        chromatische Aberration), 6 Umgebungsverdeckung (SSAO-Näherung, halbe Auflösung).
+//        chromatische Aberration, Wolkenschatten), 6 Umgebungsverdeckung (SSAO-Näherung, halbe Auflösung).
 // Koordinaten: „uv“ = Quelltextur, „uvd“ = Bildschirm/Tiefe (auf D3D mit Kantenglättung ist die Quelle gespiegelt).
 // Alle HDR-Eingaben werden begrenzt (NaN → 0, Unendlich → 64), damit ein fehlerhaftes Material nie das ganze Bild
 // über den Bloom überstrahlt.
@@ -49,6 +49,10 @@ Shader "Hidden/RePlanet/PostFX"
     float4 _EdgeColor;                        // rgb Tönung der Linien
     float4 _AOParams;                         // x Radius (m), y Stärke, z Abtastungen, w Reichweite (m)
     float4 _AOParams2;                        // x an (0/1)
+    // Wolkenschatten (global gesetzt von Runtime/Render/WindLook.cs; nicht gesetzt = Stärke 0 = aus)
+    sampler2D _RP_CloudShadowTex;
+    float4 _RP_CloudShadow;                   // x Kachel-Skalierung (1/m), y Stärke, z Bedeckungsschwelle, w Weichheit
+    float4 _RP_CloudShadowOffset;             // xy Windversatz (Kachel-UV), z Höhe der Wolkenebene (m)
 
     struct v2f
     {
@@ -132,6 +136,23 @@ Shader "Hidden/RePlanet/PostFX"
         float sun = pow(saturate(dot(dir, _SunDirW.xyz)), 6.0);
         fogCol += _SunColor.rgb * sun * _SunColor.a;
         return lerp(col, fogCol, f);
+    }
+
+    // ------------------------------------------------------------ Wolkenschatten
+    // Weltpunkt aus der Tiefe, entlang der Sonnenrichtung auf die Wolkenebene projiziert, in der kachelbaren
+    // Rauschtextur nachgeschlagen. Der Himmel (Tiefe = fern) bleibt unberührt. Rückgabe: Helligkeitsfaktor 0..1.
+    float CloudShadow(float2 uvd, float3 ray)
+    {
+        if (_RP_CloudShadow.y < 0.001 || _FogParams2.w < 0.5) return 1.0;
+        float raw = SAMPLE_DEPTH_TEXTURE(_CameraDepthTexture, uvd);
+        if (Linear01Depth(raw) > 0.9999) return 1.0;
+        float3 wp = _WorldSpaceCameraPos + ray * LinearEyeDepth(raw);
+        float3 sd = _SunDirW.xyz;
+        sd.y = max(sd.y, 0.25);
+        float2 p = wp.xz + sd.xz / sd.y * (_RP_CloudShadowOffset.z - wp.y);
+        float n = tex2Dlod(_RP_CloudShadowTex, float4(p * _RP_CloudShadow.x + _RP_CloudShadowOffset.xy, 0.0, 0.0)).r;
+        float s = smoothstep(_RP_CloudShadow.z - _RP_CloudShadow.w, _RP_CloudShadow.z + _RP_CloudShadow.w, n);
+        return 1.0 - _RP_CloudShadow.y * s;
     }
 
     // ------------------------------------------------------------ Konturen
@@ -329,6 +350,7 @@ Shader "Hidden/RePlanet/PostFX"
             }
         }
 
+        col *= CloudShadow(i.uvd, i.ray);
         col = ApplyFog(col, i.uvd, i.ray);
         col *= _Grade.x;
         col += tex2D(_BloomTex, i.uv).rgb * _Bloom.z;

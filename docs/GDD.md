@@ -128,7 +128,10 @@ Planeten ist ein **Großprojekt**:
 - NIVALIS: Laborheizung → Rechenzentrum → **Wärme- und Energienetz** (sendet das Signal an die Arche)
 
 Ist ein Projekt fertig, **erwacht** der Bereich: Fenster und Laternen schalten sich nacheinander ein, Brunnen laufen,
-über dem Projektplatz steigt ein Feuerwerk auf. Projekte bringen zusätzliche Energie, schalten Gebäude frei und machen
+über dem Projektplatz steigt ein Feuerwerk auf. Je weiter der Bereich danach wiederhergestellt wird („Stadt erwacht 2.0“), desto
+lebendiger wird er: mehr erleuchtete Fenster, kräftigere Brunnen, Lichthöfe um die Laternen, kleine Elektroautos und auf
+TERRA Straßenbahnen, die auf den Straßen fahren (sie halten vor MIKO und liegendem Müll), wehende Fahnen und
+holografische Schilder über Projektplätzen und alten KONSUMA-Tafeln. Projekte bringen zusätzliche Energie, schalten Gebäude frei und machen
 die ökologischen Aktionen des Bereichs möglich. Großprojekte schalten Kosmetik frei.
 
 ## 8. Tag und Nacht, Wind und Stürme
@@ -266,6 +269,19 @@ allem Müll), **Hochformat 9:16** für kurze Videos, Sprung zu Aussichtspunkten.
 - Leistungsanzeige (F3): Bildrate aktuell/Minimum der letzten 5 s, Bildzeit, Draw-Calls, Qualitätsstufe, Auflösung.
 
 ## 15. Präsentation
+
+- **Tiere kehren zurück**, sobald ein Bereich wiederhergestellt wird (TERRA: Spatzenschwärme, Hasen, Füchse · PYRA:
+  Echsen, Falken, Sandfinken · PELAGIA: Möwen, Krabben am Strand, Fischschwärme · NIVALIS: pinguinartige Vögel,
+  Polarfüchse, Schneeammern). Vögel kreisen, landen auf Dächern und fliegen bei Annäherung auf, Bodentiere fliehen vor
+  MIKO und Fahrzeugen; nachts und im Sturm verstecken sich die meisten. Mitspieler sehen dieselben Tiere an denselben Orten.
+- **Spuren und Wetterspuren:** Reifen- und Kettenspuren auf Sand, Schnee und Erde verblassen und werden vom Wind verweht;
+  schnelle Fahrt wirbelt Staub (PYRA, TERRA) bzw. Schnee auf; nach Regen auf PELAGIA stehen Pfützen, die langsam trocknen.
+- **Wind und Wolken:** Gräser, Blumen und gepflanzte Bäume wiegen sich mit Windstärke und -richtung, Fahnen wehen,
+  Wolkenschatten ziehen über die Landschaft (stärker bei aufgelockerter Bewölkung, im Sturm gedämpft, nachts aus).
+- **MIKOs Mimik:** Das Augen-Display zeigt Stimmungen – fröhlich in wiederhergestellter Umgebung, neugierig bei Tieren,
+  müde bei leerem Akku, ängstlich im Sturm ohne Schutz, schläfrig in der Nacht, frierend auf NIVALIS. Dazu Gesten:
+  Winken, wenn ein Mitspieler näherkommt, Freudensprung nach Abgabe, Verkauf, Lieferung oder geschafften Bereichen,
+  Kopfneigen im Leerlauf, Zittern in der Kälte. Der Roboterlaut [G] ist jetzt auch beim Mitspieler sichtbar.
 
 - Grafik vollständig prozedural: Gelände als Höhenfeld mit Verschmutzung, die beim Aufräumen abnimmt, und Bodenbewuchs,
   der mit der Ökologie wächst; Müll per GPU-Instancing; eigener Himmels-Shader mit Wolken, Sternen, Himmelskörpern und

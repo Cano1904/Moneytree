@@ -12,9 +12,10 @@ namespace RePlanet
     /// drei robuste Räder mit Profil, Felgen und sichtbarer Federung; faltbarer Sammelarm mit Gelenken, Hydraulik und
     /// Kabeln; sichtbarer Müllbehälter mit Rippen und Füllung. Lack mit Kratzern, Kantenabrieb und Schmutz kommt aus
     /// dem Oberflächen-Shader. Upgrades (Behältergröße, Anbauteile) und Kosmetik (Farbe, Akzent, Aufkleber, Aufsatz)
-    /// sind am Modell sichtbar; Scheinwerfer leuchten bei Dunkelheit.
+    /// sind am Modell sichtbar; Scheinwerfer leuchten bei Dunkelheit. Stimmungen und Gesten (Winken, Freudensprung,
+    /// Kopfneigen, Zittern, Gähnen): MikoFace.cs.
     /// </summary>
-    public class RobotModel : MonoBehaviour
+    public partial class RobotModel : MonoBehaviour
     {
         Transform root, body, head, visor, eyeL, eyeR, bin, binFill, arm1, arm2, tip, stickerQuad;
         readonly Transform[] wheels = new Transform[3];
@@ -759,7 +760,7 @@ namespace RePlanet
                 else { tAsym = 0.4f; }
             }
             else if (sleeping) tLower = 0.9f;
-            else tLower = loadFrac * 0.12f;
+            else { tLower = loadFrac * 0.12f; MoodLids(ref tLower, ref tRaise, ref tTilt, ref tAsym); }
             float k = Mathf.Clamp01(dt * 10f);
             lidLower = Mathf.Lerp(lidLower, tLower, k); lidRaise = Mathf.Lerp(lidRaise, tRaise, k);
             lidTilt = Mathf.Lerp(lidTilt, tTilt, k); lidAsym = Mathf.Lerp(lidAsym, tAsym, k);
@@ -777,9 +778,11 @@ namespace RePlanet
                 lidUp[i].gameObject.SetActive(lidUp[i].localScale.y > 0.002f);
                 lidDown[i].gameObject.SetActive(lidDown[i].localScale.y > 0.002f);
             }
-            var ec = off ? new Color(0.8f, 0.1f, 0.05f) * (Mathf.Sin(Time.time * 6f) > 0 ? 1f : 0.2f) : emoteT > 0 ? eyeColor : eyeBase;
-            Mats.SetEmission(eyeMat, ec * (sleeping ? 0.4f : 2.2f));
+            var ec = off ? new Color(0.8f, 0.1f, 0.05f) * (Mathf.Sin(Time.time * 6f) > 0 ? 1f : 0.2f) : emoteT > 0 ? eyeColor : MoodEyeColor(dt);
+            Mats.SetEmission(eyeMat, ec * (sleeping ? 0.4f : 2.2f * (off || emoteT > 0 ? 1f : MoodGlow())));
             head.localRotation = Quaternion.Euler(emoteT > 0 ? Mathf.Sin(emoteT * 18f) * 6f : 0, emoteT > 0 ? Mathf.Sin(emoteT * 11f) * 8f : 0, emoteT > 0 && emoteKind == "curious" ? 10f * Mathf.Min(1f, emoteT) : 0f);
+            // Mimik und Gesten (Stimmung, Winken, Hüpfen, Kopfneigen, Zittern) – siehe MikoFace.cs
+            ApplyFace(dt, speed, acting, swimming, sleeping, off);
             // Scheinwerfer in der Dunkelheit
             float lamp = off || sleeping ? 0f : night;
             if (Headlight != null) Headlight.intensity = Mathf.Lerp(0f, 2.4f, lamp);
