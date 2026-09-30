@@ -60,7 +60,7 @@ public static class LocTests
         {
             var l = WorldGen.Get(p);
             foreach (var z in l.Zones) add(z.Name, "Zone " + p);
-            foreach (var list in new[] { l.Repairs, l.Eco, l.LoreSpots, l.Viewpoints, l.Shelters })
+            foreach (var list in new[] { l.Repairs, l.Eco, l.LoreSpots, l.Viewpoints, l.Shelters, l.Bots })
                 foreach (var s in list) add(s.Name, "Spot " + p);
         }
         return req;
@@ -72,11 +72,12 @@ public static class LocTests
         var files = new List<string>();
         foreach (var d in new[] { "Core/Sim", "Core/Net", "Core/Save" }) files.AddRange(Directory.GetFiles(Path.Combine(Src, d), "*.cs"));
         files.Add(Path.Combine(Src, "Core/Data/GameData.cs"));
-        foreach (var f in new[] { "Runtime/Game/GameApp.cs", "Runtime/Game/CameraRig.cs", "Runtime/Render/WorldView.cs", "Runtime/UI/HudHints.cs", "Runtime/Game/PlayerController.cs", "Runtime/Game/Settings.cs" })
+        foreach (var f in new[] { "Runtime/Game/GameApp.cs", "Runtime/Game/CameraRig.cs", "Runtime/Render/WorldView.cs", "Runtime/UI/HudHints.cs", "Runtime/Game/PlayerController.cs", "Runtime/Game/Settings.cs",
+                                   "Runtime/Game/FeatureToasts.cs", "Runtime/Game/PlayerControllerFeatures.cs", "Runtime/UI/FeaturesUI.cs", "Runtime/Render/FeaturesView.cs" })
             files.Add(Path.Combine(Src, f));
         var res = new List<KeyValuePair<string, string>>();
-        var skip = new Regex(@"Debug\.Log|^\s*//|^\s*///|\bcase\s+""|Hash\.|throw new InvalidOperation|Log\?\.Invoke|LogWarning|Console\.");
-        var badBefore = new Regex(@"(\.Set\(|\.Str\(|\.Int\(|\.Bool\(|\.Float\(|\.Obj\(|\.Arr\(|\.Strs\(|\.Has\(|ContainsKey\(|TryGetValue\(|==|!=|Stat\(|AddStat\(|Tech\w*\(|Get\(|Planet\(|Projects\[|\bL\(|Loc\.T\(|Loc\.F\()\s*$");
+        var skip = new Regex(@"Debug\.Log|^\s*//|^\s*///|Hash\.|throw new InvalidOperation|Log\?\.Invoke|LogWarning|Console\.");
+        var badBefore = new Regex(@"(\bcase\s*|\.Set\(|\.Str\(|\.Int\(|\.Bool\(|\.Float\(|\.Obj\(|\.Arr\(|\.Strs\(|\.Has\(|ContainsKey\(|TryGetValue\(|==|!=|Stat\(|AddStat\(|Tech\w*\(|Get\(|Planet\(|Projects\[|\bL\(|Loc\.T\(|Loc\.F\()\s*$");
         foreach (var f in files)
         {
             int no = 0;
@@ -107,6 +108,7 @@ public static class LocTests
         "Buildings", "Base", "Backdrop", "TransportShip", "Planet_", "Terrain", "Water", "Dune", "GreenhouseRuin", "GreenhouseRestored",
         "BuildPadCursor", "BuildPreview", "RePlanet_", "RePlanet-Accept", "RePlanet-Read-", "RePlanet-Write-", "RePlanet-ClientWrite", "RePlanet-ClientRead",
         "yyyy-MM-dd HH:mm", "yyyy-MM-dd HH:mm:ss", "Fotos", "Vorschau", "Menü", "Aussichtspunkt gespeichert",
+        "Features", "FeatureLine", "Helfer_", "Space",
     };
 
     public static List<string> Missing()

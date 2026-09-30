@@ -65,6 +65,7 @@ namespace RePlanet.Core
             foreach (var m in GameData.Missions) { var x = m; add(x.Title, v => x.Title = v); add(x.Desc, v => x.Desc = v); }
             foreach (var d in GameData.Lore.Values) { var x = d; add(x.Title, v => x.Title = v); add(x.Text, v => x.Text = v); }
             foreach (var c in GameData.Cosmetics.Values) { var x = c; add(x.Name, v => x.Name = v); add(x.Hint, v => x.Hint = v); }
+            foreach (var a in GameData.Achievements) { var x = a; add(x.Name, v => x.Name = v); add(x.Desc, v => x.Desc = v); add(x.Unit, v => x.Unit = v); }
             for (int i = 0; i < GameData.ShipLevelName.Length; i++) { int k = i; add(GameData.ShipLevelName[k], v => GameData.ShipLevelName[k] = v); }
             for (int i = 0; i < Rules.StageNames.Length; i++) { int k = i; add(Rules.StageNames[k], v => Rules.StageNames[k] = v); }
             return l;
