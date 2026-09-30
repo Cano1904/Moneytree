@@ -21,7 +21,7 @@ namespace RePlanet.Core
     /// <summary>
     /// Reine Regelfunktionen. Werden vom Server (Autorität) und vom Client (Anzeige, Begründungen) identisch genutzt.
     /// </summary>
-    public static class Rules
+    public static partial class Rules
     {
         public const float GrowTime = 90f;
         public const float LiftTime = 4f;

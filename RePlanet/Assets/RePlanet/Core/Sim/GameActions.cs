@@ -111,8 +111,13 @@ namespace RePlanet.Core
                     case "introSeen": S.IntroSeen = true; DW("flags"); return ActResult.OK();
                     case "respawn": return ActRespawn(p);
                     case "sleep": return ActSleep(p);
-                    case "wake": p.Sleeping = false; DPl(p.Id); return ActResult.OK();
+                    case "wake": p.Sleeping = false; p.Waiting = false; DPl(p.Id); return ActResult.OK();
                     case "shelter": return ActBuildShelter(p);
+                    case "wait": return ActWait(p);
+                    case "fasttravel": return ActFastTravel(p, a);
+                    case "botfix": return ActBotFix(p, a);
+                    case "botfollow": return ActBotFollow(p, a);
+                    case "botstay": return ActBotStay(p, a);
                 }
             }
             catch (Exception e)
@@ -624,6 +629,7 @@ namespace RePlanet.Core
             ConsumeMaterials(cost);
             S.Cur.Repaired.Add(id);
             DP("repairs");
+            S.AddStat("repairsDone", 1); DW("stats");
             Earn(15);
             Fx(new JObj().Set("k", "repaired").Set("s", id).Set("pos", spot.Pos.ToJson(1)));
             return ActResult.OK(new JObj().Set("done", true));
@@ -644,6 +650,7 @@ namespace RePlanet.Core
             if (!Spend(cost)) return ActResult.Fail("Es fehlen " + (cost - S.Credits) + " Credits für das Saatgut.");
             S.Cur.Eco[id] = S.PlayTime;
             DP("eco");
+            S.AddStat("planted", 1); DW("stats");
             Fx(new JObj().Set("k", "plant").Set("s", id).Set("pos", spot.Pos.ToJson(1)));
             return ActResult.OK();
         }
@@ -904,6 +911,7 @@ namespace RePlanet.Core
             UpdateDyn(d);
             v.Carry = d.Id;
             DP("vehicles");
+            S.AddStat("lifted", 1); DW("stats");
             Fx(new JObj().Set("k", "lifted").Set("o", key).Set("d", d.Id).Set("help", help));
             return ActResult.OK(new JObj().Set("done", true).Set("d", d.Id));
         }
@@ -962,6 +970,7 @@ namespace RePlanet.Core
                 ExitVehicle(pd);
             }
             foreach (var v in S.Cur.Vehicles.Values) { DropCarried(v, v.Pos); v.Driver = null; }
+            StopFollowing(S.Cur);
             foreach (var d in Drones) if (d.Items.Count > 0) AddToStorage(d.Items, Grade.Unsorted, true);
             Drones.Clear();
             S.CurrentPlanet = pl;
@@ -984,10 +993,18 @@ namespace RePlanet.Core
         ActResult ActDelivery(PlayerData p)
         {
             if (!InBase(p)) return ActResult.Fail("Lieferungen werden am Stützpunkt bestellt.");
-            foreach (var d in S.Cur.Dyn.Values) if (d.Delivery) return ActResult.Fail("Die letzte Lieferung liegt noch am Abladeplatz.");
+            // Gebühr und Abklingzeit: Lieferungen sind eine Reserve, keine Endlosquelle (siehe GameData.DeliveryFee/DeliveryCooldown)
+            float wait;
+            var why = Rules.DeliveryCheck(S, S.Cur, out wait);
+            if (why != null) return ActResult.Fail(why);
+            int fee = GameData.DeliveryFee(S.CurrentPlanet);
+            if (!Spend(fee)) return ActResult.Fail("Es fehlen " + (fee - S.Credits) + " Credits für die Liefergebühr.");
+            S.Cur.NextDelivery = S.PlayTime + GameData.DeliveryCooldown;
+            DP("misc");
+            S.AddStat("deliveries", 1); DW("stats");
             var def = GameData.Planets[S.CurrentPlanet];
             var b = WorldGen.Get(S.CurrentPlanet).Base;
-            int count = 14;
+            int count = GameData.DeliveryParts;
             long mix = S.NextDyn; // fest vor der Schleife: SpawnDyn erhöht NextDyn, sonst wäre jede Lieferung sortenrein
             for (int i = 0; i < count; i++)
             {
@@ -997,8 +1014,8 @@ namespace RePlanet.Core
                 pos.y = Terrain.HeightAt(S.CurrentPlanet, pos.x, pos.z);
                 SpawnDyn(type, pos, 0, false, true);
             }
-            Fx(new JObj().Set("k", "delivery").Set("n", count));
-            return ActResult.OK(new JObj().Set("n", count));
+            Fx(new JObj().Set("k", "delivery").Set("n", count).Set("fee", fee));
+            return ActResult.OK(new JObj().Set("n", count).Set("fee", fee));
         }
 
         ActResult ActContract(PlayerData p)
@@ -1040,8 +1057,11 @@ namespace RePlanet.Core
             int kind = Rules.ShelterKind(S, S.Cur, p.Pos);
             if (kind == 0) return ActResult.Fail("Hier ist kein Unterschlupf. Suche einen " + GameData.Planets[S.CurrentPlanet].ShelterName + ", fahre zum Stützpunkt oder baue einen Notunterschlupf (" + Rules.ShelterCost + " Credits).");
             bool night = Rules.IsNight(S, S.CurrentPlanet);
-            if (!night && !S.Cur.StormActive) return ActResult.Fail("MIKO ist nicht müde – Schlafen geht nachts oder während eines Sturms.");
+            // Tagsüber im Sturm: nicht schlafen, sondern abwarten (der Sturm lässt sich nicht verschlafen)
+            if (!night && S.Cur.StormActive) return ActWait(p);
+            if (!night) return ActResult.Fail("MIKO ist nicht müde – Schlafen geht nur nachts. Einen Sturm wartest du im Unterschlupf ab.");
             p.Sleeping = true;
+            p.Waiting = false;
             p.ShelterKind = kind;
             DPl(p.Id);
             int online = 0, sleeping = 0;

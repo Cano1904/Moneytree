@@ -365,13 +365,20 @@ public static class WeatherTests
         env.Sync(g.S, null);
         Assert.Equal(1, env.ActiveDuneSet, "Dünen-Set gewechselt");
         Assert.True(!env.Solid(dune0) && env.Solid(dune1), "Jetzt blockiert Set 1");
-        // Nächster Sturm: Schlafen im Unterschlupf überspringt ihn
+        // Nächster Sturm (tagsüber): „Schlafen“ im Unterschlupf heißt abwarten – der Sturm wird nicht übersprungen
         Run(g, def.StormEvery + 2, 0.5f, () => ps.StormActive);
         Assert.True(ps.StormActive, "Zweiter Sturm");
+        Assert.False(Rules.IsNight(g.S, "pyra"), "Testvoraussetzung: zweiter Sturm tagsüber");
         var rs = g.Apply("p", TestKit.A("sleep"), true);
-        Assert.True(rs.Ok, "Im Sturm schlafen erlaubt: " + rs.Err);
+        Assert.True(rs.Ok, "Im Sturm abwarten erlaubt: " + rs.Err);
+        Assert.True(p.Waiting && !p.Sleeping, "Wartet ab statt zu schlafen");
         Run(g, 1f);
-        Assert.False(ps.StormActive, "Sturm durch Schlafen übersprungen");
+        Assert.True(ps.StormActive, "Sturm läuft weiter (nicht verschlafbar)");
+        Assert.Equal(Game.WaitTimeScale, g.TimeScale, "Zeitraffer, solange alle abwarten");
+        fx = Run(g, def.StormDuration + 5, 0.5f, () => !ps.StormActive);
+        Assert.False(ps.StormActive, "Sturm endet regulär");
+        Assert.False(p.Waiting, "Abwarten endet mit dem Sturm");
+        Assert.Equal(1f, g.TimeScale, "Zeitraffer vorbei");
         Assert.Equal(2, ps.StormCount, "Zweiter Sturm gezählt");
         env.Sync(g.S, null);
         Assert.Equal(0, env.ActiveDuneSet, "Dünen wieder Set 0");
@@ -499,12 +506,16 @@ public static class WeatherTests
             Run(g, 5f);
             Assert.False(p.Exposed, roomId + ": im Sturm drinnen nicht ausgesetzt");
             Assert.True(p.Energy >= e - 0.01f, roomId + ": kein Sturmverbrauch");
-            // Schlafen überspringt Nacht und Sturm
+            // Schlafen überspringt die Nacht – der Sturm läuft weiter und wird drinnen abgewartet
             var rs = g.Apply(p.Id, TestKit.A("sleep"), true);
             Assert.True(rs.Ok, roomId + ": Schlafen erlaubt: " + rs.Err);
             var fx = Run(g, 1f);
             Assert.True(Has(fx, "morning"), roomId + ": Morgen nach dem Schlafen");
-            Assert.False(Rules.IsNight(g.S, "terra") || ps.StormActive, roomId + ": Nacht und Sturm vorbei");
+            Assert.False(Rules.IsNight(g.S, "terra"), roomId + ": Nacht vorbei");
+            Assert.True(ps.StormActive, roomId + ": Sturm lässt sich nicht verschlafen");
+            Assert.True(p.Waiting, roomId + ": nach dem Aufwachen wird der Sturm abgewartet");
+            Run(g, GameData.Planets["terra"].StormDuration + 2f, 0.25f, () => !ps.StormActive);
+            Assert.False(ps.StormActive || p.Waiting, roomId + ": Sturm vorbei, Abwarten beendet");
             // Draußen gelten weiter die bisherigen Regeln
             RunUntilNight(g);
             TestHelpers.Teleport(g, p.Id, OpenSpot(g));

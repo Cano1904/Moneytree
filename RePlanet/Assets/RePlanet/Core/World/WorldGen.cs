@@ -91,6 +91,7 @@ namespace RePlanet.Core
             PlaceTrash(c);
             PlaceMounds(c);
             PlaceSkyline(c);
+            PlaceBrokenBots(c);
             foreach (var t in c.L.Trash)
             {
                 if (t.Gate >= 0) continue;
@@ -345,6 +346,46 @@ namespace RePlanet.Core
             c.L.Viewpoints.Add(new Spot { Id = c.P + "_vp0", Kind = "view", Name = "Aussichtspunkt Stützpunkt", Area = 0, Pos = new V3(18, gy + 6f, -92), Yaw = 0.25f });
             float vy = Terrain.HeightAt(c.P, -30, 64);
             c.L.Viewpoints.Add(new Spot { Id = c.P + "_vp1", Kind = "view", Name = "Aussichtspunkt " + def.AreaNames[2], Area = 2, Pos = new V3(-30, Math.Max(vy, 0) + 8f, 64), Yaw = 0.5f });
+        }
+
+        /// <summary>
+        /// Defekte Helferroboter: einer je Bereich an einer freien, trockenen Stelle. Eigener Zufallsgenerator und erst nach dem
+        /// Müll platziert – so bleiben alle übrigen Positionen (und damit gespeicherte Objekt-IDs) unverändert.
+        /// </summary>
+        static void PlaceBrokenBots(Ctx c)
+        {
+            var r = new Rng(GameData.Planets[c.P].Seed + 4242);
+            string[] names = { "Alter Sammelroboter", "Verrosteter Helfer", "Stiller Sortierroboter" };
+            for (int a = 0; a < 3; a++)
+            {
+                float z0 = a == 0 ? -140f : a == 1 ? -40f : 60f, z1 = a == 0 ? -58f : a == 1 ? 40f : 138f;
+                Spot spot = null;
+                for (int attempt = 0; attempt < 600 && spot == null; attempt++)
+                {
+                    float x = r.Range(-128f, 128f), z = r.Range(z0, z1);
+                    if (!SpotFree(c, x, z, 4f, false)) continue;
+                    if (c.L.BlockedStatic(x, z, 2.5f)) continue;
+                    float y = Terrain.HeightAt(c.P, x, z);
+                    if (y < Terrain.WaterLevel(c.P) + 0.3f) continue;
+                    spot = new Spot { Id = c.P + "_bot" + a, Kind = "bot", Name = names[a], Area = a, Pos = new V3(x, y, z), Yaw = r.Range(-3.1f, 3.1f) };
+                }
+                // Rückfall: Raster absuchen (wenig Land, z. B. Lagune auf PELAGIA) – trocken und frei genügt
+                for (float z = z0 + 4f; z < z1 && spot == null; z += 3f)
+                    for (float x = -120f; x <= 120f && spot == null; x += 3f)
+                    {
+                        if (InBaseRect(x, z, 4) || Math.Abs(z + 50) < 8 || Math.Abs(z - 50) < 8) continue;
+                        float y = Terrain.HeightAt(c.P, x, z);
+                        if (y < Terrain.WaterLevel(c.P) + 0.4f || c.L.BlockedStatic(x, z, 1.5f)) continue;
+                        spot = new Spot { Id = c.P + "_bot" + a, Kind = "bot", Name = names[a], Area = a, Pos = new V3(x, y, z), Yaw = 0.5f };
+                    }
+                if (spot == null)
+                {
+                    float fz = a == 0 ? -70 : a == 1 ? 20 : 90;
+                    spot = new Spot { Id = c.P + "_bot" + a, Kind = "bot", Name = names[a], Area = a, Pos = new V3(10, Terrain.HeightAt(c.P, 10, fz), fz) };
+                }
+                c.KeepOut.Add(new[] { spot.Pos.x, spot.Pos.z, 4f });
+                c.L.Bots.Add(spot);
+            }
         }
 
         // ------------------------------------------------------------------ Grenzen & Tore

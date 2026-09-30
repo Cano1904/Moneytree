@@ -57,17 +57,17 @@ Upgrades gelten für das ganze Team (Koop) und alle Planeten. Stufe 0 ist der St
 | Upgrade | Kategorie | Stufe | Kosten | Summe | Wert | Kaufbar |
 | --- | --- | ---: | ---: | ---: | --- | --- |
 | **Müllbehälter** | Behälter | 0 | Start | – | 12 Vol. | sofort |
-|  |  | 1 | 90 | 90 | 20 Vol. |  |
-|  |  | 2 | 320 | 410 | 30 Vol. |  |
-|  |  | 3 | 900 | 1.310 | 45 Vol. |  |
-|  |  | 4 | 2.200 | 3.510 | 65 Vol. |  |
+|  |  | 1 | 180 | 180 | 20 Vol. |  |
+|  |  | 2 | 320 | 500 | 30 Vol. |  |
+|  |  | 3 | 900 | 1.400 | 45 Vol. |  |
+|  |  | 4 | 2.200 | 3.600 | 65 Vol. |  |
 | **Greifarm** | Werkzeug | 0 | Start | – | 3 kg | sofort |
 |  |  | 1 | 250 | 250 | 6 kg |  |
 |  |  | 2 | 900 | 1.150 | 12 kg |  |
 | **Müllsauger** | Werkzeug | 0 | Start | – | nicht vorhanden | sofort |
-|  |  | 1 | 110 | 110 | 3 Obj./s, 4 m |  |
-|  |  | 2 | 600 | 710 | 5 Obj./s, 6 m |  |
-|  |  | 3 | 1.600 | 2.310 | 8 Obj./s, 8 m |  |
+|  |  | 1 | 200 | 200 | 3 Obj./s, 4 m |  |
+|  |  | 2 | 600 | 800 | 5 Obj./s, 6 m |  |
+|  |  | 3 | 1.600 | 2.400 | 8 Obj./s, 8 m |  |
 | **Magnetarm** | Werkzeug | 0 | Start | – | nicht vorhanden | sofort |
 |  |  | 1 | 420 | 420 | 7 m, 6 Teile |  |
 |  |  | 2 | 1.400 | 1.820 | 11 m, 12 Teile |  |
@@ -105,7 +105,7 @@ Upgrades gelten für das ganze Team (Koop) und alle Planeten. Stufe 0 ist der St
 |  |  | 1 | 1.800 | 1.800 | 50 m, 5 Vol. |  |
 |  |  | 2 | 4.500 | 6.300 | 70 m, 8 Vol. |  |
 
-Alle Upgrades zusammen: **52.870 Credits**.
+Alle Upgrades zusammen: **53.050 Credits**.
 
 Beschreibungen:
 
@@ -281,14 +281,14 @@ Endlos wiederholbar; verlangt sortierte Einheiten aus dem Lager. Die Aufträge l
 
 ## Schrottlieferungen
 
-Am Stützpunkt kostenlos bestellbar (eine Lieferung gleichzeitig), je 14 Teile aus der Liste des Planeten, reihum gewählt.
+Am Stützpunkt bestellbar (eine Lieferung gleichzeitig), je 14 Teile aus der Liste des Planeten, reihum gewählt. Jede Bestellung kostet eine Liefergebühr; danach startet der nächste Frachter frühestens nach 60 s Spielzeit (je Planet).
 
-| Planet | Mögliche Teile | Ø Wert je Teil (sortiert) | Ø Wert je Lieferung |
-| --- | --- | ---: | ---: |
-| TERRA | Zeitungsbündel, Karton, Glasflasche, Plastikflasche, Getränkedose, Toaster, Rostiges Gartengerät, Alter Fernseher | 12,4 | 173 |
-| PYRA | Schraubenhaufen, Zahnrad, Kupferkabeltrommel, Maschinenteil, Rohrstück, Stahlstück | 24,8 | 348 |
-| PELAGIA | Plastikkanister, Treibende Plastikflasche, Kaputte Boje, Netzstück, Elektroschrott, Anker mit Kette | 14,8 | 208 |
-| NIVALIS | Industrie-Akku, Platinenstapel, Kabeltrommel, Solarpanel-Bruch, Drohnenwrack, Seltenmetall-Kern | 35,3 | 495 |
+| Planet | Mögliche Teile | Ø Wert je Teil (sortiert) | Ø Wert je Lieferung | Gebühr |
+| --- | --- | ---: | ---: | ---: |
+| TERRA | Zeitungsbündel, Karton, Glasflasche, Plastikflasche, Getränkedose, Toaster, Rostiges Gartengerät, Alter Fernseher | 12,4 | 173 | 15 |
+| PYRA | Schraubenhaufen, Zahnrad, Kupferkabeltrommel, Maschinenteil, Rohrstück, Stahlstück | 24,8 | 348 | 30 |
+| PELAGIA | Plastikkanister, Treibende Plastikflasche, Kaputte Boje, Netzstück, Elektroschrott, Anker mit Kette | 14,8 | 208 | 20 |
+| NIVALIS | Industrie-Akku, Platinenstapel, Kabeltrommel, Solarpanel-Bruch, Drohnenwrack, Seltenmetall-Kern | 35,3 | 495 | 45 |
 
 ## Müll je Planet und Bereich
 

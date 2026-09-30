@@ -313,14 +313,15 @@ namespace RePlanet.DocGen
         {
             L("## Schrottlieferungen");
             L();
-            L("Am Stützpunkt kostenlos bestellbar (eine Lieferung gleichzeitig), je 14 Teile aus der Liste des Planeten, reihum gewählt.");
+            L("Am Stützpunkt bestellbar (eine Lieferung gleichzeitig), je " + GameData.DeliveryParts + " Teile aus der Liste des Planeten, reihum gewählt. " +
+              "Jede Bestellung kostet eine Liefergebühr; danach startet der nächste Frachter frühestens nach " + D(GameData.DeliveryCooldown, "0") + " s Spielzeit (je Planet).");
             L();
-            Head("Planet", "Mögliche Teile", "#Ø Wert je Teil (sortiert)", "#Ø Wert je Lieferung");
+            Head("Planet", "Mögliche Teile", "#Ø Wert je Teil (sortiert)", "#Ø Wert je Lieferung", "#Gebühr");
             foreach (var pl in GameData.PlanetOrder)
             {
                 var pd = GameData.Planets[pl];
                 double avg = pd.Deliveries.Average(t => (double)TypeValue(t));
-                Row(pd.Name, string.Join(", ", pd.Deliveries.Select(t => GameData.Trash[t].Name)), D(avg, "0.0"), D(avg * 14, "0"));
+                Row(pd.Name, string.Join(", ", pd.Deliveries.Select(t => GameData.Trash[t].Name)), D(avg, "0.0"), D(avg * GameData.DeliveryParts, "0"), N(GameData.DeliveryFee(pl)));
             }
             L();
         }

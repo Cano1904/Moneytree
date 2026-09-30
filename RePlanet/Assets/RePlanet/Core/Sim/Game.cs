@@ -69,6 +69,7 @@ namespace RePlanet.Core
             foreach (var ps in S.Planets.Values) ps.RecomputeDerived();
             OnPlanetEnter(false);
             EvaluateMissions();
+            EvaluateAchievements(false);
         }
 
         public static WorldState NewWorld(string name, string startPlanet = "terra")
@@ -183,6 +184,12 @@ namespace RePlanet.Core
             var dl = new List<object>();
             foreach (var d in Drones) dl.Add(Json.Arr(Json.R(d.Pos.x, 1), Json.R(d.Pos.y, 1), Json.R(d.Pos.z, 1), d.Items.Count > 0 ? 1 : 0));
             o["d"] = dl;
+            if (S.Cur.Bots.Count > 0)
+            {
+                var bl = new List<object>();
+                foreach (var b in S.Cur.Bots.Values) bl.Add(Json.Arr(b.Id, Json.R(b.Pos.x, 2), Json.R(b.Pos.y, 2), Json.R(b.Pos.z, 2), Json.R(b.Yaw, 2), b.State));
+                o["b"] = bl;
+            }
             return o;
         }
 
@@ -246,6 +253,7 @@ namespace RePlanet.Core
             if (!S.Players.TryGetValue(pid, out p) || !p.Online) return false;
             if (!pos.IsFinite || Math.Abs(pos.x) > 160 || Math.Abs(pos.z) > 160 || pos.y < -40 || pos.y > 120) return false;
             realDt = M.Clamp(realDt, 0f, 1.0f);
+            if (!CheckPinned(p, pos)) return false;
             VehicleState veh = null;
             if (p.Vehicle != null) S.Cur.Vehicles.TryGetValue(p.Vehicle, out veh);
             float limit = veh != null ? veh.Def.Speed * 1.3f : 10f;
@@ -268,7 +276,7 @@ namespace RePlanet.Core
             }
             if (dist > 0.05f) p.LastMoveTime = Now;
             if (p.TowTimer > 0 && !tele) return false; // abgeschaltet – wartet auf Abschleppdrohne
-            if (p.Sleeping && dist > 0.6f) { p.Sleeping = false; DPl(pid); }
+            if ((p.Sleeping || p.Waiting) && dist > 0.6f) { p.Sleeping = false; p.Waiting = false; DPl(pid); }
             p.Pos = pos;
             p.Yaw = yaw;
             p.Flags = flags;
@@ -405,6 +413,7 @@ namespace RePlanet.Core
             }
             else
             {
+                if (o.D != null && o.D.Ev > 0 && ps.Dyn.ContainsKey(o.Key)) { S.AddStat("eventItems", 1); DW("stats"); }
                 if (ps.Dyn.Remove(o.Key))
                 {
                     dynRemovals.Add(o.Key);
@@ -508,6 +517,7 @@ namespace RePlanet.Core
             if (energyDirty) { energy = Rules.Energy(ps); energyDirty = false; }
             UpdateMachines(dt);
             UpdateDrones(dt);
+            TickFeatures(dt);
 
             // Wetter: Wind, Sturmwarnung und Stürme auf allen Planeten
             ps.StormTimer += dt;
@@ -545,7 +555,7 @@ namespace RePlanet.Core
             var charge = WorldGen.Get(ps.Id).Base.Stations["charge"];
             var store = WorldGen.Get(ps.Id).Base.Stations["storage"];
             bool fast = Rules.CountOf(ps, "ladestation") > 0;
-            int online = 0, sleepers = 0;
+            int online = 0, sleepers = 0, resting = 0;
             foreach (var p in S.Players.Values)
             {
                 if (!p.Online) continue;
@@ -556,7 +566,7 @@ namespace RePlanet.Core
                     if (p.TowTimer <= 0) Tow(p);
                     continue;
                 }
-                if (!slow) { if (p.Sleeping) sleepers++; continue; }
+                if (!slow) { if (p.Sleeping) sleepers++; if (p.Sleeping || p.Waiting) resting++; continue; }
                 int kind = Rules.ShelterKind(S, ps, p.Pos);
                 if (kind != p.ShelterKind)
                 {
@@ -566,6 +576,7 @@ namespace RePlanet.Core
                 bool exposed = (night || ps.StormActive) && kind == 0 && p.Vehicle == null;
                 if (exposed != p.Exposed) { p.Exposed = exposed; DPl(p.Id); }
                 if (p.Sleeping && kind == 0) { p.Sleeping = false; DPl(p.Id); }
+                if (p.Waiting && (kind == 0 || !ps.StormActive)) { p.Waiting = false; DPl(p.Id); }
                 float max = S.MaxEnergy;
                 if (exposed)
                 {
@@ -587,21 +598,26 @@ namespace RePlanet.Core
                     DPl(p.Id);
                 }
                 if (p.Sleeping) sleepers++;
+                if (p.Sleeping || p.Waiting) resting++;
             }
-            // Alle schlafen geschützt → Nacht bzw. Sturm überspringen
-            if (online > 0 && sleepers == online && (night || ps.StormActive))
+            // Sturm gemeinsam im Unterschlupf abwarten → Zeitraffer (der Sturm läuft weiter, nur schneller)
+            waitFast = online > 0 && resting == online && ps.StormActive;
+            // Alle schlafen geschützt → die Nacht wird übersprungen. Ein Sturm lässt sich nicht verschlafen:
+            // er läuft weiter, die Schläfer warten ihn im Unterschlupf ab (Zeitraffer, siehe TimeScale).
+            if (online > 0 && sleepers == online && night)
             {
-                if (night) { ps.DayOffset += Rules.SecondsUntilMorning(S, ps.Id); DP("weather"); }
-                if (ps.StormActive) EndStorm(ps, pdef);
+                ps.DayOffset += Rules.SecondsUntilMorning(S, ps.Id); DP("weather");
                 foreach (var p in S.Players.Values)
                 {
                     if (!p.Online) continue;
                     p.Sleeping = false;
+                    p.Waiting = ps.StormActive && p.ShelterKind > 0;
                     p.Energy = S.MaxEnergy;
                     DPl(p.Id);
                 }
+                S.AddStat("nights", 1); DW("stats");
                 wasNight = Rules.IsNight(S, ps.Id);
-                Fx(new JObj().Set("k", "morning"));
+                Fx(new JObj().Set("k", "morning").Set("storm", ps.StormActive));
                 SaveReason = "Nach dem Schlafen";
             }
 
@@ -633,6 +649,7 @@ namespace RePlanet.Core
             ps.StormActive = false; ps.StormWarn = false; ps.StormTimer = 0; ps.StormCount++;
             DP("weather");
             Fx(new JObj().Set("k", "storm").Set("on", false).Set("name", pdef.StormName).Set("dunes", pdef.Storms));
+            AfterStorm(ps);
         }
 
         /// <summary>Energie leer bei Nacht/Sturm ohne Unterschlupf: MIKO schaltet ab, eine Drohne schleppt es zum Stützpunkt.</summary>
@@ -752,6 +769,7 @@ namespace RePlanet.Core
             float speed = 9f * Math.Max(0.2f, eff);
             var reserved = new HashSet<string>();
             foreach (var d in Drones) if (d.Target != null) reserved.Add(d.Target);
+            foreach (var hb in S.Cur.Bots.Values) if (hb.Target != null) reserved.Add(hb.Target);
             foreach (var d in Drones)
             {
                 Building hangar = ps.Buildings.Find(b => b.Id == d.Hangar);
@@ -846,13 +864,16 @@ namespace RePlanet.Core
             SaveReason = "Projekt abgeschlossen";
         }
 
-        void UnlockCosmetic(string id)
+        /// <summary>quiet = ohne eigene Meldung (z. B. bei Erfolgen, deren Meldung die Belohnung nennt).</summary>
+        void UnlockCosmetic(string id, bool quiet = false)
         {
             if (!GameData.Cosmetics.ContainsKey(id)) return;
             if (S.CosmeticUnlocks.Add(id))
             {
                 DW("cosm");
-                Fx(new JObj().Set("k", "cosmetic").Set("id", id).Set("name", GameData.Cosmetics[id].Name));
+                var f = new JObj().Set("k", "cosmetic").Set("id", id).Set("name", GameData.Cosmetics[id].Name);
+                if (quiet) f["quiet"] = true;
+                Fx(f);
             }
         }
 

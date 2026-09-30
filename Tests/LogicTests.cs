@@ -12,6 +12,7 @@ public static class LogicTests
         {
             var g = new Game(Game.NewWorld("Lieferung", pl));
             var p = g.Join("p", "P");
+            g.S.Credits = 1000;
             var def = GameData.Planets[pl];
             for (int round = 0; round < 3; round++)
             {
@@ -22,8 +23,9 @@ public static class LogicTests
                 Assert.Equal(14, items.Count, pl + ": 14 Teile");
                 int kinds = items.Select(d => d.Type).Distinct().Count();
                 Assert.True(kinds >= Math.Min(def.Deliveries.Length, 5), pl + ": Lieferung ist gemischt (" + kinds + " Sorten: " + string.Join(",", items.Select(d => d.Type).Distinct()) + ")");
-                // Abräumen, damit die nächste Lieferung möglich ist
+                // Abräumen und Abklingzeit abwarten, damit die nächste Lieferung möglich ist
                 foreach (var d in items) g.S.Cur.Dyn.Remove(d.Id);
+                g.S.PlayTime += GameData.DeliveryCooldown + 1;
             }
         }
     }

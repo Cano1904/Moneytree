@@ -287,7 +287,7 @@ namespace RePlanet.Core
         {
             if (Closed) return;
             clock += dt;
-            if (simulate) Game.Tick(dt);
+            if (simulate) Game.Tick(dt * Game.TimeScale); // Zeitraffer beim gemeinsamen Abwarten eines Sturms
             patchTimer += dt;
             posTimer += dt;
             if (patchTimer >= 1f / 30f)
