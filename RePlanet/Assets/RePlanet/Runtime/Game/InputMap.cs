@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using RePlanet.Core;
 using UnityEngine;
 
 namespace RePlanet
@@ -11,7 +12,8 @@ namespace RePlanet
         Interact, UseTool, AltTool, ToolNext, ToolPrev,
         Tool1, Tool2, Tool3, Tool4, Tool5, Tool6, Tool7,
         Press, Menu, Map, Build, Photo, Pause, DiveUp, DiveDown,
-        Vehicle, VehicleReset, Emote, Sleep, Shelter, Missions, Inventory, QuickSave, RotateBuild
+        Vehicle, VehicleReset, Emote, Sleep, Shelter, Missions, Inventory, QuickSave, RotateBuild,
+        Radio, PerfOverlay
     }
 
     /// <summary>
@@ -33,6 +35,7 @@ namespace RePlanet
             { GameAction.Vehicle, KeyCode.F }, { GameAction.VehicleReset, KeyCode.X }, { GameAction.Emote, KeyCode.G }, { GameAction.Sleep, KeyCode.Z },
             { GameAction.Shelter, KeyCode.N }, { GameAction.Missions, KeyCode.J }, { GameAction.Inventory, KeyCode.I }, { GameAction.QuickSave, KeyCode.F5 },
             { GameAction.RotateBuild, KeyCode.R },
+            { GameAction.Radio, KeyCode.T }, { GameAction.PerfOverlay, KeyCode.F3 },
         };
 
         public static readonly Dictionary<GameAction, string> Names = new Dictionary<GameAction, string>
@@ -47,6 +50,7 @@ namespace RePlanet
             { GameAction.Vehicle, "Ein-/Aussteigen" }, { GameAction.VehicleReset, "Fahrzeug zurücksetzen" }, { GameAction.Emote, "Roboterlaut" }, { GameAction.Sleep, "Schlafen" },
             { GameAction.Shelter, "Notunterschlupf bauen" }, { GameAction.Missions, "Aufträge" }, { GameAction.Inventory, "Inventar" }, { GameAction.QuickSave, "Schnellspeichern" },
             { GameAction.RotateBuild, "Bauwerk drehen" },
+            { GameAction.Radio, "Radio an/aus" }, { GameAction.PerfOverlay, "Leistungsanzeige" },
         };
 
         static readonly Dictionary<GameAction, KeyCode> bindings = new Dictionary<GameAction, KeyCode>(Defaults);
@@ -69,6 +73,7 @@ namespace RePlanet
                 case GameAction.Sprint: return KeyCode.JoystickButton8;
                 case GameAction.Photo: return KeyCode.JoystickButton9;
                 case GameAction.DiveUp: return KeyCode.JoystickButton0;
+                case GameAction.RotateBuild: return KeyCode.JoystickButton3; // nur in der Bauansicht (Y)
                 default: return KeyCode.None;
             }
         }
@@ -111,15 +116,15 @@ namespace RePlanet
             switch (k)
             {
                 case KeyCode.None: return "—";
-                case KeyCode.Mouse0: return "Linke Maustaste";
-                case KeyCode.Mouse1: return "Rechte Maustaste";
-                case KeyCode.Mouse2: return "Mittlere Maustaste";
-                case KeyCode.LeftShift: return "Umschalt";
-                case KeyCode.LeftControl: return "Strg";
-                case KeyCode.Space: return "Leertaste";
+                case KeyCode.Mouse0: return Loc.T("Linke Maustaste");
+                case KeyCode.Mouse1: return Loc.T("Rechte Maustaste");
+                case KeyCode.Mouse2: return Loc.T("Mittlere Maustaste");
+                case KeyCode.LeftShift: return Loc.T("Umschalt");
+                case KeyCode.LeftControl: return Loc.T("Strg");
+                case KeyCode.Space: return Loc.T("Leertaste");
                 case KeyCode.Escape: return "Esc";
                 case KeyCode.Tab: return "Tab";
-                case KeyCode.Return: return "Eingabe";
+                case KeyCode.Return: return Loc.T("Eingabe");
             }
             var s = k.ToString();
             if (s.StartsWith("Alpha")) return s.Substring(5);
@@ -133,9 +138,9 @@ namespace RePlanet
             {
                 if (a == GameAction.UseTool) return "RT";
                 if (a == GameAction.AltTool) return "LT";
-                if (a == GameAction.Menu) return "Steuerkreuz ↑";
-                if (a == GameAction.Build) return "Steuerkreuz →";
-                if (a == GameAction.Sleep) return "Steuerkreuz ↓";
+                if (a == GameAction.Menu) return Loc.T("Steuerkreuz ↑");
+                if (a == GameAction.Build) return Loc.T("Steuerkreuz →");
+                if (a == GameAction.Sleep) return Loc.T("Steuerkreuz ↓");
                 if (a == GameAction.DiveDown) return "B";
                 var pb = PadButton(a);
                 switch (pb)
@@ -290,6 +295,25 @@ namespace RePlanet
             lastNav = stick;
             return new Vector2Int(x, y);
         }
+
+        // ------------------------------------------------------------ Controller direkt (Bauansicht)
+        /// <summary>Linker Stick (x = rechts, y = vorwärts) mit Totzone, ohne Tastatur.</summary>
+        public static Vector2 PadStick()
+        {
+            var v = new Vector2(Axis("RP_LX"), -Axis("RP_LY"));
+            if (v.magnitude < PadDeadzone) return Vector2.zero;
+            return v.sqrMagnitude > 1f ? v.normalized : v;
+        }
+
+        /// <summary>Schulter-Trigger gerade gedrückt (LT = links, RT = rechts) – nur Controller, nicht die Maustasten.</summary>
+        public static bool PadTriggerDown(bool right)
+        {
+            Poll();
+            return right ? curRT > 0.5f && prevRT <= 0.5f : curLT > 0.5f && prevLT <= 0.5f;
+        }
+
+        /// <summary>Controller-Taste gerade gedrückt (0 = A, 1 = B, 2 = X, 3 = Y, 4 = LB, 5 = RB, 6 = Back, 7 = Start).</summary>
+        public static bool PadButtonDown(int button) { return button >= 0 && button < 10 && Input.GetKeyDown(KeyCode.JoystickButton0 + button); }
 
         public static bool NavConfirm() { return Input.GetKeyDown(KeyCode.Return) || Input.GetKeyDown(KeyCode.KeypadEnter) || Input.GetKeyDown(KeyCode.JoystickButton0); }
         public static bool NavBack() { return Input.GetKeyDown(KeyCode.Escape) || Input.GetKeyDown(KeyCode.JoystickButton1); }

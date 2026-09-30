@@ -32,12 +32,22 @@ namespace RePlanet
                 case "Linke Maustaste": return "LMT";
                 case "Rechte Maustaste": return "RMT";
                 case "Mittlere Maustaste": return "MMT";
-                case "Leertaste": return "Leer";
+                case "Leertaste": return L("Leer");
                 case "Umschalt": return "⇧";
                 case "Steuerkreuz ↑": return "✚↑";
                 case "Steuerkreuz ↓": return "✚↓";
                 case "Steuerkreuz →": return "✚→";
                 case "Steuerkreuz ←": return "✚←";
+                // Englische Tastennamen (Sprache Englisch)
+                case "Left Mouse": return "LMB";
+                case "Right Mouse": return "RMB";
+                case "Middle Mouse": return "MMB";
+                case "Space": return "Space";
+                case "Shift": return "⇧";
+                case "D-pad ↑": return "✚↑";
+                case "D-pad ↓": return "✚↓";
+                case "D-pad →": return "✚→";
+                case "D-pad ←": return "✚←";
             }
             return label.Length > 6 ? label.Substring(0, 5) + "." : label;
         }
@@ -65,10 +75,10 @@ namespace RePlanet
             float lf = Mathf.Clamp01(vol / cap);
 
             string alert = null; Color alertCol = UISkin.Warn;
-            if (me.Energy <= 0.01f) { alert = "⚠ Notbetrieb – zum Stützpunkt"; alertCol = (s.ReduceFlashing || Mathf.Repeat(Time.unscaledTime, 1f) < 0.6f) ? UISkin.Bad : UISkin.Warn; }
-            else if (lf >= 0.99f) alert = "Behälter voll" + (level > 0 ? "  [" + ShortKey(InputMap.Label(GameAction.Press)) + "] pressen" : "");
-            else if (level > 0 && Hud.Diving) { alert = "Tauchen  [" + ShortKey(InputMap.Label(GameAction.DiveUp)) + "] ↑  [" + ShortKey(InputMap.Label(GameAction.DiveDown)) + "] ↓"; alertCol = UISkin.Teal; }
-            else if (level > 0 && Hud.Swimming && w.TechLevel("dive") > 0) { alert = "[" + ShortKey(InputMap.Label(GameAction.DiveDown)) + "] abtauchen"; alertCol = UISkin.Teal; }
+            if (me.Energy <= 0.01f) { alert = L("⚠ Notbetrieb – zum Stützpunkt"); alertCol = (s.ReduceFlashing || Mathf.Repeat(Time.unscaledTime, 1f) < 0.6f) ? UISkin.Bad : UISkin.Warn; }
+            else if (lf >= 0.99f) alert = L("Behälter voll") + (level > 0 ? "  [" + ShortKey(InputMap.Label(GameAction.Press)) + L("] pressen") : "");
+            else if (level > 0 && Hud.Diving) { alert = L("Tauchen  [") + ShortKey(InputMap.Label(GameAction.DiveUp)) + "] ↑  [" + ShortKey(InputMap.Label(GameAction.DiveDown)) + "] ↓"; alertCol = UISkin.Teal; }
+            else if (level > 0 && Hud.Swimming && w.TechLevel("dive") > 0) { alert = "[" + ShortKey(InputMap.Label(GameAction.DiveDown)) + L("] abtauchen"); alertCol = UISkin.Teal; }
 
             var r = new Rect(16, 14, 262, alert != null ? 106 : 82);
             UISkin.PanelBox(r);
@@ -90,7 +100,7 @@ namespace RePlanet
         // ================================================================== Ziel (einblendend, kompakt)
         void DrawObjectiveCompact(GameApp app, WorldState w, int level)
         {
-            string obj = Objective(w);
+            string obj = L(Objective(w));
             float now = Time.unscaledTime;
             // Ziel nach Menü/Karte (HUD war nicht sichtbar) oder bei Änderung wieder zeigen
             if (now - objLastHudTime > 0.4f) ShowObjective(level == Settings.HintsOff ? 4f : 6f);
@@ -124,7 +134,7 @@ namespace RePlanet
                 var r = new Rect(VW * 0.5f - 44, 14, 88, 26);
                 UISkin.RoundRect(r, new Color(0, 0, 0, UISkin.Contrast ? 0.9f : 0.35f));
                 UISkin.Tex(new Rect(r.x + 10, r.y + 7, 12, 12), UISkin.Shape("diamond"), UISkin.Accent * new Color(1, 1, 1, 0.8f));
-                GUI.Label(new Rect(r.x + 26, r.y, 34, 26), UISkin.Col("Ziel", UISkin.TextDim), UISkin.LabelTiny);
+                GUI.Label(new Rect(r.x + 26, r.y, 34, 26), UISkin.Col(L("Ziel"), UISkin.TextDim), UISkin.LabelTiny);
                 UISkin.KeyCap(r.x + 60, r.y + 4, k, 18);
             }
         }
@@ -160,7 +170,7 @@ namespace RePlanet
                     UISkin.Tex(new Rect(r.center.x - 11, r.y + 16, 22, 22), UISkin.Shape(ToolShapes[i]), ic);
                     UISkin.KeyCap(r.x + 3, r.y + 3, ShortKey(InputMap.Label(ToolKeys[i])), 16);
                 }
-                if (ai >= 0) GUI.Label(new Rect(x0, y0 - 26, total, 24), ToolShort[ai], SmallCenter());
+                if (ai >= 0) GUI.Label(new Rect(x0, y0 - 26, total, 24), L(ToolShort[ai]), SmallCenter());
                 GUI.color = oc;
             }
             if (a < 0.99f && ai >= 0)
@@ -202,7 +212,7 @@ namespace RePlanet
                 if (Hud.PromptAt.HasValue && WorldToHud(Hud.PromptAt.Value, out p)) { anchor = p; anchored = true; }
                 anchor = DrawChip(anchor, key != null ? ShortKey(key) : null, word, Hud.PromptHold, key == null, false);
             }
-            string bl = Hud.BlockedShort ?? Hud.Blocked;
+            string bl = L(Hud.BlockedShort ?? Hud.Blocked);
             if (!string.IsNullOrEmpty(bl))
             {
                 Vector2 bp = anchor + new Vector2(0f, anchored || word != null || key != null ? 30f : 0f);
@@ -240,8 +250,8 @@ namespace RePlanet
         void DrawShelterCompact(GameApp app, WorldState w, PlayerData me, PlanetDef pd, int level)
         {
             bool storm = w.Cur.StormActive;
-            string title = storm ? pd.StormName + "!" : "Nacht";
-            string dist = Hud.ShelterDist >= 0 ? "  Unterschlupf " + Hud.ShelterDist.ToString("0") + " m" : "";
+            string title = storm ? pd.StormName + "!" : L("Nacht");
+            string dist = Hud.ShelterDist >= 0 ? L("  Unterschlupf ") + Hud.ShelterDist.ToString("0") + " m" : "";
             float bw = 420f;
             var r = new Rect((VW - bw) * 0.5f, 70, bw, level > 0 ? 64 : 38);
             UISkin.RoundRect(r, new Color(UISkin.Bad.r * 0.35f, UISkin.Bad.g * 0.1f, 0.02f, UISkin.Contrast ? 1f : 0.72f));
@@ -257,15 +267,18 @@ namespace RePlanet
             {
                 float x = r.x + 46;
                 x += UISkin.KeyCap(x, r.y + 36, ShortKey(InputMap.Label(GameAction.Shelter)), 20) + 6;
-                GUI.Label(new Rect(x, r.y + 33, 180, 26), UISkin.Col("Notunterschlupf " + Rules.ShelterCost, UISkin.TextDim), UISkin.LabelTiny);
+                GUI.Label(new Rect(x, r.y + 33, 180, 26), UISkin.Col(L("Notunterschlupf ") + Rules.ShelterCost, UISkin.TextDim), UISkin.LabelTiny);
                 x += 176;
                 x += UISkin.KeyCap(x, r.y + 36, ShortKey(InputMap.Label(GameAction.Sleep)), 20) + 6;
-                GUI.Label(new Rect(x, r.y + 33, 120, 26), UISkin.Col("Schlafen", UISkin.TextDim), UISkin.LabelTiny);
+                GUI.Label(new Rect(x, r.y + 33, 120, 26), UISkin.Col(L("Schlafen"), UISkin.TextDim), UISkin.LabelTiny);
             }
         }
 
         // ================================================================== Meldungen kürzen und zusammenfassen
-        /// <summary>Wertet neue Meldungen nach der Hinweisstufe aus (kürzen, unterdrücken, gleichartige zusammenfassen).</summary>
+        /// <summary>
+        /// Wertet neue Meldungen nach der Hinweisstufe aus (kürzen, unterdrücken, gleichartige zusammenfassen).
+        /// Meldungen und Kurzformen sind deutsch (Kanon, wie vom Server); übersetzt wird erst beim Zeichnen (Loc-Vorlagen).
+        /// </summary>
         void ProcessToasts(GameApp app)
         {
             var list = Hud.Toasts;
@@ -405,7 +418,7 @@ namespace RePlanet
         {
             if (HintLevel(app) == Settings.HintsOff) return;
             var r = new Rect(VW - 250, VH - 44, 230, 28);
-            GUI.Label(r, UISkin.Col("Beliebige Taste: weiter", new Color(1, 1, 1, 0.55f)), SmallRight());
+            GUI.Label(r, UISkin.Col(L("Beliebige Taste: weiter"), new Color(1, 1, 1, 0.55f)), SmallRight());
         }
     }
 }

@@ -38,7 +38,6 @@ namespace RePlanet
         string guiError;
         float guiErrorUntil;
         string confirm;          // offene Sicherheitsabfrage (Schlüssel)
-        float fps, fpsAcc; int fpsFrames;
         float textScaleUsed;
 
         static string L(string de) { return Loc.T(de); }
@@ -55,8 +54,7 @@ namespace RePlanet
             var app = GameApp.I;
             if (app == null) return;
 
-            fpsAcc += Time.unscaledDeltaTime; fpsFrames++;
-            if (fpsAcc >= 0.5f) { fps = fpsFrames / fpsAcc; fpsAcc = 0; fpsFrames = 0; }
+            UpdatePerf(app);
 
             var screen = UIState.Screen;
             bool fresh = false;
@@ -82,8 +80,8 @@ namespace RePlanet
                 {
                     autoOpenCoop = false;
                     string inv, err;
-                    if (app.OpenCoop(out inv, out err)) { coopError = null; OpenSub(UIScreen.Coop, UIScreen.None); Hud.Show("Koop geöffnet – Einladung teilen!", ToastKind.Success, 5f); }
-                    else Hud.Show("Koop konnte nicht geöffnet werden: " + err, ToastKind.Error, 8f);
+                    if (app.OpenCoop(out inv, out err)) { coopError = null; OpenSub(UIScreen.Coop, UIScreen.None); Hud.Show(L("Koop geöffnet – Einladung teilen!"), ToastKind.Success, 5f); }
+                    else Hud.Show(L("Koop konnte nicht geöffnet werden: ") + err, ToastKind.Error, 8f);
                 }
                 else if (autoOpenTimeout <= 0 || app.Mode == AppMode.Menu && UIState.Screen != UIScreen.Loading) autoOpenCoop = false;
             }
@@ -218,7 +216,16 @@ namespace RePlanet
                 if (!inGame) return;
                 if (BuildMode.Active)
                 {
-                    if (InputMap.Down(GameAction.Pause) || InputMap.Down(GameAction.Build) || back) { ExitBuild(); AudioManager.Ui("ui_back"); return; }
+                    if (InputMap.Down(GameAction.Pause) || InputMap.Down(GameAction.Build)) { ExitBuild(); AudioManager.Ui("ui_back"); return; }
+                    if (back)
+                    {
+                        // Zurück (B/Esc) bricht zuerst Nachfrage, Umsetzen oder Auswahl ab, erst dann wird die Bauansicht verlassen
+                        if (confirm != null) confirm = null;
+                        else if (BuildMode.MoveId >= 0 || BuildMode.Type != null) { BuildMode.MoveId = -1; BuildMode.Type = null; }
+                        else ExitBuild();
+                        AudioManager.Ui("ui_back");
+                        return;
+                    }
                     if (InputMap.Down(GameAction.Menu)) { ExitBuild(); OpenMenu(UIState.MenuTab); return; }
                     return;
                 }
@@ -230,6 +237,7 @@ namespace RePlanet
                 if (InputMap.Down(GameAction.Build)) { ToggleBuild(app); return; }
                 if (InputMap.Down(GameAction.Photo)) { EnterPhoto(); return; }
                 if (InputMap.Down(GameAction.QuickSave)) { app.SaveNow(); return; }
+                if (InputMap.Down(GameAction.Radio)) { ToggleRadio(); return; }
                 return;
             }
 
@@ -294,9 +302,9 @@ namespace RePlanet
             if (BuildMode.Active) { ExitBuild(); return; }
             var w = app.W; var me = app.Me;
             if (w == null || me == null) return;
-            if (me.Vehicle != null) { Hud.Show("Zum Bauen erst aussteigen.", ToastKind.Info); return; }
+            if (me.Vehicle != null) { Hud.Show(L("Zum Bauen erst aussteigen."), ToastKind.Info); return; }
             var bl = WorldGen.Get(w.CurrentPlanet).Base;
-            if (!bl.InBase(me.Pos.x, me.Pos.z)) { Hud.Show("Bauen geht nur am Stützpunkt.", ToastKind.Info); AudioManager.Ui("beep_error"); return; }
+            if (!bl.InBase(me.Pos.x, me.Pos.z)) { Hud.Show(L("Bauen geht nur am Stützpunkt."), ToastKind.Info); AudioManager.Ui("beep_error"); return; }
             BuildMode.Active = true;
             BuildMode.MoveId = -1;
             BuildMode.RequestDemolish = false;
@@ -366,13 +374,14 @@ namespace RePlanet
             try
             {
                 DrawEntryOverlay();
+                DrawPerfOverlay(app);
                 bool photoClean = screen == UIScreen.Photo && PhotoMode.HideHud && !photoPanel;
                 if (screen != UIScreen.Intro && screen != UIScreen.Ending && screen != UIScreen.Loading && !photoClean) DrawToasts(app);
                 if (guiError != null && Time.unscaledTime < guiErrorUntil)
                 {
                     var r = new Rect(20, VH - 70, Mathf.Min(900, VW - 40), 50);
                     UISkin.PanelBox(r);
-                    GUI.Label(new Rect(r.x + 14, r.y, r.width - 28, r.height), UISkin.Col("Anzeigefehler: " + guiError, UISkin.Bad), UISkin.LabelSmall);
+                    GUI.Label(new Rect(r.x + 14, r.y, r.width - 28, r.height), UISkin.Col(L("Anzeigefehler: ") + guiError, UISkin.Bad), UISkin.LabelSmall);
                 }
             }
             catch (ExitGUIException) { throw; }
@@ -463,7 +472,7 @@ namespace RePlanet
             {
                 // Nicht im Fokus-Ring (sonst stünde der Fokus zuerst auf „Zurück“) – per Esc/B erreichbar
                 var br = new Rect(r.xMax - 196, r.y + 14, 176, 38);
-                if (GUI.Button(br, "‹ " + L("Zurück") + (InputMap.UsingPad ? " (B)" : " (Esc)"), UISkin.ButtonSmall)) Back();
+                if (GUI.Button(br, "‹ " + L("Zurück") + (InputMap.UsingPad ? " (B)" : L(" (Esc)")), UISkin.ButtonSmall)) Back();
             }
             return new Rect(r.x + 24, r.y + 74, r.width - 48, r.height - 90);
         }
@@ -472,7 +481,7 @@ namespace RePlanet
         {
             if (seconds < 0) seconds = 0;
             int h = (int)(seconds / 3600), m = (int)(seconds % 3600 / 60);
-            return h > 0 ? h + " Std. " + m.ToString("00") + " Min." : m + " Min.";
+            return h > 0 ? h + L(" Std. ") + m.ToString("00") + L(" Min.") : m + L(" Min.");
         }
 
         /// <summary>Zahl mit deutschem Tausenderpunkt (ohne Kulturabhängigkeit).</summary>

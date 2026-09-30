@@ -274,6 +274,7 @@ namespace RePlanet
             PhotoMode.Active = false;
             BuildMode.Active = false;
             Hud.ClearTransient();
+            Narrator.ClearGameLines();
             if (had) OnSessionEnded?.Invoke();
         }
 
@@ -417,6 +418,8 @@ namespace RePlanet
                         if (GameData.Planets.TryGetValue(f.Str("planet") ?? "", out pd)) Hud.Show(pd.Name + " – " + pd.Subtitle, ToastKind.Story, 5f);
                         break;
                     }
+                case "narrate": if (Settings.NarratorInGame) Narrator.PlayGameLine(f.Str("id")); break;
+                case "radio": Hud.Show(Loc.F("Neues Stück im Radio: „{0}“ [{1}]", Loc.T(name), InputMap.Label(GameAction.Radio)), ToastKind.Success, 5f); break;
                 default: FeatureToasts.Show(this, f); break;
                 case "ending":
                     if (OnEndingRequested != null)

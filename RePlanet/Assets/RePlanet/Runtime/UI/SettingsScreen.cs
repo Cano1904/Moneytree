@@ -32,7 +32,7 @@ namespace RePlanet
             GameAction.Press, GameAction.Vehicle, GameAction.VehicleReset, GameAction.DiveUp, GameAction.DiveDown,
             GameAction.Sleep, GameAction.Shelter, GameAction.Emote,
             GameAction.Menu, GameAction.Inventory, GameAction.Missions, GameAction.Map, GameAction.Build, GameAction.RotateBuild,
-            GameAction.Photo, GameAction.QuickSave, GameAction.Pause,
+            GameAction.Photo, GameAction.QuickSave, GameAction.Pause, GameAction.Radio, GameAction.PerfOverlay,
         };
 
         static readonly string[,] PadTable =
@@ -54,6 +54,7 @@ namespace RePlanet
             { "Steuerkreuz →", "Bauansicht" },
             { "Steuerkreuz ↓", "Schlafen" },
             { "Steuerkreuz ←", "Roboterlaut" },
+            { "Bauansicht", "A platzieren · Y drehen · X umsetzen · Back abreißen · LB/RB Bauwerk · LT/RT Kategorie · B abbrechen" },
         };
 
         void EnsureResolutions()
@@ -71,7 +72,7 @@ namespace RePlanet
             catch (Exception) { }
             resList.Sort((a, b) => a == Vector2Int.zero ? -1 : b == Vector2Int.zero ? 1 : (a.x * 10000 + a.y).CompareTo(b.x * 10000 + b.y));
             resNames = new string[resList.Count];
-            for (int i = 0; i < resList.Count; i++) resNames[i] = resList[i] == Vector2Int.zero ? "Bildschirm (" + Screen.currentResolution.width + " × " + Screen.currentResolution.height + ")" : resList[i].x + " × " + resList[i].y;
+            for (int i = 0; i < resList.Count; i++) resNames[i] = resList[i] == Vector2Int.zero ? L("Bildschirm (") + Screen.currentResolution.width + " × " + Screen.currentResolution.height + ")" : resList[i].x + " × " + resList[i].y;
         }
 
         int CurrentResIndex(Settings s)
@@ -112,15 +113,15 @@ namespace RePlanet
             if (k == KeyCode.None) return;
             var a = capturing.Value;
             capturing = null;
-            if (k == KeyCode.Escape) { captureMsg = "Abgebrochen."; AudioManager.Ui("ui_back"); return; }
+            if (k == KeyCode.Escape) { captureMsg = L("Abgebrochen."); AudioManager.Ui("ui_back"); return; }
             // Wer verliert die Taste?
             string lost = null;
             foreach (GameAction other in Enum.GetValues(typeof(GameAction)))
-                if (other != a && InputMap.Get(other) == k && other != GameAction.RotateBuild && a != GameAction.RotateBuild) { string n; lost = InputMap.Names.TryGetValue(other, out n) ? n : other.ToString(); }
+                if (other != a && InputMap.Get(other) == k && other != GameAction.RotateBuild && a != GameAction.RotateBuild) { string n; lost = InputMap.Names.TryGetValue(other, out n) ? L(n) : other.ToString(); }
             InputMap.Rebind(a, k);
             app.Settings.Save();
-            string an; InputMap.Names.TryGetValue(a, out an);
-            captureMsg = "„" + (an ?? a.ToString()) + "“ → " + InputMap.KeyName(k) + (lost != null ? UISkin.Col("   · „" + lost + "“ ist jetzt nicht belegt.", UISkin.Warn) : "");
+            string an; InputMap.Names.TryGetValue(a, out an); an = L(an);
+            captureMsg = "„" + (an ?? a.ToString()) + "“ → " + InputMap.KeyName(k) + (lost != null ? UISkin.Col("   · „" + lost + L("“ ist jetzt nicht belegt."), UISkin.Warn) : "");
             AudioManager.Ui("ui_click");
         }
 
@@ -173,38 +174,38 @@ namespace RePlanet
             int q = UINav.Choice(new Rect(0, y, w, RowH), L("Qualität"), s.Quality, Settings.QualityNames);
             if (q != s.Quality) { s.ApplyPreset(q); MarkSettings(); }
             y += RowStep;
-            y = Note("Die Qualitätsstufe setzt Schatten, Kantenglättung, Sichtweite, Partikel und Render-Skalierung. Einzelwerte lassen sich danach anpassen.", w, y);
+            y = Note(L("Die Qualitätsstufe setzt Schatten, Kantenglättung, Sichtweite, Partikel und Render-Skalierung. Einzelwerte lassen sich danach anpassen."), w, y);
 
-            y = Heading("Anzeige", w, y);
+            y = Heading(L("Anzeige"), w, y);
             if (pendingWindow < 0) pendingWindow = s.WindowMode;
             if (pendingRes < 0) pendingRes = CurrentResIndex(s);
-            pendingWindow = UINav.Choice(new Rect(0, y, w, RowH), "Fenstermodus", pendingWindow, Settings.WindowModeNames);
+            pendingWindow = UINav.Choice(new Rect(0, y, w, RowH), L("Fenstermodus"), pendingWindow, Settings.WindowModeNames);
             y += RowStep;
             pendingRes = UINav.Choice(new Rect(0, y, w, RowH), L("Auflösung"), pendingRes, resNames);
             y += RowStep;
             bool changed = pendingWindow != s.WindowMode || pendingRes != CurrentResIndex(s);
-            if (UINav.Button(new Rect(w * 0.42f, y, 260, 40), "Übernehmen", changed, UISkin.ButtonSmall))
+            if (UINav.Button(new Rect(w * 0.42f, y, 260, 40), L("Übernehmen"), changed, UISkin.ButtonSmall))
             {
                 var v = resList[Mathf.Clamp(pendingRes, 0, resList.Count - 1)];
                 s.ResWidth = v.x; s.ResHeight = v.y; s.WindowMode = pendingWindow;
                 s.Apply(); s.Save();
-                Hud.Show("Anzeige übernommen.", ToastKind.Info, 2f);
+                Hud.Show(L("Anzeige übernommen."), ToastKind.Info, 2f);
             }
-            if (changed) GUI.Label(new Rect(w * 0.42f + 276, y, w * 0.58f - 280, 40), UISkin.Col("Noch nicht übernommen", UISkin.Warn), UISkin.LabelSmall);
-            else if (Application.isEditor) GUI.Label(new Rect(w * 0.42f + 276, y, w * 0.58f - 280, 40), "Im Editor ohne Wirkung", UISkin.LabelSmall);
+            if (changed) GUI.Label(new Rect(w * 0.42f + 276, y, w * 0.58f - 280, 40), UISkin.Col(L("Noch nicht übernommen"), UISkin.Warn), UISkin.LabelSmall);
+            else if (Application.isEditor) GUI.Label(new Rect(w * 0.42f + 276, y, w * 0.58f - 280, 40), L("Im Editor ohne Wirkung"), UISkin.LabelSmall);
             y += RowStep;
             bool vs = UINav.Toggle(new Rect(0, y, w, RowH), s.VSync, "VSync");
             if (vs != s.VSync) { s.VSync = vs; MarkSettings(); }
             y += RowStep;
             string[] fpsNames = new string[Settings.FpsOptions.Length];
             int fi = 0;
-            for (int i = 0; i < fpsNames.Length; i++) { fpsNames[i] = Settings.FpsOptions[i] == 0 ? "Unbegrenzt" : Settings.FpsOptions[i] + " FPS"; if (Settings.FpsOptions[i] == s.FpsLimit) fi = i; }
+            for (int i = 0; i < fpsNames.Length; i++) { fpsNames[i] = Settings.FpsOptions[i] == 0 ? L("Unbegrenzt") : Settings.FpsOptions[i] + " FPS"; if (Settings.FpsOptions[i] == s.FpsLimit) fi = i; }
             int nfi = UINav.Choice(new Rect(0, y, w, RowH), L("Bildrate begrenzen"), fi, fpsNames);
             if (nfi != fi) { s.FpsLimit = Settings.FpsOptions[nfi]; MarkSettings(); }
             y += RowStep;
-            if (s.VSync && s.FpsLimit > 0) y = Note("Hinweis: Die Begrenzung wirkt nur bei ausgeschaltetem VSync.", w, y);
+            if (s.VSync && s.FpsLimit > 0) y = Note(L("Hinweis: Die Begrenzung wirkt nur bei ausgeschaltetem VSync."), w, y);
 
-            y = Heading("Bildqualität", w, y);
+            y = Heading(L("Bildqualität"), w, y);
             int sh = UINav.Choice(new Rect(0, y, w, RowH), L("Schatten"), Mathf.Clamp(s.Shadows, 0, 3), Settings.ShadowNames);
             if (sh != s.Shadows) { s.Shadows = sh; MarkSettings(); }
             y += RowStep;
@@ -221,15 +222,16 @@ namespace RePlanet
             int pa = UINav.Choice(new Rect(0, y, w, RowH), L("Partikel"), Mathf.Clamp(s.Particles, 0, 2), ParticleNames);
             if (pa != s.Particles) { s.Particles = pa; MarkSettings(); }
             y += RowStep;
-            float br = UINav.Slider(new Rect(0, y, w, RowH), "Helligkeit", s.Brightness, 0.7f, 1.3f, 0.05f, (s.Brightness * 100).ToString("0") + " %");
+            float br = UINav.Slider(new Rect(0, y, w, RowH), L("Helligkeit"), s.Brightness, 0.7f, 1.3f, 0.05f, (s.Brightness * 100).ToString("0") + " %");
             if (Mathf.Abs(br - s.Brightness) > 1e-4f) { s.Brightness = br; MarkSettings(); }
             y += RowStep;
-            float fov = UINav.Slider(new Rect(0, y, w, RowH), "Sichtfeld", s.Fov, 45f, 90f, 1f, s.Fov.ToString("0") + "°");
+            float fov = UINav.Slider(new Rect(0, y, w, RowH), L("Sichtfeld"), s.Fov, 45f, 90f, 1f, s.Fov.ToString("0") + "°");
             if (Mathf.Abs(fov - s.Fov) > 1e-4f) { s.Fov = fov; MarkSettings(); }
             y += RowStep;
-            bool sf = UINav.Toggle(new Rect(0, y, w, RowH), s.ShowFps, "Bildrate anzeigen");
+            bool sf = UINav.Toggle(new Rect(0, y, w, RowH), s.ShowFps, L("Leistungsanzeige") + " [" + InputMap.Label(GameAction.PerfOverlay) + "]");
             if (sf != s.ShowFps) { s.ShowFps = sf; MarkSettings(); }
             y += RowStep;
+            y = Note(L("Oben links: Bildrate (aktuell, Minimum und Mittel der letzten 5 Sekunden), Bildzeit, Draw-Calls, Qualitätsstufe und Auflösung."), w, y);
             bool ds = UINav.Toggle(new Rect(0, y, w, RowH), s.DetailShaders, "Detail-Shader (experimentell, wirkt nach Neustart)");
             if (ds != s.DetailShaders) { s.DetailShaders = ds; MarkSettings(); }
             y += RowStep;
@@ -255,35 +257,39 @@ namespace RePlanet
             if (Mathf.Abs(nv - s.AmbientVolume) > 1e-4f) { s.AmbientVolume = nv; MarkSettings(); }
             y = VolumeSlider(L("Oberfläche"), s.UiVolume, w, y, out nv);
             if (Mathf.Abs(nv - s.UiVolume) > 1e-4f) { s.UiVolume = nv; MarkSettings(); }
-            y = VolumeSlider("Stimmen & Roboterlaute", s.VoiceVolume, w, y, out nv);
+            y = VolumeSlider(L("Stimmen & Roboterlaute"), s.VoiceVolume, w, y, out nv);
             if (Mathf.Abs(nv - s.VoiceVolume) > 1e-4f) { s.VoiceVolume = nv; MarkSettings(); }
-            bool mu = UINav.Toggle(new Rect(0, y, w, RowH), s.MuteWhenUnfocused, "Stumm, wenn das Spiel nicht im Vordergrund ist");
+            bool mu = UINav.Toggle(new Rect(0, y, w, RowH), s.MuteWhenUnfocused, L("Stumm, wenn das Spiel nicht im Vordergrund ist"));
             if (mu != s.MuteWhenUnfocused) { s.MuteWhenUnfocused = mu; MarkSettings(); }
             y += RowStep;
+            bool nig = UINav.Toggle(new Rect(0, y, w, RowH), s.NarratorInGame, L("Erzähler im Spiel"));
+            if (nig != s.NarratorInGame) { s.NarratorInGame = nig; if (!nig) Narrator.ClearGameLines(); MarkSettings(); }
+            y += RowStep;
+            y = Note(L("Der Erzähler spricht zu besonderen Momenten einen kurzen Satz – jeder nur einmal pro Spielstand. Ohne Aufnahme erscheint der Satz als Untertitel."), w, y);
             return y;
         }
 
         float SettingsControls(GameApp app, Settings s, float w, float y)
         {
-            float ms = UINav.Slider(new Rect(0, y, w, RowH), "Mausempfindlichkeit", s.MouseSensitivity, 0.1f, 4f, 0.05f, s.MouseSensitivity.ToString("0.00") + "×");
+            float ms = UINav.Slider(new Rect(0, y, w, RowH), L("Mausempfindlichkeit"), s.MouseSensitivity, 0.1f, 4f, 0.05f, s.MouseSensitivity.ToString("0.00") + "×");
             if (Mathf.Abs(ms - s.MouseSensitivity) > 1e-4f) { s.MouseSensitivity = ms; MarkSettings(); }
             y += RowStep;
-            float ps = UINav.Slider(new Rect(0, y, w, RowH), "Controller-Empfindlichkeit", s.PadSensitivity, 0.1f, 4f, 0.05f, s.PadSensitivity.ToString("0.00") + "×");
+            float ps = UINav.Slider(new Rect(0, y, w, RowH), L("Controller-Empfindlichkeit"), s.PadSensitivity, 0.1f, 4f, 0.05f, s.PadSensitivity.ToString("0.00") + "×");
             if (Mathf.Abs(ps - s.PadSensitivity) > 1e-4f) { s.PadSensitivity = ps; MarkSettings(); }
             y += RowStep;
             bool iy = UINav.Toggle(new Rect(0, y, w, RowH), s.InvertY, L("Y-Achse umkehren"));
             if (iy != s.InvertY) { s.InvertY = iy; MarkSettings(); }
             y += RowStep;
-            bool ha = UINav.Toggle(new Rect(0, y, w, RowH), s.HoldActions, "Werkzeuge halten statt umschalten");
+            bool ha = UINav.Toggle(new Rect(0, y, w, RowH), s.HoldActions, L("Werkzeuge halten statt umschalten"));
             if (ha != s.HoldActions) { s.HoldActions = ha; MarkSettings(); }
             y += RowStep;
-            y = Note(s.HoldActions ? "Werkzeug wirkt, solange die Taste gehalten wird." : "Einmal drücken startet das Werkzeug, erneut drücken stoppt es (schont die Hände).", w, y);
+            y = Note(s.HoldActions ? L("Werkzeug wirkt, solange die Taste gehalten wird.") : L("Einmal drücken startet das Werkzeug, erneut drücken stoppt es (schont die Hände)."), w, y);
 
-            y = Heading(L("Tasten belegen") + " (Tastatur & Maus)", w, y);
+            y = Heading(L("Tasten belegen") + L(" (Tastatur & Maus)"), w, y);
             if (capturing != null)
             {
-                string an; InputMap.Names.TryGetValue(capturing.Value, out an);
-                GUI.Label(new Rect(10, y, w - 20, 34), UISkin.Col("Neue Taste für „" + an + "“ drücken … (Esc bricht ab)", UISkin.Accent), UISkin.LabelBold);
+                string an; InputMap.Names.TryGetValue(capturing.Value, out an); an = L(an);
+                GUI.Label(new Rect(10, y, w - 20, 34), UISkin.Col(L("Neue Taste für „") + an + L("“ drücken … (Esc bricht ab)"), UISkin.Accent), UISkin.LabelBold);
                 y += 40;
             }
             else if (!string.IsNullOrEmpty(captureMsg))
@@ -298,7 +304,7 @@ namespace RePlanet
                 int col = i % 2;
                 float x = col * (colW + 20);
                 if (col == 0 && i > 0) y += 46;
-                string name; InputMap.Names.TryGetValue(a, out name);
+                string name; InputMap.Names.TryGetValue(a, out name); name = L(name);
                 GUI.Label(new Rect(x + 10, y, colW * 0.55f, 40), name ?? a.ToString(), UISkin.Label);
                 bool isCap = capturing != null && capturing.Value == a;
                 string keyText = isCap ? "…" : InputMap.KeyName(InputMap.Get(a));
@@ -311,38 +317,38 @@ namespace RePlanet
                 }
             }
             y += 52;
-            if (UINav.Button(new Rect(0, y, 320, 42), "Standard wiederherstellen", capturing == null, UISkin.ButtonSmall))
+            if (UINav.Button(new Rect(0, y, 320, 42), L("Standard wiederherstellen"), capturing == null, UISkin.ButtonSmall))
             {
                 InputMap.ResetDefaults();
                 s.Save();
-                captureMsg = "Standardbelegung wiederhergestellt.";
+                captureMsg = L("Standardbelegung wiederhergestellt.");
             }
             y += 54;
-            y = Note("„Bauwerk drehen“ darf dieselbe Taste wie eine andere Aktion nutzen – es wirkt nur in der Bauansicht. Menüs lassen sich immer mit Pfeiltasten, Eingabe und Esc bedienen; im Spielmenü wechseln Q/E die Reiter.", w, y);
+            y = Note(L("„Bauwerk drehen“ darf dieselbe Taste wie eine andere Aktion nutzen – es wirkt nur in der Bauansicht. Menüs lassen sich immer mit Pfeiltasten, Eingabe und Esc bedienen; im Spielmenü wechseln Q/E die Reiter."), w, y);
 
-            y = Heading("Controller (feste Belegung)", w, y);
+            y = Heading(L("Controller (feste Belegung)"), w, y);
             int rows = PadTable.GetLength(0);
             for (int i = 0; i < rows; i++)
             {
                 var rr = new Rect(0, y, w, 34);
                 if (i % 2 == 0) UISkin.RoundRect(rr, new Color(1, 1, 1, 0.04f));
-                UISkin.KeyCap(12, y + 5, PadTable[i, 0], 24);
-                GUI.Label(new Rect(w * 0.3f, y, w * 0.7f, 34), PadTable[i, 1], UISkin.LabelSmall);
+                UISkin.KeyCap(12, y + 5, L(PadTable[i, 0]), 24);
+                GUI.Label(new Rect(w * 0.3f, y, w * 0.7f, 34), L(PadTable[i, 1]), UISkin.LabelSmall);
                 y += 36;
             }
             y += 6;
-            y = Note("Controller werden über Unitys klassischen Input Manager (XInput) gelesen. Tastatur/Maus und Controller können jederzeit gewechselt werden – Hinweise im Spiel passen sich an.", w, y);
+            y = Note(L("Controller werden über Unitys klassischen Input Manager (XInput) gelesen. Tastatur/Maus und Controller können jederzeit gewechselt werden – Hinweise im Spiel passen sich an."), w, y);
             return y;
         }
 
         float SettingsAccess(GameApp app, Settings s, float w, float y)
         {
-            int hi = UINav.Choice(new Rect(0, y, w, RowH), "Hinweise", Mathf.Clamp(s.Hints, 0, 2), Settings.HintNames);
+            int hi = UINav.Choice(new Rect(0, y, w, RowH), L("Hinweise"), Mathf.Clamp(s.Hints, 0, 2), Settings.HintNames);
             if (hi != s.Hints) { s.Hints = hi; MarkSettings(); }
             y += RowStep;
-            y = Note(s.Hints == Settings.HintsOff ? "Keine Tasten- und Tipp-Hinweise; nur Warnungen und wichtige Meldungen."
-                : s.Hints == Settings.HintsMinimal ? "Ruhiges HUD: Tastensymbol und ein Wort direkt am Objekt, kurze Meldungen. Das Ziel blendet sich aus – mit [" + InputMap.Label(GameAction.Missions) + "] oder bei einem neuen Ziel kommt es zurück."
-                : "Alle Hinweise als ausführlicher Text (Tastenhilfe, Ziel dauerhaft, vollständige Meldungen).", w, y);
+            y = Note(s.Hints == Settings.HintsOff ? L("Keine Tasten- und Tipp-Hinweise; nur Warnungen und wichtige Meldungen.")
+                : s.Hints == Settings.HintsMinimal ? L("Ruhiges HUD: Tastensymbol und ein Wort direkt am Objekt, kurze Meldungen. Das Ziel blendet sich aus – mit [") + InputMap.Label(GameAction.Missions) + L("] oder bei einem neuen Ziel kommt es zurück.")
+                : L("Alle Hinweise als ausführlicher Text (Tastenhilfe, Ziel dauerhaft, vollständige Meldungen)."), w, y);
             bool st = UINav.Toggle(new Rect(0, y, w, RowH), s.Subtitles, L("Untertitel"));
             if (st != s.Subtitles) { s.Subtitles = st; MarkSettings(); }
             y += RowStep;
@@ -352,29 +358,29 @@ namespace RePlanet
             bool cs = UINav.Toggle(new Rect(0, y, w, RowH), s.CameraShake, L("Kamerawackeln"));
             if (cs != s.CameraShake) { s.CameraShake = cs; MarkSettings(); }
             y += RowStep;
-            bool hc = UINav.Toggle(new Rect(0, y, w, RowH), s.HighContrast, "Hoher Kontrast");
+            bool hc = UINav.Toggle(new Rect(0, y, w, RowH), s.HighContrast, L("Hoher Kontrast"));
             if (hc != s.HighContrast) { s.HighContrast = hc; MarkSettings(); }
             y += RowStep;
-            bool rf = UINav.Toggle(new Rect(0, y, w, RowH), s.ReduceFlashing, "Blitze und Lichtblitze reduzieren");
+            bool rf = UINav.Toggle(new Rect(0, y, w, RowH), s.ReduceFlashing, L("Blitze und Lichtblitze reduzieren"));
             if (rf != s.ReduceFlashing) { s.ReduceFlashing = rf; MarkSettings(); }
             y += RowStep;
-            int li = Mathf.Max(0, Array.IndexOf(Loc.Languages, s.Language));
-            int nli = UINav.Choice(new Rect(0, y, w, RowH), L("Sprache"), li, Loc.LanguageNames);
-            if (nli != li) { s.Language = Loc.Languages[nli]; Loc.Lang = s.Language; MarkSettings(); }
-            y += RowStep;
-            y = Note("Materialien werden immer mit Form-Symbol und Farbe gezeigt (z. B. ◯ Glas, △ Kunststoff, ⬡ Metall), damit sie auch ohne Farbsehen unterscheidbar sind. Hoher Kontrast nutzt schwarze Flächen, weiße Schrift und gelbe Fokusrahmen.", w, y);
+            y = Note(L("Materialien werden immer mit Form-Symbol und Farbe gezeigt (z. B. ◯ Glas, △ Kunststoff, ⬡ Metall), damit sie auch ohne Farbsehen unterscheidbar sind. Hoher Kontrast nutzt schwarze Flächen, weiße Schrift und gelbe Fokusrahmen."), w, y);
             return y;
         }
 
         float SettingsMisc(GameApp app, Settings s, float w, float y)
         {
+            int li = Mathf.Max(0, Array.IndexOf(Loc.Languages, s.Language));
+            int nli = UINav.Choice(new Rect(0, y, w, RowH), L("Sprache") + L(" / Language"), li, Loc.LanguageNames);
+            if (nli != li) { s.Language = Loc.Languages[nli]; Loc.Lang = s.Language; Loc.ApplyToData(); BuildMode.Category = null; MarkSettings(); }
+            y += RowStep;
             GUI.Label(new Rect(10, y, w * 0.4f, RowH), L("Spielername"), UISkin.Label);
             string nm = UINav.TextField(new Rect(w * 0.42f, y + 2, w * 0.58f - 6, RowH - 4), s.PlayerName, 20, "set_name");
             if (nm != s.PlayerName) { s.PlayerName = nm; settingsSaveDirty = true; }
             y += RowStep;
-            y = Note("Der Name ist für Mitspieler sichtbar. Er gilt ab der nächsten Sitzung.", w, y);
+            y = Note(L("Der Name ist für Mitspieler sichtbar. Er gilt ab der nächsten Sitzung."), w, y);
             if (portText == null) portText = s.CoopPort.ToString();
-            GUI.Label(new Rect(10, y, w * 0.4f, RowH), "Koop-Port (TCP)", UISkin.Label);
+            GUI.Label(new Rect(10, y, w * 0.4f, RowH), L("Koop-Port (TCP)"), UISkin.Label);
             string pt = UINav.TextField(new Rect(w * 0.42f, y + 2, 200, RowH - 4), portText, 5, "set_port");
             if (pt != portText)
             {
@@ -384,13 +390,13 @@ namespace RePlanet
             }
             int pp;
             bool portOk = int.TryParse(portText, out pp) && pp >= 1024 && pp <= 65535;
-            GUI.Label(new Rect(w * 0.42f + 216, y, w * 0.58f - 220, RowH), portOk ? "Aktiv: " + s.CoopPort : UISkin.Col("Bitte 1024–65535 eingeben", UISkin.Warn), UISkin.LabelSmall);
+            GUI.Label(new Rect(w * 0.42f + 216, y, w * 0.58f - 220, RowH), portOk ? L("Aktiv: ") + s.CoopPort : UISkin.Col(L("Bitte 1024–65535 eingeben"), UISkin.Warn), UISkin.LabelSmall);
             y += RowStep;
-            y = Note("Für Spiele über das Internet muss dieser TCP-Port am Router des Hosts weitergeleitet werden (oder ein VPN wie Tailscale/ZeroTier genutzt werden).", w, y);
-            y = Heading("Ordner", w, y);
-            y = PathRow("Spielstände", app.SaveDir, w, y);
-            y = PathRow("Fotos", app.PhotoDir, w, y);
-            y = PathRow("Einstellungen", Application.persistentDataPath, w, y);
+            y = Note(L("Für Spiele über das Internet muss dieser TCP-Port am Router des Hosts weitergeleitet werden (oder ein VPN wie Tailscale/ZeroTier genutzt werden)."), w, y);
+            y = Heading(L("Ordner"), w, y);
+            y = PathRow(L("Spielstände"), app.SaveDir, w, y);
+            y = PathRow(L("Fotos"), app.PhotoDir, w, y);
+            y = PathRow(L("Einstellungen"), Application.persistentDataPath, w, y);
             return y;
         }
 
@@ -398,10 +404,10 @@ namespace RePlanet
         {
             GUI.Label(new Rect(10, y, 180, 40), label, UISkin.Label);
             GUI.Label(new Rect(190, y, w - 380, 40), path, UISkin.LabelSmall);
-            if (UINav.Button(new Rect(w - 180, y + 2, 170, 36), "Kopieren", true, UISkin.ButtonSmall))
+            if (UINav.Button(new Rect(w - 180, y + 2, 170, 36), L("Kopieren"), true, UISkin.ButtonSmall))
             {
                 GUIUtility.systemCopyBuffer = path;
-                Hud.Show("Pfad kopiert.", ToastKind.Info, 2f);
+                Hud.Show(L("Pfad kopiert."), ToastKind.Info, 2f);
             }
             return y + 46;
         }

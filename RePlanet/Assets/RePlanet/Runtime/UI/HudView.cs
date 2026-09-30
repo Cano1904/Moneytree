@@ -47,6 +47,9 @@ namespace RePlanet
             }
 
             // ---------------------------------------------------- Oben links: Planet, Credits, Energie, Ladung
+            // (unter der Leistungsanzeige, falls eingeschaltet)
+            float perfH = PerfOverlayHeight(app);
+            if (perfH > 0f) GUI.BeginGroup(new Rect(0, perfH, VW, VH - perfH));
             if (!full) DrawStatusCompact(app, w, me, pd, s, level);
             else
             {
@@ -72,19 +75,20 @@ namespace RePlanet
                 UISkin.Bar(new Rect(tl.x + 120, tl.y + 112, tl.width - 230, 14), lf, lf >= 0.99f ? UISkin.Warn : UISkin.Accent);
                 GUI.Label(new Rect(tl.xMax - 104, tl.y + 106, 90, 26), vol.ToString("0.#") + "/" + cap.ToString("0"), UISkin.LabelSmall);
                 string status;
-                if (me.Energy <= 0.01f) status = UISkin.Col("⚠ NOTBETRIEB – langsam, Werkzeuge aus. Zum Stützpunkt laden.", (s.ReduceFlashing || Mathf.Repeat(Time.unscaledTime, 1f) < 0.6f) ? UISkin.Bad : UISkin.Warn);
-                else if (lf >= 0.99f) status = UISkin.Col("Behälter voll – einlagern, verkaufen oder pressen " + KeyHint(GameAction.Press), UISkin.Warn);
-                else if (Hud.Diving) status = UISkin.Col("Tauchen", UISkin.Teal) + "  " + KeyHint(GameAction.DiveUp) + " auf · " + KeyHint(GameAction.DiveDown) + " ab";
-                else if (Hud.Swimming) status = UISkin.Col("Schwimmen", UISkin.Teal) + (w.TechLevel("dive") > 0 ? "  " + KeyHint(GameAction.DiveDown) + " abtauchen" : "");
-                else status = UISkin.Col(KeyHint(GameAction.Menu) + " Menü  " + KeyHint(GameAction.Map) + " Karte  " + KeyHint(GameAction.Build) + " Bauen", UISkin.TextDim);
+                if (me.Energy <= 0.01f) status = UISkin.Col(L("⚠ NOTBETRIEB – langsam, Werkzeuge aus. Zum Stützpunkt laden."), (s.ReduceFlashing || Mathf.Repeat(Time.unscaledTime, 1f) < 0.6f) ? UISkin.Bad : UISkin.Warn);
+                else if (lf >= 0.99f) status = UISkin.Col(L("Behälter voll – einlagern, verkaufen oder pressen ") + KeyHint(GameAction.Press), UISkin.Warn);
+                else if (Hud.Diving) status = UISkin.Col(L("Tauchen"), UISkin.Teal) + "  " + KeyHint(GameAction.DiveUp) + L(" auf · ") + KeyHint(GameAction.DiveDown) + L(" ab");
+                else if (Hud.Swimming) status = UISkin.Col(L("Schwimmen"), UISkin.Teal) + (w.TechLevel("dive") > 0 ? "  " + KeyHint(GameAction.DiveDown) + L(" abtauchen") : "");
+                else status = UISkin.Col(KeyHint(GameAction.Menu) + L(" Menü  ") + KeyHint(GameAction.Map) + L(" Karte  ") + KeyHint(GameAction.Build) + L(" Bauen"), UISkin.TextDim);
                 GUI.Label(new Rect(tl.x + 18, tl.y + 136, tl.width - 30, 30), status, UISkin.LabelTiny);
             }
+            if (perfH > 0f) GUI.EndGroup();
 
             // ---------------------------------------------------- Oben Mitte: aktuelles Ziel
             if (!full) DrawObjectiveCompact(app, w, level);
             else
             {
-                string obj = Objective(w);
+                string obj = L(Objective(w));
                 float ow = Mathf.Min(700f, VW - 900f);
                 if (ow < 380f) ow = Mathf.Min(560f, VW - 480f);
                 if (ow > 200f && !string.IsNullOrEmpty(obj))
@@ -119,7 +123,7 @@ namespace RePlanet
             }
 
             // Untertitel
-            if (s.Subtitles && !string.IsNullOrEmpty(Hud.Subtitle) && Time.unscaledTime < Hud.SubtitleUntil)
+            if ((s.Subtitles || Hud.SubtitleAlways) && !string.IsNullOrEmpty(Hud.Subtitle) && Time.unscaledTime < Hud.SubtitleUntil)
             {
                 string sub = (string.IsNullOrEmpty(Hud.SubtitleSpeaker) ? "" : UISkin.Col(Hud.SubtitleSpeaker + ": ", UISkin.Accent)) + Hud.Subtitle;
                 float sw = Mathf.Min(1100f, VW - 80f);
@@ -135,7 +139,7 @@ namespace RePlanet
                 var c = UISkin.Good; c.a = Mathf.Clamp01(app.savedFlash);
                 var r = new Rect(VW - 210, VH - 56, 190, 36);
                 UISkin.RoundRect(r, new Color(0, 0, 0, 0.5f * c.a));
-                GUI.Label(r, UISkin.Col("✓ Gespeichert", c), UISkin.LabelCenter);
+                GUI.Label(r, UISkin.Col(L("✓ Gespeichert"), c), UISkin.LabelCenter);
             }
 
             // ---------------------------------------------------- Vollbild-Overlays
@@ -158,14 +162,14 @@ namespace RePlanet
             UISkin.PanelBox(r);
             UISkin.Tex(new Rect(r.x + 16, r.y + 12, 34, 34), UISkin.Shape(night ? "moon" : "sun"), night ? new Color(0.75f, 0.82f, 1f) : UISkin.Warn);
             GUI.Label(new Rect(r.x + 60, r.y + 8, 120, 40), "<b>" + clock + "</b>", UISkin.H2);
-            GUI.Label(new Rect(r.x + 160, r.y + 12, 110, 34), night ? "Nacht" : phase < 0.3f ? "Morgen" : phase > 0.72f ? "Abend" : "Tag", UISkin.LabelSmall);
+            GUI.Label(new Rect(r.x + 160, r.y + 12, 110, 34), night ? L("Nacht") : phase < 0.3f ? L("Morgen") : phase > 0.72f ? L("Abend") : L("Tag"), UISkin.LabelSmall);
             // Wind: Pfeil (relativ zur Kamera) + Stärke
             float windDeg = Mathf.Atan2(dx, dz) * Mathf.Rad2Deg - Hud.CameraYaw;
             DrawRotated(new Rect(r.x + 20, r.y + 58, 26, 26), UISkin.Arrow, windDeg, UISkin.Teal);
-            string ws = "Wind " + (wind * 100).ToString("0") + " %";
+            string ws = L("Wind ") + (wind * 100).ToString("0") + " %";
             Color wc = UISkin.TextDim;
             if (ps.StormActive) { ws = pd.StormName.ToUpperInvariant() + "!"; wc = UISkin.Bad; }
-            else if (ps.StormWarn) { ws = "⚠ " + pd.StormName + " zieht auf"; wc = UISkin.Warn; }
+            else if (ps.StormWarn) { ws = "⚠ " + pd.StormName + L(" zieht auf"); wc = UISkin.Warn; }
             GUI.Label(new Rect(r.x + 60, r.y + 54, r.width - 70, 34), UISkin.Col(ws, wc), UISkin.LabelSmall);
             float y = r.yMax + 8;
 
@@ -182,16 +186,11 @@ namespace RePlanet
                     CosmeticDef cd;
                     Color col = GameData.Cosmetics.TryGetValue(p.Color ?? "", out cd) ? UISkin.FromRgb(cd.Value) : UISkin.Teal;
                     UISkin.Tex(new Rect(pr.x + 14, py + 5, 14, 14), UISkin.Shape("dot"), col);
-                    string st = p.TowTimer > 0 ? UISkin.Col(" (abgeschleppt)", UISkin.Bad) : p.Sleeping ? UISkin.Col(" (schläft)", UISkin.TextDim) : p.Exposed ? UISkin.Col(" (ungeschützt)", UISkin.Warn) : "";
+                    string st = p.TowTimer > 0 ? UISkin.Col(L(" (abgeschleppt)"), UISkin.Bad) : p.Sleeping ? UISkin.Col(L(" (schläft)"), UISkin.TextDim) : p.Exposed ? UISkin.Col(L(" (ungeschützt)"), UISkin.Warn) : "";
                     GUI.Label(new Rect(pr.x + 36, py, pr.width - 44, 24), p.Name + st, UISkin.LabelTiny);
                     py += 26;
                 }
                 y = pr.yMax + 8;
-            }
-            if (s.ShowFps)
-            {
-                GUI.Label(new Rect(r.x, y, r.width - 10, 24), UISkin.Col(fps.ToString("0") + " FPS", fps < 30 ? UISkin.Warn : UISkin.Good), UISkin.LabelRight);
-                y += 26;
             }
             toastTop = y + 6;
         }
@@ -201,7 +200,7 @@ namespace RePlanet
         void DrawShelterWarning(GameApp app, WorldState w, PlayerData me, PlanetDef pd)
         {
             bool storm = w.Cur.StormActive;
-            string title = storm ? pd.StormName + "! Schnell in einen Unterschlupf" : "Nacht: Suche einen " + pd.ShelterName;
+            string title = storm ? pd.StormName + L("! Schnell in einen Unterschlupf") : L("Nacht: Suche einen ") + pd.ShelterName;
             float bw = Mathf.Min(620f, VW - 200f);
             var r = new Rect((VW - bw) * 0.5f, 110, bw, 118);
             UISkin.PanelBox(r);
@@ -213,10 +212,10 @@ namespace RePlanet
                 var mp = PlayerController.I != null ? PlayerController.I.RenderPos : new Vector3(me.Pos.x, me.Pos.y, me.Pos.z);
                 float ang = Mathf.Atan2(sp.x - mp.x, sp.z - mp.z) * Mathf.Rad2Deg - Hud.CameraYaw;
                 DrawRotated(new Rect(r.x + 26, r.y + 52, 52, 52), UISkin.Arrow, ang, UISkin.Accent);
-                GUI.Label(new Rect(r.x + 96, r.y + 46, r.width - 110, 30), "Nächster Unterschlupf: <b>" + Hud.ShelterDist.ToString("0") + " m</b>", UISkin.Label);
+                GUI.Label(new Rect(r.x + 96, r.y + 46, r.width - 110, 30), L("Nächster Unterschlupf: <b>") + Hud.ShelterDist.ToString("0") + " m</b>", UISkin.Label);
             }
             GUI.Label(new Rect(r.x + 96, r.y + 76, r.width - 110, 30),
-                KeyHint(GameAction.Shelter) + " Notunterschlupf bauen (" + Rules.ShelterCost + " Credits)  ·  " + KeyHint(GameAction.Sleep) + " dort schlafen", UISkin.LabelSmall);
+                KeyHint(GameAction.Shelter) + L(" Notunterschlupf bauen (") + Rules.ShelterCost + L(" Credits)  ·  ") + KeyHint(GameAction.Sleep) + L(" dort schlafen"), UISkin.LabelSmall);
         }
 
         void DrawToolbar(GameApp app, WorldState w, PlayerData me, float y)
@@ -236,7 +235,7 @@ namespace RePlanet
                 if (act) UISkin.OutlineRect(new Rect(r.x - 3, r.y - 3, r.width + 6, r.height + 6), UISkin.Accent);
                 Color ic = !has ? new Color(1, 1, 1, 0.22f) : act ? Color.white : UISkin.Teal;
                 UISkin.Tex(new Rect(r.center.x - 15, r.y + 12, 30, 30), UISkin.Shape(ToolShapes[i]), ic);
-                GUI.Label(new Rect(r.x, r.y + 46, r.width, 26), has ? ToolShort[i] : UISkin.Col(ToolShort[i], UISkin.TextDim * new Color(1, 1, 1, 0.6f)), SmallCenter());
+                GUI.Label(new Rect(r.x, r.y + 46, r.width, 26), has ? L(ToolShort[i]) : UISkin.Col(L(ToolShort[i]), UISkin.TextDim * new Color(1, 1, 1, 0.6f)), SmallCenter());
                 UISkin.KeyCap(r.x + 5, r.y + 5, InputMap.Label(ToolKeys[i]), 20);
             }
             // Magnet-Aufladung über der Leiste
@@ -244,7 +243,7 @@ namespace RePlanet
             {
                 var mr = new Rect((VW - 300) * 0.5f, y - 30, 300, 14);
                 UISkin.Bar(mr, Hud.MagnetCharge, Color.Lerp(UISkin.Teal, UISkin.Accent, Hud.MagnetCharge));
-                GUI.Label(new Rect(mr.x - 150, mr.y - 6, 140, 26), "Magnetwelle", SmallRight());
+                GUI.Label(new Rect(mr.x - 150, mr.y - 6, 140, 26), L("Magnetwelle"), SmallRight());
             }
         }
 
@@ -270,23 +269,23 @@ namespace RePlanet
             var r = new Rect((VW - bw) * 0.5f, y - 6, bw, 84);
             UISkin.PanelBox(r);
             UISkin.Tex(new Rect(r.x + 16, r.y + 14, 34, 34), UISkin.Shape("truck"), UISkin.Accent);
-            GUI.Label(new Rect(r.x + 62, r.y + 8, bw - 80, 30), "<b>" + def.Name + "</b>   " + UISkin.Col(full ? KeyHint(GameAction.Vehicle) + " aussteigen" : "[" + ShortKey(InputMap.Label(GameAction.Vehicle)) + "]", UISkin.TextDim), UISkin.Label);
+            GUI.Label(new Rect(r.x + 62, r.y + 8, bw - 80, 30), "<b>" + def.Name + "</b>   " + UISkin.Col(full ? KeyHint(GameAction.Vehicle) + L(" aussteigen") : "[" + ShortKey(InputMap.Label(GameAction.Vehicle)) + "]", UISkin.TextDim), UISkin.Label);
             if (def.Capacity > 0)
             {
                 float vol = Item.Volume(v.Cargo);
                 float f = Mathf.Clamp01(vol / def.Capacity);
                 UISkin.Bar(new Rect(r.x + 62, r.y + 46, bw - 190, 14), f, f >= 0.99f ? UISkin.Warn : UISkin.Accent);
-                GUI.Label(new Rect(r.xMax - 118, r.y + 40, 104, 26), "Ladung " + vol.ToString("0") + "/" + def.Capacity.ToString("0"), UISkin.LabelTiny);
+                GUI.Label(new Rect(r.xMax - 118, r.y + 40, 104, 26), L("Ladung ") + vol.ToString("0") + "/" + def.Capacity.ToString("0"), UISkin.LabelTiny);
             }
             else if (v.Carry != null)
-                GUI.Label(new Rect(r.x + 62, r.y + 40, bw - 80, 26), UISkin.Col(full ? "Wrack am Haken – zum Rover oder Stützpunkt bringen" : "Wrack am Haken", UISkin.Warn), UISkin.LabelSmall);
+                GUI.Label(new Rect(r.x + 62, r.y + 40, bw - 80, 26), UISkin.Col(full ? L("Wrack am Haken – zum Rover oder Stützpunkt bringen") : L("Wrack am Haken"), UISkin.Warn), UISkin.LabelSmall);
             else
-                GUI.Label(new Rect(r.x + 62, r.y + 40, bw - 80, 26), full ? "Kran bereit – an ein Wrack heranfahren" : "Kran bereit", UISkin.LabelSmall);
+                GUI.Label(new Rect(r.x + 62, r.y + 40, bw - 80, 26), full ? L("Kran bereit – an ein Wrack heranfahren") : L("Kran bereit"), UISkin.LabelSmall);
             if (Hud.VehicleStuck)
             {
                 var sr = new Rect((VW - 460) * 0.5f, r.y - 48, 460, 40);
                 UISkin.RoundRect(sr, new Color(UISkin.Warn.r * 0.4f, UISkin.Warn.g * 0.3f, 0, 0.85f));
-                GUI.Label(sr, full ? "Festgefahren?  " + KeyHint(GameAction.VehicleReset) + " Fahrzeug zurücksetzen" : "Festgefahren?  [" + ShortKey(InputMap.Label(GameAction.VehicleReset)) + "]", UISkin.LabelCenter);
+                GUI.Label(sr, full ? L("Festgefahren?  ") + KeyHint(GameAction.VehicleReset) + L(" Fahrzeug zurücksetzen") : L("Festgefahren?  [") + ShortKey(InputMap.Label(GameAction.VehicleReset)) + "]", UISkin.LabelCenter);
             }
         }
 
@@ -304,7 +303,7 @@ namespace RePlanet
             }
             if (!string.IsNullOrEmpty(Hud.Blocked))
             {
-                string t = "⚠ " + Hud.Blocked;
+                string t = "⚠ " + L(Hud.Blocked);
                 float th = UISkin.TextHeight(UISkin.WrapCenter, t, pw - 40) + 16;
                 y -= th + 6;
                 var r = new Rect((VW - pw) * 0.5f, y, pw, th);
@@ -328,8 +327,8 @@ namespace RePlanet
             var r = CenterRect(760, 170);
             UISkin.PanelBox(r);
             GUI.Label(new Rect(r.x, r.y + 18, r.width, 44), UISkin.Col("NOTABSCHALTUNG", UISkin.Bad), UISkin.H1);
-            GUI.Label(new Rect(r.x, r.y + 72, r.width, 30), "Eine Abschleppdrohne bringt MIKO zum Stützpunkt …", UISkin.LabelCenter);
-            GUI.Label(new Rect(r.x, r.y + 110, r.width, 30), "Ankunft in etwa " + Mathf.CeilToInt(me.TowTimer) + " s. Die Ladung bleibt erhalten.", UISkin.LabelCenter);
+            GUI.Label(new Rect(r.x, r.y + 72, r.width, 30), L("Eine Abschleppdrohne bringt MIKO zum Stützpunkt …"), UISkin.LabelCenter);
+            GUI.Label(new Rect(r.x, r.y + 110, r.width, 30), L("Ankunft in etwa ") + Mathf.CeilToInt(me.TowTimer) + L(" s. Die Ladung bleibt erhalten."), UISkin.LabelCenter);
         }
 
         void DrawSleepOverlay(GameApp app, WorldState w)
@@ -339,11 +338,11 @@ namespace RePlanet
             foreach (var p in w.Players.Values) if (p.Online) { online++; if (p.Sleeping) sleeping++; }
             var r = CenterRect(700, 180);
             float z = Mathf.Repeat(Time.unscaledTime * 0.8f, 3f);
-            string zzz = z < 1 ? "Zzz" : z < 2 ? "Zzz …" : "Zzz … …";
+            string zzz = z < 1 ? L("Zzz") : z < 2 ? L("Zzz …") : L("Zzz … …");
             GUI.Label(new Rect(r.x, r.y, r.width, 60), UISkin.Col(zzz, UISkin.Story), UISkin.H1);
-            string t = online > 1 && sleeping < online ? "Warte auf Mitspieler (" + sleeping + "/" + online + " schlafen) …" : "MIKO lädt und schläft bis zum Morgen …";
+            string t = online > 1 && sleeping < online ? L("Warte auf Mitspieler (") + sleeping + "/" + online + L(" schlafen) …") : L("MIKO lädt und schläft bis zum Morgen …");
             GUI.Label(new Rect(r.x, r.y + 70, r.width, 30), t, UISkin.LabelCenter);
-            GUI.Label(new Rect(r.x, r.y + 110, r.width, 30), UISkin.Col(KeyHint(GameAction.Sleep) + " aufwachen", UISkin.TextDim), UISkin.LabelCenter);
+            GUI.Label(new Rect(r.x, r.y + 110, r.width, 30), UISkin.Col(KeyHint(GameAction.Sleep) + L(" aufwachen"), UISkin.TextDim), UISkin.LabelCenter);
         }
 
         /// <summary>Zeichnet eine Textur um ihren Mittelpunkt gedreht (Grad, im Uhrzeigersinn, 0 = oben).</summary>
@@ -379,7 +378,7 @@ namespace RePlanet
                 float age = now - t.Created;
                 if (age > t.Duration || age < 0) continue;
                 if (!full && (t.Hidden || !t.Seen)) continue;
-                string text = full || t.Shown == null ? t.Text : t.Shown;
+                string text = L(full || t.Shown == null ? t.Text : t.Shown);
                 if (!full && t.Count > 1 && t.MergeKey == null) text += UISkin.Col("  ×" + t.Count, UISkin.TextDim);
                 if (++shown > maxShown) break;
                 float a = Mathf.Clamp01((t.Duration - age) / 0.5f) * Mathf.Clamp01(age / 0.15f + 0.2f);

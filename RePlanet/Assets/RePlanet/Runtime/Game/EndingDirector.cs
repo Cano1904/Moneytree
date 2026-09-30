@@ -125,8 +125,8 @@ namespace RePlanet
             if (t < 12f)
             {
                 GUI.color = new Color(1f, 0.9f, 0.7f, fade(0.5f, 12f));
-                GUI.Label(new Rect(0, Screen.height * 0.18f, Screen.width, 90 * scale), "PROGRAMM ZWEITE CHANCE – BEDINGUNG ERFÜLLT", mid);
-                GUI.Label(new Rect(0, Screen.height * 0.26f, Screen.width, 90 * scale), "Die Arche HORIZONT kehrt zurück.", big);
+                GUI.Label(new Rect(0, Screen.height * 0.18f, Screen.width, 90 * scale), Loc.T("PROGRAMM ZWEITE CHANCE – BEDINGUNG ERFÜLLT"), mid);
+                GUI.Label(new Rect(0, Screen.height * 0.26f, Screen.width, 90 * scale), Loc.T("Die Arche HORIZONT kehrt zurück."), big);
             }
             else if (t < 36f && w != null)
             {
@@ -139,7 +139,7 @@ namespace RePlanet
                 GUI.color = new Color(Mats.C(pd.Accent).r, Mats.C(pd.Accent).g, Mats.C(pd.Accent).b, fade(a0, a0 + 6f));
                 GUI.Label(new Rect(0, Screen.height * 0.2f, Screen.width, 80 * scale), pd.Name + " – " + pd.Subtitle, big);
                 GUI.color = new Color(1, 1, 1, fade(a0, a0 + 6f));
-                GUI.Label(new Rect(0, Screen.height * 0.29f, Screen.width, 60 * scale), "Wiederhergestellt: " + (rest * 100f).ToString("0") + " %", mid);
+                GUI.Label(new Rect(0, Screen.height * 0.29f, Screen.width, 60 * scale), Loc.F("Wiederhergestellt: {0} %", (rest * 100f).ToString("0")), mid);
                 var sb = new System.Text.StringBuilder();
                 for (int ar = 0; ar < 3; ar++)
                 {
@@ -153,8 +153,8 @@ namespace RePlanet
             {
                 float a = Mathf.Clamp01((t - 36f) / 1.5f);
                 GUI.color = new Color(1, 1, 1, a);
-                GUI.Label(new Rect(0, Screen.height * 0.16f, Screen.width, 80 * scale), "Danke, MIKO.", big);
-                string stats = "Objekte gesammelt: " + w.Stat("collected") + "   ·   Credits verdient: " + w.Stat("credEarned") + "   ·   Spielzeit: " + (w.PlayTime / 3600.0).ToString("0.0") + " h";
+                GUI.Label(new Rect(0, Screen.height * 0.16f, Screen.width, 80 * scale), Loc.T("Danke, MIKO."), big);
+                string stats = Loc.F("Objekte gesammelt: {0}   ·   Credits verdient: {1}   ·   Spielzeit: {2} h", Loc.Num(w.Stat("collected")), Loc.Num(w.Stat("credEarned")), (w.PlayTime / 3600.0).ToString("0.0", System.Globalization.CultureInfo.InvariantCulture));
                 GUI.Label(new Rect(0, Screen.height * 0.25f, Screen.width, 60 * scale), stats, small);
                 float scroll = (t - 38f) * 40f * scale;
                 string[] credits =
@@ -163,12 +163,12 @@ namespace RePlanet
                     "", "Die Welten gehören jetzt dir. Freies Spiel beginnt …"
                 };
                 for (int i = 0; i < credits.Length; i++)
-                    GUI.Label(new Rect(0, Screen.height * 0.75f - scroll + i * 44 * scale, Screen.width, 44 * scale), credits[i], small);
+                    GUI.Label(new Rect(0, Screen.height * 0.75f - scroll + i * 44 * scale, Screen.width, 44 * scale), Loc.T(credits[i]), small);
             }
             // Untertitel zur Erzählerstimme (nur wenn Aufnahmen vorhanden sind – ohne Stimme erzählen die Tafeln)
             if (Narrator.HasRecordings && (GameApp.I == null || GameApp.I.Settings == null || GameApp.I.Settings.Subtitles))
             {
-                string line = Narrator.SubtitleAt(t);
+                string line = Loc.T(Narrator.SubtitleAt(t));
                 if (!string.IsNullOrEmpty(line))
                 {
                     var st = new GUIStyle(GUI.skin.label) { fontSize = (int)(32 * scale), alignment = TextAnchor.MiddleCenter, wordWrap = true };
@@ -181,7 +181,7 @@ namespace RePlanet
             }
             var hs = new GUIStyle(GUI.skin.label) { fontSize = (int)(20 * scale), alignment = TextAnchor.MiddleRight };
             GUI.color = new Color(1, 1, 1, 0.6f);
-            GUI.Label(new Rect(0, Screen.height - bar + 8 * scale, Screen.width - 30, 30 * scale), "Gedrückt halten zum Überspringen", hs);
+            GUI.Label(new Rect(0, Screen.height - bar + 8 * scale, Screen.width - 30, 30 * scale), Loc.T("Gedrückt halten zum Überspringen"), hs);
             GUI.color = Color.white;
         }
     }

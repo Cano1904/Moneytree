@@ -696,8 +696,8 @@ namespace RePlanet
                 if (sp.z < 0 || sp.z > 60) continue;
                 var r = new Rect(sp.x - 80, Screen.height - sp.y - 12, 160, 24);
                 var style = new GUIStyle(GUI.skin.label) { alignment = TextAnchor.MiddleCenter, fontStyle = FontStyle.Bold };
-                GUI.color = new Color(0, 0, 0, 0.6f); GUI.Label(new Rect(r.x + 1, r.y + 1, r.width, r.height), p.Name + (p.Sleeping ? " (schläft)" : ""), style);
-                GUI.color = Color.white; GUI.Label(r, p.Name + (p.Sleeping ? " (schläft)" : ""), style);
+                GUI.color = new Color(0, 0, 0, 0.6f); GUI.Label(new Rect(r.x + 1, r.y + 1, r.width, r.height), p.Name + (p.Sleeping ? Loc.T(" (schläft)") : ""), style);
+                GUI.color = Color.white; GUI.Label(r, p.Name + (p.Sleeping ? Loc.T(" (schläft)") : ""), style);
             }
         }
     }

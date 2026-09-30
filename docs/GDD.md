@@ -260,7 +260,10 @@ allem Müll), **Hochformat 9:16** für kurze Videos, Sprung zu Aussichtspunkten.
 - Getrennte Lautstärken (Gesamt, Musik, Effekte, Umgebung, Oberfläche, Stimme), Stummschalten im Hintergrund.
 - Maus- und Controller-Empfindlichkeit, Y-Achse umkehrbar, Sichtfeld, Helligkeit, Render-Skalierung, Qualitätsstufen.
 - Solo-Pause bei offenen Menüs; verständliche Begründung bei jeder abgelehnten Aktion; Notabschaltung statt Game Over.
-- Sprache: Deutsch (vollständig), Englisch (teilweise, Menübegriffe).
+- Sprache: Deutsch und Englisch (vollständig; Einstellungen › Sonstiges). Beim ersten Start Englisch, wenn das System englisch ist.
+- Bauansicht vollständig mit dem Controller: Cursor mit dem linken Stick, A platzieren, Y drehen, LB/RB Bauwerk, LT/RT Kategorie,
+  X umsetzen, Back (zweimal) abreißen, B abbrechen; Tastensymbole passen sich dem Gerät an.
+- Leistungsanzeige (F3): Bildrate aktuell/Minimum der letzten 5 s, Bildzeit, Draw-Calls, Qualitätsstufe, Auflösung.
 
 ## 15. Präsentation
 
@@ -268,3 +271,10 @@ allem Müll), **Hochformat 9:16** für kurze Videos, Sprung zu Aussichtspunkten.
   der mit der Ökologie wächst; Müll per GPU-Instancing; eigener Himmels-Shader mit Wolken, Sternen, Himmelskörpern und
   Polarlicht; Wetterpartikel; animiertes Wasser.
 - Audio vollständig prozedural: Effekte, planetenspezifische Musik (eigene Tonleitern je Planet), Intro-Score.
+- **Stadtklänge:** Mit der Wiederherstellung kehren Vögel (auf PELAGIA Möwen), Blätterrauschen, plätschernde Brunnen und – wenn
+  die Stadt erwacht – fernes Stadtleben mit Verkehr, Straßenbahn und Stimmen zurück.
+- **Radio (Taste T, Spielmenü › Radio):** Stücke aus der Spielmusik in eigenen Fassungen; neue Stücke für jeden gereinigten
+  Bereich und jedes Großprojekt (gespeichert im Spielstand), kurze synthetische Senderkennungen zwischen den Stücken,
+  ein Sender für alles und einer je Planet.
+- **Erzähler im Spiel:** 21 kurze Sätze des Erzählers zu besonderen Momenten (erste Landung, erste Nacht, erster Sturm,
+  Planet vollendet, Mitspieler …), jeder nur einmal pro Spielstand; abschaltbar („Erzähler im Spiel“).

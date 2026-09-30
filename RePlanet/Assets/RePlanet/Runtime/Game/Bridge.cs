@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using RePlanet.Core;
 using UnityEngine;
 
 namespace RePlanet
@@ -78,20 +79,24 @@ namespace RePlanet
         /// <summary>Setzt den Interaktionshinweis in Lang- und Kurzform.</summary>
         public static void SetPrompt(string full, string key, string word, Vector3? at = null, bool hold = false)
         {
-            Prompt = full; PromptKey = key; PromptWord = word; PromptAt = at; PromptHold = hold;
+            Prompt = Loc.T(full); PromptKey = key; PromptWord = Loc.T(word); PromptAt = at; PromptHold = hold;
         }
 
         /// <summary>Setzt den Grund, warum etwas nicht geht, in Lang- und Kurzform.</summary>
         public static void SetBlocked(string full, string shortText, Vector3? at = null)
         {
-            Blocked = full; BlockedShort = shortText; BlockedAt = at;
+            Blocked = Loc.T(full); BlockedShort = Loc.T(shortText); BlockedAt = at;
         }
 
-        public static void Say(string text, float duration, string speaker = null)
+        /// <summary>Untertitel auch bei ausgeschalteten Untertiteln zeigen (Erzählerzeile ohne Aufnahme).</summary>
+        public static bool SubtitleAlways;
+
+        public static void Say(string text, float duration, string speaker = null, bool always = false)
         {
             Subtitle = text;
             SubtitleSpeaker = speaker;
             SubtitleUntil = Time.unscaledTime + duration;
+            SubtitleAlways = always;
         }
 
         public static void ClearTransient()
@@ -161,5 +166,10 @@ namespace RePlanet
         public static string Reason;
         public static int HoverBuildingId = -1;
         public static bool RequestPlace, RequestDemolish;
+        /// <summary>Controller: Zielpunkt auf der Baufläche (Weltkoordinaten), per linkem Stick bewegt.</summary>
+        public static Vector3 PadCursor;
+        public static bool PadCursorInit;
+        /// <summary>Kategorie-Filter der Bauleiste (null = alle).</summary>
+        public static string Category;
     }
 }

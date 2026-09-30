@@ -5,14 +5,14 @@ using UnityEngine;
 namespace RePlanet
 {
     /// <summary>
-    /// Spielmenü (Tab) mit Reitern: Inventar, Aufträge, Karte, Werkstatt, Lager, Archiv, Roboter, Koop.
+    /// Spielmenü (Tab) mit Reitern: Inventar, Aufträge, Karte, Werkstatt, Lager, Archiv, Roboter, Radio, Koop.
     /// Q/E bzw. LB/RB wechseln die Reiter. Käufe/Verkäufe laufen als Aktionen über den Server – der prüft
     /// Nähe zu Stationen und Berechtigungen; die UI zeigt die Gründe vorab an.
     /// </summary>
     public partial class UIRoot
     {
-        static readonly string[] MenuTabs = { "inventory", "missions", "map", "workshop", "storage", "archive", "achievements", "robot", "coop" };
-        static readonly string[] MenuTabNames = { "Inventar", "Aufträge", "Karte", "Werkstatt", "Lager", "Archiv", "Erfolge", "Roboter", "Koop" };
+        static readonly string[] MenuTabs = { "inventory", "missions", "map", "workshop", "storage", "archive", "achievements", "robot", "radio", "coop" };
+        static readonly string[] MenuTabNames = { "Inventar", "Aufträge", "Karte", "Werkstatt", "Lager", "Archiv", "Erfolge", "Roboter", "Radio", "Koop" };
         string menuTab = "inventory";
         string menuStation;
         int wsSub;
@@ -87,7 +87,7 @@ namespace RePlanet
             int nt = UINav.Tabs(new Rect(tabsX, r.y + 14, tabsW, 42), cur, names);
             if (nt != cur) SetMenuTab(MenuTabs[nt]);
             var w = app.W;
-            GUI.Label(new Rect(r.xMax - 330, r.y + 14, 180, 42), "<b>" + Num(w.Credits) + "</b> Cr", UISkin.LabelRight);
+            GUI.Label(new Rect(r.xMax - 330, r.y + 14, 180, 42), "<b>" + Num(w.Credits) + L("</b> Cr"), UISkin.LabelRight);
             if (UINav.Button(new Rect(r.xMax - 140, r.y + 16, 120, 38), "✕ " + L("Zurück"), true, UISkin.ButtonSmall)) Back();
             UISkin.Rect(new Rect(r.x + 16, r.y + 64, r.width - 32, 2), new Color(UISkin.Accent.r, UISkin.Accent.g, UISkin.Accent.b, 0.5f));
             var content = new Rect(r.x + 22, r.y + 76, r.width - 44, r.height - 90);
@@ -96,7 +96,7 @@ namespace RePlanet
                 var mr = new Rect(content.x, content.yMax - 40, content.width, 40);
                 content.height -= 48;
                 UISkin.RoundRect(mr, actMsgErr ? new Color(0.4f, 0.08f, 0.05f, 0.9f) : new Color(0.05f, 0.3f, 0.15f, 0.9f));
-                GUI.Label(new Rect(mr.x + 16, mr.y, mr.width - 32, mr.height), (actMsgErr ? "⚠ " : "✓ ") + actMsg, UISkin.Label);
+                GUI.Label(new Rect(mr.x + 16, mr.y, mr.width - 32, mr.height), (actMsgErr ? "⚠ " : "✓ ") + L(actMsg), UISkin.Label);
             }
             switch (menuTab)
             {
@@ -115,6 +115,7 @@ namespace RePlanet
                 case "archive": TabArchive(app, content); break;
                 case "achievements": TabAchievements(app, content); break;
                 case "robot": TabRobot(app, content); break;
+                case "radio": TabRadio(app, content); break;
                 case "coop":
                     {
                         const int key = 408;
@@ -152,15 +153,15 @@ namespace RePlanet
         {
             switch (st)
             {
-                case "sell": return "Verkaufsterminal";
-                case "storage": return "Lager";
-                case "sort": return "Sortiertisch";
-                case "trader": return "Materialhändler";
-                case "disposal": return "Entsorgungsstation";
-                case "contracts": return "Auftragstafel";
-                case "workshop": return "Werkstatt";
-                case "garage": return "Garage";
-                case "ship": return "Transportschiff";
+                case "sell": return L("Verkaufsterminal");
+                case "storage": return L("Lager");
+                case "sort": return L("Sortiertisch");
+                case "trader": return L("Materialhändler");
+                case "disposal": return L("Entsorgungsstation");
+                case "contracts": return L("Auftragstafel");
+                case "workshop": return L("Werkstatt");
+                case "garage": return L("Garage");
+                case "ship": return L("Transportschiff");
             }
             return st;
         }
@@ -191,8 +192,8 @@ namespace RePlanet
             // Behälter
             float vol = Item.Volume(me.Bin), cap = Mathf.Max(1f, w.BinCapacity);
             float y = left.y;
-            GUI.Label(new Rect(left.x, y, left.width, 34), "Behälter", UISkin.H3);
-            GUI.Label(new Rect(left.x, y, left.width, 34), vol.ToString("0.#") + " / " + cap.ToString("0") + " Vol.", UISkin.LabelRight);
+            GUI.Label(new Rect(left.x, y, left.width, 34), L("Behälter"), UISkin.H3);
+            GUI.Label(new Rect(left.x, y, left.width, 34), vol.ToString("0.#") + " / " + cap.ToString("0") + L(" Vol."), UISkin.LabelRight);
             y += 38;
             UISkin.Bar(new Rect(left.x, y, left.width, 14), vol / cap, vol >= cap - 0.01f ? UISkin.Warn : UISkin.Accent);
             y += 24;
@@ -211,7 +212,7 @@ namespace RePlanet
             float cy = 0;
             if (binKeys.Count == 0)
             {
-                GUI.Label(new Rect(0, 10, sw, 30), UISkin.Col("Der Behälter ist leer. Müll mit " + KeyHint(GameAction.UseTool) + " aufsammeln.", UISkin.TextDim), UISkin.Label);
+                GUI.Label(new Rect(0, 10, sw, 30), UISkin.Col(L("Der Behälter ist leer. Müll mit ") + KeyHint(GameAction.UseTool) + L(" aufsammeln."), UISkin.TextDim), UISkin.Label);
                 cy = 50;
             }
             foreach (var k in binKeys)
@@ -223,19 +224,19 @@ namespace RePlanet
                 int n = binGroups[k];
                 var row = new Rect(0, cy, sw, 58);
                 UISkin.RoundRect(row, new Color(1, 1, 1, 0.045f));
-                GUI.Label(new Rect(12, cy + 4, sw * 0.5f, 26), "<b>" + n + "×</b> " + t.Name + (pressed ? UISkin.Col("  (gepresst)", UISkin.Teal) : "") + (t.Hazard > 0 ? UISkin.Col("  ⚠ Gefahrstoff", UISkin.Bad) : ""), UISkin.Label);
+                GUI.Label(new Rect(12, cy + 4, sw * 0.5f, 26), "<b>" + n + "×</b> " + t.Name + (pressed ? UISkin.Col(L("  (gepresst)"), UISkin.Teal) : "") + (t.Hazard > 0 ? UISkin.Col(L("  ⚠ Gefahrstoff"), UISkin.Bad) : ""), UISkin.Label);
                 float mx = 12;
                 foreach (var kv in t.Yield)
                 {
                     mx += UISkin.MaterialTag(new Rect(mx, cy + 30, 220, 24), kv.Key, " ×" + (kv.Value * n), UISkin.LabelTiny) + 16;
                 }
                 float iv = Mathf.Max(0.25f, t.Volume) * (pressed ? 0.5f : 1f) * n;
-                GUI.Label(new Rect(sw - 150, cy + 4, 140, 26), iv.ToString("0.#") + " Vol.", UISkin.LabelRight);
+                GUI.Label(new Rect(sw - 150, cy + 4, 140, 26), iv.ToString("0.#") + L(" Vol."), UISkin.LabelRight);
                 cy += 64;
             }
             UINav.EndScroll(cy);
             int val = Rules.BinValue(w, me.Bin);
-            GUI.Label(new Rect(left.x, left.yMax - 34, left.width, 30), "Direktverkauf (unsortiert): ca. <b>" + Num(val) + "</b> Credits · Sortiert und als Ballen bringt es mehr.", UISkin.LabelSmall);
+            GUI.Label(new Rect(left.x, left.yMax - 34, left.width, 30), L("Direktverkauf (unsortiert): ca. <b>") + Num(val) + L("</b> Credits · Sortiert und als Ballen bringt es mehr."), UISkin.LabelSmall);
 
             // Rechts: Energie, Werkzeuge, Presse, Tipps
             float ry = right.y;
@@ -244,9 +245,9 @@ namespace RePlanet
             UISkin.Bar(new Rect(right.x, ry + 4, right.width - 120, 14), ef, ef < 0.1f ? UISkin.Bad : ef < 0.3f ? UISkin.Warn : UISkin.Teal);
             GUI.Label(new Rect(right.xMax - 110, ry - 4, 110, 30), me.Energy.ToString("0") + " / " + w.MaxEnergy.ToString("0"), UISkin.LabelRight);
             ry += 30;
-            if (me.Energy <= 0.01f) ry = Para(UISkin.Col("Notbetrieb: langsam, keine Werkzeuge. Am Stützpunkt lädt der Akku.", UISkin.Bad), right.x, right.width, ry);
+            if (me.Energy <= 0.01f) ry = Para(UISkin.Col(L("Notbetrieb: langsam, keine Werkzeuge. Am Stützpunkt lädt der Akku."), UISkin.Bad), right.x, right.width, ry);
             ry += 6;
-            ry = Section("Werkzeuge", right.x, right.width, ry);
+            ry = Section(L("Werkzeuge"), right.x, right.width, ry);
             for (int i = 0; i < Rules.ToolIds.Length; i++)
             {
                 string id = Rules.ToolIds[i];
@@ -256,18 +257,18 @@ namespace RePlanet
                 string lvl = "";
                 TechDef td;
                 if (GameData.Tech.TryGetValue(id, out td)) lvl = td.Levels[Mathf.Clamp(w.TechLevel(id), 0, td.MaxLevel)].Label;
-                GUI.Label(new Rect(right.x + 70, ry, right.width - 70, 30), (has ? Rules.ToolName(id) : UISkin.Col(Rules.ToolName(id) + " – Werkstatt", UISkin.TextDim)) + (has && lvl.Length > 0 ? UISkin.Col("  · " + lvl, UISkin.TextDim) : ""), UISkin.LabelSmall);
+                GUI.Label(new Rect(right.x + 70, ry, right.width - 70, 30), (has ? L(Rules.ToolName(id)) : UISkin.Col(L(Rules.ToolName(id)) + L(" – Werkstatt"), UISkin.TextDim)) + (has && lvl.Length > 0 ? UISkin.Col("  · " + lvl, UISkin.TextDim) : ""), UISkin.LabelSmall);
                 ry += 30;
             }
             ry += 8;
             bool press = w.TechLevel("press") > 0;
-            if (UINav.Button(new Rect(right.x, ry, right.width, 44), "Behälter pressen " + KeyHint(GameAction.Press), press && me.Bin.Count > 0))
-                MenuAct(app, new JObj().Set("a", "press"), "Gepresst – mehr Platz im Behälter.");
+            if (UINav.Button(new Rect(right.x, ry, right.width, 44), L("Behälter pressen ") + KeyHint(GameAction.Press), press && me.Bin.Count > 0))
+                MenuAct(app, new JObj().Set("a", "press"), L("Gepresst – mehr Platz im Behälter."));
             ry += 50;
-            if (!press) ry = Para("Die Müllpresse gibt es in der Werkstatt (halbiert das Volumen von Papier, Kunststoff, Metall, Stahl, Kupfer und Netzen).", right.x, right.width, ry);
+            if (!press) ry = Para(L("Die Müllpresse gibt es in der Werkstatt (halbiert das Volumen von Papier, Kunststoff, Metall, Stahl, Kupfer und Netzen)."), right.x, right.width, ry);
             ry += 4;
-            ry = Section("Wohin damit?", right.x, right.width, ry);
-            ry = Para("• <b>Verkaufsterminal:</b> Behälter direkt verkaufen (unsortiert).\n• <b>Lager/Abladeplatz:</b> einlagern, dann sortieren (Sortiertisch oder Sortieranlage) und teurer verkaufen.\n• <b>Entsorgungsstation:</b> Gefahrstoffe fachgerecht abgeben – der Umweltfonds zahlt.\n• Alles im Reiter „" + L("Lager") + "“ – direkt an der jeweiligen Station.", right.x, right.width, ry);
+            ry = Section(L("Wohin damit?"), right.x, right.width, ry);
+            ry = Para(L("• <b>Verkaufsterminal:</b> Behälter direkt verkaufen (unsortiert).\n• <b>Lager/Abladeplatz:</b> einlagern, dann sortieren (Sortiertisch oder Sortieranlage) und teurer verkaufen.\n• <b>Entsorgungsstation:</b> Gefahrstoffe fachgerecht abgeben – der Umweltfonds zahlt.\n• Alles im Reiter „") + L("Lager") + L("“ – direkt an der jeweiligen Station."), right.x, right.width, ry);
         }
 
         // ================================================================== Aufträge
@@ -283,7 +284,7 @@ namespace RePlanet
             UINav.BeginScroll(keyL, left);
             float w1 = UINav.ScrollWidth(keyL, left);
             float y = 0;
-            string obj = Objective(w);
+            string obj = L(Objective(w));
             float oh = UISkin.TextHeight(UISkin.Wrap, obj, w1 - 40) + 50;
             var or = new Rect(0, y, w1, oh);
             UISkin.RoundRect(or, new Color(UISkin.Accent.r, UISkin.Accent.g, UISkin.Accent.b, 0.16f));
@@ -292,7 +293,7 @@ namespace RePlanet
             y += oh + 16;
             for (int pass = 0; pass < 3; pass++)
             {
-                string head = pass == 0 ? "Aktive Aufträge" : pass == 1 ? "Erledigt" : "Noch gesperrt";
+                string head = pass == 0 ? L("Aktive Aufträge") : pass == 1 ? L("Erledigt") : L("Noch gesperrt");
                 bool any = false;
                 foreach (var m in GameData.Missions)
                 {
@@ -314,13 +315,13 @@ namespace RePlanet
             float ry = 0;
             var ps = w.Cur;
             var pd = GameData.Planets[w.CurrentPlanet];
-            ry = Section("Wiederherstellung " + pd.Name + " – " + (Rules.PlanetRestoration(w, ps) * 100).ToString("0") + " %", 0, w2, ry);
+            ry = Section(L("Wiederherstellung ") + pd.Name + " – " + (Rules.PlanetRestoration(w, ps) * 100).ToString("0") + " %", 0, w2, ry);
             for (int a = 0; a < 3; a++)
             {
                 int st = Rules.AreaStage(w, ps, a);
                 float cl = Rules.Cleanliness(ps, a);
                 GUI.Label(new Rect(0, ry, w2 * 0.5f, 26), "<b>" + pd.AreaNames[a] + "</b>", UISkin.Label);
-                GUI.Label(new Rect(w2 * 0.4f, ry, w2 * 0.6f, 26), UISkin.Col("Stufe " + st + "/4 · " + Rules.StageNames[Mathf.Clamp(st, 0, 4)], st >= 4 ? UISkin.Good : UISkin.TextDim), UISkin.LabelSmall);
+                GUI.Label(new Rect(w2 * 0.4f, ry, w2 * 0.6f, 26), UISkin.Col(L("Stufe ") + st + "/4 · " + L(Rules.StageNames[Mathf.Clamp(st, 0, 4)]), st >= 4 ? UISkin.Good : UISkin.TextDim), UISkin.LabelSmall);
                 ry += 28;
                 for (int s = 1; s <= 4; s++)
                 {
@@ -328,18 +329,18 @@ namespace RePlanet
                     UISkin.RoundRect(sr, st >= s ? (s == 4 ? UISkin.Good : UISkin.Teal) : new Color(1, 1, 1, 0.12f));
                 }
                 ry += 14;
-                GUI.Label(new Rect(0, ry, w2, 24), "Sauberkeit " + (cl * 100).ToString("0") + " % (Ziel " + (GameData.AreaCleanThreshold * 100).ToString("0") + " %) · Ökologie " + (Rules.EcoFraction(w, ps, a) * 100).ToString("0") + " %", UISkin.LabelTiny);
+                GUI.Label(new Rect(0, ry, w2, 24), L("Sauberkeit ") + (cl * 100).ToString("0") + L(" % (Ziel ") + (GameData.AreaCleanThreshold * 100).ToString("0") + L(" %) · Ökologie ") + (Rules.EcoFraction(w, ps, a) * 100).ToString("0") + " %", UISkin.LabelTiny);
                 ry += 30;
             }
             ry += 6;
-            ry = Section("Großprojekte", 0, w2, ry);
+            ry = Section(L("Großprojekte"), 0, w2, ry);
             foreach (var pid in GameData.PlanetOrder)
             {
                 var ppd = GameData.Planets[pid];
                 PlanetState pps;
                 w.Planets.TryGetValue(pid, out pps);
                 bool unlocked = w.Unlocked.Contains(pid);
-                GUI.Label(new Rect(0, ry, w2, 30), UISkin.Col(ppd.Name, UISkin.FromRgb(ppd.Accent)) + UISkin.Col("  " + ppd.Subtitle + (unlocked ? "" : " · noch nicht erreichbar"), UISkin.TextDim), UISkin.LabelBold);
+                GUI.Label(new Rect(0, ry, w2, 30), UISkin.Col(ppd.Name, UISkin.FromRgb(ppd.Accent)) + UISkin.Col("  " + ppd.Subtitle + (unlocked ? "" : L(" · noch nicht erreichbar")), UISkin.TextDim), UISkin.LabelBold);
                 ry += 32;
                 for (int a = 0; a < 3; a++) ry = ProjectRow(w, GameData.Projects[GameData.ProjectId(pid, a)], pps, w2, ry);
                 ry += 8;
@@ -349,7 +350,7 @@ namespace RePlanet
 
         float MissionRow(WorldState w, MissionDef m, MissionState ms, int status, float width, float y)
         {
-            string tag = m.Kind == "tutorial" ? "Einstieg" : "Nebenauftrag";
+            string tag = m.Kind == "tutorial" ? L("Einstieg") : L("Nebenauftrag");
             PlanetDef mpd;
             GameData.Planets.TryGetValue(m.Planet ?? "", out mpd);
             float dh = UISkin.TextHeight(UISkin.WrapSmall, m.Desc, width - 24);
@@ -369,12 +370,12 @@ namespace RePlanet
                 GUI.Label(new Rect(width - 118, yy, 104, 22), p + "/" + m.Target, UISkin.LabelTiny);
                 yy += 24;
             }
-            string reward = (m.RewardCredits > 0 ? "Belohnung: " + Num(m.RewardCredits) + " Credits" : "");
+            string reward = (m.RewardCredits > 0 ? L("Belohnung: ") + Num(m.RewardCredits) + L(" Credits") : "");
             CosmeticDef cd;
-            if (m.RewardCosmetic != null && GameData.Cosmetics.TryGetValue(m.RewardCosmetic, out cd)) reward += (reward.Length > 0 ? " + " : "Belohnung: ") + "Kosmetik „" + cd.Name + "“";
+            if (m.RewardCosmetic != null && GameData.Cosmetics.TryGetValue(m.RewardCosmetic, out cd)) reward += (reward.Length > 0 ? " + " : L("Belohnung: ")) + L("Kosmetik „") + cd.Name + "“";
             if (status == 0 && m.Prereq != null)
             {
-                foreach (var pm in GameData.Missions) if (pm.Id == m.Prereq) { reward += (reward.Length > 0 ? " · " : "") + "Nach „" + pm.Title + "“"; break; }
+                foreach (var pm in GameData.Missions) if (pm.Id == m.Prereq) { reward += (reward.Length > 0 ? " · " : "") + L("Nach „") + pm.Title + "“"; break; }
             }
             GUI.Label(new Rect(14, yy, width - 24, 26), UISkin.Col(reward, UISkin.Warn), UISkin.LabelTiny);
             return y + h + 8;
@@ -394,7 +395,7 @@ namespace RePlanet
             float h = 34 + dh + 32 + (why != null ? 26 : 0) + (started && !done ? 20 : 0) + 8;
             var r = new Rect(0, y, width, h);
             UISkin.RoundRect(r, new Color(1, 1, 1, done ? 0.03f : 0.06f));
-            string status = done ? UISkin.Col("✓ abgeschlossen", UISkin.Good) : started ? UISkin.Col("im Bau " + (st.Progress * 100).ToString("0") + " %", UISkin.Accent) : UISkin.Col("offen", UISkin.TextDim);
+            string status = done ? UISkin.Col(L("✓ abgeschlossen"), UISkin.Good) : started ? UISkin.Col(L("im Bau ") + (st.Progress * 100).ToString("0") + " %", UISkin.Accent) : UISkin.Col("offen", UISkin.TextDim);
             GUI.Label(new Rect(14, y + 5, width - 28, 28), "<b>" + pr.Name + "</b>" + (pr.Great ? UISkin.Col("  GROSSPROJEKT", UISkin.Story) : "") + "   " + status, UISkin.Label);
             float yy = y + 33;
             GUI.Label(new Rect(14, yy, width - 24, dh + 4), pr.Desc, UISkin.WrapSmall);
@@ -407,7 +408,7 @@ namespace RePlanet
             // Anforderungen
             float mx = 14;
             bool okC = w.Credits >= pr.Credits;
-            string cr = Num(pr.Credits) + " Cr";
+            string cr = Num(pr.Credits) + L(" Cr");
             GUI.Label(new Rect(mx, yy, 140, 26), UISkin.Col(cr, done || okC ? UISkin.Text : UISkin.Bad), UISkin.LabelTiny);
             mx += UISkin.TextWidth(UISkin.LabelTiny, cr) + 16;
             foreach (var kv in pr.Mats)
@@ -420,20 +421,20 @@ namespace RePlanet
             }
             yy += 30;
             if (why != null) GUI.Label(new Rect(14, yy, width - 28, 24), UISkin.Col(why, UISkin.Warn), UISkin.LabelTiny);
-            else if (!done && !started && ps != null) GUI.Label(new Rect(14, yy, width - 28, 24), UISkin.Col("Bereit – am Projektplatz starten.", UISkin.Good), UISkin.LabelTiny);
+            else if (!done && !started && ps != null) GUI.Label(new Rect(14, yy, width - 28, 24), UISkin.Col(L("Bereit – am Projektplatz starten."), UISkin.Good), UISkin.LabelTiny);
             return y + h + 6;
         }
 
         // ================================================================== Werkstatt
         void TabWorkshop(GameApp app, Rect c)
         {
-            string[] subs = { "Upgrades", "Fahrzeuge", "Transportschiff & " + L("Reisen") };
+            string[] subs = { L("Upgrades"), L("Fahrzeuge"), L("Transportschiff & ") + L("Reisen") };
             wsSub = UINav.Tabs(new Rect(c.x, c.y, Mathf.Min(760f, c.width), 40), wsSub, subs);
             bool inBase = InBaseLocal(app);
             float y = c.y + 50;
             if (!inBase && wsSub < 2)
             {
-                GUI.Label(new Rect(c.x, y, c.width, 28), UISkin.Col("Du bist unterwegs – kaufen geht nur am Stützpunkt (Werkstatt/Garage). Die Angebote kannst du hier ansehen.", UISkin.Warn), UISkin.LabelSmall);
+                GUI.Label(new Rect(c.x, y, c.width, 28), UISkin.Col(L("Du bist unterwegs – kaufen geht nur am Stützpunkt (Werkstatt/Garage). Die Angebote kannst du hier ansehen."), UISkin.Warn), UISkin.LabelSmall);
                 y += 32;
             }
             var area = new Rect(c.x, y, c.width, c.yMax - y);
@@ -471,25 +472,25 @@ namespace RePlanet
             bool maxed = lvl >= t.MaxLevel;
             int cost = maxed ? 0 : t.Levels[lvl + 1].Cost;
             string reason = null;
-            if (maxed) reason = "Voll ausgebaut";
-            else if (t.RequiresPlanet != null && !w.Unlocked.Contains(t.RequiresPlanet)) reason = "Erst verfügbar, wenn " + GameData.Planets[t.RequiresPlanet].Name + " erreichbar ist";
-            else if (GuestBlocked(app, cost)) reason = "Nur der Host (ab " + Num(GameData.GuestExpensiveThreshold) + " Cr, Vertrauensmodus aus)";
-            else if (w.Credits < cost) reason = "Es fehlen " + Num(cost - w.Credits) + " Credits";
-            else if (!inBase) reason = "Nur am Stützpunkt";
+            if (maxed) reason = L("Voll ausgebaut");
+            else if (t.RequiresPlanet != null && !w.Unlocked.Contains(t.RequiresPlanet)) reason = L("Erst verfügbar, wenn ") + GameData.Planets[t.RequiresPlanet].Name + L(" erreichbar ist");
+            else if (GuestBlocked(app, cost)) reason = L("Nur der Host (ab ") + Num(GameData.GuestExpensiveThreshold) + L(" Cr, Vertrauensmodus aus)");
+            else if (w.Credits < cost) reason = L("Es fehlen ") + Num(cost - w.Credits) + L(" Credits");
+            else if (!inBase) reason = L("Nur am Stützpunkt");
             float textW = width - 300;
             float dh = UISkin.TextHeight(UISkin.WrapSmall, t.Desc, textW);
             float h = Mathf.Max(96f, 34 + dh + 30);
             var r = new Rect(0, y, width, h);
             UISkin.RoundRect(r, new Color(1, 1, 1, 0.05f));
-            GUI.Label(new Rect(14, y + 6, textW, 28), "<b>" + t.Name + "</b>" + UISkin.Col("   Stufe " + lvl + "/" + t.MaxLevel, UISkin.TextDim), UISkin.Label);
+            GUI.Label(new Rect(14, y + 6, textW, 28), "<b>" + t.Name + "</b>" + UISkin.Col(L("   Stufe ") + lvl + "/" + t.MaxLevel, UISkin.TextDim), UISkin.Label);
             GUI.Label(new Rect(14, y + 34, textW, dh + 4), t.Desc, UISkin.WrapSmall);
             string eff = t.Effect + ": " + UISkin.Col(t.Levels[lvl].Label, UISkin.Text) + (maxed ? "" : "  →  " + UISkin.Col(t.Levels[lvl + 1].Label, UISkin.Good));
             GUI.Label(new Rect(14, y + 36 + dh, textW, 26), eff, UISkin.LabelSmall);
             // Kaufen
             float bx = width - 280;
-            if (!maxed) GUI.Label(new Rect(bx, y + 6, 266, 28), "<b>" + Num(cost) + "</b> Credits", UISkin.LabelRight);
-            if (UINav.Button(new Rect(bx, y + 38, 266, 40), maxed ? "Maximal" : L("Kaufen"), reason == null, reason == null ? UISkin.ButtonSel : UISkin.ButtonSmall))
-                MenuAct(app, new JObj().Set("a", "buytech").Set("id", t.Id), t.Name + " verbessert.");
+            if (!maxed) GUI.Label(new Rect(bx, y + 6, 266, 28), "<b>" + Num(cost) + L("</b> Credits"), UISkin.LabelRight);
+            if (UINav.Button(new Rect(bx, y + 38, 266, 40), maxed ? L("Maximal") : L("Kaufen"), reason == null, reason == null ? UISkin.ButtonSel : UISkin.ButtonSmall))
+                MenuAct(app, new JObj().Set("a", "buytech").Set("id", t.Id), t.Name + L(" verbessert."));
             if (reason != null && !maxed) GUI.Label(new Rect(bx - 60, y + 80, 326, 22), UISkin.Col(reason, UISkin.Warn), SmallRight());
             return y + h + 8;
         }
@@ -501,29 +502,29 @@ namespace RePlanet
             UINav.BeginScroll(key, area);
             float sw = UINav.ScrollWidth(key, area);
             float y = 0;
-            y = Para("Fahrzeuge stehen nach dem Kauf in der Garage des Stützpunkts. Einsteigen mit " + KeyHint(GameAction.Vehicle) + ".", 0, sw, y);
+            y = Para(L("Fahrzeuge stehen nach dem Kauf in der Garage des Stützpunkts. Einsteigen mit ") + KeyHint(GameAction.Vehicle) + ".", 0, sw, y);
             foreach (var v in GameData.Vehicles.Values)
             {
                 bool owned = w.OwnedVehicles.Contains(v.Id);
                 string reason = null;
-                if (owned) reason = "Bereits in der Garage";
-                else if (v.Planet != null && !w.Unlocked.Contains(v.Planet)) reason = "Erst auf " + GameData.Planets[v.Planet].Name + " nutzbar";
-                else if (GuestBlocked(app, v.Cost)) reason = "Nur der Host (Vertrauensmodus aus)";
-                else if (w.Credits < v.Cost) reason = "Es fehlen " + Num(v.Cost - w.Credits) + " Credits";
-                else if (!inBase) reason = "Nur am Stützpunkt";
+                if (owned) reason = L("Bereits in der Garage");
+                else if (v.Planet != null && !w.Unlocked.Contains(v.Planet)) reason = L("Erst auf ") + GameData.Planets[v.Planet].Name + L(" nutzbar");
+                else if (GuestBlocked(app, v.Cost)) reason = L("Nur der Host (Vertrauensmodus aus)");
+                else if (w.Credits < v.Cost) reason = L("Es fehlen ") + Num(v.Cost - w.Credits) + L(" Credits");
+                else if (!inBase) reason = L("Nur am Stützpunkt");
                 float textW = sw - 300;
                 float dh = UISkin.TextHeight(UISkin.WrapSmall, v.Desc, textW);
                 float h = Mathf.Max(100f, 34 + dh + 32);
                 var r = new Rect(0, y, sw, h);
                 UISkin.RoundRect(r, new Color(1, 1, 1, 0.05f));
                 UISkin.Tex(new Rect(14, y + 10, 28, 28), UISkin.Shape("truck"), owned ? UISkin.Good : UISkin.Accent);
-                GUI.Label(new Rect(52, y + 8, textW - 40, 28), "<b>" + v.Name + "</b>" + (owned ? UISkin.Col("   ✓ vorhanden", UISkin.Good) : "") + (v.Planet != null ? UISkin.Col("   nur " + GameData.Planets[v.Planet].Name, UISkin.TextDim) : ""), UISkin.Label);
+                GUI.Label(new Rect(52, y + 8, textW - 40, 28), "<b>" + v.Name + "</b>" + (owned ? UISkin.Col(L("   ✓ vorhanden"), UISkin.Good) : "") + (v.Planet != null ? UISkin.Col(L("   nur ") + GameData.Planets[v.Planet].Name, UISkin.TextDim) : ""), UISkin.Label);
                 GUI.Label(new Rect(14, y + 40, textW, dh + 4), v.Desc, UISkin.WrapSmall);
-                GUI.Label(new Rect(14, y + 42 + dh, textW, 24), "Tempo " + v.Speed.ToString("0") + " m/s" + (v.Capacity > 0 ? " · Ladung " + v.Capacity.ToString("0") + " Vol." : "") + (v.Water ? " · fährt auf dem Wasser" : ""), UISkin.LabelTiny);
+                GUI.Label(new Rect(14, y + 42 + dh, textW, 24), L("Tempo ") + v.Speed.ToString("0") + " m/s" + (v.Capacity > 0 ? L(" · Ladung ") + v.Capacity.ToString("0") + L(" Vol.") : "") + (v.Water ? L(" · fährt auf dem Wasser") : ""), UISkin.LabelTiny);
                 float bx = sw - 280;
-                if (!owned) GUI.Label(new Rect(bx, y + 6, 266, 28), "<b>" + Num(v.Cost) + "</b> Credits", UISkin.LabelRight);
-                if (UINav.Button(new Rect(bx, y + 38, 266, 40), owned ? "In der Garage" : L("Kaufen"), reason == null, reason == null ? UISkin.ButtonSel : UISkin.ButtonSmall))
-                    MenuAct(app, new JObj().Set("a", "buyveh").Set("id", v.Id), v.Name + " gekauft.");
+                if (!owned) GUI.Label(new Rect(bx, y + 6, 266, 28), "<b>" + Num(v.Cost) + L("</b> Credits"), UISkin.LabelRight);
+                if (UINav.Button(new Rect(bx, y + 38, 266, 40), owned ? L("In der Garage") : L("Kaufen"), reason == null, reason == null ? UISkin.ButtonSel : UISkin.ButtonSmall))
+                    MenuAct(app, new JObj().Set("a", "buyveh").Set("id", v.Id), v.Name + L(" gekauft."));
                 if (reason != null && !owned) GUI.Label(new Rect(bx - 60, y + 80, 326, 22), UISkin.Col(reason, UISkin.Warn), SmallRight());
                 y += h + 8;
             }
@@ -537,26 +538,26 @@ namespace RePlanet
             UINav.BeginScroll(key, area);
             float sw = UINav.ScrollWidth(key, area);
             float y = 0;
-            y = Section("Transportschiff", 0, sw, y);
+            y = Section(L("Transportschiff"), 0, sw, y);
             int lvl = Mathf.Clamp(w.ShipLevel, 0, GameData.ShipLevelName.Length - 1);
-            GUI.Label(new Rect(0, y, sw, 28), "Ausbau: <b>" + GameData.ShipLevelName[lvl] + "</b>", UISkin.Label);
+            GUI.Label(new Rect(0, y, sw, 28), L("Ausbau: <b>") + GameData.ShipLevelName[lvl] + "</b>", UISkin.Label);
             y += 32;
             if (lvl < GameData.ShipLevelCost.Length - 1)
             {
                 int cost = GameData.ShipLevelCost[lvl + 1];
                 string reason = null;
-                if (GuestBlocked(app, cost)) reason = "Nur der Host (Vertrauensmodus aus)";
-                else if (w.Credits < cost) reason = "Es fehlen " + Num(cost - w.Credits) + " Credits";
-                else if (!inBase) reason = "Nur am Stützpunkt (Landeplatz)";
-                GUI.Label(new Rect(0, y, sw - 300, 28), "Nächste Stufe: " + GameData.ShipLevelName[lvl + 1] + " – <b>" + Num(cost) + "</b> Credits", UISkin.Label);
-                if (UINav.Button(new Rect(sw - 280, y - 4, 266, 40), "Einbauen", reason == null, reason == null ? UISkin.ButtonSel : UISkin.ButtonSmall))
-                    MenuAct(app, new JObj().Set("a", "buyship"), "Sprungantrieb eingebaut.");
+                if (GuestBlocked(app, cost)) reason = L("Nur der Host (Vertrauensmodus aus)");
+                else if (w.Credits < cost) reason = L("Es fehlen ") + Num(cost - w.Credits) + L(" Credits");
+                else if (!inBase) reason = L("Nur am Stützpunkt (Landeplatz)");
+                GUI.Label(new Rect(0, y, sw - 300, 28), L("Nächste Stufe: ") + GameData.ShipLevelName[lvl + 1] + " – <b>" + Num(cost) + L("</b> Credits"), UISkin.Label);
+                if (UINav.Button(new Rect(sw - 280, y - 4, 266, 40), L("Einbauen"), reason == null, reason == null ? UISkin.ButtonSel : UISkin.ButtonSmall))
+                    MenuAct(app, new JObj().Set("a", "buyship"), L("Sprungantrieb eingebaut."));
                 y += 42;
                 if (reason != null) { GUI.Label(new Rect(0, y, sw, 24), UISkin.Col(reason, UISkin.Warn), UISkin.LabelTiny); y += 26; }
             }
-            else { GUI.Label(new Rect(0, y, sw, 26), UISkin.Col("Voll ausgebaut – alle Welten sind erreichbar, sobald sie freigeschaltet sind.", UISkin.Good), UISkin.LabelSmall); y += 30; }
+            else { GUI.Label(new Rect(0, y, sw, 26), UISkin.Col(L("Voll ausgebaut – alle Welten sind erreichbar, sobald sie freigeschaltet sind."), UISkin.Good), UISkin.LabelSmall); y += 30; }
             y += 10;
-            y = Section(L("Reisen") + " – Sternenkarte", 0, sw, y);
+            y = Section(L("Reisen") + L(" – Sternenkarte"), 0, sw, y);
             y = DrawStarMap(app, sw, y);
             UINav.EndScroll(y + 10);
         }
@@ -615,7 +616,7 @@ namespace RePlanet
                     if (!unlocked) UISkin.Tex(new Rect(cx - 12, cy - 12, 24, 24), UISkin.Shape("cross"), new Color(1, 1, 1, 0.6f));
                 }
                 GUI.Label(new Rect(cx - 100, cy + size * 0.5f + 6, 200, 26), UISkin.Col(pd.Name, unlocked ? UISkin.FromRgb(pd.Accent) : UISkin.TextDim), SmallCenter());
-                string st = current ? "● Du bist hier" : unlocked ? "erreichbar" : "gesperrt";
+                string st = current ? L("● Du bist hier") : unlocked ? L("erreichbar") : L("gesperrt");
                 PlanetState pps;
                 if (w.Planets.TryGetValue(id, out pps) && unlocked) st += " · " + (Rules.PlanetRestoration(w, pps) * 100).ToString("0") + " %";
                 GUI.Label(new Rect(cx - 110, cy + size * 0.5f + 30, 220, 22), UISkin.Col(st, current ? UISkin.Good : UISkin.TextDim), SmallCenter());
@@ -629,13 +630,13 @@ namespace RePlanet
             y += 36;
             y = Para(UISkin.Col(sp.Mood, UISkin.Warn), 0, width, y);
             y = Para(sp.Description, 0, width, y);
-            if (!su) y = Para(UISkin.Col("Freischalten: " + sp.UnlockHint, UISkin.Story), 0, width, y);
+            if (!su) y = Para(UISkin.Col(L("Freischalten: ") + sp.UnlockHint, UISkin.Story), 0, width, y);
             string reason = null;
-            if (scur) reason = "Du bist bereits hier.";
+            if (scur) reason = L("Du bist bereits hier.");
             else if (!su) reason = sp.UnlockHint;
-            else if (!app.IsHost) reason = "Nur der Host kann das Transportschiff starten.";
-            else if (!NearStationLocal(app, "ship", 4f)) reason = "Zum Transportschiff am Landeplatz fahren.";
-            if (UINav.Button(new Rect(0, y + 4, 340, 48), L("Reisen") + " nach " + sp.Name, reason == null, reason == null ? UISkin.ButtonSel : UISkin.ButtonSmall))
+            else if (!app.IsHost) reason = L("Nur der Host kann das Transportschiff starten.");
+            else if (!NearStationLocal(app, "ship", 4f)) reason = L("Zum Transportschiff am Landeplatz fahren.");
+            if (UINav.Button(new Rect(0, y + 4, 340, 48), L("Reisen") + L(" nach ") + sp.Name, reason == null, reason == null ? UISkin.ButtonSel : UISkin.ButtonSmall))
             {
                 string target = travelSel;
                 app.Act(new JObj().Set("a", "travel").Set("planet", target), r =>
@@ -647,7 +648,7 @@ namespace RePlanet
             }
             if (reason != null) GUI.Label(new Rect(356, y + 4, width - 360, 48), UISkin.Col(reason, UISkin.Warn), UISkin.LabelSmall);
             y += 60;
-            y = Para("Beim Reisen kommen alle Mitspieler mit. Lager, Gebäude und Fortschritt jedes Planeten bleiben erhalten.", 0, width, y);
+            y = Para(L("Beim Reisen kommen alle Mitspieler mit. Lager, Gebäude und Fortschritt jedes Planeten bleiben erhalten."), 0, width, y);
             return y;
         }
 
@@ -662,7 +663,7 @@ namespace RePlanet
             float y = DrawStarMap(app, UINav.ScrollWidth(key, inner), 0);
             UINav.EndScroll(y + 10);
             if (actMsg != null && Time.unscaledTime < actMsgUntil)
-                GUI.Label(new Rect(r.x + 24, r.yMax - 40, r.width - 48, 30), UISkin.Col(actMsg, actMsgErr ? UISkin.Bad : UISkin.Good), UISkin.LabelSmall);
+                GUI.Label(new Rect(r.x + 24, r.yMax - 40, r.width - 48, 30), UISkin.Col(L(actMsg), actMsgErr ? UISkin.Bad : UISkin.Good), UISkin.LabelSmall);
         }
 
         // ================================================================== Lager
@@ -676,26 +677,26 @@ namespace RePlanet
             float sw = UINav.ScrollWidth(key, c);
             float y = 0;
             int used = ps.StorageUsed(), cap = ps.StorageCap();
-            GUI.Label(new Rect(0, y, sw * 0.5f, 28), "Lager: <b>" + used + " / " + cap + "</b> Einheiten" + UISkin.Col("  (Ballen zählen 5)", UISkin.TextDim), UISkin.Label);
+            GUI.Label(new Rect(0, y, sw * 0.5f, 28), L("Lager: <b>") + used + " / " + cap + L("</b> Einheiten") + UISkin.Col(L("  (Ballen zählen 5)"), UISkin.TextDim), UISkin.Label);
             Color ec = en.Efficiency >= 0.999f ? UISkin.Good : en.Efficiency >= 0.6f ? UISkin.Warn : UISkin.Bad;
-            GUI.Label(new Rect(sw * 0.5f, y, sw * 0.5f, 28), "Energie: +" + en.Supply.ToString("0.#") + " / −" + en.Demand.ToString("0.#") + " → Anlagen " + UISkin.Col((en.Efficiency * 100).ToString("0") + " %", ec), UISkin.LabelRight);
+            GUI.Label(new Rect(sw * 0.5f, y, sw * 0.5f, 28), L("Energie: +") + en.Supply.ToString("0.#") + " / −" + en.Demand.ToString("0.#") + L(" → Anlagen ") + UISkin.Col((en.Efficiency * 100).ToString("0") + " %", ec), UISkin.LabelRight);
             y += 30;
             UISkin.Bar(new Rect(0, y, sw, 10), used / (float)Mathf.Max(1, cap), used >= cap ? UISkin.Warn : UISkin.Teal);
             y += 18;
-            string where = menuStation != null ? "Du stehst am <b>" + StationName(menuStation) + "</b>. " : "";
-            y = Para(where + "Der Server prüft die Station: Verkaufen am Verkaufsterminal, Kaufen beim Materialhändler, Einlagern am Lager/Abladeplatz, Entsorgen an der Entsorgungsstation, Recyclingaufträge an der Auftragstafel.", 0, sw, y);
+            string where = menuStation != null ? L("Du stehst am <b>") + StationName(menuStation) + "</b>. " : "";
+            y = Para(where + L("Der Server prüft die Station: Verkaufen am Verkaufsterminal, Kaufen beim Materialhändler, Einlagern am Lager/Abladeplatz, Entsorgen an der Entsorgungsstation, Recyclingaufträge an der Auftragstafel."), 0, sw, y);
             y += 4;
 
             // ---------------------------------------------------- Behälter
-            y = Section("Behälter (" + me.Bin.Count + " Teile, " + Item.Volume(me.Bin).ToString("0.#") + " Vol.)", 0, sw, y);
+            y = Section(L("Behälter (") + me.Bin.Count + L(" Teile, ") + Item.Volume(me.Bin).ToString("0.#") + L(" Vol.)"), 0, sw, y);
             float bw = (sw - 24) / 3f;
             bool nSell = NearStationLocal(app, "sell"), nStore = NearStationLocal(app, "storage", 1.5f) || NearDrop(app), nDisp = NearStationLocal(app, "disposal");
             int binVal = Rules.BinValue(w, me.Bin);
-            if (UINav.Button(new Rect(0, y, bw, 46), "Behälter verkaufen (~" + Num(binVal) + " Cr)", me.Bin.Count > 0, nSell ? UISkin.ButtonSel : UISkin.Button))
+            if (UINav.Button(new Rect(0, y, bw, 46), L("Behälter verkaufen (~") + Num(binVal) + L(" Cr)"), me.Bin.Count > 0, nSell ? UISkin.ButtonSel : UISkin.Button))
                 MenuAct(app, new JObj().Set("a", "sellbin"));
-            if (UINav.Button(new Rect(bw + 12, y, bw, 46), L("Einlagern") + " (alles)", me.Bin.Count > 0, nStore ? UISkin.ButtonSel : UISkin.Button))
-                MenuAct(app, new JObj().Set("a", "deposit"), "Eingelagert.");
-            if (UINav.Button(new Rect((bw + 12) * 2, y, bw, 46), "Gefahrstoffe " + L("Entsorgen").ToLowerInvariant(), true, nDisp ? UISkin.ButtonSel : UISkin.Button))
+            if (UINav.Button(new Rect(bw + 12, y, bw, 46), L("Einlagern") + L(" (alles)"), me.Bin.Count > 0, nStore ? UISkin.ButtonSel : UISkin.Button))
+                MenuAct(app, new JObj().Set("a", "deposit"), L("Eingelagert."));
+            if (UINav.Button(new Rect((bw + 12) * 2, y, bw, 46), L("Gefahrstoffe ") + L("Entsorgen").ToLowerInvariant(), true, nDisp ? UISkin.ButtonSel : UISkin.Button))
                 MenuAct(app, new JObj().Set("a", "dispose"));
             y += 50;
             GUI.Label(new Rect(0, y, bw, 22), StationHint(nSell, "sell"), UISkin.LabelTiny);
@@ -704,16 +705,16 @@ namespace RePlanet
             y += 32;
 
             // ---------------------------------------------------- Materialtabelle
-            y = Section("Material im Lager", 0, sw, y);
+            y = Section(L("Material im Lager"), 0, sw, y);
             bool nTrade = NearStationLocal(app, "trader");
             float colName = sw * 0.2f, colCnt = sw * 0.05f, colSell = sw * 0.12f, colBuy = sw * 0.1f;
             float x0 = 0, xU = colName, xS = xU + colCnt, xB = xS + colCnt, xSell = xB + colCnt + 10, xBuy = xSell + colSell * 3 + 20;
-            GUI.Label(new Rect(x0 + 8, y, colName, 24), "Material", UISkin.LabelTiny);
-            GUI.Label(new Rect(xU, y, colCnt, 24), "Unsort.", UISkin.LabelTiny);
-            GUI.Label(new Rect(xS, y, colCnt, 24), "Sortiert", UISkin.LabelTiny);
-            GUI.Label(new Rect(xB, y, colCnt, 24), "Ballen", UISkin.LabelTiny);
-            GUI.Label(new Rect(xSell, y, colSell * 3, 24), L("Verkaufen") + " (alles je Stufe)" + (nSell ? "" : UISkin.Col(" – am Verkaufsterminal", UISkin.TextDim)), UISkin.LabelTiny);
-            GUI.Label(new Rect(xBuy, y, colBuy * 2 + 10, 24), "Händler" + (nTrade ? "" : UISkin.Col(" – beim Materialhändler", UISkin.TextDim)), UISkin.LabelTiny);
+            GUI.Label(new Rect(x0 + 8, y, colName, 24), L("Material"), UISkin.LabelTiny);
+            GUI.Label(new Rect(xU, y, colCnt, 24), L("Unsort."), UISkin.LabelTiny);
+            GUI.Label(new Rect(xS, y, colCnt, 24), L("Sortiert"), UISkin.LabelTiny);
+            GUI.Label(new Rect(xB, y, colCnt, 24), L("Ballen"), UISkin.LabelTiny);
+            GUI.Label(new Rect(xSell, y, colSell * 3, 24), L("Verkaufen") + L(" (alles je Stufe)") + (nSell ? "" : UISkin.Col(L(" – am Verkaufsterminal"), UISkin.TextDim)), UISkin.LabelTiny);
+            GUI.Label(new Rect(xBuy, y, colBuy * 2 + 10, 24), L("Händler") + (nTrade ? "" : UISkin.Col(L(" – beim Materialhändler"), UISkin.TextDim)), UISkin.LabelTiny);
             y += 26;
             int row = 0;
             foreach (var mat in GameData.MaterialOrder)
@@ -731,7 +732,7 @@ namespace RePlanet
                 GUI.Label(new Rect(xB, y, colCnt, 44), B.ToString(), B > 0 ? UISkin.Label : UISkin.LabelSmall);
                 if (md.Price <= 0)
                 {
-                    GUI.Label(new Rect(xSell, y, colSell * 3, 44), UISkin.Col("→ nur Entsorgung (+" + md.DisposalBonus + " Cr/Einheit)", UISkin.Warn), UISkin.LabelSmall);
+                    GUI.Label(new Rect(xSell, y, colSell * 3, 44), UISkin.Col(L("→ nur Entsorgung (+") + md.DisposalBonus + L(" Cr/Einheit)"), UISkin.Warn), UISkin.LabelSmall);
                 }
                 else
                 {
@@ -748,26 +749,26 @@ namespace RePlanet
                 {
                     int p10 = GameData.BuyPrice(mat) * 10, p50 = GameData.BuyPrice(mat) * 50;
                     if (UINav.Button(new Rect(xBuy, y + 4, colBuy, 36), "+10 (" + Num(p10) + ")", w.Credits >= p10 && !GuestBlocked(app, p10), UISkin.ButtonSmall))
-                        MenuAct(app, new JObj().Set("a", "buymat").Set("m", mat).Set("n", 10), "10 " + md.Name + " gekauft.");
+                        MenuAct(app, new JObj().Set("a", "buymat").Set("m", mat).Set("n", 10), "10 " + md.Name + L(" gekauft."));
                     if (UINav.Button(new Rect(xBuy + colBuy + 8, y + 4, colBuy, 36), "+50 (" + Num(p50) + ")", w.Credits >= p50 && !GuestBlocked(app, p50), UISkin.ButtonSmall))
-                        MenuAct(app, new JObj().Set("a", "buymat").Set("m", mat).Set("n", 50), "50 " + md.Name + " gekauft.");
+                        MenuAct(app, new JObj().Set("a", "buymat").Set("m", mat).Set("n", 50), "50 " + md.Name + L(" gekauft."));
                 }
                 y += 46;
             }
-            y = Para("U = unsortiert (50 % Wert), S = sortiert (100 %), B = Ballen aus 10 sortierten Einheiten (130 %). Sortieren: am Sortiertisch " + KeyHint(GameAction.Interact) + " halten oder mit einer Sortieranlage (Bauansicht).", 0, sw, y + 4);
+            y = Para(L("U = unsortiert (50 % Wert), S = sortiert (100 %), B = Ballen aus 10 sortierten Einheiten (130 %). Sortieren: am Sortiertisch ") + KeyHint(GameAction.Interact) + L(" halten oder mit einer Sortieranlage (Bauansicht)."), 0, sw, y + 4);
 
             // ---------------------------------------------------- Aufträge & Lieferungen
             y += 6;
-            y = Section("Recyclingauftrag & Lieferungen", 0, sw, y);
+            y = Section(L("Recyclingauftrag & Lieferungen"), 0, sw, y);
             string cm; int cn, creward;
             Rules.Contract(w.CurrentPlanet, ps.ContractIdx, out cm, out cn, out creward);
             StorageEntry ce;
             int haveS = ps.Storage.TryGetValue(cm, out ce) ? ce.S : 0;
             bool nContract = NearStationLocal(app, "contracts");
             float tagW = UISkin.MaterialTag(new Rect(0, y + 4, 280, 30), cm, null, UISkin.LabelBold);
-            GUI.Label(new Rect(tagW + 10, y, sw - tagW - 340, 38), "Liefere <b>" + cn + "</b> sortierte Einheiten (vorhanden: " + UISkin.Col(haveS.ToString(), haveS >= cn ? UISkin.Good : UISkin.Bad) + ") → <b>" + Num(creward) + "</b> Credits", UISkin.Label);
-            if (UINav.Button(new Rect(sw - 320, y, 320, 42), "Auftrag erfüllen", haveS >= cn, nContract ? UISkin.ButtonSel : UISkin.Button))
-                MenuAct(app, new JObj().Set("a", "contract"), "Recyclingauftrag erfüllt.");
+            GUI.Label(new Rect(tagW + 10, y, sw - tagW - 340, 38), L("Liefere <b>") + cn + L("</b> sortierte Einheiten (vorhanden: ") + UISkin.Col(haveS.ToString(), haveS >= cn ? UISkin.Good : UISkin.Bad) + ") → <b>" + Num(creward) + L("</b> Credits"), UISkin.Label);
+            if (UINav.Button(new Rect(sw - 320, y, 320, 42), L("Auftrag erfüllen"), haveS >= cn, nContract ? UISkin.ButtonSel : UISkin.Button))
+                MenuAct(app, new JObj().Set("a", "contract"), L("Recyclingauftrag erfüllt."));
             y += 44;
             GUI.Label(new Rect(sw - 320, y, 320, 22), StationHint(nContract, "contracts"), UISkin.LabelTiny);
             y += 30;
@@ -776,13 +777,13 @@ namespace RePlanet
             float dWait;
             string dWhy = Rules.DeliveryCheck(w, ps, out dWait);
             int dFee = GameData.DeliveryFee(w.CurrentPlanet);
-            GUI.Label(new Rect(0, y, sw - 340, 42), "Schrottlieferung: " + GameData.DeliveryParts + " Teile Müll landen am Abladeplatz – ideal zum Sortieren und für Aufträge. Gebühr " + dFee + " Credits, danach " + Mathf.RoundToInt(GameData.DeliveryCooldown) + " s Pause.", UISkin.LabelSmall);
-            string dLabel = pending ? "Lieferung liegt noch bereit" : dWait > 0 ? "Nächste in " + Rules.FormatWait(dWait) : "Lieferung bestellen (" + dFee + " Cr)";
+            GUI.Label(new Rect(0, y, sw - 340, 42), Loc.F("Schrottlieferung: {0} Teile Müll landen am Abladeplatz – ideal zum Sortieren und für Aufträge. Gebühr {1} Credits, danach {2} s Pause.", GameData.DeliveryParts, dFee, Mathf.RoundToInt(GameData.DeliveryCooldown)), UISkin.LabelSmall);
+            string dLabel = pending ? L("Lieferung liegt noch bereit") : dWait > 0 ? Loc.F("Nächste in {0}", Rules.FormatWait(dWait)) : Loc.F("Lieferung bestellen ({0} Cr)", dFee);
             if (UINav.Button(new Rect(sw - 320, y, 320, 42), dLabel, dWhy == null && InBaseLocal(app), UISkin.Button))
-                MenuAct(app, new JObj().Set("a", "delivery"), "Lieferung ist unterwegs zum Abladeplatz.");
+                MenuAct(app, new JObj().Set("a", "delivery"), L("Lieferung ist unterwegs zum Abladeplatz."));
             y += 48;
-            if (dWhy != null && !pending && dWait <= 0) { GUI.Label(new Rect(sw - 320, y - 4, 320, 22), UISkin.Col(dWhy, UISkin.Warn), UISkin.LabelTiny); y += 20; }
-            if (!InBaseLocal(app)) { GUI.Label(new Rect(sw - 320, y - 4, 320, 22), UISkin.Col("Nur am Stützpunkt", UISkin.TextDim), UISkin.LabelTiny); y += 20; }
+            if (dWhy != null && !pending && dWait <= 0) { GUI.Label(new Rect(sw - 320, y - 4, 320, 22), UISkin.Col(Loc.T(dWhy), UISkin.Warn), UISkin.LabelTiny); y += 20; }
+            if (!InBaseLocal(app)) { GUI.Label(new Rect(sw - 320, y - 4, 320, 22), UISkin.Col(L("Nur am Stützpunkt"), UISkin.TextDim), UISkin.LabelTiny); y += 20; }
             UINav.EndScroll(y + 10);
         }
 
@@ -796,7 +797,7 @@ namespace RePlanet
 
         string StationHint(bool near, string st)
         {
-            return near ? UISkin.Col("✓ " + StationName(st) + " in Reichweite", UISkin.Good) : UISkin.Col("→ am " + StationName(st), UISkin.TextDim);
+            return near ? UISkin.Col("✓ " + StationName(st) + L(" in Reichweite"), UISkin.Good) : UISkin.Col(L("→ am ") + StationName(st), UISkin.TextDim);
         }
 
         // ================================================================== Archiv
@@ -812,7 +813,7 @@ namespace RePlanet
             UINav.BeginScroll(key, left);
             float sw = UINav.ScrollWidth(key, left);
             float y = 0;
-            GUI.Label(new Rect(0, y, sw, 30), "Fundstücke: <b>" + found + " / " + GameData.LoreOrder.Count + "</b>", UISkin.Label);
+            GUI.Label(new Rect(0, y, sw, 30), L("Fundstücke: <b>") + found + " / " + GameData.LoreOrder.Count + "</b>", UISkin.Label);
             y += 36;
             string lastPlanet = null;
             foreach (var id in GameData.LoreOrder)
@@ -827,7 +828,7 @@ namespace RePlanet
                     y += 34;
                 }
                 bool has = w.Lore.Contains(id);
-                if (UINav.Button(new Rect(0, y, sw, 40), has ? ld.Title : "??? (noch nicht gefunden)", has, loreSel == id ? UISkin.ButtonSel : UISkin.ButtonSmall)) loreSel = id;
+                if (UINav.Button(new Rect(0, y, sw, 40), has ? ld.Title : L("??? (noch nicht gefunden)"), has, loreSel == id ? UISkin.ButtonSel : UISkin.ButtonSmall)) loreSel = id;
                 y += 46;
             }
             UINav.EndScroll(y);
@@ -845,7 +846,7 @@ namespace RePlanet
             }
             else
             {
-                GUI.Label(new Rect(right.x + 30, right.y + 30, right.width - 60, 120), UISkin.Col("Wähle links ein Fundstück zum Lesen.\n\nFundstücke liegen verstreut auf den Planeten (Buch-Symbol auf der Karte). Mit " + KeyHint(GameAction.Interact) + " aufheben.", UISkin.TextDim), UISkin.Wrap);
+                GUI.Label(new Rect(right.x + 30, right.y + 30, right.width - 60, 120), UISkin.Col(L("Wähle links ein Fundstück zum Lesen.\n\nFundstücke liegen verstreut auf den Planeten (Buch-Symbol auf der Karte). Mit ") + KeyHint(GameAction.Interact) + L(" aufheben."), UISkin.TextDim), UISkin.Wrap);
             }
         }
 
@@ -904,21 +905,21 @@ namespace RePlanet
             var pv = new Rect(0, y, pvS, pvS + 20);
             DrawRobotPreview(pv);
             float tx = pvS + 24;
-            GUI.Label(new Rect(tx, y, sw - tx, 30), "Aussehen von MIKO", UISkin.H3);
-            y = Para("Kosmetik ist rein optisch. Freigeschaltetes bleibt in deinem Profil – auch in anderen Welten und im Koop.", tx, sw - tx, y + 36);
+            GUI.Label(new Rect(tx, y, sw - tx, 30), L("Aussehen von MIKO"), UISkin.H3);
+            y = Para(L("Kosmetik ist rein optisch. Freigeschaltetes bleibt in deinem Profil – auch in anderen Welten und im Koop."), tx, sw - tx, y + 36);
             bool changed = cosmSel[0] != app.Profile.Color || cosmSel[1] != app.Profile.Accent || cosmSel[2] != app.Profile.Sticker || cosmSel[3] != app.Profile.Attach;
-            if (UINav.Button(new Rect(tx, y + 6, 240, 44), "Übernehmen", changed, UISkin.ButtonSel))
+            if (UINav.Button(new Rect(tx, y + 6, 240, 44), L("Übernehmen"), changed, UISkin.ButtonSel))
             {
                 var p = app.Profile;
                 p.Color = cosmSel[0]; p.Accent = cosmSel[1]; p.Sticker = cosmSel[2]; p.Attach = cosmSel[3];
                 p.Save();
-                MenuAct(app, new JObj().Set("a", "cosm").Set("color", p.Color).Set("accent", p.Accent).Set("sticker", p.Sticker).Set("attach", p.Attach).Set("personal", true), "Neues Aussehen übernommen.");
+                MenuAct(app, new JObj().Set("a", "cosm").Set("color", p.Color).Set("accent", p.Accent).Set("sticker", p.Sticker).Set("attach", p.Attach).Set("personal", true), L("Neues Aussehen übernommen."));
             }
-            if (UINav.Button(new Rect(tx + 252, y + 6, 200, 44), "Zurücksetzen", changed, UISkin.ButtonSmall)) LoadCosmSel();
+            if (UINav.Button(new Rect(tx + 252, y + 6, 200, 44), L("Zurücksetzen"), changed, UISkin.ButtonSmall)) LoadCosmSel();
             y = Mathf.Max(y + 60, pvS + 40);
             for (int k = 0; k < 4; k++)
             {
-                y = Section(CosmKindNames[k], 0, sw, y);
+                y = Section(L(CosmKindNames[k]), 0, sw, y);
                 float bx = 0, bw = 200, bh = 44;
                 foreach (var id in GameData.CosmeticOrder)
                 {
@@ -939,24 +940,24 @@ namespace RePlanet
 
             // Statistiken
             float ry = right.y;
-            ry = Section("Statistik – " + w.WorldName, right.x, right.width, ry);
-            StatLine(right, ref ry, "Spielzeit", FormatTime(w.PlayTime));
-            StatLine(right, ref ry, "Wiederherstellung gesamt", (SaveCodec.TotalRestoration(w) * 100).ToString("0") + " %");
-            StatLine(right, ref ry, "Credits verdient", Num(w.Stat("credEarned")));
-            StatLine(right, ref ry, "Objekte gesammelt", Num(w.Stat("collected")));
-            StatLine(right, ref ry, "Verkäufe", Num(w.Stat("sales")));
-            StatLine(right, ref ry, "Einheiten sortiert", Num(w.Stat("sorted")));
-            StatLine(right, ref ry, "Ballen verkauft", Num(w.Stat("balesSold")));
-            StatLine(right, ref ry, "Gefahrstoffe entsorgt", Num(w.Stat("disposed")));
-            StatLine(right, ref ry, "Objekte zerlegt", Num(w.Stat("dismantled")));
-            StatLine(right, ref ry, "Aufgetaut", Num(w.Stat("thawed")));
-            StatLine(right, ref ry, "Ölteppiche gereinigt", Num(w.Stat("oil")));
-            StatLine(right, ref ry, "Upgrades gekauft", Num(w.Stat("techBought")));
-            StatLine(right, ref ry, "Unterschlupf genutzt", Num(w.Stat("shelterVisits")));
-            StatLine(right, ref ry, "Notabschaltungen", Num(w.Stat("shutdowns")));
-            StatLine(right, ref ry, "Fundstücke", w.Lore.Count + " / " + GameData.LoreOrder.Count);
-            StatLine(right, ref ry, "Planeten erreichbar", w.Unlocked.Count + " / " + GameData.PlanetOrder.Count);
-            if (w.CampaignDone) StatLine(right, ref ry, "Kampagne", UISkin.Col("abgeschlossen ✓", UISkin.Good));
+            ry = Section(L("Statistik – ") + w.WorldName, right.x, right.width, ry);
+            StatLine(right, ref ry, L("Spielzeit"), FormatTime(w.PlayTime));
+            StatLine(right, ref ry, L("Wiederherstellung gesamt"), (SaveCodec.TotalRestoration(w) * 100).ToString("0") + " %");
+            StatLine(right, ref ry, L("Credits verdient"), Num(w.Stat("credEarned")));
+            StatLine(right, ref ry, L("Objekte gesammelt"), Num(w.Stat("collected")));
+            StatLine(right, ref ry, L("Verkäufe"), Num(w.Stat("sales")));
+            StatLine(right, ref ry, L("Einheiten sortiert"), Num(w.Stat("sorted")));
+            StatLine(right, ref ry, L("Ballen verkauft"), Num(w.Stat("balesSold")));
+            StatLine(right, ref ry, L("Gefahrstoffe entsorgt"), Num(w.Stat("disposed")));
+            StatLine(right, ref ry, L("Objekte zerlegt"), Num(w.Stat("dismantled")));
+            StatLine(right, ref ry, L("Aufgetaut"), Num(w.Stat("thawed")));
+            StatLine(right, ref ry, L("Ölteppiche gereinigt"), Num(w.Stat("oil")));
+            StatLine(right, ref ry, L("Upgrades gekauft"), Num(w.Stat("techBought")));
+            StatLine(right, ref ry, L("Unterschlupf genutzt"), Num(w.Stat("shelterVisits")));
+            StatLine(right, ref ry, L("Notabschaltungen"), Num(w.Stat("shutdowns")));
+            StatLine(right, ref ry, L("Fundstücke"), w.Lore.Count + " / " + GameData.LoreOrder.Count);
+            StatLine(right, ref ry, L("Planeten erreichbar"), w.Unlocked.Count + " / " + GameData.PlanetOrder.Count);
+            if (w.CampaignDone) StatLine(right, ref ry, L("Kampagne"), UISkin.Col(L("abgeschlossen ✓"), UISkin.Good));
         }
 
         void StatLine(Rect r, ref float y, string label, string value)

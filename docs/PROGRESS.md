@@ -69,6 +69,19 @@ Shader-Prüfung OK, Server-Rauchtest 17/17.
 - Nicht in Unity getestet: Darstellung (Helfermodelle, Leuchtspuren, Kapseln), Oberfläche (Reiter, Schnellreise-Liste),
   Zeitraffer-Gefühl beim Abwarten, Koop mit mehreren Rechnern.
 
+## Erweiterungen (Radio, Stadtklänge, Controller-Bauansicht, Englisch, Erzähler, Leistungsanzeige)
+- **Radio:** `Core/Sim/Story.cs` (Stücke, Freischaltregeln), `Runtime/Audio/AudioRadio.cs`, `Runtime/UI/RadioUI.cs`; Kennungen in
+  `Core/Audio/SynthCity.cs`. Freischaltungen im Speicherteil `story`, alte Stände werden abgeleitet (Test).
+- **Stadtklänge:** `Runtime/Audio/AudioCity.cs` + Synth-Schichten `city_*` (Loops, nahtlos, Audio-Probe ohne NaN).
+- **Controller in der Bauansicht:** Cursor per Stick, alle Aktionen am Pad, Kategorien (LT/RT bzw. 1–6), Tastensymbole.
+- **Englisch:** vollständige Tabelle (`Core/Loc/LocEn*.cs`), Vorlagen für Server-Meldungen, Datentabellen übersetzbar, Test auf
+  Vollständigkeit und Platzhalter.
+- **Erzähler im Spiel:** 21 Zeilen (`game_01 … game_21`), Texte in `docs/SPRECHERTEXT_ELEVENLABS.md` Abschnitt 5 und
+  `Tools/Voice/generate_elevenlabs.py` (`--game`). Aufnahmen fehlen noch → vorerst Untertitel.
+- **Leistungsanzeige:** `Runtime/UI/PerfOverlay.cs` (F3, Einstellung Grafik › Leistungsanzeige).
+- Nicht in Unity getestet: Klangbild von Radio/Stadtklängen, Controller-Bedienung der Bauansicht, Textlängen auf Englisch,
+  ProfilerRecorder-Zähler im Release-Build (zeigen sonst „–“).
+
 ## Grenzen (Stand dieser Umgebung)
 - Kein Unity-Editor, kein Unity-Laufzeittest, keine echten Spiel-Screenshots, keine gebaute .exe.
 - Shader wurden nicht mit Unitys Compiler übersetzt (nur glslang-Prüfung).

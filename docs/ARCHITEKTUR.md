@@ -11,8 +11,8 @@ RePlanet/Assets/RePlanet/
 │   ├── Save/      Versioniertes Speicherformat mit Prüfsumme, Backup, Migration
 │   ├── Net/       Sitzungen (Session, SessionHub), Transporte (lokal, TCP), Client-Replik (GameClient), Host (HostServer)
 │   ├── Motion/    Bewegungsphysik (Roboter, Schwimmen/Tauchen, Fahrzeuge, Kollision)
-│   ├── Audio/     Prozedurale Klangsynthese (Effekte, Musik-Stems, Intro-Score) + Intro-Zeitplan
-│   └── Loc/       Lokalisierung (Deutsch = Schlüssel, weitere Sprachen als Tabellen)
+│   ├── Audio/     Prozedurale Klangsynthese (Effekte, Musik-Stems, Intro-Score, Radio-Kennungen, Stadtklänge) + Intro-Zeitplan
+│   └── Loc/       Lokalisierung: Deutsch = Schlüssel, Englisch in LocEn*.cs (Oberfläche, Daten, Meldungsvorlagen)
 ├── Runtime/     Unity-Schicht (MonoBehaviours, alles wird zur Laufzeit erzeugt – keine Prefabs nötig)
 │   ├── Game/      GameApp (Ablaufsteuerung), Settings/Profile, InputMap, Bridge (HUD-/UI-Zustand),
 │   │              CameraRig, PlayerController, IntroDirector, EndingDirector
@@ -22,9 +22,11 @@ RePlanet/Assets/RePlanet/
 │   │              ShipArrival (Containerfrachter bei Lieferungen, Landeanflug; Geometrie: FreighterModel),
 │   │              PlanetSelectScene (Planetenwahl als Weltall-Szene mit Anflug),
 │   │              MapCamera (3D-Karte: eigene Kamera schräg von oben in eine RenderTexture, nur bei offener Karte)
-│   ├── Audio/     AudioManager (Clips aus Core/Audio, Musikschichten, 3D-Effekte, Ambience)
+│   ├── Audio/     AudioManager (Clips aus Core/Audio, Musikschichten, 3D-Effekte, Ambience), AudioRadio (Radio),
+│   │              AudioCity (Stadtklänge), Narrator (Erzähler: Intro, Abspann, Zeilen im Spiel)
 │   └── UI/        UIRoot (IMGUI: Hauptmenü, Einstellungen, HUD, Spielmenü, Karte (3D mit Symbolen, 2D-Rückfall), Bau-/Fotomodus);
-│                  HudHints: ruhiges HUD je Einstellung „Hinweise“ (Aus / Minimal / Ausführlich)
+│                  HudHints: ruhiges HUD je Einstellung „Hinweise“ (Aus / Minimal / Ausführlich);
+│                  RadioUI (Spielmenü-Reiter Radio), PerfOverlay (Leistungsanzeige, F3), BuildUI (Bauansicht mit Controller)
 ├── Editor/      Projekt-Setup (Material-Vorlagen, Szene, Build-Einstellungen) und Build-Menü
 └── Resources/   RePlanetSky.shader (eigener Himmel) + vom Setup erzeugte Material-Vorlagen
 ```
@@ -100,9 +102,45 @@ Alles serverautoritativ in `Core/Sim/GameFeatures.cs` (Aktionen `wait`, `fasttra
 * **Stadt erwacht:** Nach einem Projekt schalten sich Fenster und Laternen des Bereichs nacheinander ein,
   Brunnen laufen, Feuerwerk über dem Projektplatz.
 
+## Erzähler im Spiel und Radio (`Core/Sim/Story.cs`)
+
+* **Erzählerzeilen** (`Story.Lines`, 21 Stück, Dateien `Resources/Voice/game_01 … game_21`): Der Server löst sie aus den eigenen
+  Ereignissen aus (`Game.OnStoryFx` hängt an `Game.Fx`: erste Landung je Planet, erste Einlagerung, erster Verkauf, erste
+  Lieferung, erster Lichtpunkt, erster Bereich bei 85 % und bei 100 %, erstes Projekt, erster Planet komplett, erster Sturm,
+  erster Sandsturm, erste Nacht, erster Morgen, erste Notabschaltung, NIVALIS frei, erster Mitspieler, erstes Fundstück, erste
+  Ökologie). Jede Zeile nur einmal pro Spielstand (`WorldState.Narrated`), Clients bekommen das Ereignis `narrate` und spielen
+  die Aufnahme über `Narrator.PlayGameLine` (Warteschlange, Musik wird abgesenkt; fehlt die Datei, nur Untertitel).
+  Einstellung „Erzähler im Spiel“.
+* **Radio** (`Story.Tracks`): Stücke sind die vorhandenen Musikstücke mit eigener Stem-Mischung; freigeschaltet je gereinigtem
+  Bereich (85 %), je Großprojekt und nach dem Abspann (`WorldState.RadioUnlocked`, Ereignis `radio`). `AudioRadio` ersetzt im
+  Spiel die Planetenmusik, spielt zwischen den Stücken synthetische Senderkennungen (`Synth.RadioJingles`), Sender „Radio
+  Zweite Chance“ (alle) und je Planet. Taste T, Spielmenü-Reiter „Radio“.
+* **Speicherteil `story`** (Radio + erzählte Zeilen): Fehlt er (ältere Spielstände), leitet `Game.InitStory` die Freischaltungen
+  aus dem Fortschritt ab und markiert offensichtlich vergangene Anlässe als erzählt (`Story.InferNarrated`).
+
+## Stadtklänge (`Runtime/Audio/AudioCity.cs`, Klänge in `Core/Audio/SynthCity.cs`)
+
+Schichten wachsen mit der Wiederherstellung des Bereichs, in dem MIKO steht: Singvögel (TERRA, schwächer PYRA) bzw. Möwen
+(PELAGIA) mit Sauberkeit und Ökologie, Blätterrauschen mit Begrünung und Wind, räumliche Brunnen-Quellen an den Brunnen
+(sobald ihr Projekt fertig ist), fernes Stadtleben (Verkehr, Straßenbahn, Stimmen) mit der Zahl fertiger Projekte. Nacht,
+Sturm und Unterschlupf dämpfen; Lautstärke = Einstellung „Umgebung“.
+
+## Lokalisierung (`Core/Loc`)
+
+* Deutsch ist Schlüssel und Kanon: Core und Server erzeugen immer deutsche Texte. Übersetzt wird bei der Anzeige
+  (`Loc.T`): exakte Einträge, sonst **Vorlagen** mit Platzhaltern (`„{0}“ ist jetzt erreichbar!`), deren eingesetzte Werte
+  ebenfalls übersetzt werden; zusätzlich Zerlegung von Aufzählungen, „Menge Name“ und „Name: Grund“. So werden auch Meldungen
+  eines deutschen Hosts für einen englischen Gast übersetzt.
+* Datentabellen (`GameData`) werden im Spielprozess mit `Loc.ApplyToData()` an Ort und Stelle übersetzt (Originale gemerkt).
+* Oberfläche: `L("…")`/`Loc.T("…")` an Literalen, `UINav`-Bedienelemente übersetzen Beschriftungen selbst,
+  Meldungen/Ziele/Gründe werden beim Zeichnen übersetzt (die HUD-Kurzformen arbeiten auf dem deutschen Kanon).
+* Test `LocTests`: jeder deutsche Anzeigetext hat eine englische Übersetzung, Platzhalter und Leerzeichen stimmen.
+
 ## Erweiterungspunkte
 
 * Neue Müllart: `GameData.DefineTrash` + Form in `MeshKit.Trash`.
 * Neues Gebäude: `GameData.DefineBuildings` + Modell in `ActorsView.BuildMachine`.
-* Neue Sprache: Tabelle in `Core/Loc/Loc.cs`.
+* Neue Sprache: Kennung in `Loc.Languages`/`LanguageNames`, Tabelle wie `LocEn*.cs`; `LocTests` zeigt fehlende Einträge (`dotnet run -- locmissing`).
+* Neue Erzählerzeile: `Story.L(...)` + Auslöser in `Game.OnStoryFx`, Text in `docs/SPRECHERTEXT_ELEVENLABS.md` und `Tools/Voice/generate_elevenlabs.py`.
+* Neues Radio-Stück: `Story.R(...)` (Musikstück + Stem-Mischung) + Regel in `Story.Eligible`.
 * Balancing: Werte in `Core/Data/GameData.cs`; Wirkung mit dem Kampagnen-Bot messen (`cd Tests && dotnet run -c Release -- balance`).
