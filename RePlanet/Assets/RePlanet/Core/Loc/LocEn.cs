@@ -7,8 +7,9 @@ namespace RePlanet.Core
     {
         static void FillEnglish(Action<string, string> e)
         {
-            e("Fortsetzen", "Continue"); e("Neues Spiel", "New Game"); e("Koop", "Co-op"); e("Spielstände", "Saves");
-            e("Einstellungen", "Settings"); e("Beenden", "Quit"); e("Zurück", "Back"); e("Speichern", "Save"); e("Laden", "Load");
+            FillEnglishUi(e);
+            FillEnglishData(e);
+            FillEnglishCore(e);
         }
     }
 }

@@ -205,7 +205,43 @@ namespace RePlanet.Core
                 r = TryTemplates(l, s, depth);
                 if (r != null) return r;
             }
-            return TryTemplates(openStart, s, depth);
+            r = TryTemplates(openStart, s, depth);
+            if (r != null) return r;
+            return Fallbacks(s, depth);
+        }
+
+        static readonly Regex NumberThing = new Regex(@"^([+−-]?\d[\d.,]*)( ?[×x]? )(.+)$", RegexOptions.Compiled);
+
+        /// <summary>
+        /// Allgemeine Zerlegungen, wenn weder Eintrag noch Vorlage passt: Aufzählungen („200 Credits, 5 Metall“),
+        /// Menge + Name („5 Metall“) und „Name: Grund“. Nur wenn dabei wirklich etwas übersetzt wird.
+        /// </summary>
+        static string Fallbacks(string s, int depth)
+        {
+            if (s.IndexOf(", ", StringComparison.Ordinal) > 0)
+            {
+                var parts = s.Split(new[] { ", " }, StringSplitOptions.None);
+                bool any = false;
+                for (int i = 0; i < parts.Length; i++)
+                {
+                    var t = Translate(parts[i], depth + 1);
+                    if (t != null) { parts[i] = t; any = true; }
+                }
+                if (any) return string.Join(", ", parts);
+            }
+            var m = NumberThing.Match(s);
+            if (m.Success)
+            {
+                var t = Translate(m.Groups[3].Value, depth + 1);
+                if (t != null) return m.Groups[1].Value + m.Groups[2].Value + t;
+            }
+            int c = s.IndexOf(": ", StringComparison.Ordinal);
+            if (c > 0 && c < s.Length - 2)
+            {
+                var right = Translate(s.Substring(c + 2), depth + 1);
+                if (right != null) return (Translate(s.Substring(0, c), depth + 1) ?? s.Substring(0, c)) + ": " + right;
+            }
+            return null;
         }
 
         static string TryTemplates(List<Template> list, string s, int depth)
