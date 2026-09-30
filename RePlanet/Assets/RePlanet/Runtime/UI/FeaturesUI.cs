@@ -23,8 +23,8 @@ namespace RePlanet
             float y = 0;
             int done = 0;
             foreach (var a in GameData.Achievements) if (w.Achievements.Contains(a.Id)) done++;
-            y = Section("Erfolge – " + done + " von " + GameData.Achievements.Count + " erreicht", 0, sw, y);
-            y = Para("Erfolge schalten Kosmetik für MIKO frei (Farben, Akzente, Aufkleber, Anbauteile) – ohne Spielvorteil. Anlegen im Reiter „Roboter“.", 0, sw, y);
+            y = Section(Loc.F("Erfolge – {0} von {1} erreicht", done, GameData.Achievements.Count), 0, sw, y);
+            y = Para(L("Erfolge schalten Kosmetik für MIKO frei (Farben, Akzente, Aufkleber, Anbauteile) – ohne Spielvorteil. Anlegen im Reiter „Roboter“."), 0, sw, y);
             y += 6;
             float colW = sw >= 900f ? (sw - 16f) * 0.5f : sw;
             int col = 0; float rowY = y;
@@ -53,7 +53,7 @@ namespace RePlanet
             GUI.Label(new Rect(r.x + 52, r.y + 32, r.width - 230, 24), UISkin.Col(a.Desc, UISkin.TextDim), UISkin.LabelTiny);
             long cur = Rules.AchievementCounter(w, a);
             long div = System.Math.Max(1, a.Div);
-            string num = got ? "erreicht ✓" : System.Math.Min(cur / div, a.Target / div).ToString("#,0") + " / " + (a.Target / div).ToString("#,0") + a.Unit;
+            string num = got ? L("erreicht ✓") : System.Math.Min(cur / div, a.Target / div).ToString("#,0") + " / " + (a.Target / div).ToString("#,0") + a.Unit;
             UISkin.Bar(new Rect(r.x + 52, r.y + 62, r.width - 230, 8), prog, got ? UISkin.Good : UISkin.Teal);
             GUI.Label(new Rect(r.xMax - 172, r.y + 54, 160, 24), UISkin.Col(num, got ? UISkin.Good : UISkin.Text), UISkin.LabelTiny);
             // Belohnung
@@ -62,7 +62,7 @@ namespace RePlanet
             {
                 string shape = cd.Kind == "color" || cd.Kind == "accent" ? "dot" : cd.Kind == "sticker" ? "star" : "flag";
                 UISkin.Tex(new Rect(r.xMax - 170, r.y + 14, 22, 22), UISkin.Shape(shape), UISkin.FromRgb(cd.Value));
-                string kind = cd.Kind == "color" ? "Farbe" : cd.Kind == "accent" ? "Akzent" : cd.Kind == "sticker" ? "Aufkleber" : "Anbauteil";
+                string kind = L(cd.Kind == "color" ? "Farbe" : cd.Kind == "accent" ? "Akzent" : cd.Kind == "sticker" ? "Aufkleber" : "Anbauteil");
                 GUI.Label(new Rect(r.xMax - 142, r.y + 6, 136, 22), UISkin.Col(kind, UISkin.TextDim), UISkin.LabelTiny);
                 GUI.Label(new Rect(r.xMax - 142, r.y + 24, 136, 26), cd.Name, UISkin.LabelTiny);
             }
@@ -73,7 +73,7 @@ namespace RePlanet
         bool FastTravelButton(GameApp app, Rect r)
         {
             var me = app.Me;
-            string label = fastTravelOpen ? "✕ Schnellreise schließen" : "✦ Schnellreise (Lichtnetz)";
+            string label = L(fastTravelOpen ? "✕ Schnellreise schließen" : "✦ Schnellreise (Lichtnetz)");
             if (UINav.Button(r, label, me != null, fastTravelOpen ? UISkin.ButtonSel : UISkin.ButtonSmall)) { fastTravelOpen = !fastTravelOpen; AudioManager.Ui("ui_click"); }
             return fastTravelOpen;
         }
@@ -85,12 +85,12 @@ namespace RePlanet
             if (w == null || me == null) return r.y;
             var ps = w.Cur;
             float y = r.y;
-            GUI.Label(new Rect(r.x, y, r.width, 28), "Schnellreise", UISkin.H3);
+            GUI.Label(new Rect(r.x, y, r.width, 28), L("Schnellreise"), UISkin.H3);
             y += 30;
             var here = Rules.TravelPointAt(ps, me.Pos);
             string intro = here != null
-                ? "Du stehst am " + (here.Zone < 0 ? "Stützpunkt" : "Lichtpunkt „" + here.Name + "“") + ". Ziel wählen:"
-                : "Start nur an einem leuchtenden Lichtpunkt oder am Stützpunkt. Nicht im Sturm, nicht im Fahrzeug, Behälter höchstens zu einem Viertel voll.";
+                ? (here.Zone < 0 ? L("Du stehst am Stützpunkt. Ziel wählen:") : Loc.F("Du stehst am Lichtpunkt „{0}“. Ziel wählen:", L(here.Name)))
+                : L("Start nur an einem leuchtenden Lichtpunkt oder am Stützpunkt. Nicht im Sturm, nicht im Fahrzeug, Behälter höchstens zu einem Viertel voll.");
             y = Para(intro, r.x, r.width, y, UISkin.WrapSmall);
             foreach (var t in Rules.TravelPoints(ps))
             {
@@ -98,7 +98,7 @@ namespace RePlanet
                 float cost; V3 dest;
                 string why = Rules.FastTravelCheck(w, ps, me, t.Zone, out cost, out dest);
                 bool ok = why == null;
-                string label = (t.Lit ? "✦ " : "○ ") + t.Name + (t.Lit ? "  · " + cost.ToString("0") + " Energie" : "  · leuchtet noch nicht");
+                string label = (t.Lit ? "✦ " : "○ ") + L(t.Name) + (t.Lit ? Loc.F("  · {0} Energie", cost.ToString("0")) : L("  · leuchtet noch nicht"));
                 if (UINav.Button(new Rect(r.x, y, r.width, 38), label, ok, ok ? UISkin.ButtonSmall : UISkin.ButtonSmall))
                 {
                     int zone = t.Zone;
@@ -109,11 +109,11 @@ namespace RePlanet
                         else { fastTravelMsg = res.Err; fastTravelErr = true; fastTravelMsgUntil = Time.unscaledTime + 5f; }
                     });
                 }
-                if (!ok && t.Lit && UINav.IsHover(new Rect(r.x, y, r.width, 38))) { fastTravelMsg = why; fastTravelErr = true; fastTravelMsgUntil = Time.unscaledTime + 0.2f; }
+                if (!ok && t.Lit && UINav.IsHover(new Rect(r.x, y, r.width, 38))) { fastTravelMsg = L(why); fastTravelErr = true; fastTravelMsgUntil = Time.unscaledTime + 0.2f; }
                 y += 42;
             }
             if (fastTravelMsg != null && Time.unscaledTime < fastTravelMsgUntil && y < r.yMax - 30)
-                y = Para(UISkin.Col(fastTravelMsg, fastTravelErr ? UISkin.Warn : UISkin.Good), r.x, r.width, y + 4, UISkin.WrapSmall);
+                y = Para(UISkin.Col(L(fastTravelMsg), fastTravelErr ? UISkin.Warn : UISkin.Good), r.x, r.width, y + 4, UISkin.WrapSmall);
             return y;
         }
 
@@ -126,8 +126,8 @@ namespace RePlanet
             foreach (var s in l.Bots)
             {
                 HelperBot b;
-                if (ps.Bots.TryGetValue(s.Id, out b)) Mark(W2M(b.Pos.x, b.Pos.z), "gear", UISkin.Teal, 16, "Helferroboter (sammelt im Umkreis " + GameData.HelperRadius.ToString("0") + " m, " + b.Load.Count + "/" + GameData.HelperLoad + ")");
-                else Mark(W2M(s.Pos.x, s.Pos.z), "gear", new Color(0.65f, 0.4f, 0.25f), 15, s.Name + " – defekt, reparierbar (" + Rules.HelperCostText(w.CurrentPlanet) + ")");
+                if (ps.Bots.TryGetValue(s.Id, out b)) Mark(W2M(b.Pos.x, b.Pos.z), "gear", UISkin.Teal, 16, Loc.F("Helferroboter (sammelt im Umkreis {0} m, {1}/{2})", GameData.HelperRadius.ToString("0"), b.Load.Count, GameData.HelperLoad));
+                else Mark(W2M(s.Pos.x, s.Pos.z), "gear", new Color(0.65f, 0.4f, 0.25f), 15, Loc.F("{0} – defekt, reparierbar ({1})", L(s.Name), L(Rules.HelperCostText(w.CurrentPlanet))));
             }
             foreach (var d in ps.Dyn.Values)
                 if (d.Ev > 0 && d.CarriedBy == null) Mark(W2M(d.Pos.x, d.Pos.z), "star", UISkin.Warn, 13, EventName(d));
@@ -142,8 +142,8 @@ namespace RePlanet
             foreach (var s in l.Bots)
             {
                 HelperBot b;
-                if (ps.Bots.TryGetValue(s.Id, out b)) Mark3(mc, planet, b.Pos.x, b.Pos.z, "gear", UISkin.Teal, 18 * isz, "Helferroboter (sammelt im Umkreis " + GameData.HelperRadius.ToString("0") + " m, " + b.Load.Count + "/" + GameData.HelperLoad + ")");
-                else Mark3(mc, planet, s.Pos.x, s.Pos.z, "gear", new Color(0.65f, 0.4f, 0.25f), 17 * isz, s.Name + " – defekt, reparierbar (" + Rules.HelperCostText(planet) + ")");
+                if (ps.Bots.TryGetValue(s.Id, out b)) Mark3(mc, planet, b.Pos.x, b.Pos.z, "gear", UISkin.Teal, 18 * isz, Loc.F("Helferroboter (sammelt im Umkreis {0} m, {1}/{2})", GameData.HelperRadius.ToString("0"), b.Load.Count, GameData.HelperLoad));
+                else Mark3(mc, planet, s.Pos.x, s.Pos.z, "gear", new Color(0.65f, 0.4f, 0.25f), 17 * isz, Loc.F("{0} – defekt, reparierbar ({1})", L(s.Name), L(Rules.HelperCostText(planet))));
             }
             foreach (var d in ps.Dyn.Values)
                 if (d.Ev > 0 && d.CarriedBy == null) Mark3(mc, planet, d.Pos.x, d.Pos.z, "star", UISkin.Warn, 15 * isz, EventName(d));
@@ -151,7 +151,7 @@ namespace RePlanet
 
         static string EventName(DynObj d)
         {
-            return d.Ev == 1 ? "Meteoritensplitter (wertvoll)" : d.Ev == 2 ? "Versorgungskiste" : "Freigelegte Deponie";
+            return L(d.Ev == 1 ? "Meteoritensplitter (wertvoll)" : d.Ev == 2 ? "Versorgungskiste" : "Freigelegte Deponie");
         }
 
         // ================================================================== Sturm abwarten
@@ -163,13 +163,13 @@ namespace RePlanet
             float bw = Mathf.Min(720f, VW - 80f);
             var r = new Rect((VW - bw) * 0.5f, VH * 0.2f, bw, 110);
             UISkin.PanelBox(r);
-            GUI.Label(new Rect(r.x, r.y + 10, r.width, 36), UISkin.Col(pd.StormName + " abwarten …", UISkin.Story), UISkin.LabelCenter);
+            GUI.Label(new Rect(r.x, r.y + 10, r.width, 36), UISkin.Col(Loc.F("{0} abwarten …", pd.StormName), UISkin.Story), UISkin.LabelCenter);
             float left = Mathf.Max(0f, pd.StormDuration - w.Cur.StormTimer);
             string t = online > 1 && resting < online
-                ? "Warte auf Mitspieler (" + resting + "/" + online + ") – erst wenn alle abwarten, läuft die Zeit schneller."
-                : "Die Zeit läuft ×" + Game.WaitTimeScale.ToString("0") + " schneller. Noch etwa " + Mathf.CeilToInt(left) + " s Sturm.";
+                ? Loc.F("Warte auf Mitspieler ({0}/{1}) – erst wenn alle abwarten, läuft die Zeit schneller.", resting, online)
+                : Loc.F("Die Zeit läuft ×{0} schneller. Noch etwa {1} s Sturm.", Game.WaitTimeScale.ToString("0"), Mathf.CeilToInt(left));
             GUI.Label(new Rect(r.x + 20, r.y + 46, r.width - 40, 28), t, UISkin.LabelCenter);
-            GUI.Label(new Rect(r.x, r.y + 76, r.width, 26), UISkin.Col(KeyHint(GameAction.Sleep) + " aufstehen", UISkin.TextDim), UISkin.LabelCenter);
+            GUI.Label(new Rect(r.x, r.y + 76, r.width, 26), UISkin.Col(KeyHint(GameAction.Sleep) + L(" aufstehen"), UISkin.TextDim), UISkin.LabelCenter);
         }
     }
 }

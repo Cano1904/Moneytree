@@ -395,7 +395,7 @@ namespace RePlanet
             else if (s.StartsWith("Koop geöffnet")) r = "Koop geöffnet";
             if (hide) return null;
             if (level == Settings.HintsOff && (t.Kind == ToastKind.Info || t.Kind == ToastKind.Success)) return null;
-            if (r == null) r = GenericShort(s, t.Kind);
+            if (r == null) r = GenericShort(L(s), t.Kind); // erst übersetzen, dann kürzen (die Kürzung arbeitet sprachneutral)
             return r;
         }
 

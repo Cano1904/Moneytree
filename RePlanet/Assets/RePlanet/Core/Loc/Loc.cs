@@ -205,6 +205,18 @@ namespace RePlanet.Core
                 r = TryTemplates(l, s, depth);
                 if (r != null) return r;
             }
+            // Aufzählung, deren Teile alle übersetzbar sind („14 Teile, Gebühr 15 Credits“) – vor den Vorlagen ohne festen Anfang
+            if (s.IndexOf(", ", StringComparison.Ordinal) > 0)
+            {
+                var parts = s.Split(new[] { ", " }, StringSplitOptions.None);
+                bool all = true;
+                for (int i = 0; i < parts.Length && all; i++)
+                {
+                    var t = Translate(parts[i], depth + 1);
+                    if (t == null) all = false; else parts[i] = t;
+                }
+                if (all) return string.Join(", ", parts);
+            }
             r = TryTemplates(openStart, s, depth);
             if (r != null) return r;
             return Fallbacks(s, depth);

@@ -10,6 +10,7 @@ namespace RePlanet.Core
             FillEnglishUi(e);
             FillEnglishData(e);
             FillEnglishCore(e);
+            FillEnglishFeatures(e);
         }
     }
 }
