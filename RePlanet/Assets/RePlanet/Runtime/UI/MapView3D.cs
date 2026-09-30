@@ -64,7 +64,7 @@ namespace RePlanet
         {
             Dim(0.6f);
             var r = new Rect(30, 30, VW - 60, VH - 60);
-            var inner = Window(r, L("Karte") + "   " + UISkin.Col(KeyHint(GameAction.Map) + " schließen", UISkin.TextDim));
+            var inner = Window(r, L("Karte") + "   " + UISkin.Col(KeyHint(GameAction.Map) + L(" schließen"), UISkin.TextDim));
             float side = Mathf.Min(380f, inner.width * 0.3f);
             float ms = Mathf.Min(inner.height, inner.width - side - 30);
             DrawMap(app, new Rect(inner.x, inner.y, ms, ms));
@@ -142,13 +142,13 @@ namespace RePlanet
                 var gl = l.Gates[g];
                 if (Rules.GateOpen(ps, g) || gl == null || gl.Blocker == null) continue;
                 var bb = gl.Blocker;
-                Mark3(mc, planet, bb.Cx, bb.Cz, "cross", UISkin.Bad, 24 * isz, "Versperrt: " + gl.Hint);
+                Mark3(mc, planet, bb.Cx, bb.Cz, "cross", UISkin.Bad, 24 * isz, L("Versperrt: ") + gl.Hint);
             }
 
             // Stützpunkt, Schiff, Projektplätze
             var bl = l.Base;
-            Mark3(mc, planet, bl.Center.x, bl.Center.z, "house", UISkin.Teal, 28 * isz, "Stützpunkt (Lager, Verkauf, Werkstatt, Schiff)");
-            Mark3(mc, planet, bl.ShipPad.x, bl.ShipPad.z, "flag", UISkin.Accent, 20 * isz, "Transportschiff (Reisen)");
+            Mark3(mc, planet, bl.Center.x, bl.Center.z, "house", UISkin.Teal, 28 * isz, L("Stützpunkt (Lager, Verkauf, Werkstatt, Schiff)"));
+            Mark3(mc, planet, bl.ShipPad.x, bl.ShipPad.z, "flag", UISkin.Accent, 20 * isz, L("Transportschiff (Reisen)"));
             for (int a = 0; a < 3; a++)
             {
                 var site = l.ProjectSites != null && l.ProjectSites.Length > a ? l.ProjectSites[a] : Terrain.ProjectSite(planet, a);
@@ -156,44 +156,44 @@ namespace RePlanet
                 var pst = ps.Projects[pid];
                 var pdef = GameData.Projects[pid];
                 Color c = pst.Done ? UISkin.Good : pst.Started ? UISkin.Accent : UISkin.Warn;
-                string st = pst.Done ? "fertig" : pst.Started ? "im Bau " + (pst.Progress * 100).ToString("0") + " %" : "offen";
-                Mark3(mc, planet, site.x, site.z, "star", c, 28 * isz, "Projektplatz: " + pdef.Name + " (" + st + ")");
+                string st = pst.Done ? L("fertig") : pst.Started ? L("im Bau ") + (pst.Progress * 100).ToString("0") + " %" : L("offen");
+                Mark3(mc, planet, site.x, site.z, "star", c, 28 * isz, L("Projektplatz: ") + pdef.Name + " (" + st + ")");
             }
             // Lichtpunkte, Reparatur, Öko, Fundstücke, Aussicht, Unterschlüpfe
             foreach (var z in l.Zones)
             {
                 bool clean = Rules.ZoneCleared(ps, z.Index);
-                Mark3(mc, planet, z.Center.x, z.Center.z, clean ? "dot" : "ring", clean ? UISkin.Good : UISkin.Warn, (clean ? 15 : 19) * isz, "Lichtpunkt „" + z.Name + "“" + (clean ? " – sauber" : " – verschmutzt"));
+                Mark3(mc, planet, z.Center.x, z.Center.z, clean ? "dot" : "ring", clean ? UISkin.Good : UISkin.Warn, (clean ? 15 : 19) * isz, L("Lichtpunkt „") + L(z.Name) + L("“") + (clean ? L(" – sauber") : L(" – verschmutzt")));
             }
             foreach (var s in l.Repairs)
             {
                 bool done = ps.Repaired.Contains(s.Id);
-                Mark3(mc, planet, s.Pos.x, s.Pos.z, "wrench", done ? UISkin.Good : UISkin.Accent, 17 * isz, s.Name + (done ? " – repariert" : " – defekt"));
+                Mark3(mc, planet, s.Pos.x, s.Pos.z, "wrench", done ? UISkin.Good : UISkin.Accent, 17 * isz, L(s.Name) + (done ? L(" – repariert") : L(" – defekt")));
             }
             foreach (var s in l.Eco)
             {
                 float gr = Rules.EcoGrowth(w, ps, s.Id);
                 bool planted = ps.Eco.ContainsKey(s.Id);
                 Color c = gr >= 0.999f ? UISkin.Good : planted ? new Color(0.55f, 0.85f, 0.45f) : new Color(0.7f, 0.75f, 0.65f, 0.8f);
-                Mark3(mc, planet, s.Pos.x, s.Pos.z, "leaf", c, 16 * isz, s.Name + (gr >= 0.999f ? " – gewachsen" : planted ? " – wächst " + (gr * 100).ToString("0") + " %" : " – noch leer"));
+                Mark3(mc, planet, s.Pos.x, s.Pos.z, "leaf", c, 16 * isz, L(s.Name) + (gr >= 0.999f ? L(" – gewachsen") : planted ? L(" – wächst ") + (gr * 100).ToString("0") + " %" : L(" – noch leer")));
             }
             foreach (var s in l.LoreSpots)
             {
                 bool found = w.Lore.Contains(s.Id);
-                Mark3(mc, planet, s.Pos.x, s.Pos.z, "book", found ? new Color(0.7f, 0.7f, 0.7f, 0.8f) : UISkin.Story, 17 * isz, found ? "Fundstück (gefunden): " + s.Name : "Fundstück – noch nicht entdeckt");
+                Mark3(mc, planet, s.Pos.x, s.Pos.z, "book", found ? new Color(0.7f, 0.7f, 0.7f, 0.8f) : UISkin.Story, 17 * isz, found ? L("Fundstück (gefunden): ") + L(s.Name) : L("Fundstück – noch nicht entdeckt"));
             }
             foreach (var s in l.Viewpoints)
             {
                 bool seen = ps.Views.Contains(s.Id);
-                Mark3(mc, planet, s.Pos.x, s.Pos.z, "eye", seen ? UISkin.Good : UISkin.Teal, 17 * isz, s.Name + (seen ? " – gemerkt (Fotomodus)" : ""));
+                Mark3(mc, planet, s.Pos.x, s.Pos.z, "eye", seen ? UISkin.Good : UISkin.Teal, 17 * isz, L(s.Name) + (seen ? L(" – gemerkt (Fotomodus)") : ""));
             }
             foreach (var s in l.Shelters) Mark3(mc, planet, s.Pos.x, s.Pos.z, "house", UISkin.Story, 18 * isz, pd.ShelterName);
-            foreach (var s in ps.Shelters) Mark3(mc, planet, s.x, s.z, "house", new Color(0.6f, 0.95f, 1f), 16 * isz, "Notunterschlupf (selbst gebaut)");
+            foreach (var s in ps.Shelters) Mark3(mc, planet, s.x, s.z, "house", new Color(0.6f, 0.95f, 1f), 16 * isz, L("Notunterschlupf (selbst gebaut)"));
             // Fahrzeuge
             foreach (var v in ps.Vehicles.Values)
             {
                 if (!GameData.Vehicles.ContainsKey(v.Id)) continue;
-                Mark3(mc, planet, v.Pos.x, v.Pos.z, "truck", UISkin.Accent, 21 * isz, v.Def.Name + (v.Driver != null ? " (besetzt)" : ""));
+                Mark3(mc, planet, v.Pos.x, v.Pos.z, "truck", UISkin.Accent, 21 * isz, v.Def.Name + (v.Driver != null ? L(" (besetzt)") : ""));
             }
 
             // Mitspieler und MIKO (Pfeil in Blickrichtung)
@@ -210,7 +210,7 @@ namespace RePlanet
             {
                 Vector3 myPos = PlayerController.I != null ? PlayerController.I.RenderPos : new Vector3(me.Pos.x, me.Pos.y, me.Pos.z);
                 float yawR = Hud.CameraYaw * Mathf.Deg2Rad;
-                DrawPlayerArrow(mc, myPos + Vector3.up * 1.5f, new Vector3(Mathf.Sin(yawR), 0f, Mathf.Cos(yawR)), UISkin.Accent, 32f, "Du (" + (me.Name ?? "MIKO") + ")", true);
+                DrawPlayerArrow(mc, myPos + Vector3.up * 1.5f, new Vector3(Mathf.Sin(yawR), 0f, Mathf.Cos(yawR)), UISkin.Accent, 32f, L("Du (") + (me.Name ?? "MIKO") + ")", true);
             }
 
             // Kompass (oben rechts über der Karte)
@@ -226,14 +226,14 @@ namespace RePlanet
                 UISkin.Rect(new Rect(tr.x + 12, tr.yMax - 6, 46, 3), UISkin.Accent);
                 GUI.Label(new Rect(tr.x + 18, tr.y + 6, tr.width - 24, 34), title, UISkin.Label);
                 string hint = InputMap.UsingPad
-                    ? "Rechter Stick: drehen/neigen  ·  LB/RB: Zoom  ·  Linker Stick: verschieben  ·  R3: zu MIKO  ·  B/Back: schließen"
-                    : "Q/E oder Maus ziehen: drehen  ·  Mausrad, +/−: Zoom  ·  " + MoveKeysLabel() + ": verschieben  ·  C: zu MIKO  ·  N: Norden  ·  " + InputMap.Label(GameAction.Map) + "/Esc: schließen";
+                    ? L("Rechter Stick: drehen/neigen  ·  LB/RB: Zoom  ·  Linker Stick: verschieben  ·  R3: zu MIKO  ·  B/Back: schließen")
+                    : L("Q/E oder Maus ziehen: drehen  ·  Mausrad, +/−: Zoom  ·  ") + MoveKeysLabel() + L(": verschieben  ·  C: zu MIKO  ·  N: Norden  ·  ") + InputMap.Label(GameAction.Map) + L("/Esc: schließen");
                 float hw = Mathf.Min(UISkin.TextWidth(UISkin.LabelTiny, hint) + 32f, map3DArea.width - 48f);
                 var hr = new Rect(24f, VH - 24f - 38f, hw, 38f);
                 UISkin.RoundRect(hr, new Color(0.01f, 0.05f, 0.07f, 0.66f));
                 GUI.Label(new Rect(hr.x + 16, hr.y + 7, hr.width - 24, 26), UISkin.Col(hint, UISkin.TextDim), UISkin.LabelTiny);
                 if (!mc.Following)
-                    GUI.Label(new Rect(hr.x + 4, hr.y - 30, 400, 26), UISkin.Col("Karte verschoben – " + (InputMap.UsingPad ? "R3" : "C") + ": zurück zu MIKO", UISkin.Teal), UISkin.LabelTiny);
+                    GUI.Label(new Rect(hr.x + 4, hr.y - 30, 400, 26), UISkin.Col(L("Karte verschoben – ") + (InputMap.UsingPad ? "R3" : "C") + L(": zurück zu MIKO"), UISkin.Teal), UISkin.LabelTiny);
             }
 
             // Seitenleiste (halbtransparent)

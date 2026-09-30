@@ -141,9 +141,9 @@ namespace RePlanet
             UISkin.PanelBox(ir);
             GUI.Label(new Rect(ir.x + 18, ir.y + 10, ir.width - 36, 32), UISkin.Col("BAUANSICHT", UISkin.Accent), UISkin.H3);
             Color ec = en.Efficiency >= 0.999f ? UISkin.Good : en.Efficiency >= 0.6f ? UISkin.Warn : UISkin.Bad;
-            GUI.Label(new Rect(ir.x + 18, ir.y + 44, ir.width - 36, 26), "Energie: " + UISkin.Col("+" + en.Supply.ToString("0.#"), UISkin.Good) + " / " + UISkin.Col("−" + en.Demand.ToString("0.#"), UISkin.Warn)
-                + "  → Anlagen " + UISkin.Col((en.Efficiency * 100).ToString("0") + " %", ec), UISkin.LabelSmall);
-            GUI.Label(new Rect(ir.x + 18, ir.y + 70, ir.width - 36, 26), "Lager: " + ps.StorageUsed() + " / " + ps.StorageCap() + " Einheiten · " + Num(w.Credits) + " Credits", UISkin.LabelSmall);
+            GUI.Label(new Rect(ir.x + 18, ir.y + 44, ir.width - 36, 26), L("Energie: ") + UISkin.Col("+" + en.Supply.ToString("0.#"), UISkin.Good) + " / " + UISkin.Col("−" + en.Demand.ToString("0.#"), UISkin.Warn)
+                + L("  → Anlagen ") + UISkin.Col((en.Efficiency * 100).ToString("0") + " %", ec), UISkin.LabelSmall);
+            GUI.Label(new Rect(ir.x + 18, ir.y + 70, ir.width - 36, 26), L("Lager: ") + ps.StorageUsed() + " / " + ps.StorageCap() + L(" Einheiten · ") + Num(w.Credits) + L(" Credits"), UISkin.LabelSmall);
             bool usePad = InputMap.UsingPad;
             string status;
             if (usePad && confirm != null && confirm.StartsWith("demolish:")) status = UISkin.Col(L("Abreißen? Back erneut drücken (B: abbrechen)"), UISkin.Warn);
@@ -160,7 +160,7 @@ namespace RePlanet
                 float hx = ir.x + 18, hy = ir.y + 136, mx = ir.xMax - 10;
                 hx = BuildHint(hx, hy, "A", L("platzieren"), mx);
                 hx = BuildHint(hx, hy, "Y", L("drehen"), mx);
-                hx = BuildHint(hx, hy, "L-Stick", L("zielen"), mx);
+                hx = BuildHint(hx, hy, L("L-Stick"), L("zielen"), mx);
                 hx = ir.x + 18; hy += 24;
                 hx = BuildHint(hx, hy, "LB/RB", L("Bauwerk"), mx);
                 hx = BuildHint(hx, hy, "LT/RT", L("Kategorie"), mx);
@@ -173,7 +173,7 @@ namespace RePlanet
             {
                 string hints = L("Linksklick") + "/" + InputMap.Label(GameAction.Interact) + ": " + L("platzieren") + " · " + InputMap.Label(GameAction.RotateBuild) + ": " + L("drehen")
                     + "\n" + L("Rechtsklick: Auswahl aufheben · Mausrad/Bild↑↓: Bauwerk wechseln · 1–6: Kategorie")
-                    + "\n" + InputMap.Label(GameAction.Build) + "/Esc: " + L("Bauansicht verlassen");
+                    + "\n" + InputMap.Label(GameAction.Build) + L("/Esc: ") + L("Bauansicht verlassen");
                 GUI.Label(new Rect(ir.x + 18, ir.y + 140, ir.width - 36, 70), UISkin.Col(hints, UISkin.TextDim), UISkin.WrapSmall);
             }
 
@@ -188,7 +188,7 @@ namespace RePlanet
 
             float exitW = 150f;
             var exitR = new Rect(band.xMax - pad - exitW, band.y + pad, exitW, left.height);
-            if (GUI.Button(exitR, "Bauansicht\nverlassen", UISkin.ButtonSmall)) { AudioManager.Ui("ui_back"); ExitBuild(); return; }
+            if (GUI.Button(exitR, L("Bauansicht\nverlassen"), UISkin.ButtonSmall)) { AudioManager.Ui("ui_back"); ExitBuild(); return; }
 
             var pal = new Rect(left.xMax + pad * 2, band.y + pad, exitR.x - left.xMax - pad * 4, left.height);
             DrawBuildCategories(new Rect(pal.x, band.y - 40, pal.width, 32));
@@ -218,7 +218,7 @@ namespace RePlanet
             if (def.RequiresPlanetProject != null)
             {
                 ProjectDef pr;
-                if (GameData.Projects.TryGetValue(def.RequiresPlanetProject, out pr) && !w.Planet(pr.Planet).Projects[pr.Id].Done) locked = "Nach „" + pr.Name + "“ (" + GameData.Planets[pr.Planet].Name + ")";
+                if (GameData.Projects.TryGetValue(def.RequiresPlanetProject, out pr) && !w.Planet(pr.Planet).Projects[pr.Id].Done) locked = L("Nach „") + pr.Name + "“ (" + GameData.Planets[pr.Planet].Name + ")";
             }
             int count = Rules.CountOf(ps, def.Id);
             bool max = count >= def.MaxCount;
@@ -231,12 +231,12 @@ namespace RePlanet
             y += lh;
             if (locked != null)
             {
-                GUI.Label(new Rect(r.x + 8, y, r.width - 16, r.yMax - y - 4), UISkin.Col("Gesperrt: " + locked, UISkin.Warn), UISkin.WrapSmall);
+                GUI.Label(new Rect(r.x + 8, y, r.width - 16, r.yMax - y - 4), UISkin.Col(L("Gesperrt: ") + locked, UISkin.Warn), UISkin.WrapSmall);
             }
             else
             {
                 bool okC = w.Credits >= def.Cost;
-                GUI.Label(new Rect(r.x + 8, y, r.width - 16, lh), UISkin.Col(def.Cost + " Credits", okC ? UISkin.Text : UISkin.Bad) + UISkin.Col("  · " + def.W + "×" + def.H, UISkin.TextDim), UISkin.LabelTiny);
+                GUI.Label(new Rect(r.x + 8, y, r.width - 16, lh), UISkin.Col(def.Cost + L(" Credits"), okC ? UISkin.Text : UISkin.Bad) + UISkin.Col("  · " + def.W + "×" + def.H, UISkin.TextDim), UISkin.LabelTiny);
                 y += lh;
                 float mx = r.x + 8;
                 foreach (var kv in def.Mats)
@@ -249,15 +249,15 @@ namespace RePlanet
                     if (mx > r.xMax - 30) break;
                 }
                 y += lh;
-                string e = def.EnergyGen > 0 ? UISkin.Col("Energie +" + def.EnergyGen.ToString("0.#"), UISkin.Good) : def.EnergyUse > 0 ? UISkin.Col("Energie −" + def.EnergyUse.ToString("0.#"), UISkin.Warn) : UISkin.Col("keine Energie", UISkin.TextDim);
+                string e = def.EnergyGen > 0 ? UISkin.Col(L("Energie +") + def.EnergyGen.ToString("0.#"), UISkin.Good) : def.EnergyUse > 0 ? UISkin.Col(L("Energie −") + def.EnergyUse.ToString("0.#"), UISkin.Warn) : UISkin.Col(L("keine Energie"), UISkin.TextDim);
                 GUI.Label(new Rect(r.x + 8, y, r.width - 16, lh), e, UISkin.LabelTiny);
                 y += lh;
-                GUI.Label(new Rect(r.x + 8, y, r.width - 16, lh), UISkin.Col(count + "/" + def.MaxCount + " gebaut", max ? UISkin.Warn : UISkin.TextDim), UISkin.LabelTiny);
+                GUI.Label(new Rect(r.x + 8, y, r.width - 16, lh), UISkin.Col(count + "/" + def.MaxCount + L(" gebaut"), max ? UISkin.Warn : UISkin.TextDim), UISkin.LabelTiny);
             }
             if (GUI.Button(r, GUIContent.none, GUIStyle.none))
             {
-                if (locked != null) { Hud.Show("Gesperrt: " + locked, ToastKind.Info, 3f); AudioManager.Ui("beep_error"); }
-                else if (max) { Hud.Show("Maximal " + def.MaxCount + "× " + def.Name + " pro Stützpunkt.", ToastKind.Info, 3f); AudioManager.Ui("beep_error"); }
+                if (locked != null) { Hud.Show(L("Gesperrt: ") + locked, ToastKind.Info, 3f); AudioManager.Ui("beep_error"); }
+                else if (max) { Hud.Show(L("Maximal ") + def.MaxCount + "× " + def.Name + L(" pro Stützpunkt."), ToastKind.Info, 3f); AudioManager.Ui("beep_error"); }
                 else { BuildMode.Type = def.Id; BuildMode.MoveId = -1; AudioManager.Ui("ui_click"); }
             }
             if ((hover || (sel && InputMap.UsingPad)) && Event.current.type == EventType.Repaint && !string.IsNullOrEmpty(def.Desc))
@@ -306,13 +306,13 @@ namespace RePlanet
             }
             var def = b.Def;
             GUI.Label(new Rect(r.x + 12, r.y + 6, r.width - 24, 26), "<b>" + def.Name + "</b>", UISkin.LabelSmall);
-            string st = def.Machine ? (b.Connected ? UISkin.Col("verbunden", UISkin.Good) : UISkin.Col("nicht verbunden – Förderband zum Lager legen", UISkin.Warn)) : UISkin.Col(def.Category, UISkin.TextDim);
+            string st = def.Machine ? (b.Connected ? UISkin.Col("verbunden", UISkin.Good) : UISkin.Col(L("nicht verbunden – Förderband zum Lager legen"), UISkin.Warn)) : UISkin.Col(def.Category, UISkin.TextDim);
             GUI.Label(new Rect(r.x + 12, r.y + 32, r.width - 24, 40), st, UISkin.WrapSmall);
             float bh = Mathf.Min(38f, (r.height - 84) * 0.5f);
             if (bh < 24) bh = 24;
             float by = r.yMax - bh * 2 - 12;
             bool moving = BuildMode.MoveId >= 0;
-            if (GUI.Button(new Rect(r.x + 10, by, r.width - 20, bh), moving ? "Umsetzen abbrechen" : "Umsetzen", UISkin.ButtonSmall))
+            if (GUI.Button(new Rect(r.x + 10, by, r.width - 20, bh), moving ? L("Umsetzen abbrechen") : L("Umsetzen"), UISkin.ButtonSmall))
             {
                 AudioManager.Ui("ui_click");
                 BuildMode.MoveId = moving ? -1 : b.Id;
@@ -320,7 +320,7 @@ namespace RePlanet
             if (confirm == "demolish:" + b.Id)
             {
                 float hw = (r.width - 26) * 0.5f;
-                if (GUI.Button(new Rect(r.x + 10, by + bh + 6, hw, bh), "Ja, abreißen", UISkin.ButtonSel))
+                if (GUI.Button(new Rect(r.x + 10, by + bh + 6, hw, bh), L("Ja, abreißen"), UISkin.ButtonSel))
                 {
                     AudioManager.Ui("ui_click");
                     confirm = null;
@@ -328,15 +328,15 @@ namespace RePlanet
                     BuildMode.RequestDemolish = true;
                     buildSel = -1;
                 }
-                if (GUI.Button(new Rect(r.x + 16 + hw, by + bh + 6, hw, bh), "Nein", UISkin.ButtonSmall)) { confirm = null; AudioManager.Ui("ui_back"); }
+                if (GUI.Button(new Rect(r.x + 16 + hw, by + bh + 6, hw, bh), L("Nein"), UISkin.ButtonSmall)) { confirm = null; AudioManager.Ui("ui_back"); }
             }
             else
             {
                 bool allowed = app.IsHost || app.W.TrustGuests;
-                if (GUI.Button(new Rect(r.x + 10, by + bh + 6, r.width - 20, bh), allowed ? "Abreißen (50 % zurück)" : "Abreißen: nur Host", allowed ? UISkin.ButtonSmall : UISkin.ButtonOff))
+                if (GUI.Button(new Rect(r.x + 10, by + bh + 6, r.width - 20, bh), allowed ? L("Abreißen (50 % zurück)") : L("Abreißen: nur Host"), allowed ? UISkin.ButtonSmall : UISkin.ButtonOff))
                 {
                     if (allowed) { AudioManager.Ui("ui_click"); confirm = "demolish:" + b.Id; }
-                    else { Hud.Show("Abriss ist dem Host vorbehalten (Vertrauensmodus aus).", ToastKind.Info, 3f); AudioManager.Ui("beep_error"); }
+                    else { Hud.Show(L("Abriss ist dem Host vorbehalten (Vertrauensmodus aus)."), ToastKind.Info, 3f); AudioManager.Ui("beep_error"); }
                 }
             }
         }

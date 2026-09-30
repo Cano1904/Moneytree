@@ -14,7 +14,7 @@ namespace RePlanet
         float mainRefresh;
         List<SlotInfo> savesCache = new List<SlotInfo>();
         string savesMsg; bool savesMsgError;
-        string ngName = "Meine Welt";
+        string ngName = L("Meine Welt");
         int ngSlot;
         SlotInfo ngExisting;
         int ngExistingFor = -1;
@@ -81,7 +81,7 @@ namespace RePlanet
             ts.fontSize = oldSize;
             var sub = UISkin.Subtitle;
             sub.alignment = TextAnchor.MiddleCenter;
-            UISkin.Shadow(new Rect(0, top + titleH - 6, VW, 44), "Eine zweite Chance", sub);
+            UISkin.Shadow(new Rect(0, top + titleH - 6, VW, 44), L("Eine zweite Chance"), sub);
 
             bool canContinue = mainSlot != null;
             float y = top + titleH + 64f;
@@ -113,14 +113,14 @@ namespace RePlanet
             if (confirm == "quit")
             {
                 float hw = (bw - 10) * 0.5f;
-                if (UINav.Button(new Rect(left, y, hw, bh), "Ja, beenden", true, UISkin.ButtonSel)) app.QuitGame();
-                if (UINav.Button(new Rect(left + hw + 10, y, hw, bh), "Abbrechen")) confirm = null;
+                if (UINav.Button(new Rect(left, y, hw, bh), L("Ja, beenden"), true, UISkin.ButtonSel)) app.QuitGame();
+                if (UINav.Button(new Rect(left + hw + 10, y, hw, bh), L("Abbrechen"))) confirm = null;
             }
             else if (UINav.Button(new Rect(left, y, bw, bh), L("Beenden"))) confirm = "quit";
 
             // Steuerung und Versionsnummer (klein, unten mittig)
-            string ver = "Version " + Application.version;
-            string hint = InputMap.UsingPad ? "Steuerkreuz/Stick · A: Bestätigen · B: Zurück" : "Pfeiltasten/Maus · Eingabe: Bestätigen · Esc: Zurück";
+            string ver = L("Version ") + Application.version;
+            string hint = InputMap.UsingPad ? L("Steuerkreuz/Stick · A: Bestätigen · B: Zurück") : L("Pfeiltasten/Maus · Eingabe: Bestätigen · Esc: Zurück");
             GUI.Label(new Rect(0, VH - 58, VW, 24), UISkin.Col(hint, UISkin.TextDim), SmallCenter());
             GUI.Label(new Rect(0, VH - 34, VW, 24), UISkin.Col(ver, UISkin.TextDim * new Color(1, 1, 1, 0.7f)), SmallCenter());
         }
@@ -130,7 +130,7 @@ namespace RePlanet
         {
             var app = GameApp.I;
             if (app == null) return;
-            if (string.IsNullOrEmpty(ngName)) ngName = "Meine Welt";
+            if (string.IsNullOrEmpty(ngName)) ngName = L("Meine Welt");
             // Freien Slot vorschlagen
             ngSlot = 0;
             try
@@ -148,11 +148,11 @@ namespace RePlanet
             var r = CenterRect(760, 460);
             var inner = Window(r, L("Neues Spiel"));
             float y = inner.y + 6;
-            GUI.Label(new Rect(inner.x, y, inner.width, 30), "Name der Welt", UISkin.LabelSmall);
+            GUI.Label(new Rect(inner.x, y, inner.width, 30), L("Name der Welt"), UISkin.LabelSmall);
             y += 32;
             ngName = UINav.TextField(new Rect(inner.x, y, inner.width, 44), ngName, 32, "ng_name");
             y += 60;
-            ngSlot = UINav.Choice(new Rect(inner.x, y, inner.width, 46), "Speicherplatz", ngSlot, SlotLabels);
+            ngSlot = UINav.Choice(new Rect(inner.x, y, inner.width, 46), L("Speicherplatz"), ngSlot, SlotLabels);
             y += 54;
             if (ngExistingFor != ngSlot)
             {
@@ -161,16 +161,16 @@ namespace RePlanet
             }
             string warn;
             if (ngExisting != null)
-                warn = UISkin.Col("⚠ Überschreibt den vorhandenen Stand: ", UISkin.Warn) + (ngExisting.World ?? "?") + " · " + ngExisting.Planet + " · " + FormatTime(ngExisting.Playtime)
-                    + " · " + Num(ngExisting.Credits) + " Credits" + (string.IsNullOrEmpty(ngExisting.Saved) ? "" : " · gespeichert " + ngExisting.Saved);
-            else warn = UISkin.Col("Dieser Speicherplatz ist frei.", UISkin.Good);
+                warn = UISkin.Col(L("⚠ Überschreibt den vorhandenen Stand: "), UISkin.Warn) + (ngExisting.World ?? "?") + " · " + ngExisting.Planet + " · " + FormatTime(ngExisting.Playtime)
+                    + " · " + Num(ngExisting.Credits) + L(" Credits") + (string.IsNullOrEmpty(ngExisting.Saved) ? "" : L(" · gespeichert ") + ngExisting.Saved);
+            else warn = UISkin.Col(L("Dieser Speicherplatz ist frei."), UISkin.Good);
             GUI.Label(new Rect(inner.x + 10, y, inner.width - 20, 60), warn, UISkin.WrapSmall);
             y += 66;
             float bw = (inner.width - 14) * 0.5f;
             var go = new Rect(inner.x, inner.yMax - 56, bw, 52);
-            if (UINav.Button(go, "Los geht's!", true, UISkin.ButtonSel))
+            if (UINav.Button(go, L("Los geht's!"), true, UISkin.ButtonSel))
             {
-                app.BeginNewGame(string.IsNullOrEmpty(ngName) ? "Meine Welt" : ngName.Trim(), SaveStore.Slots[ngSlot], true);
+                app.BeginNewGame(string.IsNullOrEmpty(ngName) ? L("Meine Welt") : ngName.Trim(), SaveStore.Slots[ngSlot], true);
             }
             if (UINav.Button(new Rect(go.xMax + 14, go.y, bw, 52), L("Zurück"))) Back();
         }
@@ -209,7 +209,7 @@ namespace RePlanet
             if (scene == null || !scene.Active) { DrawPlanetSelectCards(app); return; }
             if (scene.Descending)
             {
-                GUI.Label(new Rect(VW - 330, VH - 44, 310, 28), UISkin.Col("Beliebige Taste: überspringen", new Color(1, 1, 1, 0.5f)), SmallRight());
+                GUI.Label(new Rect(VW - 330, VH - 44, 310, 28), UISkin.Col(L("Beliebige Taste: überspringen"), new Color(1, 1, 1, 0.5f)), SmallRight());
                 return;
             }
             if (psTitle == null || psTitle.fontSize != UISkin.H2.fontSize + 6)
@@ -225,9 +225,9 @@ namespace RePlanet
             float x = Mathf.Max(40f, VW * 0.045f);
             float y = Mathf.Max(28f, VH * 0.06f);
             float lw = Mathf.Min(430f, VW * 0.34f);
-            UISkin.Shadow(new Rect(x, y, VW * 0.6f, 48), "Wohin fliegt MIKO zuerst?", psTitle);
+            UISkin.Shadow(new Rect(x, y, VW * 0.6f, 48), L("Wohin fliegt MIKO zuerst?"), psTitle);
             y += 46;
-            GUI.Label(new Rect(x + 2, y, VW * 0.6f, 26), UISkin.Col("Startplanet wählen – die anderen erreichst du später mit dem Transportschiff.", UISkin.TextDim), UISkin.LabelSmall);
+            GUI.Label(new Rect(x + 2, y, VW * 0.6f, 26), UISkin.Col(L("Startplanet wählen – die anderen erreichst du später mit dem Transportschiff."), UISkin.TextDim), UISkin.LabelSmall);
             y += 48;
 
             var list = new List<PlanetDef>(5);
@@ -253,7 +253,7 @@ namespace RePlanet
                 UISkin.Tex(new Rect(r.x + 18, r.y + 17, 24, 24), UISkin.Circle, locked ? accent * new Color(0.5f, 0.5f, 0.5f, 1f) : accent);
                 GUI.Label(new Rect(r.x + 54, r.y + 4, r.width - 150, 28), UISkin.Col("<b>" + pd.Name + "</b>", locked ? UISkin.TextDim : sel ? accent : UISkin.Text), UISkin.Label);
                 GUI.Label(new Rect(r.x + 54, r.y + 30, r.width - 64, 24), UISkin.Col(pd.Subtitle, UISkin.TextDim), UISkin.LabelTiny);
-                if (locked) GUI.Label(new Rect(r.xMax - 110, r.y + 4, 100, 28), UISkin.Col("später", UISkin.Story), SmallRight());
+                if (locked) GUI.Label(new Rect(r.xMax - 110, r.y + 4, 100, 28), UISkin.Col(L("später"), UISkin.Story), SmallRight());
                 if (click)
                 {
                     if (locked) { AudioManager.Ui("beep_error"); scene.Focus(pd.Id); }
@@ -275,7 +275,7 @@ namespace RePlanet
                 float mh = UISkin.TextHeight(UISkin.WrapSmall, cur.Mood, lw);
                 GUI.Label(new Rect(x, y, lw, mh + 4), UISkin.Col(cur.Mood, UISkin.Warn), UISkin.WrapSmall);
                 y += mh + 8;
-                string desc = cur.StartPlanet ? cur.Description : (string.IsNullOrEmpty(cur.UnlockHint) ? "Das Finale – wird später erreichbar." : cur.UnlockHint);
+                string desc = cur.StartPlanet ? cur.Description : (string.IsNullOrEmpty(cur.UnlockHint) ? L("Das Finale – wird später erreichbar.") : cur.UnlockHint);
                 float dh = UISkin.TextHeight(UISkin.WrapSmall, desc, lw);
                 float room = VH - 150f - y;
                 if (dh > room) dh = Mathf.Max(0f, room);
@@ -285,15 +285,15 @@ namespace RePlanet
 
             float by = VH - 84f;
             bool canLand = cur != null && cur.StartPlanet;
-            if (UINav.Button(new Rect(x, by, lw * 0.62f, 50), canLand ? "Hier landen ›" : "Noch gesperrt", canLand, UISkin.ButtonSel) && canLand) { scene.Descend(cur.Id); return; }
+            if (UINav.Button(new Rect(x, by, lw * 0.62f, 50), canLand ? L("Hier landen ›") : L("Noch gesperrt"), canLand, UISkin.ButtonSel) && canLand) { scene.Descend(cur.Id); return; }
             if (UINav.Button(new Rect(x + lw * 0.62f + 12, by, lw * 0.38f - 12, 50), "‹ " + L("Zurück"))) Back();
         }
 
         void DrawPlanetSelectCards(GameApp app)
         {
             Vignette();
-            UISkin.Shadow(new Rect(0, Mathf.Max(20, VH * 0.05f), VW, 60), "Wohin fliegt MIKO zuerst?", UISkin.H1);
-            GUI.Label(new Rect(0, Mathf.Max(20, VH * 0.05f) + 56, VW, 30), "Wähle den Startplaneten – die anderen erreichst du später mit dem Transportschiff.", UISkin.LabelCenter);
+            UISkin.Shadow(new Rect(0, Mathf.Max(20, VH * 0.05f), VW, 60), L("Wohin fliegt MIKO zuerst?"), UISkin.H1);
+            GUI.Label(new Rect(0, Mathf.Max(20, VH * 0.05f) + 56, VW, 30), L("Wähle den Startplaneten – die anderen erreichst du später mit dem Transportschiff."), UISkin.LabelCenter);
 
             var list = new List<PlanetDef>(3);
             foreach (var id in GameData.PlanetOrder) { var pd = GameData.Planets[id]; if (pd.StartPlanet) list.Add(pd); }
@@ -322,7 +322,7 @@ namespace RePlanet
                 if (WorldView.I != null) WorldView.I.PreviewPlanet(focusedPlanet);
             }
 
-            GUI.Label(new Rect(0, top + ch + 16, VW, 30), UISkin.Col("NIVALIS – das Finale – wird später erreichbar.", UISkin.Story), UISkin.LabelCenter);
+            GUI.Label(new Rect(0, top + ch + 16, VW, 30), UISkin.Col(L("NIVALIS – das Finale – wird später erreichbar."), UISkin.Story), UISkin.LabelCenter);
             if (UINav.Button(new Rect(VW * 0.5f - 110, VH - 72, 220, 48), "‹ " + L("Zurück"))) Back();
         }
 
@@ -366,7 +366,7 @@ namespace RePlanet
             if (Event.current.type == EventType.Repaint)
             {
                 UISkin.Sliced(btn, highlight ? UISkin.BtnSel : UISkin.Btn);
-                GUI.Label(btn, highlight ? "Hier landen ›" : "Auswählen", UISkin.LabelCenter);
+                GUI.Label(btn, highlight ? L("Hier landen ›") : L("Auswählen"), UISkin.LabelCenter);
             }
         }
 
@@ -379,22 +379,22 @@ namespace RePlanet
             bool inGame = app.InGame;
             bool host = inGame && app.IsHost;
             float y = inner.y;
-            GUI.Label(new Rect(inner.x, y, inner.width - 180, 28), "Ordner: " + app.SaveDir, UISkin.LabelSmall);
-            if (UINav.Button(new Rect(inner.xMax - 170, y - 2, 170, 32), "Pfad kopieren", true, UISkin.ButtonSmall))
+            GUI.Label(new Rect(inner.x, y, inner.width - 180, 28), L("Ordner: ") + app.SaveDir, UISkin.LabelSmall);
+            if (UINav.Button(new Rect(inner.xMax - 170, y - 2, 170, 32), L("Pfad kopieren"), true, UISkin.ButtonSmall))
             {
                 GUIUtility.systemCopyBuffer = app.SaveDir;
-                Hud.Show("Pfad kopiert.", ToastKind.Info, 2f);
+                Hud.Show(L("Pfad kopiert."), ToastKind.Info, 2f);
             }
             y += 36;
             if (!string.IsNullOrEmpty(savesMsg))
             {
-                GUI.Label(new Rect(inner.x, y, inner.width, 44), UISkin.Col(savesMsg, savesMsgError ? UISkin.Bad : UISkin.Good), UISkin.WrapSmall);
+                GUI.Label(new Rect(inner.x, y, inner.width, 44), UISkin.Col(L(savesMsg), savesMsgError ? UISkin.Bad : UISkin.Good), UISkin.WrapSmall);
                 y += 46;
             }
             if (inGame && !host)
-                GUI.Label(new Rect(inner.x, y, inner.width, 28), UISkin.Col("Als Gast kannst du nicht speichern – die Welt gehört dem Host. Laden beendet die Koop-Sitzung.", UISkin.Warn), UISkin.LabelSmall);
+                GUI.Label(new Rect(inner.x, y, inner.width, 28), UISkin.Col(L("Als Gast kannst du nicht speichern – die Welt gehört dem Host. Laden beendet die Koop-Sitzung."), UISkin.Warn), UISkin.LabelSmall);
             else if (inGame)
-                GUI.Label(new Rect(inner.x, y, inner.width, 28), "Aktueller Speicherplatz: " + GameApp.SlotName(app.Slot) + ". Beim Laden eines anderen Stands wird die laufende Welt vorher gespeichert.", UISkin.LabelSmall);
+                GUI.Label(new Rect(inner.x, y, inner.width, 28), L("Aktueller Speicherplatz: ") + L(GameApp.SlotName(app.Slot)) + L(". Beim Laden eines anderen Stands wird die laufende Welt vorher gespeichert."), UISkin.LabelSmall);
             y += 34;
 
             var view = new Rect(inner.x, y, inner.width, inner.yMax - y);
@@ -416,19 +416,19 @@ namespace RePlanet
             r.height = h;
             UISkin.PanelBoxLight(r);
             bool current = inGame && app.Slot == info.Slot;
-            GUI.Label(new Rect(r.x + 18, r.y + 8, 260, 30), GameApp.SlotName(info.Slot) + (current ? UISkin.Col("  (aktuell)", UISkin.Accent) : ""), UISkin.H3);
+            GUI.Label(new Rect(r.x + 18, r.y + 8, 260, 30), L(GameApp.SlotName(info.Slot)) + (current ? UISkin.Col(L("  (aktuell)"), UISkin.Accent) : ""), UISkin.H3);
             if (!exists)
             {
-                GUI.Label(new Rect(r.x + 18, r.y + 44, r.width - 300, 30), UISkin.Col("(leer)", UISkin.TextDim), UISkin.Label);
+                GUI.Label(new Rect(r.x + 18, r.y + 44, r.width - 300, 30), UISkin.Col(L("(leer)"), UISkin.TextDim), UISkin.Label);
             }
             else
             {
                 string line1 = (info.World ?? "Welt") + (string.IsNullOrEmpty(info.Planet) ? "" : " · " + info.Planet);
                 GUI.Label(new Rect(r.x + 18, r.y + 42, r.width - 360, 28), line1, UISkin.LabelBold);
-                string line2 = "Spielzeit " + FormatTime(info.Playtime) + " · " + Num(info.Credits) + " Credits · Wiederherstellung " + (info.Restoration * 100).ToString("0") + " %"
-                    + (info.Campaign ? " · Kampagne abgeschlossen" : "");
+                string line2 = L("Spielzeit ") + FormatTime(info.Playtime) + " · " + Num(info.Credits) + L(" Credits · Wiederherstellung ") + (info.Restoration * 100).ToString("0") + " %"
+                    + (info.Campaign ? L(" · Kampagne abgeschlossen") : "");
                 GUI.Label(new Rect(r.x + 18, r.y + 70, r.width - 360, 26), line2, UISkin.LabelSmall);
-                string line3 = (string.IsNullOrEmpty(info.Saved) ? "" : "Gespeichert: " + info.Saved) + (info.HasBackup ? "   · Backup vorhanden" : "");
+                string line3 = (string.IsNullOrEmpty(info.Saved) ? "" : L("Gespeichert: ") + info.Saved) + (info.HasBackup ? L("   · Backup vorhanden") : "");
                 if (info.Error != null) line3 += "   " + UISkin.Col("⚠ " + info.Error, UISkin.Warn);
                 GUI.Label(new Rect(r.x + 18, r.y + 96, r.width - 360, 26), line3, UISkin.LabelSmall);
             }
@@ -438,29 +438,29 @@ namespace RePlanet
             string delKey = "del:" + info.Slot;
             if (confirm == delKey)
             {
-                GUI.Label(new Rect(bx, r.y + 8, 310, 30), UISkin.Col("Wirklich löschen?", UISkin.Warn), UISkin.LabelBold);
-                if (UINav.Button(new Rect(bx, r.y + 44, bw, bh), "Ja, löschen", true, UISkin.ButtonSel))
+                GUI.Label(new Rect(bx, r.y + 8, 310, 30), UISkin.Col(L("Wirklich löschen?"), UISkin.Warn), UISkin.LabelBold);
+                if (UINav.Button(new Rect(bx, r.y + 44, bw, bh), L("Ja, löschen"), true, UISkin.ButtonSel))
                 {
                     confirm = null;
                     bool ok = app.Saves.Delete(info.Slot);
-                    savesMsg = ok ? GameApp.SlotName(info.Slot) + " gelöscht." : "Löschen fehlgeschlagen.";
+                    savesMsg = ok ? L(GameApp.SlotName(info.Slot)) + L(" gelöscht.") : L("Löschen fehlgeschlagen.");
                     savesMsgError = !ok;
                     RefreshSaves(); RefreshMainMenu();
                 }
-                if (UINav.Button(new Rect(bx + bw + 10, r.y + 44, bw, bh), "Abbrechen")) confirm = null;
+                if (UINav.Button(new Rect(bx + bw + 10, r.y + 44, bw, bh), L("Abbrechen"))) confirm = null;
                 return h;
             }
             string loadKey = "load:" + info.Slot;
             if (confirm == loadKey)
             {
-                GUI.Label(new Rect(bx, r.y + 8, 320, 30), UISkin.Col(host ? "Laufende Welt speichern und wechseln?" : "Sitzung verlassen und laden?", UISkin.Warn), UISkin.LabelSmall);
-                if (UINav.Button(new Rect(bx, r.y + 44, bw, bh), "Ja, laden", true, UISkin.ButtonSel))
+                GUI.Label(new Rect(bx, r.y + 8, 320, 30), UISkin.Col(host ? L("Laufende Welt speichern und wechseln?") : L("Sitzung verlassen und laden?"), UISkin.Warn), UISkin.LabelSmall);
+                if (UINav.Button(new Rect(bx, r.y + 44, bw, bh), L("Ja, laden"), true, UISkin.ButtonSel))
                 {
                     confirm = null;
                     if (host) app.SaveNow(null, true);
                     app.Continue(info.Slot);
                 }
-                if (UINav.Button(new Rect(bx + bw + 10, r.y + 44, bw, bh), "Abbrechen")) confirm = null;
+                if (UINav.Button(new Rect(bx + bw + 10, r.y + 44, bw, bh), L("Abbrechen"))) confirm = null;
                 return h;
             }
             bool loadable = exists && (info.World != null || info.HasBackup);
@@ -469,22 +469,22 @@ namespace RePlanet
                 if (inGame) confirm = loadKey;
                 else app.Continue(info.Slot);
             }
-            if (UINav.Button(new Rect(bx + bw + 10, r.y + 10, bw, bh), "Exportieren", exists && info.World != null, UISkin.ButtonSmall))
+            if (UINav.Button(new Rect(bx + bw + 10, r.y + 10, bw, bh), L("Exportieren"), exists && info.World != null, UISkin.ButtonSmall))
             {
                 string err;
                 var path = app.Saves.Export(info.Slot, Path.Combine(Application.persistentDataPath, "exports"), out err);
-                if (path != null) { savesMsg = "Exportiert nach: " + path; savesMsgError = false; }
-                else { savesMsg = "Export fehlgeschlagen: " + err; savesMsgError = true; }
+                if (path != null) { savesMsg = L("Exportiert nach: ") + path; savesMsgError = false; }
+                else { savesMsg = L("Export fehlgeschlagen: ") + err; savesMsgError = true; }
             }
             if (inGame && host)
             {
-                if (UINav.Button(new Rect(bx, r.y + 52, bw, bh), "Hier speichern", true, UISkin.ButtonSmall))
+                if (UINav.Button(new Rect(bx, r.y + 52, bw, bh), L("Hier speichern"), true, UISkin.ButtonSmall))
                 {
-                    if (app.SaveNow(info.Slot)) { app.Slot = info.Slot; savesMsg = "Gespeichert in " + GameApp.SlotName(info.Slot) + "."; savesMsgError = false; }
+                    if (app.SaveNow(info.Slot)) { app.Slot = info.Slot; savesMsg = L("Gespeichert in ") + L(GameApp.SlotName(info.Slot)) + "."; savesMsgError = false; }
                     RefreshSaves();
                 }
             }
-            if (UINav.Button(new Rect(bx + bw + 10, r.y + 52, bw, bh), "Löschen", exists && !current, UISkin.ButtonSmall)) confirm = delKey;
+            if (UINav.Button(new Rect(bx + bw + 10, r.y + 52, bw, bh), L("Löschen"), exists && !current, UISkin.ButtonSmall)) confirm = delKey;
             return h;
         }
 
@@ -500,33 +500,33 @@ namespace RePlanet
             UISkin.PanelBox(r);
             GUI.Label(new Rect(r.x, r.y + 16, r.width, 50), L("Pause"), UISkin.H1);
             if (app.CoopActive)
-                GUI.Label(new Rect(r.x, r.y + 64, r.width, 28), UISkin.Col("Koop: das Spiel läuft weiter", UISkin.Warn), UISkin.LabelCenter);
+                GUI.Label(new Rect(r.x, r.y + 64, r.width, 28), UISkin.Col(L("Koop: das Spiel läuft weiter"), UISkin.Warn), UISkin.LabelCenter);
             else if (app.InGame)
-                GUI.Label(new Rect(r.x, r.y + 64, r.width, 28), "Die Welt steht still.", UISkin.LabelCenter);
+                GUI.Label(new Rect(r.x, r.y + 64, r.width, 28), L("Die Welt steht still."), UISkin.LabelCenter);
             float y = r.y + 104, x = r.x + 40, w = r.width - 80;
             float step = bh + 10;
 
             if (confirm == "menu" || confirm == "quit")
             {
                 string q = confirm == "menu"
-                    ? (host ? "Zurück ins Hauptmenü? Die Welt wird gespeichert" + (app.CoopActive ? " und die Mitspieler werden getrennt." : ".") : "Die Koop-Sitzung verlassen?")
-                    : (host ? "Spiel beenden? Die Welt wird vorher gespeichert." : "Spiel beenden und die Sitzung verlassen?");
+                    ? (host ? L("Zurück ins Hauptmenü? Die Welt wird gespeichert") + (app.CoopActive ? L(" und die Mitspieler werden getrennt.") : ".") : L("Die Koop-Sitzung verlassen?"))
+                    : (host ? L("Spiel beenden? Die Welt wird vorher gespeichert.") : L("Spiel beenden und die Sitzung verlassen?"));
                 float th = UISkin.TextHeight(UISkin.WrapCenter, q, w);
                 GUI.Label(new Rect(x, y, w, th + 6), q, UISkin.WrapCenter);
                 y += th + 20;
-                if (UINav.Button(new Rect(x, y, w, bh), confirm == "menu" ? "Ja, zum Hauptmenü" : "Ja, beenden", true, UISkin.ButtonSel))
+                if (UINav.Button(new Rect(x, y, w, bh), confirm == "menu" ? L("Ja, zum Hauptmenü") : L("Ja, beenden"), true, UISkin.ButtonSel))
                 {
                     if (confirm == "menu") { confirm = null; app.LeaveToMenu(); }
                     else app.QuitGame();
                 }
                 y += step;
-                if (UINav.Button(new Rect(x, y, w, bh), "Abbrechen")) confirm = null;
+                if (UINav.Button(new Rect(x, y, w, bh), L("Abbrechen"))) confirm = null;
                 return;
             }
 
             if (UINav.Button(new Rect(x, y, w, bh), L("Fortsetzen"), true, UISkin.ButtonSel)) { UIState.Open(UIScreen.None); AudioManager.Ui("ui_back"); }
             y += step;
-            if (UINav.Button(new Rect(x, y, w, bh), L("Speichern") + (host ? " (" + GameApp.SlotName(app.Slot) + ")" : " – nur Host"), host)) app.SaveNow();
+            if (UINav.Button(new Rect(x, y, w, bh), L("Speichern") + (host ? " (" + L(GameApp.SlotName(app.Slot)) + ")" : L(" – nur Host")), host)) app.SaveNow();
             y += step;
             if (UINav.Button(new Rect(x, y, w, bh), L("Spielstände"))) OpenSub(UIScreen.Saves, UIScreen.Pause);
             y += step;
@@ -547,7 +547,7 @@ namespace RePlanet
             if (Event.current.type == EventType.Repaint) UISkin.Rect(new Rect(0, 0, VW, VH), new Color(0.02f, 0.07f, 0.09f, 0.72f));
             var r = CenterRect(700, 170);
             UISkin.PanelBox(r);
-            GUI.Label(new Rect(r.x, r.y + 20, r.width, 40), string.IsNullOrEmpty(app.LoadingText) ? "Laden …" : app.LoadingText, UISkin.LabelCenter);
+            GUI.Label(new Rect(r.x, r.y + 20, r.width, 40), string.IsNullOrEmpty(app.LoadingText) ? L("Laden …") : L(app.LoadingText), UISkin.LabelCenter);
             var bar = new Rect(r.x + 50, r.y + 90, r.width - 100, 16);
             UISkin.Bar(bar, 0, UISkin.Teal);
             if (Event.current.type == EventType.Repaint)
@@ -556,17 +556,17 @@ namespace RePlanet
                 float x0 = Mathf.Clamp01(t), x1 = Mathf.Clamp01(t + 0.3f);
                 if (x1 > x0) UISkin.RoundRect(new Rect(bar.x + bar.width * x0, bar.y, bar.width * (x1 - x0), bar.height), UISkin.Teal);
             }
-            GUI.Label(new Rect(r.x, r.y + 120, r.width, 30), "MIKO fährt die Systeme hoch …", UISkin.LabelSmall);
+            GUI.Label(new Rect(r.x, r.y + 120, r.width, 30), L("MIKO fährt die Systeme hoch …"), UISkin.LabelSmall);
         }
 
         void DrawMessage(GameApp app)
         {
             Backdrop(app);
-            string text = UIState.MessageText ?? "";
+            string text = L(UIState.MessageText ?? "");
             float th = UISkin.TextHeight(UISkin.WrapCenter, text, 660);
             var r = CenterRect(740, Mathf.Min(VH - 60, th + 200));
             UISkin.PanelBox(r);
-            GUI.Label(new Rect(r.x, r.y + 18, r.width, 44), UIState.MessageTitle ?? "Hinweis", UISkin.H1);
+            GUI.Label(new Rect(r.x, r.y + 18, r.width, 44), L(UIState.MessageTitle ?? "Hinweis"), UISkin.H1);
             GUI.Label(new Rect(r.x + 40, r.y + 80, r.width - 80, th + 10), text, UISkin.WrapCenter);
             if (UINav.Button(new Rect(r.center.x - 110, r.yMax - 70, 220, 50), "OK", true, UISkin.ButtonSel))
                 UIState.Open(UIState.ReturnTo);

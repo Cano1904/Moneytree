@@ -201,7 +201,7 @@ namespace RePlanet
             if (mt == null || !mt.Done || mt.Tex == null)
             {
                 float prog = mt != null ? mt.Row / (float)MapRes : 0f;
-                GUI.Label(new Rect(r.x, r.center.y - 40, r.width, 30), "Karte wird erstellt …", UISkin.LabelCenter);
+                GUI.Label(new Rect(r.x, r.center.y - 40, r.width, 30), L("Karte wird erstellt …"), UISkin.LabelCenter);
                 UISkin.Bar(new Rect(r.x + r.width * 0.2f, r.center.y, r.width * 0.6f, 12), prog, UISkin.Teal);
                 return;
             }
@@ -232,7 +232,7 @@ namespace RePlanet
                 {
                     var bb = gl.Blocker;
                     if (rep) MapBox(bb.Cx - bb.Hx, bb.Cz - bb.Hz, bb.Cx + bb.Hx, bb.Cz + bb.Hz, new Color(UISkin.Bad.r, UISkin.Bad.g, UISkin.Bad.b, 0.9f));
-                    Mark(W2M(bb.Cx, bb.Cz), "cross", UISkin.Bad, 22, "Versperrt: " + gl.Hint);
+                    Mark(W2M(bb.Cx, bb.Cz), "cross", UISkin.Bad, 22, L("Versperrt: ") + gl.Hint);
                 }
             }
             for (int a = 0; a < 3; a++)
@@ -258,8 +258,8 @@ namespace RePlanet
                     float hx = b.W * bl.Cell * 0.5f, hz = b.H * bl.Cell * 0.5f;
                     MapBox(c0.x - hx, c0.z - hz, c0.x + hx, c0.z + hz, UISkin.FromRgb(b.Def.Color != 0 ? b.Def.Color : 0x888888u, 0.95f));
                 }
-            Mark(W2M(bl.Center.x, bl.Center.z), "house", UISkin.Teal, 26, "Stützpunkt (Lager, Verkauf, Werkstatt, Schiff)");
-            Mark(W2M(bl.ShipPad.x, bl.ShipPad.z), "flag", UISkin.Accent, 18, "Transportschiff (Reisen)");
+            Mark(W2M(bl.Center.x, bl.Center.z), "house", UISkin.Teal, 26, L("Stützpunkt (Lager, Verkauf, Werkstatt, Schiff)"));
+            Mark(W2M(bl.ShipPad.x, bl.ShipPad.z), "flag", UISkin.Accent, 18, L("Transportschiff (Reisen)"));
 
             // Projektplätze
             for (int a = 0; a < 3; a++)
@@ -269,21 +269,21 @@ namespace RePlanet
                 var pst = ps.Projects[pid];
                 var pdef = GameData.Projects[pid];
                 Color c = pst.Done ? UISkin.Good : pst.Started ? UISkin.Accent : UISkin.Warn;
-                string st = pst.Done ? "fertig" : pst.Started ? "im Bau " + (pst.Progress * 100).ToString("0") + " %" : "offen";
-                Mark(W2M(site.x, site.z), "star", c, 26, "Projektplatz: " + pdef.Name + " (" + st + ")");
+                string st = pst.Done ? L("fertig") : pst.Started ? L("im Bau ") + (pst.Progress * 100).ToString("0") + " %" : L("offen");
+                Mark(W2M(site.x, site.z), "star", c, 26, L("Projektplatz: ") + pdef.Name + " (" + st + ")");
             }
 
             // Lichtpunkte (Zonen)
             foreach (var z in l.Zones)
             {
                 bool clean = Rules.ZoneCleared(ps, z.Index);
-                Mark(W2M(z.Center.x, z.Center.z), clean ? "dot" : "ring", clean ? UISkin.Good : UISkin.Warn, clean ? 14 : 18, "Lichtpunkt „" + z.Name + "“" + (clean ? " – sauber" : " – verschmutzt"));
+                Mark(W2M(z.Center.x, z.Center.z), clean ? "dot" : "ring", clean ? UISkin.Good : UISkin.Warn, clean ? 14 : 18, L("Lichtpunkt „") + L(z.Name) + L("“") + (clean ? L(" – sauber") : L(" – verschmutzt")));
             }
             // Reparaturpunkte
             foreach (var s in l.Repairs)
             {
                 bool done = ps.Repaired.Contains(s.Id);
-                Mark(W2M(s.Pos.x, s.Pos.z), "wrench", done ? UISkin.Good : UISkin.Accent, 16, s.Name + (done ? " – repariert" : " – defekt"));
+                Mark(W2M(s.Pos.x, s.Pos.z), "wrench", done ? UISkin.Good : UISkin.Accent, 16, L(s.Name) + (done ? L(" – repariert") : L(" – defekt")));
             }
             // Öko-Plätze
             foreach (var s in l.Eco)
@@ -291,29 +291,29 @@ namespace RePlanet
                 float gr = Rules.EcoGrowth(w, ps, s.Id);
                 bool planted = ps.Eco.ContainsKey(s.Id);
                 Color c = gr >= 0.999f ? UISkin.Good : planted ? new Color(0.55f, 0.85f, 0.45f) : new Color(0.7f, 0.75f, 0.65f, 0.75f);
-                Mark(W2M(s.Pos.x, s.Pos.z), "leaf", c, 15, s.Name + (gr >= 0.999f ? " – gewachsen" : planted ? " – wächst " + (gr * 100).ToString("0") + " %" : " – noch leer"));
+                Mark(W2M(s.Pos.x, s.Pos.z), "leaf", c, 15, L(s.Name) + (gr >= 0.999f ? L(" – gewachsen") : planted ? L(" – wächst ") + (gr * 100).ToString("0") + " %" : L(" – noch leer")));
             }
             // Fundstücke
             foreach (var s in l.LoreSpots)
             {
                 bool found = w.Lore.Contains(s.Id);
-                Mark(W2M(s.Pos.x, s.Pos.z), "book", found ? new Color(0.7f, 0.7f, 0.7f, 0.8f) : UISkin.Story, 16, found ? "Fundstück (gefunden): " + s.Name : "Fundstück – noch nicht entdeckt");
+                Mark(W2M(s.Pos.x, s.Pos.z), "book", found ? new Color(0.7f, 0.7f, 0.7f, 0.8f) : UISkin.Story, 16, found ? L("Fundstück (gefunden): ") + L(s.Name) : L("Fundstück – noch nicht entdeckt"));
             }
             // Aussichtspunkte
             foreach (var s in l.Viewpoints)
             {
                 bool seen = ps.Views.Contains(s.Id);
-                Mark(W2M(s.Pos.x, s.Pos.z), "eye", seen ? UISkin.Good : UISkin.Teal, 16, s.Name + (seen ? " – gemerkt (Fotomodus)" : ""));
+                Mark(W2M(s.Pos.x, s.Pos.z), "eye", seen ? UISkin.Good : UISkin.Teal, 16, L(s.Name) + (seen ? L(" – gemerkt (Fotomodus)") : ""));
             }
             // Unterschlüpfe
             foreach (var s in l.Shelters) Mark(W2M(s.Pos.x, s.Pos.z), "house", UISkin.Story, 17, pd.ShelterName);
-            foreach (var s in ps.Shelters) Mark(W2M(s.x, s.z), "house", new Color(0.6f, 0.95f, 1f), 15, "Notunterschlupf (selbst gebaut)");
+            foreach (var s in ps.Shelters) Mark(W2M(s.x, s.z), "house", new Color(0.6f, 0.95f, 1f), 15, L("Notunterschlupf (selbst gebaut)"));
 
             // Fahrzeuge
             foreach (var v in ps.Vehicles.Values)
             {
                 if (!GameData.Vehicles.ContainsKey(v.Id)) continue;
-                Mark(W2M(v.Pos.x, v.Pos.z), "truck", UISkin.Accent, 20, v.Def.Name + (v.Driver != null ? " (besetzt)" : ""));
+                Mark(W2M(v.Pos.x, v.Pos.z), "truck", UISkin.Accent, 20, v.Def.Name + (v.Driver != null ? L(" (besetzt)") : ""));
             }
 
             // Spieler
@@ -344,7 +344,7 @@ namespace RePlanet
                     }
                     DrawRotated(new Rect(mp.x - 15, mp.y - 15, 30, 30), UISkin.Arrow, Hud.CameraYaw, Color.white);
                     DrawRotated(new Rect(mp.x - 11, mp.y - 11, 22, 22), UISkin.Arrow, Hud.CameraYaw, UISkin.Accent);
-                    if (rep) marks.Add(new MapMark { P = mp, Text = "Du (" + (me.Name ?? "MIKO") + ")" });
+                    if (rep) marks.Add(new MapMark { P = mp, Text = L("Du (") + (me.Name ?? "MIKO") + ")" });
                 }
             }
 
@@ -401,62 +401,62 @@ namespace RePlanet
             float y = r.y;
             GUI.Label(new Rect(r.x, y, r.width, 34), UISkin.Col(pd.Name, UISkin.FromRgb(pd.Accent)) + " – " + pd.Subtitle, UISkin.LabelBold);
             y += 34;
-            GUI.Label(new Rect(r.x, y, r.width, 26), "Wiederherstellung: " + (Rules.PlanetRestoration(w, ps) * 100).ToString("0") + " %", UISkin.LabelSmall);
+            GUI.Label(new Rect(r.x, y, r.width, 26), L("Wiederherstellung: ") + (Rules.PlanetRestoration(w, ps) * 100).ToString("0") + " %", UISkin.LabelSmall);
             y += 30;
             for (int a = 0; a < 3; a++)
             {
                 int stage = Rules.AreaStage(w, ps, a);
                 GUI.Label(new Rect(r.x, y, r.width, 24), "<b>" + pd.AreaNames[a] + "</b>", UISkin.LabelSmall);
                 y += 24;
-                GUI.Label(new Rect(r.x + 10, y, r.width - 10, 22), "Stufe " + stage + "/4: " + Rules.StageNames[Mathf.Clamp(stage, 0, 4)], UISkin.LabelTiny);
+                GUI.Label(new Rect(r.x + 10, y, r.width - 10, 22), L("Stufe ") + stage + "/4: " + L(Rules.StageNames[Mathf.Clamp(stage, 0, 4)]), UISkin.LabelTiny);
                 y += 22;
                 UISkin.Bar(new Rect(r.x + 10, y + 3, r.width - 90, 10), Rules.Cleanliness(ps, a), stage >= 2 ? UISkin.Good : UISkin.Teal);
                 GUI.Label(new Rect(r.xMax - 74, y - 3, 70, 22), (Rules.Cleanliness(ps, a) * 100).ToString("0") + " %", UISkin.LabelTiny);
                 y += 22;
             }
             y += 8;
-            GUI.Label(new Rect(r.x, y, r.width, 28), "Legende", UISkin.H3);
+            GUI.Label(new Rect(r.x, y, r.width, 28), L("Legende"), UISkin.H3);
             y += 30;
             float colW = r.width;
             for (int i = 0; i < LegendShapes.Length; i++)
             {
                 if (y > r.yMax - 110) break;
                 UISkin.Tex(new Rect(r.x + 4, y + 3, 18, 18), UISkin.Shape(LegendShapes[i]), LegendColor(i));
-                GUI.Label(new Rect(r.x + 30, y, colW - 30, 24), LegendTexts[i], UISkin.LabelTiny);
+                GUI.Label(new Rect(r.x + 30, y, colW - 30, 24), L(LegendTexts[i]), UISkin.LabelTiny);
                 y += 24;
             }
             float legendEnd = mode == 0 ? r.yMax - 100 : r.yMax - 150;
             if (y < legendEnd)
             {
                 DrawRotated(new Rect(r.x + 4, y + 3, 18, 18), UISkin.Arrow, 0, UISkin.Accent);
-                GUI.Label(new Rect(r.x + 30, y, colW - 30, 24), "Du (Blickrichtung) · Mitspieler in ihrer Farbe", UISkin.LabelTiny);
+                GUI.Label(new Rect(r.x + 30, y, colW - 30, 24), L("Du (Blickrichtung) · Mitspieler in ihrer Farbe"), UISkin.LabelTiny);
                 y += 24;
             }
             if (mode == 2)
             {
                 // Linien der 3D-Karte
-                if (y < legendEnd) { LegendLine(new Rect(r.x + 2, y, colW, 24), new Color(0.35f, 1f, 0.88f, 0.9f), 3f, "Bereichsgrenze"); y += 24; }
-                if (y < legendEnd) { LegendLine(new Rect(r.x + 2, y, colW, 24), new Color(0.85f, 0.97f, 1f, 0.6f), 1.5f, "Höhenlinien · Stützpunktfläche"); y += 24; }
+                if (y < legendEnd) { LegendLine(new Rect(r.x + 2, y, colW, 24), new Color(0.35f, 1f, 0.88f, 0.9f), 3f, L("Bereichsgrenze")); y += 24; }
+                if (y < legendEnd) { LegendLine(new Rect(r.x + 2, y, colW, 24), new Color(0.85f, 0.97f, 1f, 0.6f), 1.5f, L("Höhenlinien · Stützpunktfläche")); y += 24; }
             }
             y += 4;
             // Zoom und Ansicht
             float zy = r.yMax - (mode == 0 ? 64 : 112);
             bool three = mode == 2 && MapCamera.I != null;
             float zf = three ? MapCamera.I.ZoomFactor : mapZoom;
-            GUI.Label(new Rect(r.x, zy, 120, 40), "Zoom " + zf.ToString("0.#") + "×", UISkin.LabelSmall);
+            GUI.Label(new Rect(r.x, zy, 120, 40), L("Zoom ") + zf.ToString("0.#") + "×", UISkin.LabelSmall);
             bool canOut = three ? MapCamera.I.TargetDistance < MapCamera.MaxDistance - 0.5f : mapZoom > 1.01f;
             bool canIn = three ? MapCamera.I.TargetDistance > MapCamera.MinDistance + 0.5f : mapZoom < 3.99f;
             if (UINav.Button(new Rect(r.x + 120, zy, 60, 40), "−", canOut, UISkin.ButtonSmall)) ZoomMap(-1);
             if (UINav.Button(new Rect(r.x + 186, zy, 60, 40), "+", canIn, UISkin.ButtonSmall)) ZoomMap(1);
             if (mode >= 1)
             {
-                if (UINav.Button(new Rect(r.x, zy + 48, Mathf.Min(r.width, 246), 40), mode == 2 ? "2D-Karte zeigen" : "3D-Karte zeigen", true, UISkin.ButtonSmall))
+                if (UINav.Button(new Rect(r.x, zy + 48, Mathf.Min(r.width, 246), 40), mode == 2 ? L("2D-Karte zeigen") : L("3D-Karte zeigen"), true, UISkin.ButtonSmall))
                 {
                     map2D = mode == 2;
                     mapDragging = mapPanning = false;
                 }
             }
-            else GUI.Label(new Rect(r.x, zy + 42, r.width, 22), InputMap.UsingPad ? "LB/RB: Zoom" : "Mausrad oder +/−: Zoom", UISkin.LabelTiny);
+            else GUI.Label(new Rect(r.x, zy + 42, r.width, 22), InputMap.UsingPad ? L("LB/RB: Zoom") : L("Mausrad oder +/−: Zoom"), UISkin.LabelTiny);
             return y;
         }
 

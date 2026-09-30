@@ -246,7 +246,7 @@ namespace RePlanet
                 var app = GameApp.I;
                 bool subs = !Narrator.HasRecordings || app == null || app.Settings == null || app.Settings.Subtitles;
                 string line = subs ? Narrator.SubtitleAt(t) : null;
-                if (line != null) Hud.Say(line, 0.3f); else Hud.Subtitle = null;
+                if (line != null) Hud.Say(Loc.T(line), 0.3f); else Hud.Subtitle = null;
             }
             catch (Exception e) { Report("Untertitel", e); }
 
@@ -2988,7 +2988,7 @@ namespace RePlanet
                 float sc = Screen.height / 1080f * (GameApp.I != null && GameApp.I.Settings != null ? GameApp.I.Settings.TextScale : 1f);
                 var ps = new GUIStyle(GUI.skin.label) { fontSize = (int)(26 * sc), alignment = TextAnchor.MiddleCenter };
                 GUI.color = new Color(1f, 1f, 1f, 0.55f);
-                GUI.Label(new Rect(0, Screen.height * 0.5f - 20 * sc, Screen.width, 40 * sc), "Intro wird vorbereitet …", ps);
+                GUI.Label(new Rect(0, Screen.height * 0.5f - 20 * sc, Screen.width, 40 * sc), Loc.T("Intro wird vorbereitet …"), ps);
                 GUI.color = Color.white;
                 if (Event.current.type == EventType.Repaint) blackShown = true;
                 return;
@@ -3033,7 +3033,7 @@ namespace RePlanet
                 var ss = new GUIStyle(ts) { fontSize = (int)(44 * scale), fontStyle = FontStyle.Normal };
                 float a2 = Mathf.Clamp01((t - 94.2f) / 2f) * Mathf.Clamp01((IntroTimeline.Total + 1.5f - t) / 1.5f);
                 GUI.color = new Color(1f, 0.75f, 0.45f, a2);
-                GUI.Label(new Rect(0, Screen.height * 0.3f + 150 * scale, Screen.width, 70 * scale), "Eine zweite Chance", ss);
+                GUI.Label(new Rect(0, Screen.height * 0.3f + 150 * scale, Screen.width, 70 * scale), Loc.T("Eine zweite Chance"), ss);
             }
             // Untertitel (ohne Aufnahme immer sichtbar, weil sie die Geschichte erzählen)
             if (!string.IsNullOrEmpty(Hud.Subtitle))
@@ -3050,12 +3050,12 @@ namespace RePlanet
             {
                 var ls = new GUIStyle(GUI.skin.label) { fontSize = (int)(24 * scale), alignment = TextAnchor.MiddleCenter };
                 GUI.color = new Color(1, 1, 1, 0.5f + 0.3f * Mathf.Sin(Time.unscaledTime * 3f));
-                GUI.Label(new Rect(0, Screen.height * 0.5f - 20 * scale, Screen.width, 40 * scale), "Musik wird vorbereitet …", ls);
+                GUI.Label(new Rect(0, Screen.height * 0.5f - 20 * scale, Screen.width, 40 * scale), Loc.T("Musik wird vorbereitet …"), ls);
             }
             // Überspringen-Hinweis
             var hs = new GUIStyle(GUI.skin.label) { fontSize = (int)(20 * scale), alignment = TextAnchor.MiddleRight };
             GUI.color = new Color(1, 1, 1, 0.6f + (skipHold > 0 ? 0.4f : 0));
-            GUI.Label(new Rect(0, Screen.height - bar + 10 * scale, Screen.width - 30, 30 * scale), skipHold > 0 ? "Überspringen … " + (int)(skipHold * 100) + " %" : "Gedrückt halten zum Überspringen", hs);
+            GUI.Label(new Rect(0, Screen.height - bar + 10 * scale, Screen.width - 30, 30 * scale), skipHold > 0 ? Loc.F("Überspringen … {0} %", (int)(skipHold * 100)) : Loc.T("Gedrückt halten zum Überspringen"), hs);
             GUI.color = Color.white;
         }
     }

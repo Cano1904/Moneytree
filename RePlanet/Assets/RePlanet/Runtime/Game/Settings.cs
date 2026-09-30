@@ -80,6 +80,7 @@ namespace RePlanet
         public void Apply()
         {
             Loc.Lang = Language;
+            Loc.ApplyToData();
             try
             {
                 // Qualitätsstufe (falls die Unity-Stufen existieren) + Einzelwerte

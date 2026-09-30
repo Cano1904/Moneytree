@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using RePlanet.Core;
 using UnityEngine;
 
 namespace RePlanet
@@ -115,15 +116,15 @@ namespace RePlanet
             switch (k)
             {
                 case KeyCode.None: return "—";
-                case KeyCode.Mouse0: return "Linke Maustaste";
-                case KeyCode.Mouse1: return "Rechte Maustaste";
-                case KeyCode.Mouse2: return "Mittlere Maustaste";
-                case KeyCode.LeftShift: return "Umschalt";
-                case KeyCode.LeftControl: return "Strg";
-                case KeyCode.Space: return "Leertaste";
+                case KeyCode.Mouse0: return Loc.T("Linke Maustaste");
+                case KeyCode.Mouse1: return Loc.T("Rechte Maustaste");
+                case KeyCode.Mouse2: return Loc.T("Mittlere Maustaste");
+                case KeyCode.LeftShift: return Loc.T("Umschalt");
+                case KeyCode.LeftControl: return Loc.T("Strg");
+                case KeyCode.Space: return Loc.T("Leertaste");
                 case KeyCode.Escape: return "Esc";
                 case KeyCode.Tab: return "Tab";
-                case KeyCode.Return: return "Eingabe";
+                case KeyCode.Return: return Loc.T("Eingabe");
             }
             var s = k.ToString();
             if (s.StartsWith("Alpha")) return s.Substring(5);
@@ -137,9 +138,9 @@ namespace RePlanet
             {
                 if (a == GameAction.UseTool) return "RT";
                 if (a == GameAction.AltTool) return "LT";
-                if (a == GameAction.Menu) return "Steuerkreuz ↑";
-                if (a == GameAction.Build) return "Steuerkreuz →";
-                if (a == GameAction.Sleep) return "Steuerkreuz ↓";
+                if (a == GameAction.Menu) return Loc.T("Steuerkreuz ↑");
+                if (a == GameAction.Build) return Loc.T("Steuerkreuz →");
+                if (a == GameAction.Sleep) return Loc.T("Steuerkreuz ↓");
                 if (a == GameAction.DiveDown) return "B";
                 var pb = PadButton(a);
                 switch (pb)

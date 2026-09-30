@@ -195,7 +195,7 @@ namespace RePlanet
 
         void SelectTool(WorldState w, string id)
         {
-            if (!Rules.HasTool(w, id)) { Hud.Show(Rules.ToolName(id) + " ist noch nicht vorhanden – in der Werkstatt kaufen.", ToastKind.Info, 2.5f); return; }
+            if (!Rules.HasTool(w, id)) { Hud.Show(Loc.T(Rules.ToolName(id)) + Loc.T(" ist noch nicht vorhanden – in der Werkstatt kaufen."), ToastKind.Info, 2.5f); return; }
             if (tool != id) AudioManager.Ui("ui_click");
             tool = id; toolToggled = false; magnetCharge = -1f;
         }
@@ -238,8 +238,8 @@ namespace RePlanet
                 switch (forTool)
                 {
                     case "cutter": e = Rules.CutCheck(w, o); break;
-                    case "heat": e = o.Frozen ? (w.TechLevel("heat") > 0 ? null : "Wärmemodul nötig.") : "Nicht eingefroren."; break;
-                    case "filter": e = o.T.Oil ? null : "Kein Ölteppich."; break;
+                    case "heat": e = o.Frozen ? (w.TechLevel("heat") > 0 ? null : Loc.T("Wärmemodul nötig.")) : Loc.T("Nicht eingefroren."); break;
+                    case "filter": e = o.T.Oil ? null : Loc.T("Kein Ölteppich."); break;
                     default: e = Rules.CollectCheck(w, o, forTool == "vacuum" ? "vacuum" : forTool == "magnet" ? "magnet" : "grab", ms.Pos, used); break;
                 }
                 if (e == null && score < bd) { bd = score; best = o; }
@@ -261,8 +261,8 @@ namespace RePlanet
                 target = FindTarget(w, me, forTool, out targetErr);
             }
             else if (target != null && Rules.Obj(w.Cur, target.Key) == null) { target = null; targetErr = null; }
-            if (target != null && targetErr == null && forTool == "grab") Hud.SetPrompt("[" + InputMap.Label(GameAction.UseTool) + "] Aufheben: " + target.T.Name, InputMap.Label(GameAction.UseTool), "Aufheben", AboveObj(target));
-            else if (target != null && targetErr != null) Hud.SetBlocked(target.T.Name + ": " + targetErr, ShortReason(targetErr), AboveObj(target));
+            if (target != null && targetErr == null && forTool == "grab") Hud.SetPrompt("[" + InputMap.Label(GameAction.UseTool) + Loc.T("] Aufheben: ") + target.T.Name, InputMap.Label(GameAction.UseTool), Loc.T("Aufheben"), AboveObj(target));
+            else if (target != null && targetErr != null) Hud.SetBlocked(target.T.Name + ": " + Loc.T(targetErr), ShortReason(Loc.T(targetErr)), AboveObj(target));
             bool held = UseHeld();
             bool acting = false;
             switch (tool)
@@ -305,7 +305,7 @@ namespace RePlanet
                             Act(new JObj().Set("a", "magnet").Set("charge", Json.R(Mathf.Max(0.2f, magnetCharge), 2)).Set("dir", Json.Arr(Json.R(f.x, 3), Json.R(f.z, 3))));
                             magnetCharge = -1f;
                         }
-                        Hud.SetPrompt("[" + InputMap.Label(GameAction.UseTool) + " halten] Magnetwelle aufladen, loslassen zum Auslösen", InputMap.Label(GameAction.UseTool), "Magnetwelle", null, true);
+                        Hud.SetPrompt("[" + InputMap.Label(GameAction.UseTool) + Loc.T(" halten] Magnetwelle aufladen, loslassen zum Auslösen"), InputMap.Label(GameAction.UseTool), Loc.T("Magnetwelle"), null, true);
                         break;
                     }
                 case "cutter":
@@ -313,8 +313,8 @@ namespace RePlanet
                 case "filter":
                     {
                         string act = tool == "cutter" ? "cut" : tool == "heat" ? "thaw" : "filter";
-                        string label = tool == "cutter" ? "Zerlegen" : tool == "heat" ? "Auftauen" : "Filtern";
-                        if (target != null && targetErr == null) Hud.SetPrompt("[" + InputMap.Label(GameAction.UseTool) + " halten] " + label + ": " + target.T.Name, InputMap.Label(GameAction.UseTool), label, AboveObj(target), true);
+                        string label = tool == "cutter" ? Loc.T("Zerlegen") : tool == "heat" ? Loc.T("Auftauen") : Loc.T("Filtern");
+                        if (target != null && targetErr == null) Hud.SetPrompt("[" + InputMap.Label(GameAction.UseTool) + Loc.T(" halten] ") + label + ": " + target.T.Name, InputMap.Label(GameAction.UseTool), label, AboveObj(target), true);
                         if (held && target != null && targetErr == null)
                         {
                             acting = true;
@@ -342,10 +342,10 @@ namespace RePlanet
                         foreach (var s in l.Eco) { float d = V3.DistXZ(s.Pos, ms.Pos); if (d < best && !w.Cur.Eco.ContainsKey(s.Id)) { best = d; spot = s; } }
                         if (spot != null)
                         {
-                            Hud.SetPrompt("[" + InputMap.Label(GameAction.UseTool) + "] " + GameData.Planets[w.CurrentPlanet].EcoName + " (15 Credits)", InputMap.Label(GameAction.UseTool), "Pflanzen", U(spot.Pos) + Vector3.up * 1.2f);
+                            Hud.SetPrompt("[" + InputMap.Label(GameAction.UseTool) + "] " + GameData.Planets[w.CurrentPlanet].EcoName + Loc.T(" (15 Credits)"), InputMap.Label(GameAction.UseTool), Loc.T("Pflanzen"), U(spot.Pos) + Vector3.up * 1.2f);
                             if (InputMap.Down(GameAction.UseTool)) Act(new JObj().Set("a", "plant").Set("s", spot.Id));
                         }
-                        else Hud.SetPrompt("Bio-Modul: Pflanzstelle suchen (Karte)", null, "Pflanzstelle suchen");
+                        else Hud.SetPrompt(Loc.T("Bio-Modul: Pflanzstelle suchen (Karte)"), null, Loc.T("Pflanzstelle suchen"));
                         break;
                     }
             }
@@ -369,8 +369,8 @@ namespace RePlanet
             if (v.Id == "rover")
             {
                 string fill = Item.Volume(v.Cargo).ToString("0") + "/" + v.Def.Capacity.ToString("0");
-                if (atBase && (v.Cargo.Count > 0 || v.Carry != null)) Hud.SetPrompt("[" + InputMap.Label(GameAction.Interact) + "] Abladen", InputMap.Label(GameAction.Interact), "Abladen");
-                else Hud.SetPrompt("[" + InputMap.Label(GameAction.UseTool) + " halten] Ansaugen (" + fill + ")", InputMap.Label(GameAction.UseTool), "Ansaugen " + fill, null, true);
+                if (atBase && (v.Cargo.Count > 0 || v.Carry != null)) Hud.SetPrompt("[" + InputMap.Label(GameAction.Interact) + Loc.T("] Abladen"), InputMap.Label(GameAction.Interact), Loc.T("Abladen"));
+                else Hud.SetPrompt("[" + InputMap.Label(GameAction.UseTool) + Loc.T(" halten] Ansaugen (") + fill + ")", InputMap.Label(GameAction.UseTool), Loc.T("Ansaugen ") + fill, null, true);
                 if (held && actTimer <= 0) { actTimer = 0.25f; Act(new JObj().Set("a", "vcollect")); }
                 if (InputMap.Down(GameAction.Interact) && atBase) Act(new JObj().Set("a", "vunload"));
                 return held;
@@ -379,8 +379,8 @@ namespace RePlanet
             {
                 if (Mathf.Abs(ms.Speed) > 0.5f && actTimer <= 0) { actTimer = 0.25f; Act(new JObj().Set("a", "boatnet")); }
                 string fill = Item.Volume(v.Cargo).ToString("0") + "/" + v.Def.Capacity.ToString("0");
-                if (atBase) Hud.SetPrompt("[" + InputMap.Label(GameAction.Interact) + "] Im Hafen abladen", InputMap.Label(GameAction.Interact), "Abladen");
-                else Hud.SetPrompt("Über Treibgut fahren (" + fill + ")", null, "Treibgut " + fill);
+                if (atBase) Hud.SetPrompt("[" + InputMap.Label(GameAction.Interact) + Loc.T("] Im Hafen abladen"), InputMap.Label(GameAction.Interact), Loc.T("Abladen"));
+                else Hud.SetPrompt(Loc.T("Über Treibgut fahren (") + fill + ")", null, Loc.T("Treibgut ") + fill);
                 if (InputMap.Down(GameAction.Interact) && atBase) Act(new JObj().Set("a", "vunload"));
                 return Mathf.Abs(ms.Speed) > 0.5f;
             }
@@ -389,8 +389,8 @@ namespace RePlanet
             {
                 VehicleState rover;
                 bool nearRover = w.Cur.Vehicles.TryGetValue("rover", out rover) && rover.Carry == null && V3.DistXZ(rover.Pos, ms.Pos) < 11f;
-                Hud.SetPrompt("[" + InputMap.Label(GameAction.Interact) + "] " + (nearRover ? "Auf den Transportrover setzen" : atBase ? "Am Stützpunkt verwerten" : "Absetzen"),
-                    InputMap.Label(GameAction.Interact), nearRover ? "Auf Rover" : atBase ? "Verwerten" : "Absetzen");
+                Hud.SetPrompt("[" + InputMap.Label(GameAction.Interact) + "] " + (nearRover ? Loc.T("Auf den Transportrover setzen") : atBase ? Loc.T("Am Stützpunkt verwerten") : Loc.T("Absetzen")),
+                    InputMap.Label(GameAction.Interact), nearRover ? Loc.T("Auf Rover") : atBase ? Loc.T("Verwerten") : Loc.T("Absetzen"));
                 if (InputMap.Down(GameAction.Interact)) Act(new JObj().Set("a", "cdrop"));
                 return false;
             }
@@ -401,8 +401,8 @@ namespace RePlanet
                 float d = V3.DistXZ(o.Pos, ms.Pos) - Rules.ObjRadius(o.T);
                 if (d < 9f && d < best) { best = d; wreck = o; }
             }
-            if (wreck == null) { Hud.SetPrompt("An ein großes Wrack heranfahren", null, "Wrack suchen"); return false; }
-            Hud.SetPrompt("[" + InputMap.Label(GameAction.Interact) + " halten] Anheben: " + wreck.T.Name + " (Mitspieler können helfen)", InputMap.Label(GameAction.Interact), "Anheben", AboveObj(wreck), true);
+            if (wreck == null) { Hud.SetPrompt(Loc.T("An ein großes Wrack heranfahren"), null, Loc.T("Wrack suchen")); return false; }
+            Hud.SetPrompt("[" + InputMap.Label(GameAction.Interact) + Loc.T(" halten] Anheben: ") + wreck.T.Name + Loc.T(" (Mitspieler können helfen)"), InputMap.Label(GameAction.Interact), Loc.T("Anheben"), AboveObj(wreck), true);
             bool lift = InputMap.Held(GameAction.Interact);
             if (lift && actTimer <= 0 && !pending)
             {
@@ -410,7 +410,7 @@ namespace RePlanet
                 Act(new JObj().Set("a", "clift").Set("o", wreck.Key).Set("dt", 0.25f), r =>
                 {
                     pending = false;
-                    if (r.Ok && r.Data != null && r.Data.Has("p")) { lastProgress = r.Data.Float("p"); progressUntil = Time.time + 0.6f; progressLabel = "Anheben" + (r.Data.Int("help") > 0 ? " (" + r.Data.Int("help") + " Helfer)" : ""); }
+                    if (r.Ok && r.Data != null && r.Data.Has("p")) { lastProgress = r.Data.Float("p"); progressUntil = Time.time + 0.6f; progressLabel = Loc.T("Anheben") + (r.Data.Int("help") > 0 ? " (" + r.Data.Int("help") + Loc.T(" Helfer)") : ""); }
                 });
                 if (CameraRig.I != null) CameraRig.I.Shake(0.05f);
                 AudioManager.Play("crane", RenderPos, 0.5f);
@@ -447,20 +447,20 @@ namespace RePlanet
                 switch (kv.Key)
                 {
                     case "storage":
-                        current = me.Bin.Count > 0 ? new Interaction { Kind = "deposit", Station = "storage", Label = key + "Einlagern (" + me.Bin.Count + ")", Key = ek, Word = "Einlagern" }
-                                                   : new Interaction { Kind = "deposit", Station = "storage", Label = "Lager: Behälter leer", Word = "Behälter leer" };
+                        current = me.Bin.Count > 0 ? new Interaction { Kind = "deposit", Station = "storage", Label = key + Loc.T("Einlagern (") + me.Bin.Count + ")", Key = ek, Word = Loc.T("Einlagern") }
+                                                   : new Interaction { Kind = "deposit", Station = "storage", Label = Loc.T("Lager: Behälter leer"), Word = Loc.T("Behälter leer") };
                         break;
-                    case "sell": current = new Interaction { Kind = "menu", Station = "sell", Label = key + "Verkaufen", Key = ek, Word = "Verkaufen" }; break;
-                    case "workshop": current = new Interaction { Kind = "menu", Station = "workshop", Label = key + "Werkstatt", Key = ek, Word = "Werkstatt" }; break;
-                    case "sort": current = new Interaction { Kind = "sort", Hold = true, Label = "[" + ek + " halten] Sortieren", Key = ek, Word = "Sortieren" }; break;
-                    case "trader": current = new Interaction { Kind = "menu", Station = "trader", Label = key + "Materialhändler", Key = ek, Word = "Händler" }; break;
-                    case "disposal": current = new Interaction { Kind = "dispose", Label = key + "Gefahrstoffe entsorgen", Key = ek, Word = "Entsorgen" }; break;
-                    case "contracts": current = new Interaction { Kind = "menu", Station = "contracts", Label = key + "Aufträge & Lieferungen", Key = ek, Word = "Aufträge" }; break;
-                    case "ship": current = new Interaction { Kind = "menu", Station = "ship", Label = key + "Reisen (Transportschiff)", Key = ek, Word = "Reisen" }; break;
-                    case "garage": current = new Interaction { Kind = "menu", Station = "garage", Label = key + "Garage", Key = ek, Word = "Garage" }; break;
+                    case "sell": current = new Interaction { Kind = "menu", Station = "sell", Label = key + Loc.T("Verkaufen"), Key = ek, Word = Loc.T("Verkaufen") }; break;
+                    case "workshop": current = new Interaction { Kind = "menu", Station = "workshop", Label = key + Loc.T("Werkstatt"), Key = ek, Word = Loc.T("Werkstatt") }; break;
+                    case "sort": current = new Interaction { Kind = "sort", Hold = true, Label = "[" + ek + Loc.T(" halten] Sortieren"), Key = ek, Word = Loc.T("Sortieren") }; break;
+                    case "trader": current = new Interaction { Kind = "menu", Station = "trader", Label = key + Loc.T("Materialhändler"), Key = ek, Word = Loc.T("Händler") }; break;
+                    case "disposal": current = new Interaction { Kind = "dispose", Label = key + Loc.T("Gefahrstoffe entsorgen"), Key = ek, Word = Loc.T("Entsorgen") }; break;
+                    case "contracts": current = new Interaction { Kind = "menu", Station = "contracts", Label = key + Loc.T("Aufträge & Lieferungen"), Key = ek, Word = Loc.T("Aufträge") }; break;
+                    case "ship": current = new Interaction { Kind = "menu", Station = "ship", Label = key + Loc.T("Reisen (Transportschiff)"), Key = ek, Word = Loc.T("Reisen") }; break;
+                    case "garage": current = new Interaction { Kind = "menu", Station = "garage", Label = key + Loc.T("Garage"), Key = ek, Word = Loc.T("Garage") }; break;
                     case "charge":
                         {
-                            string c = me.Energy < w.MaxEnergy - 0.5f ? "Lädt " + (me.Energy / w.MaxEnergy * 100f).ToString("0") + " %" : "Akku voll";
+                            string c = me.Energy < w.MaxEnergy - 0.5f ? Loc.T("Lädt ") + (me.Energy / w.MaxEnergy * 100f).ToString("0") + " %" : Loc.T("Akku voll");
                             current = new Interaction { Kind = "none", Label = c, Word = c };
                             break;
                         }
@@ -468,15 +468,15 @@ namespace RePlanet
                 if (current != null) { current.At = U(kv.Value) + Vector3.up * (kv.Key == "ship" ? 5.5f : 2.4f); break; }
             }
             if (current == null && l.Base.InBase(ms.Pos.x, ms.Pos.z) && ms.Pos.z > l.Base.GridZ0 - 2)
-                if (Hud.Prompt == null) Hud.SetPrompt("[" + InputMap.Label(GameAction.Build) + "] Bauansicht", InputMap.Label(GameAction.Build), "Bauen");
+                if (Hud.Prompt == null) Hud.SetPrompt("[" + InputMap.Label(GameAction.Build) + Loc.T("] Bauansicht"), InputMap.Label(GameAction.Build), Loc.T("Bauen"));
             // Fahrzeuge
             if (current == null)
                 foreach (var v in w.Cur.Vehicles.Values)
                 {
                     float d = V3.DistXZ(ms.Pos, v.Pos);
                     if (d > v.Def.Radius + 3.2f) continue;
-                    if (v.Id == "rover" && me.Bin.Count > 0) current = new Interaction { Kind = "vload", Label = "[" + InputMap.Label(GameAction.Interact) + "] Auf die Ladefläche umladen · [" + InputMap.Label(GameAction.Vehicle) + "] Einsteigen", Key = InputMap.Label(GameAction.Interact), Word = "Umladen" };
-                    else current = new Interaction { Kind = "none", Label = "[" + InputMap.Label(GameAction.Vehicle) + "] Einsteigen: " + v.Def.Name, Key = InputMap.Label(GameAction.Vehicle), Word = "Einsteigen" };
+                    if (v.Id == "rover" && me.Bin.Count > 0) current = new Interaction { Kind = "vload", Label = "[" + InputMap.Label(GameAction.Interact) + Loc.T("] Auf die Ladefläche umladen · [") + InputMap.Label(GameAction.Vehicle) + Loc.T("] Einsteigen"), Key = InputMap.Label(GameAction.Interact), Word = Loc.T("Umladen") };
+                    else current = new Interaction { Kind = "none", Label = "[" + InputMap.Label(GameAction.Vehicle) + Loc.T("] Einsteigen: ") + v.Def.Name, Key = InputMap.Label(GameAction.Vehicle), Word = Loc.T("Einsteigen") };
                     current.At = U(v.Pos) + Vector3.up * 3f;
                     break;
                 }
@@ -488,8 +488,8 @@ namespace RePlanet
                     var pid = GameData.ProjectId(w.CurrentPlanet, a);
                     var pd = GameData.Projects[pid];
                     var why = Rules.ProjectCheck(w, pid);
-                    if (why == null) current = new Interaction { Kind = "project", Id = a.ToString(), Label = "[" + InputMap.Label(GameAction.Interact) + "] Projekt starten: „" + pd.Name + "“ (" + pd.Credits + " Credits + Material)", Key = InputMap.Label(GameAction.Interact), Word = "Projekt starten" };
-                    else current = new Interaction { Kind = "none", Label = "„" + pd.Name + "“: " + why, Word = ShortReason(why) };
+                    if (why == null) current = new Interaction { Kind = "project", Id = a.ToString(), Label = "[" + InputMap.Label(GameAction.Interact) + Loc.T("] Projekt starten: „") + pd.Name + "“ (" + pd.Credits + Loc.T(" Credits + Material)"), Key = InputMap.Label(GameAction.Interact), Word = Loc.T("Projekt starten") };
+                    else current = new Interaction { Kind = "none", Label = "„" + pd.Name + "“: " + Loc.T(why), Word = ShortReason(Loc.T(why)) };
                     current.At = U(l.ProjectSites[a]) + Vector3.up * 3f;
                     break;
                 }
@@ -502,28 +502,28 @@ namespace RePlanet
                         var cost = Rules.RepairCost(w.CurrentPlanet);
                         var sb = new System.Text.StringBuilder();
                         foreach (var kv in cost) sb.Append(kv.Value).Append(' ').Append(GameData.Materials[kv.Key].Name).Append(' ');
-                        current = new Interaction { Kind = "repair", Id = s.Id, Hold = true, Label = "[" + InputMap.Label(GameAction.Interact) + " halten] " + s.Name + " (" + sb.ToString().Trim() + " aus dem Lager)", Key = InputMap.Label(GameAction.Interact), Word = "Reparieren", At = U(s.Pos) + Vector3.up * 2.2f };
+                        current = new Interaction { Kind = "repair", Id = s.Id, Hold = true, Label = "[" + InputMap.Label(GameAction.Interact) + Loc.T(" halten] ") + Loc.T(s.Name) + " (" + sb.ToString().Trim() + Loc.T(" aus dem Lager)"), Key = InputMap.Label(GameAction.Interact), Word = Loc.T("Reparieren"), At = U(s.Pos) + Vector3.up * 2.2f };
                         break;
                     }
             }
             if (current == null)
                 foreach (var s in l.LoreSpots)
-                    if (!w.Lore.Contains(s.Id) && V3.DistXZ(ms.Pos, s.Pos) < 3.5f) { current = new Interaction { Kind = "lore", Id = s.Id, Label = "[" + InputMap.Label(GameAction.Interact) + "] Fundstück aufheben", Key = InputMap.Label(GameAction.Interact), Word = "Fundstück", At = U(s.Pos) + Vector3.up * 1.2f }; break; }
+                    if (!w.Lore.Contains(s.Id) && V3.DistXZ(ms.Pos, s.Pos) < 3.5f) { current = new Interaction { Kind = "lore", Id = s.Id, Label = "[" + InputMap.Label(GameAction.Interact) + Loc.T("] Fundstück aufheben"), Key = InputMap.Label(GameAction.Interact), Word = Loc.T("Fundstück"), At = U(s.Pos) + Vector3.up * 1.2f }; break; }
             if (current == null)
                 foreach (var s in l.Viewpoints)
-                    if (V3.DistXZ(ms.Pos, s.Pos) < 7f) { current = new Interaction { Kind = "view", Id = s.Id, Label = "[" + InputMap.Label(GameAction.Interact) + "] " + s.Name + " merken (Fotomodus)", Key = InputMap.Label(GameAction.Interact), Word = "Aussicht merken", At = U(s.Pos) + Vector3.up * 2f }; break; }
+                    if (V3.DistXZ(ms.Pos, s.Pos) < 7f) { current = new Interaction { Kind = "view", Id = s.Id, Label = "[" + InputMap.Label(GameAction.Interact) + "] " + Loc.T(s.Name) + Loc.T(" merken (Fotomodus)"), Key = InputMap.Label(GameAction.Interact), Word = Loc.T("Aussicht merken"), At = U(s.Pos) + Vector3.up * 2f }; break; }
             if (current == null)
                 foreach (var o in Rules.All(w.Cur))
                     if (o.T.Crane && V3.DistXZ(ms.Pos, o.Pos) < 8f)
                     {
-                        current = new Interaction { Kind = "help", Id = o.Key, Hold = true, Label = "[" + InputMap.Label(GameAction.Interact) + " halten] Beim Anheben helfen (Kran nötig)", Key = InputMap.Label(GameAction.Interact), Word = "Mitheben", At = AboveObj(o) };
+                        current = new Interaction { Kind = "help", Id = o.Key, Hold = true, Label = "[" + InputMap.Label(GameAction.Interact) + Loc.T(" halten] Beim Anheben helfen (Kran nötig)"), Key = InputMap.Label(GameAction.Interact), Word = Loc.T("Mitheben"), At = AboveObj(o) };
                         break;
                     }
             // Unterschlupf
             bool night = Rules.IsNight(w, w.CurrentPlanet);
             int shelterKind = Rules.ShelterKind(w, w.Cur, ms.Pos);
             if (current == null && shelterKind > 0 && (night || w.Cur.StormActive))
-                current = new Interaction { Kind = "sleep", Label = "[" + InputMap.Label(GameAction.Sleep) + "] Schlafen", Key = InputMap.Label(GameAction.Sleep), Word = "Schlafen" };
+                current = new Interaction { Kind = "sleep", Label = "[" + InputMap.Label(GameAction.Sleep) + Loc.T("] Schlafen"), Key = InputMap.Label(GameAction.Sleep), Word = Loc.T("Schlafen") };
             if (current != null && Hud.Prompt == null || current != null && current.Kind != "none" && current.Kind != "sleep") ApplyPrompt(current);
             else if (current != null && current.Kind == "none" && Hud.Prompt == null) ApplyPrompt(current);
 
@@ -539,7 +539,7 @@ namespace RePlanet
                           : current.Kind == "repair" ? new JObj().Set("a", "repair").Set("s", current.Id).Set("dt", 0.25f)
                           : new JObj().Set("a", "help").Set("o", current.Id);
                     pending = true;
-                    string label = current.Kind == "repair" ? "Reparieren" : current.Kind == "sort" ? "Sortieren" : null;
+                    string label = current.Kind == "repair" ? Loc.T("Reparieren") : current.Kind == "sort" ? Loc.T("Sortieren") : null;
                     Act(a, r =>
                     {
                         pending = false;
@@ -588,7 +588,7 @@ namespace RePlanet
                 case "vload": Act(new JObj().Set("a", "vload").Set("v", "rover")); break;
                 case "project": Act(new JObj().Set("a", "project").Set("area", int.Parse(current.Id))); break;
                 case "lore": Act(new JObj().Set("a", "lore").Set("s", current.Id), r => { if (r.Ok) { UIState.MenuTab = "archive"; } }); break;
-                case "view": Act(new JObj().Set("a", "view").Set("s", current.Id), r => { if (r.Ok) Hud.Show("Aussichtspunkt gemerkt – im Fotomodus [" + InputMap.Label(GameAction.Photo) + "] anspringbar.", ToastKind.Success, 4f); }); break;
+                case "view": Act(new JObj().Set("a", "view").Set("s", current.Id), r => { if (r.Ok) Hud.Show(Loc.T("Aussichtspunkt gemerkt – im Fotomodus [") + InputMap.Label(GameAction.Photo) + Loc.T("] anspringbar."), ToastKind.Success, 4f); }); break;
                 case "menu":
                     UIState.Station = current.Station;
                     UIState.MenuTab = current.Station == "workshop" || current.Station == "ship" || current.Station == "garage" ? "workshop" : "storage";
@@ -609,7 +609,7 @@ namespace RePlanet
                     VehicleState best = null; float bd = float.MaxValue;
                     foreach (var v in w.Cur.Vehicles.Values) { float d = V3.DistXZ(ms.Pos, v.Pos) - v.Def.Radius; if (d < 3.5f && d < bd) { bd = d; best = v; } }
                     if (best != null) Act(new JObj().Set("a", "venter").Set("v", best.Id), r => { if (r.Ok) { ms.Pos = best.Pos; ms.Yaw = best.Yaw; ms.Speed = 0; } });
-                    else Hud.Show("Kein Fahrzeug in der Nähe.", ToastKind.Info, 2f);
+                    else Hud.Show(Loc.T("Kein Fahrzeug in der Nähe."), ToastKind.Info, 2f);
                 }
             }
             if (InputMap.Down(GameAction.Press) && veh == null) Act(new JObj().Set("a", "press"));
@@ -626,7 +626,7 @@ namespace RePlanet
             if (veh == null && InputMap.Held(GameAction.VehicleReset))
             {
                 resetHold += dt;
-                Hud.Progress = resetHold / 2f; Hud.ProgressLabel = "Zum Stützpunkt zurückkehren";
+                Hud.Progress = resetHold / 2f; Hud.ProgressLabel = Loc.T("Zum Stützpunkt zurückkehren");
                 if (resetHold >= 2f) { resetHold = 0; Act(new JObj().Set("a", "respawn")); }
             }
             else resetHold = 0;
@@ -637,7 +637,7 @@ namespace RePlanet
         {
             target = null;
             var bl = WorldGen.Get(w.CurrentPlanet).Base;
-            if (!bl.InBase(ms.Pos.x, ms.Pos.z)) { BuildMode.Active = false; Hud.Show("Bauansicht nur am Stützpunkt.", ToastKind.Info); return; }
+            if (!bl.InBase(ms.Pos.x, ms.Pos.z)) { BuildMode.Active = false; Hud.Show(Loc.T("Bauansicht nur am Stützpunkt."), ToastKind.Info); return; }
             if (InputMap.Down(GameAction.RotateBuild)) BuildMode.Rot = (BuildMode.Rot + 1) % 4;
             var cam = Camera.main;
             BuildMode.HasCursor = false;
@@ -686,11 +686,11 @@ namespace RePlanet
             string reason = Rules.CanPlace(w, w.Cur, type, gx, gz, BuildMode.Rot, BuildMode.MoveId);
             if (reason == null && BuildMode.MoveId < 0)
             {
-                if (Rules.CountOf(w.Cur, type) >= def.MaxCount) reason = "Maximal " + def.MaxCount + "× pro Stützpunkt.";
+                if (Rules.CountOf(w.Cur, type) >= def.MaxCount) reason = Loc.T("Maximal ") + def.MaxCount + Loc.T("× pro Stützpunkt.");
                 else
                 {
                     var miss = Rules.MissingText(w.Cur, def.Mats, def.Cost, w.Credits);
-                    if (miss.Length > 0) reason = "Es fehlen: " + miss + ".";
+                    if (miss.Length > 0) reason = Loc.T("Es fehlen: ") + miss + ".";
                 }
             }
             BuildMode.Valid = reason == null;

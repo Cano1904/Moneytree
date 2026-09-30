@@ -287,6 +287,7 @@ namespace RePlanet
         // ------------------------------------------------------------ Bedienelemente
         public static bool Button(Rect r, string text, bool enabled = true, GUIStyle st = null)
         {
+            text = Loc.T(text); // Beschriftungen dürfen deutsch übergeben werden (Sprache wird hier angewandt)
             bool focused;
             int id = Register(r, KButton, out focused);
             st = st ?? UISkin.Button;
@@ -326,7 +327,7 @@ namespace RePlanet
                 var box = new Rect(r.x + 6, r.y + (r.height - 26) * 0.5f, 26, 26);
                 UISkin.Sliced(box, value ? UISkin.BtnSel : UISkin.PanelDark);
                 if (value) GUI.Label(box, "✓", UISkin.LabelCenter);
-                GUI.Label(new Rect(box.xMax + 12, r.y, r.width - 50, r.height), label, UISkin.Label);
+                GUI.Label(new Rect(box.xMax + 12, r.y, r.width - 50, r.height), Loc.T(label), UISkin.Label);
                 GUI.Label(new Rect(r.x, r.y, r.width - 10, r.height), value ? Loc.T("An") : Loc.T("Aus"), value ? UISkin.LabelRight : DimRight());
             }
             bool clicked = GUI.Button(r, GUIContent.none, GUIStyle.none);
@@ -353,7 +354,7 @@ namespace RePlanet
             bool hover = r.Contains(Event.current.mousePosition) || (focused && KeyboardMode);
             if (hover) UISkin.RoundRect(r, new Color(1, 1, 1, 0.06f));
             float lw = r.width * 0.42f, vw = 90f;
-            GUI.Label(new Rect(r.x + 10, r.y, lw - 10, r.height), label, UISkin.Label);
+            GUI.Label(new Rect(r.x + 10, r.y, lw - 10, r.height), Loc.T(label), UISkin.Label);
             var sr = new Rect(r.x + lw, r.y + r.height * 0.5f - 9, r.width - lw - vw - 10, 18);
             float f = Mathf.InverseLerp(min, max, value);
             UISkin.Bar(new Rect(sr.x, sr.y + 4, sr.width, 10), f, UISkin.Teal);
@@ -384,12 +385,12 @@ namespace RePlanet
             bool hover = r.Contains(Event.current.mousePosition) || (focused && KeyboardMode);
             if (hover) UISkin.RoundRect(r, new Color(1, 1, 1, 0.06f));
             float lw = label != null ? r.width * 0.42f : 0f;
-            if (label != null) GUI.Label(new Rect(r.x + 10, r.y, lw - 10, r.height), label, UISkin.Label);
+            if (label != null) GUI.Label(new Rect(r.x + 10, r.y, lw - 10, r.height), Loc.T(label), UISkin.Label);
             var cr = new Rect(r.x + lw, r.y + 3, r.width - lw - 6, r.height - 6);
             UISkin.Sliced(cr, UISkin.PanelDark);
             int n = options.Length;
             index = Mathf.Clamp(index, 0, n - 1);
-            GUI.Label(cr, options[index], UISkin.LabelCenter);
+            GUI.Label(cr, Loc.T(options[index]), UISkin.LabelCenter);
             var lb = new Rect(cr.x, cr.y, 40, cr.height);
             var rb = new Rect(cr.xMax - 40, cr.y, 40, cr.height);
             GUI.Label(lb, "‹", UISkin.LabelCenter);
@@ -437,7 +438,7 @@ namespace RePlanet
                 {
                     if (Button(tr, names[i], true, st)) current = i;
                 }
-                else if (GUI.Button(tr, names[i], st)) { current = i; AudioManager.Ui("ui_click"); }
+                else if (GUI.Button(tr, Loc.T(names[i]), st)) { current = i; AudioManager.Ui("ui_click"); }
             }
             return current;
         }
