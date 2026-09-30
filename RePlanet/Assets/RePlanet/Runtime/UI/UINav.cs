@@ -285,15 +285,19 @@ namespace RePlanet
         }
 
         // ------------------------------------------------------------ Bedienelemente
-        public static bool Button(Rect r, string text, bool enabled = true, GUIStyle st = null)
+        /// <summary>Hatte der zuletzt gezeichnete Knopf den Tastatur-/Controller-Fokus?</summary>
+        public static bool LastFocused;
+
+        public static bool Button(Rect r, string text, bool enabled = true, GUIStyle st = null, GUIStyle offStyle = null)
         {
             text = Loc.T(text); // Beschriftungen dürfen deutsch übergeben werden (Sprache wird hier angewandt)
             bool focused;
             int id = Register(r, KButton, out focused);
+            LastFocused = focused;
             st = st ?? UISkin.Button;
             bool old = GUI.enabled;
             GUI.enabled = old && enabled;
-            bool clicked = GUI.Button(r, text, enabled ? st : UISkin.ButtonOff);
+            bool clicked = GUI.Button(r, text, enabled ? st : (offStyle ?? UISkin.ButtonOff));
             GUI.enabled = old;
             if (enabled && focused && KeyboardMode && Event.current.type == EventType.Repaint)
                 st.Draw(r, UISkin.Tmp(text), true, false, false, false);

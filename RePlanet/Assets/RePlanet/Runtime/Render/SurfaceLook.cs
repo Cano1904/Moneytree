@@ -8,8 +8,9 @@ namespace RePlanet
     /// kachelbarer Detailtextur (Flecken, Körnung, Risse/Kratzer, Rost-/Schmutzmasken), Fenster-Shader
     /// (Resources/RePlanetWindow.shader: Rahmen, Sprossen, Spiegelung, nachts teils beleuchtete Innenräume) und ein
     /// Piktogramm-Atlas für Schilder (Zahnrad, Kiste, Münze, Blitz, Gefahrenraute, Pfeile, Schiff …) statt Schrift.
-    /// Alle Texturen entstehen einmal beim ersten Gebrauch und werden zwischengespeichert. Fehlen die Shader oder
-    /// werden sie nicht unterstützt, gibt es die bisherigen Standard-Materialien.
+    /// Alle Texturen entstehen einmal beim ersten Gebrauch und werden zwischengespeichert. Fehlen die Shader, werden sie
+    /// nicht unterstützt oder ist der Oberflächen-Shader abgeschaltet (Standard, siehe <see cref="DetailShadersAllowed"/>),
+    /// gibt es Standard-Materialien mit Farbpalette.
     /// </summary>
     public static class SurfaceLook
     {
@@ -18,15 +19,41 @@ namespace RePlanet
         static Texture2D detail, icons;
         static Material signMat;
 
+        /// <summary>
+        /// Übersteuerung für Prüfumgebungen (null = Einstellung <see cref="Settings.DetailShaders"/> gilt). Muss vor dem
+        /// ersten Material gesetzt werden – die Entscheidung fällt einmal beim ersten Gebrauch.
+        /// </summary>
+        public static bool? ForceDetailShaders;
+
+        /// <summary>
+        /// Darf der eigene Oberflächen-Shader benutzt werden? Standard: nein (<see cref="Settings.DetailShadersDefault"/>).
+        /// Hintergrund: In Unity erschienen alle Paletten-Teile (Gebäude, MIKO) mit ihm reinweiß; der Standard-Shader mit
+        /// Farbpalette ist der geprüfte, verlässliche Weg. Einschalten über die Einstellung „Detail-Shader“.
+        /// </summary>
+        public static bool DetailShadersAllowed
+        {
+            get
+            {
+                if (ForceDetailShaders.HasValue) return ForceDetailShaders.Value;
+                try
+                {
+                    var app = GameApp.I;
+                    if (app != null && app.Settings != null) return app.Settings.DetailShaders;
+                }
+                catch { }
+                return Settings.DetailShadersDefault;
+            }
+        }
+
         static void Load()
         {
             if (loaded) return;
             loaded = true;
-            surface = Mats.CustomShader("RePlanetSurface", "RePlanet/Surface");
+            if (DetailShadersAllowed) surface = Mats.CustomShader("RePlanetSurface", "RePlanet/Surface");
             window = Mats.CustomShader("RePlanetWindow", "RePlanet/Window");
         }
 
-        /// <summary>Ist der Oberflächen-Shader aktiv?</summary>
+        /// <summary>Ist der Oberflächen-Shader aktiv (Einstellung an und vom System unterstützt)?</summary>
         public static bool Custom { get { Load(); return surface != null; } }
 
         /// <summary>

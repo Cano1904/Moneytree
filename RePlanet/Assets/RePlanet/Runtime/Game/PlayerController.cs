@@ -34,6 +34,8 @@ namespace RePlanet
         Interaction current;
         GameObject preview;
         string previewKey;
+        /// <summary>Im Hangar bzw. Laderaum (geschützt, keine Werkzeuge).</summary>
+        bool indoors;
 
         class Interaction
         {
@@ -142,6 +144,7 @@ namespace RePlanet
             RenderYaw = ms.Yaw;
 
             // ------------------------------------------------ Werkzeuge & Interaktion
+            indoors = Rules.Indoors(Rules.ShelterKind(w, w.Cur, ms.Pos));
             bool acting = false;
             if (!blocked && !frozen && !PhotoMode.Active)
             {
@@ -253,6 +256,13 @@ namespace RePlanet
         bool HandleTools(GameApp app, WorldState w, PlayerData me, float dt)
         {
             actTimer -= dt;
+            if (indoors)
+            {
+                // Im Unterschlupf ruhen die Werkzeuge (der Server lehnt Sammelaktionen hier ohnehin ab)
+                target = null; targetErr = null; magnetCharge = -1f; toolToggled = false;
+                if (InputMap.Held(GameAction.UseTool) || InputMap.Held(GameAction.AltTool)) Hud.SetBlocked(Rules.IndoorsDenied, "Im Unterschlupf");
+                return false;
+            }
             string forTool = tool == "seeder" ? "grab" : tool;
             scanTimer -= dt;
             if (scanTimer <= 0 || forTool != lastScanTool)
@@ -370,8 +380,9 @@ namespace RePlanet
             {
                 string fill = Item.Volume(v.Cargo).ToString("0") + "/" + v.Def.Capacity.ToString("0");
                 if (atBase && (v.Cargo.Count > 0 || v.Carry != null)) Hud.SetPrompt("[" + InputMap.Label(GameAction.Interact) + Loc.T("] Abladen"), InputMap.Label(GameAction.Interact), Loc.T("Abladen"));
+                else if (indoors) Hud.SetPrompt(Loc.T("Im Unterschlupf – Ansaugen erst draußen (") + fill + ")", null, Loc.T("Im Unterschlupf"));
                 else Hud.SetPrompt("[" + InputMap.Label(GameAction.UseTool) + Loc.T(" halten] Ansaugen (") + fill + ")", InputMap.Label(GameAction.UseTool), Loc.T("Ansaugen ") + fill, null, true);
-                if (held && actTimer <= 0) { actTimer = 0.25f; Act(new JObj().Set("a", "vcollect")); }
+                if (held && actTimer <= 0 && !indoors) { actTimer = 0.25f; Act(new JObj().Set("a", "vcollect")); }
                 if (InputMap.Down(GameAction.Interact) && atBase) Act(new JObj().Set("a", "vunload"));
                 return held;
             }
@@ -385,6 +396,7 @@ namespace RePlanet
                 return Mathf.Abs(ms.Speed) > 0.5f;
             }
             // Kran
+            if (indoors) { Hud.SetPrompt("Im Unterschlupf – der Kran arbeitet nur draußen", null, "Im Unterschlupf"); return false; }
             if (v.Carry != null)
             {
                 VehicleState rover;
@@ -519,11 +531,23 @@ namespace RePlanet
                         current = new Interaction { Kind = "help", Id = o.Key, Hold = true, Label = "[" + InputMap.Label(GameAction.Interact) + Loc.T(" halten] Beim Anheben helfen (Kran nötig)"), Key = InputMap.Label(GameAction.Interact), Word = Loc.T("Mitheben"), At = AboveObj(o) };
                         break;
                     }
-            // Unterschlupf
+            // Unterschlupf: drinnen Schlafen anbieten, draußen am Tor/an der Rampe auf den Schutzraum hinweisen
             bool night = Rules.IsNight(w, w.CurrentPlanet);
             int shelterKind = Rules.ShelterKind(w, w.Cur, ms.Pos);
-            if (current == null && shelterKind > 0 && (night || w.Cur.StormActive))
+            bool passive = current == null || current.Kind == "none" || (current.Kind == "deposit" && me.Bin.Count == 0);
+            if (shelterKind > 0 && (night || w.Cur.StormActive) && (current == null || Rules.Indoors(shelterKind) && passive))
                 current = new Interaction { Kind = "sleep", Label = "[" + InputMap.Label(GameAction.Sleep) + Loc.T("] Schlafen"), Key = InputMap.Label(GameAction.Sleep), Word = Loc.T("Schlafen") };
+            else if (passive && !Rules.Indoors(shelterKind) && (night || w.Cur.StormActive || w.Cur.StormWarn))
+            {
+                var room = EntranceNear(l, ms.Pos);
+                if (room != null)
+                    current = new Interaction
+                    {
+                        Kind = "none", Word = Loc.T("Unterschlupf"), At = EntranceAnchor(room),
+                        Label = Loc.T(room.Kind == Rules.ShelterShip ? (w.Cur.StormActive || w.Cur.StormWarn ? "Unterschlupf: über die Rampe ins Transportschiff fahren – geschützt vor dem Sturm" : "Unterschlupf: über die Rampe ins Transportschiff fahren – geschützt vor der Nacht")
+                            : (w.Cur.StormActive || w.Cur.StormWarn ? "Unterschlupf: durchs Rolltor in den Hangar fahren – geschützt vor dem Sturm" : "Unterschlupf: durchs Rolltor in den Hangar fahren – geschützt vor der Nacht")),
+                    };
+            }
             if (current != null && Hud.Prompt == null || current != null && current.Kind != "none" && current.Kind != "sleep") ApplyPrompt(current);
             else if (current != null && current.Kind == "none" && Hud.Prompt == null) ApplyPrompt(current);
 
@@ -551,6 +575,28 @@ namespace RePlanet
             }
             if (!InputMap.Down(GameAction.Interact)) return;
             RunInteraction(current);
+        }
+
+        /// <summary>Schutzraum, dessen Eingang (Tor bzw. Rampe) höchstens 9 m entfernt ist, oder null.</summary>
+        static ShelterRoom EntranceNear(PlanetLayout l, V3 p)
+        {
+            ShelterRoom best = null; float bd = 9f;
+            foreach (var r in l.Base.Rooms)
+            {
+                var a = EntranceAnchor(r);
+                float d = Mathf.Sqrt((a.x - p.x) * (a.x - p.x) + (a.z - p.z) * (a.z - p.z));
+                if (d < bd) { bd = d; best = r; }
+            }
+            return best;
+        }
+
+        /// <summary>Hinweis-Anker über der Mitte des Eingangs (Torsturz bzw. Oberkante der Heckluke).</summary>
+        static Vector3 EntranceAnchor(ShelterRoom r)
+        {
+            var i = r.Inner;
+            float x = Mathf.Abs(r.OutX) > 0.5f ? i.Cx + r.OutX * i.Hx : r.Door.Cx;
+            float z = Mathf.Abs(r.OutZ) > 0.5f ? i.Cz + r.OutZ * i.Hz : r.Door.Cz;
+            return new Vector3(x + r.OutX * 0.6f, i.Y0 + Mathf.Min(i.H, 3.4f), z + r.OutZ * 0.6f);
         }
 
         static void ApplyPrompt(Interaction i)

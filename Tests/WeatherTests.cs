@@ -385,4 +385,187 @@ public static class WeatherTests
         var envT = new MotorEnv("terra"); envT.Sync(gt.S, null);
         Assert.Equal(-1, envT.ActiveDuneSet, "Keine Dünen auf TERRA");
     }
+
+    // ================================================================== Hangar und Transportschiff als Schutzräume
+
+    /// <summary>Fährt MIKO mit dem echten Motor (Kollision) über Wegpunkte; liefert den Endzustand.</summary>
+    static MoverState WalkMotor(MotorEnv env, MoverState s, params V3[] points)
+    {
+        const float dt = 0.05f;
+        foreach (var pt in points)
+            for (int i = 0; i < 400; i++)
+            {
+                float dx = pt.x - s.Pos.x, dz = pt.z - s.Pos.z, d = M.Sqrt(dx * dx + dz * dz);
+                if (d < 0.25f) break;
+                float k = Math.Min(1f, d / 0.6f);
+                Motor.StepRobot(ref s, env, dx / d * k, dz / d * k, false, 0f, 1f, false, dt);
+            }
+        return s;
+    }
+
+    /// <summary>Lenkt ein Fahrzeug mit dem echten Motor über Wegpunkte.</summary>
+    static MoverState DriveMotor(MotorEnv env, VehicleDef def, MoverState s, params V3[] points)
+    {
+        const float dt = 0.05f;
+        foreach (var pt in points)
+            for (int i = 0; i < 600; i++)
+            {
+                float dx = pt.x - s.Pos.x, dz = pt.z - s.Pos.z, d = M.Sqrt(dx * dx + dz * dz);
+                if (d < 0.6f) break;
+                float diff = M.WrapAngle(M.Atan2(dx, dz) - s.Yaw);
+                float steer = M.Clamp(diff * 3f, -1f, 1f);
+                float throttle = Math.Abs(diff) > 1.2f ? 0.3f : Math.Min(1f, 0.25f + d * 0.15f);
+                Motor.StepVehicle(ref s, env, def, throttle, steer, dt);
+            }
+        return s;
+    }
+
+    static MoverState StartAt(V3 p, float yaw) { return new MoverState { Pos = p, Yaw = yaw }; }
+
+    [Test]
+    public static void Hangar_und_Schiff_sind_befahrbar_Waende_bleiben_fest()
+    {
+        foreach (var pl in GameData.PlanetOrder)
+        {
+            var w = Game.NewWorld("Test", pl);
+            var l = WorldGen.Get(pl);
+            var b = l.Base;
+            var env = new MotorEnv(pl);
+            env.Sync(w, null);
+            var ps = w.Planet(pl);
+            Assert.True(b.Hangar != null && b.Ship != null, pl + ": Hangar und Laderaum definiert");
+            foreach (var room in b.Rooms)
+            {
+                string n = pl + "/" + room.Id;
+                var door = new V3(room.Door.Cx, room.Door.Y0, room.Door.Cz);
+                var outside = new V3(room.Outside.x, l.GroundAt(room.Outside.x, room.Outside.z), room.Outside.z);
+                // Hineinlaufen durch Tor bzw. über die Rampe
+                var s = WalkMotor(env, StartAt(outside, 0), door, room.Spot);
+                Assert.True(V3.DistXZ(s.Pos, room.Spot) < 0.5f, n + ": MIKO erreicht den Innenraum (" + s.Pos + ")");
+                Assert.Equal(room.Kind, Rules.ShelterKind(w, ps, s.Pos), n + ": Innenraum erkannt");
+                Assert.True(Rules.Indoors(Rules.ShelterKind(w, ps, s.Pos)), n + ": gilt als drinnen");
+                float floor = Math.Max(room.Inner.Y0, Terrain.HeightAt(pl, s.Pos.x, s.Pos.z));
+                Assert.True(Math.Abs(s.Pos.y - floor) < 0.05f, n + ": steht auf dem Boden des Innenraums (y " + s.Pos.y.ToString("0.00") + " statt " + floor.ToString("0.00") + ")");
+                // … und wieder hinaus
+                s = WalkMotor(env, s, door, outside);
+                Assert.True(V3.DistXZ(s.Pos, outside) < 0.5f, n + ": MIKO fährt wieder hinaus (" + s.Pos + ")");
+                Assert.True(Rules.RoomAt(l, s.Pos) == null, n + ": draußen");
+                Assert.Equal(0, Rules.Indoors(Rules.ShelterKind(w, ps, s.Pos)) ? 1 : 0, n + ": draußen nicht mehr drinnen");
+                // Durch die Wand geht es nicht: quer zur Eingangsrichtung auf die Raummitte zu
+                float sx = room.OutZ, sz = -room.OutX;
+                float reach = Math.Abs(sx) > 0.5f ? room.Inner.Hx : room.Inner.Hz;
+                var side = new V3(room.Inner.Cx + sx * (reach + 3f), 0, room.Inner.Cz + sz * (reach + 3f));
+                side.y = l.GroundAt(side.x, side.z);
+                var sw = WalkMotor(env, StartAt(side, 0), new V3(room.Inner.Cx, room.Inner.Y0, room.Inner.Cz));
+                Assert.True(Rules.RoomAt(l, sw.Pos) == null, n + ": Wand hält MIKO auf (" + sw.Pos + ")");
+                // Der Rover fährt ebenfalls hinein und rückwärts wieder hinaus
+                var rover = GameData.Vehicles["rover"];
+                float yawIn = M.Atan2(-room.OutX, -room.OutZ);
+                var start = new V3(outside.x + room.OutX * 4f, 0, outside.z + room.OutZ * 4f);
+                start.y = l.GroundAt(start.x, start.z);
+                var vs = DriveMotor(env, rover, StartAt(start, yawIn), outside, door, room.Spot);
+                Assert.True(Rules.RoomAt(l, vs.Pos) != null, n + ": Rover fährt hinein (" + vs.Pos + ")");
+                vs.Speed = 0;
+                for (int i = 0; i < 400 && Rules.RoomAt(l, vs.Pos) != null; i++) Motor.StepVehicle(ref vs, env, rover, -1f, 0f, 0.05f);
+                for (int i = 0; i < 40; i++) Motor.StepVehicle(ref vs, env, rover, -1f, 0f, 0.05f);
+                Assert.True(Rules.RoomAt(l, vs.Pos) == null, n + ": Rover fährt wieder hinaus (" + vs.Pos + ")");
+            }
+        }
+    }
+
+    [Test]
+    public static void Im_Hangar_und_im_Schiff_geschuetzt_und_Schlafen_moeglich()
+    {
+        foreach (var roomId in new[] { "hangar", "ship" })
+        {
+            PlayerData p;
+            var g = TestHelpers.NewGame(out p);
+            var b = WorldGen.Get("terra").Base;
+            var room = roomId == "hangar" ? b.Hangar : b.Ship;
+            RunUntilNight(g);
+            TestHelpers.Teleport(g, p.Id, room.Spot);
+            p.Energy = 50f;
+            Run(g, 10f);
+            Assert.Equal(room.Kind, p.ShelterKind, roomId + ": Schutzraum erkannt");
+            Assert.False(p.Exposed, roomId + ": nachts drinnen nicht ausgesetzt");
+            Assert.True(p.Energy >= 50f - 0.01f, roomId + ": kein Nachtverbrauch (" + p.Energy.ToString("0.0") + ")");
+            if (roomId == "hangar") Assert.True(p.Energy > 60f, "Hangar: Ladesäule lädt (" + p.Energy.ToString("0.0") + ")");
+            // Sturm: ebenfalls geschützt
+            var ps = g.S.Cur;
+            ps.StormTimer = GameData.Planets["terra"].StormEvery + 1f;
+            Run(g, 2f);
+            Assert.True(ps.StormActive, roomId + ": Sturm läuft");
+            float e = p.Energy;
+            Run(g, 5f);
+            Assert.False(p.Exposed, roomId + ": im Sturm drinnen nicht ausgesetzt");
+            Assert.True(p.Energy >= e - 0.01f, roomId + ": kein Sturmverbrauch");
+            // Schlafen überspringt Nacht und Sturm
+            var rs = g.Apply(p.Id, TestKit.A("sleep"), true);
+            Assert.True(rs.Ok, roomId + ": Schlafen erlaubt: " + rs.Err);
+            var fx = Run(g, 1f);
+            Assert.True(Has(fx, "morning"), roomId + ": Morgen nach dem Schlafen");
+            Assert.False(Rules.IsNight(g.S, "terra") || ps.StormActive, roomId + ": Nacht und Sturm vorbei");
+            // Draußen gelten weiter die bisherigen Regeln
+            RunUntilNight(g);
+            TestHelpers.Teleport(g, p.Id, OpenSpot(g));
+            Run(g, 1f);
+            Assert.True(p.Exposed, roomId + ": draußen nachts wieder ausgesetzt");
+        }
+    }
+
+    [Test]
+    public static void Im_Unterschlupf_kein_Sammeln_und_keine_Werkzeuge()
+    {
+        PlayerData p;
+        var g = TestHelpers.NewGame(out p);
+        foreach (var t in new[] { "vacuum", "magnet", "cutter", "heat", "filter" }) g.S.Tech[t] = 1;
+        var o = TestHelpers.FirstGrabbable(g, p);
+        var b = WorldGen.Get("terra").Base;
+        foreach (var room in b.Rooms)
+        {
+            TestHelpers.Teleport(g, p.Id, room.Spot);
+            g.Tick(0.3f);
+            foreach (var a in new[] { TestKit.A("grab").Set("o", o.Key), TestKit.A("vacuum").Set("dir", Json.Arr(1, 0)), TestKit.A("magnet").Set("charge", 1).Set("dir", Json.Arr(1, 0)),
+                                      TestKit.A("cut").Set("o", o.Key).Set("dt", 0.25f), TestKit.A("thaw").Set("o", o.Key).Set("dt", 0.25f), TestKit.A("filter").Set("o", o.Key).Set("dt", 0.25f) })
+            {
+                var r = g.Apply(p.Id, a, true);
+                Assert.False(r.Ok, room.Id + ": " + a.Str("a") + " abgelehnt");
+                Assert.True(r.Err.StartsWith("Im Unterschlupf"), room.Id + ": kurze Meldung (" + r.Err + ")");
+            }
+            Assert.Equal(0, p.Bin.Count, room.Id + ": nichts eingesammelt");
+        }
+        // Draußen klappt das Sammeln wie gewohnt
+        var rg = TestHelpers.Grab(g, p, o);
+        Assert.True(rg.Ok, "Draußen sammeln: " + rg.Err);
+        Assert.Equal(1, p.Bin.Count, "Eingesammelt");
+        // Einlagern ist kein Sammeln: aus dem Hangar direkt hinter dem Tor erreicht man die Lager-Annahme
+        TestHelpers.Teleport(g, p.Id, new V3(0, b.Hangar.Spot.y, -143f));
+        g.Tick(0.3f);
+        Assert.Equal(Rules.ShelterHangar, Rules.ShelterKind(g.S, g.S.Cur, p.Pos), "Im Hangar hinter dem Tor");
+        var rd = g.Apply(p.Id, TestKit.A("deposit"), true);
+        Assert.True(rd.Ok, "Einlagern aus dem Hangar: " + rd.Err);
+    }
+
+    [Test]
+    public static void Aussteigen_im_Hangar_und_im_Schiff_bleibt_drinnen()
+    {
+        PlayerData p;
+        var g = TestHelpers.NewGame(out p);
+        g.S.OwnedVehicles.Add("rover"); g.EnsureVehicles();
+        var l = WorldGen.Get("terra");
+        foreach (var room in l.Base.Rooms)
+        {
+            var rover = g.S.Cur.Vehicles["rover"];
+            TestHelpers.Teleport(g, p.Id, new V3(rover.Pos.x + 1, rover.Pos.y, rover.Pos.z));
+            Assert.True(g.Apply(p.Id, TestKit.A("venter").Set("v", "rover"), true).Ok, room.Id + ": Einsteigen");
+            // Rover im Raum, quer zur Eingangsrichtung → die Aussteigeseite zeigt auf eine Wand
+            var inside = new V3(room.Inner.Cx, room.Inner.Y0, room.Inner.Cz);
+            g.AllowTeleport(p.Id);
+            Assert.True(g.Move(p.Id, inside, M.Atan2(room.OutZ, -room.OutX), false, 0, "grab", 0.1f), room.Id + ": Rover im Raum");
+            g.Tick(0.3f);
+            Assert.True(g.Apply(p.Id, TestKit.A("vexit"), true).Ok, room.Id + ": Aussteigen");
+            Assert.True(room.Contains(p.Pos, -0.5f), room.Id + ": nach dem Aussteigen im Innenraum (" + p.Pos + ")");
+            Assert.True(Math.Abs(p.Pos.y - l.GroundAt(p.Pos.x, p.Pos.z)) < 0.01f, room.Id + ": auf dem Boden");
+        }
+    }
 }

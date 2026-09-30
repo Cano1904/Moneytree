@@ -2506,8 +2506,8 @@ namespace RePlanet.Core
         public class Shot { public float Start, End; public string Id; public string[] Lines; }
 
         /// <summary>
-        /// Die Handlung folgt der Grundidee von WALL·E (vermüllte Erde, ein Konzern, Flucht auf Archen,
-        /// ein einzelner Roboter arbeitet weiter und findet einen Keimling) – mit eigenen Figuren, Namen und Bildern.
+        /// Die Handlung: vermüllte Erde, ein Konzern, Flucht auf Archen,
+        /// ein einzelner Roboter arbeitet weiter und findet einen Keimling.
         /// </summary>
         public static readonly Shot[] Shots =
         {

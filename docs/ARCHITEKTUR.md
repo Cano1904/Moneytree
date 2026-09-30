@@ -63,6 +63,11 @@ entfernte Objekte (Bitset), aufgetaute Objekte, neue dynamische Objekte (Zerlege
 Lager, Gebäude, Projekte, Reparaturen, Begrünung, Fahrzeuge, Wetter, Notunterschlüpfe, Missionen, Statistiken.
 Der Fotomodus kann deshalb jederzeit den **Ausgangszustand** (Vorher-Ansicht) zeigen.
 
+**Befahrbare Innenräume:** `BaseLayout.Rooms` beschreibt Hangar und Schiffsladeraum (`ShelterRoom`: Innenfläche,
+Eingang, Schlafplatz, Vorplatz). `Rules.ShelterKind` liefert dafür 3 (Hangar) bzw. 4 (Schiff); `Rules.Indoors` sperrt dort
+Sammelaktionen serverseitig. Rampe und Laderaumboden sind begehbare Böden (`FloorPatch`, `PlanetLayout.GroundAt`), die
+der Motor, die Kamera und der Kampagnen-Bot gleichermaßen nutzen. Tor und Rampe sind reine Darstellung (`WorldViewBase`).
+
 ## Darstellung
 
 * **Himmel:** eigener Shader (`Resources/RePlanetSky.shader`) mit Farbverläufen, Dunstband, Sonne, animierten Wolken

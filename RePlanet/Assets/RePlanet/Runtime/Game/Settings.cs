@@ -24,6 +24,13 @@ namespace RePlanet
         public float Fov = 60f;
         /// <summary>Leistungsanzeige oben links (FPS aktuell/Minimum, Bildzeit, Draw-Calls, Qualität, Auflösung); Taste F3.</summary>
         public bool ShowFps;
+        /// <summary>
+        /// Eigener Oberflächen-Shader (Resources/RePlanetSurface.shader: Putz, Ziegel, Rost … je Ecke) statt des
+        /// Standard-Shaders mit Farbpalette. Standard: aus (sicherer Weg). Wirkt nach dem nächsten Spielstart
+        /// (Materialien werden beim ersten Gebrauch angelegt und zwischengespeichert).
+        /// </summary>
+        public bool DetailShaders = DetailShadersDefault;
+        public const bool DetailShadersDefault = false;
 
         // ------------------------------------------------------------ Audio
         public float MasterVolume = 0.9f, MusicVolume = 0.7f, SfxVolume = 0.85f, AmbientVolume = 0.7f, UiVolume = 0.6f, VoiceVolume = 0.8f;
@@ -119,7 +126,7 @@ namespace RePlanet
                 var o = new JObj()
                     .Set("q", Quality).Set("rw", ResWidth).Set("rh", ResHeight).Set("wm", WindowMode).Set("vs", VSync).Set("fps", FpsLimit)
                     .Set("sh", Shadows).Set("aa", AntiAliasing).Set("vd", ViewDistance).Set("rs", RenderScale).Set("pa", Particles).Set("br", Brightness)
-                    .Set("fov", Fov).Set("sf", ShowFps)
+                    .Set("fov", Fov).Set("sf", ShowFps).Set("ds", DetailShaders)
                     .Set("mv", MasterVolume).Set("mu", MusicVolume).Set("sx", SfxVolume).Set("am", AmbientVolume).Set("ui", UiVolume).Set("vo", VoiceVolume).Set("mf", MuteWhenUnfocused).Set("nig", NarratorInGame).Set("rst", RadioStation)
                     .Set("ms", MouseSensitivity).Set("ps", PadSensitivity).Set("iy", InvertY).Set("ha", HoldActions)
                     .Set("st", Subtitles).Set("ts", TextScale).Set("cs", CameraShake).Set("hc", HighContrast).Set("rf", ReduceFlashing).Set("hi", Hints)
@@ -149,7 +156,7 @@ namespace RePlanet
                 if (!Json.TryParseObj(File.ReadAllText(PathFile), out o)) return s;
                 s.Quality = o.Int("q", 2); s.ResWidth = o.Int("rw"); s.ResHeight = o.Int("rh"); s.WindowMode = o.Int("wm"); s.VSync = o.Bool("vs", true); s.FpsLimit = o.Int("fps");
                 s.Shadows = o.Int("sh", 2); s.AntiAliasing = o.Int("aa", 2); s.ViewDistance = Mathf.Clamp(o.Float("vd", 1f), 0.5f, 1.5f); s.RenderScale = Mathf.Clamp(o.Float("rs", 1f), 0.5f, 1f);
-                s.Particles = o.Int("pa", 2); s.Brightness = Mathf.Clamp(o.Float("br", 1f), 0.7f, 1.3f); s.Fov = Mathf.Clamp(o.Float("fov", 60f), 45f, 90f); s.ShowFps = o.Bool("sf");
+                s.Particles = o.Int("pa", 2); s.Brightness = Mathf.Clamp(o.Float("br", 1f), 0.7f, 1.3f); s.Fov = Mathf.Clamp(o.Float("fov", 60f), 45f, 90f); s.ShowFps = o.Bool("sf"); s.DetailShaders = o.Bool("ds", DetailShadersDefault);
                 s.MasterVolume = o.Float("mv", 0.9f); s.MusicVolume = o.Float("mu", 0.7f); s.SfxVolume = o.Float("sx", 0.85f); s.AmbientVolume = o.Float("am", 0.7f); s.UiVolume = o.Float("ui", 0.6f); s.VoiceVolume = o.Float("vo", 0.8f);
                 s.MuteWhenUnfocused = o.Bool("mf", true); s.NarratorInGame = o.Bool("nig", true); s.RadioStation = o.Str("rst", "all");
                 s.MouseSensitivity = Mathf.Clamp(o.Float("ms", 1f), 0.1f, 4f); s.PadSensitivity = Mathf.Clamp(o.Float("ps", 1f), 0.1f, 4f); s.InvertY = o.Bool("iy"); s.HoldActions = o.Bool("ha", true);

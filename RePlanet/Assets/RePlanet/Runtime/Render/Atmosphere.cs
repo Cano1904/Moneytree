@@ -45,26 +45,81 @@ namespace RePlanet
             public float FogDay = 0.008f, FogStorm = 0.03f;
             /// <summary>Farbkorrektur (Split-Toning) der Nachbearbeitung: Tönung der Schatten und der Lichter.</summary>
             public Color GradeShadow = new Color(0.3f, 0.45f, 0.55f), GradeHighlight = new Color(1f, 0.85f, 0.65f);
-            public float Saturation = 1.2f, Contrast = 1.18f;
+            public float Saturation = 1.2f, Contrast = 1.08f;
             /// <summary>Wolkenbank (aufgetürmte Wolken am Horizont): Stärke und Höhe.</summary>
             public float Bank = 0.8f, BankHeight = 1f;
         }
 
         /// <summary>
         /// Bildlook für die Nachbearbeitung (PostFX): Sonnenstand/-farbe, Luftperspektive, Farbkorrektur je Planet.
-        /// Wird von Atmosphere jedes Bild aus Palette, Tageszeit und Wetter berechnet.
+        /// Wird von Atmosphere jedes Bild aus Palette, Tageszeit und Wetter berechnet (Planetenwahl überschreibt ihn).
         /// </summary>
         public class LookInfo
         {
             public Vector3 SunDir = new Vector3(0.3f, 0.5f, 0.8f).normalized;
             public Color SunColor = new Color(1f, 0.9f, 0.75f);
             public Texture SkyCube;
-            public float FogSky = 0.85f, FogMax = 1f, FogFalloff = 0.035f, FogBase = 0f, FogLinear = 0.35f, FogSunScatter = 0.5f;
-            public float Exposure = 1.1f, Contrast = 1.18f, Saturation = 1.2f, Vibrance = 0.45f, SplitAmount = 0.3f;
+            public float FogSky = 0.85f, FogMax = 0.9f, FogFalloff = 0.035f, FogBase = 0f, FogLinear = 0.35f, FogSunScatter = 0.5f;
+            /// <summary>
+            /// Belichtung: mit <see cref="AutoExposure"/> ein Faktor auf die automatische Belichtung aus dem aktuellen Licht
+            /// (Sonne + Umgebung, siehe <see cref="AutoExposureFor"/>), sonst der absolute Wert.
+            /// </summary>
+            public float Exposure = 1f;
+            public bool AutoExposure = true;
+            public float Contrast = 1.08f, Saturation = 1.2f, Vibrance = 0.45f, SplitAmount = 0.18f;
             public Color ShadowTint = new Color(0.3f, 0.45f, 0.55f), HighlightTint = new Color(1f, 0.85f, 0.65f);
             public Color VignetteColor = new Color(0.3f, 0.25f, 0.4f);
-            public float Vignette = 0.45f, Bloom = 0.22f, BloomThreshold = 0.9f, ShaftStrength = 0.6f, ShaftThreshold = 0.45f;
+            public float Vignette = 0.35f, Bloom = 0.12f, BloomThreshold = 1.1f, ShaftStrength = 0.6f, ShaftThreshold = 0.45f;
+            /// <summary>Konturlinien: Stärke (0 = aus), Tönung (dunkel, leicht farbig), Ausblenden zwischen Start und Ende (m).</summary>
+            public float Outline = 0.6f, OutlineFadeStart = 35f, OutlineFadeEnd = 140f;
+            public Color OutlineColor = new Color(0.2f, 0.19f, 0.26f);
+            /// <summary>Stärke der Umgebungsverdeckung (SSAO-Näherung, ab Qualität „Hoch“).</summary>
+            public float AO = 0.9f;
         }
+
+        // ------------------------------------------------------------ Belichtungs-Kalibrierung (mit PostFX/ACES)
+        // Ziel: Mitteltöne um 0,18 (linear nach ACES), Weiß clippt nicht. Die Belichtung folgt dem tatsächlichen Licht
+        // (Sonne/Mond und Umgebung, auch wenn Intro oder Planetenwahl das Licht selbst setzen):
+        //   Lichtschlüssel L = 0,6 · Sonnenstärke · Leuchtdichte(Sonnenfarbe) + Leuchtdichte(Umgebung Horizont)
+        //   Belichtung X = 0,48 · (1,08 / L)^0,75, begrenzt auf 0,3 … 1,35 (teilweise Anpassung wie ein Auge:
+        //   Sturm und Dämmerung bleiben dunkler, die Nacht wird lesbar).
+        // Nachgerechnet für TERRA am Tag (Sonne 1,2 × Farbe FFE2A8 → 0,94; Umgebung Wand 0,51 → L = 1,08, X = 0,48;
+        // Kontrast 1,08; ACES nach Narkowicz):
+        //   Albedo 0,5 in der Sonne (N·L 0,6): 0,48 · 0,5 · (0,94 · 0,6 + 0,51) = 0,26 → ACES 0,40 (sRGB 0,66)
+        //   Albedo 0,5 im Schatten:            0,48 · 0,5 · 0,51                = 0,12 → ACES 0,16 (sRGB 0,44)
+        //   Albedo 0,85 in voller Sonne:       0,48 · 0,85 · (0,94 + 0,51)      = 0,60 → ACES 0,70 (sRGB 0,85)
+        //   Himmel am Horizont (roh ≈ 0,95 · Himmelsbelichtung 1,3)            = 0,60 → ACES 0,70 (sRGB 0,85)
+        // Vorher (Sonne ×1,3, Belichtung 0,85, Kontrast 1,18): 0,74 / 0,34 / 0,93 / 0,82 – Weiß und Dunst liefen ins Clipping.
+        /// <summary>Bezugsbelichtung und Bezugslicht (TERRA am Tag) der automatischen Belichtung.</summary>
+        public const float KeyExposure = 0.48f, KeyLight = 1.08f, AdaptPower = 0.75f, ExposureMin = 0.3f, ExposureMax = 1.35f;
+        /// <summary>Himmels-Belichtung (Shader-_Exposure) am Tag bei laufender Nachbearbeitung – hält den Himmel neben der Landschaft lesbar.</summary>
+        public const float SkyExposureDay = 1.3f;
+
+        static float Lum(Color c) { return 0.2126f * c.r + 0.7152f * c.g + 0.0722f * c.b; }
+
+        /// <summary>
+        /// Automatische Belichtung aus dem aktuellen Licht (RenderSettings.sun und Umgebung Horizont). Die Helligkeits-
+        /// einstellung (in Licht und Umgebung schon eingerechnet) wird herausgerechnet, damit sie sichtbar bleibt.
+        /// </summary>
+        public static float AutoExposureFor(float brightness)
+        {
+            bool linear = QualitySettings.activeColorSpace == ColorSpace.Linear;
+            float ls = 0f;
+            var sun = RenderSettings.sun;
+            if (sun != null && sun.isActiveAndEnabled)
+            {
+                var c = linear ? sun.color.linear : sun.color;
+                ls = sun.intensity * Lum(c);
+            }
+            var amb = RenderSettings.ambientMode == UnityEngine.Rendering.AmbientMode.Flat ? RenderSettings.ambientLight : RenderSettings.ambientEquatorColor;
+            float a = Lum(linear ? amb.linear : amb);
+            float l = (0.6f * ls + a) / Mathf.Max(0.1f, brightness);
+            if (float.IsNaN(l) || l <= 1e-3f) return ExposureMax;
+            return Mathf.Clamp(KeyExposure * Mathf.Pow(KeyLight / l, AdaptPower), ExposureMin, ExposureMax);
+        }
+
+        /// <summary>Faktor auf die Nebeldichte je Planet (Ferne bleibt als Silhouette erkennbar).</summary>
+        public const float FogDensityScale = 0.7f;
 
         public static readonly LookInfo DefaultLook = new LookInfo();
         /// <summary>Aktueller Bildlook (für PostFX).</summary>
@@ -105,7 +160,7 @@ namespace RePlanet
                 P1 = Body(new Vector3(-0.45f, 0.22f, 0.79f), 18f, 0x2A3048, 0x485070, 0xFFC890, 0.35f, 2.3f, 1.3f),
                 P2 = Body(new Vector3(0.55f, 0.3f, 0.62f), 3.5f, 0xC06A4A, 0x7A3A2A, 0xFF9A6A, 0f, 7.1f, 0.5f),
                 SunAzimuth = 160f, CloudScale = 0.7f, CloudDensity = 4.2f, FogDay = 0.009f, FogStorm = 0.036f,
-                GradeShadow = Mats.C(0x5A1E48), GradeHighlight = Mats.C(0xFFA050), Saturation = 1.1f, Contrast = 1.2f, Bank = 1f, BankHeight = 1.2f } },
+                GradeShadow = Mats.C(0x5A1E48), GradeHighlight = Mats.C(0xFFA050), Saturation = 1.1f, Contrast = 1.1f, Bank = 1f, BankHeight = 1.2f } },
             // PELAGIA: türkiser Zenit, rosa Horizont, heller Mond, weiche Wolkentürme über dem Meer
             { "pelagia", new PlanetSky {
                 Day = Pal(0x1FA8B8, 0xFFC2CE, 0xFFD6DC, 0x4A7A88, 0xFFE4EC, 0x3E8A9E, 0xFF8AC0, 0x3ABCC0, 0xFFF0DA, 0xE6C4CC, 0.32f, 0.14f, 0.4f),
@@ -275,8 +330,8 @@ namespace RePlanet
             }
             // Fotomodus-Belichtung: mit Nachbearbeitung wirkt sie dort (vor dem Tonemapping), sonst auf Licht und Himmel
             float bright = (GameApp.I != null ? GameApp.I.Settings.Brightness : 1f) * (PhotoMode.Active && !PostFX.Running ? PhotoMode.Exposure : 1f);
-            // Mit HDR-Tonemapping darf die Sonne kräftiger sein (Lichter werden weich abgerollt statt abgeschnitten)
-            Sun.intensity *= bright * (PostFX.Running ? 1.3f : 1f);
+            // Keine Extra-Verstärkung mehr mit Tonemapping (früher ×1,3): Weißes lief ins Clipping, siehe Kalibrierung oben
+            Sun.intensity *= bright;
             if (GameApp.I != null) Sun.shadows = GameApp.I.Settings.Shadows == 0 ? LightShadows.None : GameApp.I.Settings.Shadows == 1 ? LightShadows.Hard : LightShadows.Soft;
 
             // Blitze im Sturm
@@ -331,7 +386,8 @@ namespace RePlanet
                 sky.SetFloat("_BankStrength", ps.Bank * Mathf.Lerp(1f, 0.7f, dark) * (1f + stormBlend * 0.25f));
                 sky.SetFloat("_BankHeight", ps.BankHeight * (1f + stormBlend * 0.4f));
                 sky.SetFloat("_SunGlow", elev > -0.05f ? (1f + duskAmt * 0.8f) * (1f - stormBlend * 0.7f) : 0f);
-                sky.SetFloat("_Exposure", (1f + lightning * 1.5f) * bright);
+                float skyExpo = PostFX.Running ? Mathf.Lerp(SkyExposureDay, 1f, dark) : 1f;
+                sky.SetFloat("_Exposure", (1f + lightning * 1.5f) * bright * skyExpo);
                 sky.SetFloat("_SkyTime", t);
                 sky.SetFloat("_Detail", GameApp.I == null || GameApp.I.Settings.Quality >= 2 ? 1f : 0f);
             }
@@ -354,7 +410,7 @@ namespace RePlanet
 
             // Nebel: Farbe = Horizontdunst, damit Landschaft und Himmel verschmelzen
             float view = GameApp.I != null ? GameApp.I.Settings.ViewDistance : 1f;
-            float fogDensity = Mathf.Lerp(ps.FogDay, ps.FogStorm, stormBlend) / Mathf.Max(0.5f, view);
+            float fogDensity = Mathf.Lerp(ps.FogDay, ps.FogStorm, stormBlend) * FogDensityScale / Mathf.Max(0.5f, view);
             var fogColor = Color.Lerp(pal.Fog, pal.Haze, 0.35f);
             if (Underwater)
             {
@@ -399,19 +455,25 @@ namespace RePlanet
             L.FogBase = fogBase;
             L.FogLinear = Underwater ? 0.8f : 0.35f + stormBlend * 0.6f;
             L.FogSunScatter = Underwater ? 0f : (0.35f + duskAmt * 0.5f) * (1f - dark) * (1f - stormBlend * 0.6f);
-            L.FogMax = 1f;
-            L.Exposure = Mathf.Lerp(0.85f, 1.12f, dark); // ACES hebt Mitteltöne an → etwas unter 1; nachts etwas heller (lesbar)
+            L.FogMax = Underwater ? 1f : 0.9f; // Ferne nie ganz im Dunst: Silhouetten bleiben
+            L.AutoExposure = true; // Kalibrierung siehe oben
+            L.Exposure = 1f;
             L.Contrast = Mathf.Lerp(ps.Contrast, 1.05f, stormBlend * 0.7f);
             L.Saturation = Mathf.Lerp(ps.Saturation, 1.08f, stormBlend * 0.5f) * Mathf.Lerp(1f, 1.02f, dark);
             L.Vibrance = Mathf.Lerp(0.45f, 0.55f, Mathf.Max(dark, stormBlend));
-            L.SplitAmount = Mathf.Lerp(0.3f, 0.26f, dark) * (1f - stormBlend * 0.3f);
+            L.SplitAmount = Mathf.Lerp(0.18f, 0.22f, dark) * (1f - stormBlend * 0.3f); // schwächer: kein cremiger Schleier
             // nachts Schatten Richtung Violett statt Türkis-Blau, Lichter bleiben warm (Lampen, Fenster)
             L.ShadowTint = Color.Lerp(ps.GradeShadow, Color.Lerp(pal.Zenith, new Color(0.35f, 0.25f, 0.6f), 0.5f), dark * 0.6f);
             L.HighlightTint = Color.Lerp(ps.GradeHighlight, pal.Sun, duskAmt * 0.5f);
             L.VignetteColor = Color.Lerp(new Color(0.2f, 0.18f, 0.26f), ps.GradeShadow * 0.5f, 0.5f);
-            L.Vignette = 0.5f;
-            L.Bloom = Mathf.Lerp(0.2f, 0.34f, Mathf.Max(duskAmt, dark));
-            L.BloomThreshold = Mathf.Lerp(0.95f, 0.75f, dark);
+            L.Vignette = 0.35f;
+            // Bloom nur für wirklich Helles (Sonne, Lampen, Leuchtschilder) – nicht für sonnige Wände
+            L.Bloom = Mathf.Lerp(0.12f, 0.3f, Mathf.Max(duskAmt, dark));
+            L.BloomThreshold = Mathf.Lerp(1.1f, 0.8f, dark);
+            L.Outline = 0.6f;
+            L.OutlineFadeStart = 35f; L.OutlineFadeEnd = 140f;
+            L.OutlineColor = Color.Lerp(new Color(0.2f, 0.19f, 0.26f), ps.GradeShadow * 0.35f, 0.3f);
+            L.AO = Underwater ? 0.5f : 0.9f;
             if (dark > 0.3f) L.HighlightTint = Color.Lerp(L.HighlightTint, new Color(1f, 0.82f, 0.6f), dark * 0.5f);
             L.ShaftStrength = elev > -0.02f && !Underwater ? (0.3f + duskAmt * 0.45f) * (1f - stormBlend * 0.85f) * (1f - dark) : 0f;
             L.ShaftThreshold = Mathf.Lerp(0.55f, 0.35f, duskAmt);

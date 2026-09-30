@@ -877,7 +877,9 @@ namespace RePlanet
             float storm = ps.StormActive ? 1f : ps.StormWarn ? 0.35f : 0f;
             float dark = Rules.Darkness(Rules.DayPhase(w, pl));
             var me = app.Me;
-            float shelter = me != null && me.ShelterKind > 0 ? 0.45f : 1f;
+            // Unterschlupf dämpft Wind und Sturm; im Hangar bzw. Laderaum (geschlossene Wände) deutlich stärker
+            bool indoors = me != null && Rules.Indoors(me.ShelterKind);
+            float shelter = me != null && me.ShelterKind > 0 ? (indoors ? 0.14f : 0.45f) : 1f;
             // Windrichtung relativ zur Kamera → leichte Stereo-Verschiebung
             float pan = 0f;
             Camera cam = CameraRig.I != null ? CameraRig.I.Cam : null;
@@ -895,7 +897,7 @@ namespace RePlanet
                 water = above < 0f ? 0.25f : 1f - Mathf.Clamp01(above / 30f) * 0.75f;
             }
             AmbLoop("amb_water", "water_loop", water > 0.01f, water * 0.7f, 0f);
-            AmbLoop("amb_night", "night_ambience", dark > 0.05f, dark * (1f - storm) * 0.8f, 0f);
+            AmbLoop("amb_night", "night_ambience", dark > 0.05f, dark * (1f - storm) * 0.8f * (indoors ? 0.3f : 1f), 0f);
             UpdateCity(dt, w, ps, pl, dark, storm, wind, shelter);
         }
 

@@ -339,11 +339,18 @@ namespace RePlanet.Core
             {
                 v.Driver = null;
                 DP("vehicles");
-                // Aussteigen neben dem Fahrzeug
+                // Aussteigen neben dem Fahrzeug – im Hangar/Laderaum bleibt MIKO drinnen (nicht in oder hinter der Wand)
                 float side = v.Def.Radius + 1.2f;
                 var np = new V3(v.Pos.x + M.Cos(v.Yaw) * side, v.Pos.y, v.Pos.z - M.Sin(v.Yaw) * side);
+                var l = WorldGen.Get(S.CurrentPlanet);
+                var room = Rules.RoomAt(l, v.Pos);
+                if (room != null && !room.Contains(np, -(Motor.RobotRadius + 0.1f)))
+                {
+                    var other = new V3(v.Pos.x - M.Cos(v.Yaw) * side, v.Pos.y, v.Pos.z + M.Sin(v.Yaw) * side);
+                    np = room.Contains(other, -(Motor.RobotRadius + 0.1f)) ? other : room.Clamp(np, Motor.RobotRadius + 0.1f);
+                }
                 if (v.Id == "boat") np = new V3(np.x, 0f, np.z);
-                else np.y = Terrain.HeightAt(S.CurrentPlanet, np.x, np.z);
+                else np.y = l.GroundAt(np.x, np.z);
                 p.Pos = np;
                 teleportOk.Add(p.Id);
             }
@@ -555,7 +562,7 @@ namespace RePlanet.Core
                 int kind = Rules.ShelterKind(S, ps, p.Pos);
                 if (kind != p.ShelterKind)
                 {
-                    if (kind == 2) { S.AddStat("shelterVisits", 1); DW("stats"); }
+                    if (kind >= Rules.ShelterField) { S.AddStat("shelterVisits", 1); DW("stats"); }
                     p.ShelterKind = kind; DPl(p.Id);
                 }
                 bool exposed = (night || ps.StormActive) && kind == 0 && p.Vehicle == null;
@@ -571,7 +578,8 @@ namespace RePlanet.Core
                     continue;
                 }
                 float rate = 0;
-                if (V3.DistXZ(p.Pos, charge) < 6f || V3.DistXZ(p.Pos, store) < 6f) rate = 16f * (fast ? 3f : 1f);
+                // Ladeplatz, Lager-Annahme und die Ladesäule im Hangar laden schnell
+                if (V3.DistXZ(p.Pos, charge) < 6f || V3.DistXZ(p.Pos, store) < 6f || kind == Rules.ShelterHangar) rate = 16f * (fast ? 3f : 1f);
                 else if (p.Sleeping) rate = 3f;
                 else if (!night && Now - p.LastMoveTime > 2.0) rate = pdef.Cold ? 0.3f : 0.6f;
                 if (p.Energy > max) { p.Energy = max; DPl(p.Id); }

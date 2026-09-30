@@ -25,7 +25,7 @@ Entscheidungen und nächste Schritte schriftlich im Projekt“). Geprüfte Ergeb
 8. **Darstellung:** alles prozedural zur Laufzeit (keine Prefabs, keine Fremd-Assets): eigener Himmels-Shader
    (Wolkenmassen, große Himmelskörper mit Lichtsaum, Sterne, Polarlicht), Müll per GPU-Instancing, „Stadt erwacht“,
    nachwachsende Vegetation, Wellenwasser, animierter MIKO mit sichtbaren Upgrades.
-9. **Erzählung:** Intro als Echtzeit-Zwischensequenz nach der Handlung von WALL·E mit eigenen Figuren und Namen
+9. **Erzählung:** Intro als Echtzeit-Zwischensequenz mit eigenen Figuren und Namen
    (Konzern KONSUMA, Arche HORIZONT, Programm ZWEITE CHANCE, Roboter MIKO); Abspann mit Rückblick aus echten Spielwerten.
 10. **Audio:** Musik, Wind, Ambience und Effekte werden prozedural synthetisiert (keine Lizenzfragen); Musik je Planet
     mit eigener Stimmung, Schichten wachsen mit dem Wiederherstellungsgrad.

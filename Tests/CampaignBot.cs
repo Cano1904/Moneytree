@@ -47,6 +47,8 @@ public class CampaignBot
     /// <summary>Credits-Verlauf: Spielzeit (s), Kontostand, insgesamt verdient.</summary>
     public readonly List<double[]> CreditHistory = new List<double[]>();
     public int Actions, Rejections, SheltersBuilt, Sleeps, StormSleeps, ShelterTrips, Deliveries, CraneHauls, Travels;
+    /// <summary>Nächte/Stürme im Hangar bzw. im Laderaum des Transportschiffs verbracht.</summary>
+    public int HangarSleeps, ShipSleeps;
     public long DeliveryCredits;
     public int Shutdowns { get { return (int)S.Stat("shutdowns"); } }
     public double TimeLimit = 60 * 3600;     // Spielzeit
@@ -153,7 +155,7 @@ public class CampaignBot
     // ------------------------------------------------------------ Bewegung
     float YFor(V3 p, V3 target)
     {
-        float g = Terrain.HeightAt(S.CurrentPlanet, p.x, p.z);
+        float g = L.GroundAt(p.x, p.z); // Gelände bzw. Schiffsrampe/Laderaumboden
         float water = Terrain.WaterLevel(S.CurrentPlanet);
         if (g < water - 0.6f)
         {
@@ -237,12 +239,17 @@ public class CampaignBot
             while (Danger() && guard++ < 200)
             {
                 if (P.TowTimer > 0) { WaitTow(); continue; }
-                if (Rules.ShelterKind(S, PS, P.Pos) != 0)
+                int kind = Rules.ShelterKind(S, PS, P.Pos);
+                // Am Stützpunkt: hinein in den Hangar oder den Laderaum des Schiffs (je nachdem, was näher liegt)
+                if (kind == Rules.ShelterBase) { EnterRoom(); kind = Rules.ShelterKind(S, PS, P.Pos); }
+                if (kind != 0)
                 {
                     bool night = Rules.IsNight(S, S.CurrentPlanet), storm = PS.StormActive;
                     if ((night || storm) && Act(new JObj().Set("a", "sleep")))
                     {
                         Sleeps++; if (storm && !night) StormSleeps++;
+                        if (kind == Rules.ShelterHangar) HangarSleeps++;
+                        if (kind == Rules.ShelterShip) ShipSleeps++;
                         int g = 0;
                         while (P.Sleeping && g++ < 40) Step(Dt);
                     }
@@ -259,6 +266,17 @@ public class CampaignBot
             }
         }
         finally { sheltering = false; }
+    }
+
+    /// <summary>Durch das Tor bzw. über die Rampe in den nächsten Innenraum (Hangar oder Laderaum) fahren.</summary>
+    void EnterRoom()
+    {
+        ShelterRoom best = null; float bd = float.MaxValue;
+        foreach (var r in L.Base.Rooms) { float d = V3.DistXZ(P.Pos, r.Outside); if (d < bd) { bd = d; best = r; } }
+        if (best == null) return;
+        MoveTo(best.Outside, 0.5f, false);
+        MoveTo(new V3(best.Door.Cx, best.Door.Y0, best.Door.Cz), 0.5f, false);
+        MoveTo(best.Spot, 0.5f, false);
     }
 
     // ------------------------------------------------------------ Wirtschaft
@@ -797,7 +815,7 @@ public class CampaignBot
         }
     }
 
-    void StartProject(int area)
+    void StartProject(int area, int retry = 0)
     {
         var pid = GameData.ProjectId(S.CurrentPlanet, area);
         var pd = GameData.Projects[pid];
@@ -835,6 +853,8 @@ public class CampaignBot
         saveFor = 0;
         ExitVehicle();
         MoveTo(L.ProjectSites[area], 6f);
+        // Unterwegs kann ein Notunterschlupf Credits gekostet haben → erneut ansparen
+        if (Rules.ProjectCheck(S, pid) != null && retry < 5) { StartProject(area, retry + 1); return; }
         if (!Act(new JObj().Set("a", "project").Set("area", area))) throw new Exception("Projektstart: " + lastErr);
         Note("Projekt gestartet: " + pd.Name + " (Credits " + S.Credits + ")");
     }

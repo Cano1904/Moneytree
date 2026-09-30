@@ -120,8 +120,10 @@ namespace UnityEngine
     public enum RuntimePlatform { LinuxPlayer, WindowsPlayer, OSXPlayer }
     public enum SystemLanguage { German, English, French, Spanish, Italian, Unknown }
 
+    public enum ColorSpace { Uninitialized = -1, Gamma = 0, Linear = 1 }
     public static class QualitySettings
     {
+        public static ColorSpace activeColorSpace = ColorSpace.Linear;
         public static int antiAliasing = 4, vSyncCount = 1, shadowCascades = 2, pixelLightCount = 4;
         public static float lodBias = 1f, shadowDistance = 80f, shadowCascade2Split = 0.33f;
         public static Vector3 shadowCascade4Split;

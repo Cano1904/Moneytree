@@ -28,10 +28,11 @@ public static class CampaignTests
         Assert.Equal("terra,pyra,pelagia,nivalis", string.Join(",", order), "Reisereihenfolge");
         Assert.True(S.Credits >= 0, "Guthaben nie negativ");
         Assert.True(bot.Sleeps > 0, "Nächte/Stürme im Unterschlupf verbracht");
+        Assert.True(bot.HangarSleeps + bot.ShipSleeps > 0, "Hangar bzw. Laderaum als Schutzraum genutzt (Hangar " + bot.HangarSleeps + ", Schiff " + bot.ShipSleeps + ")");
         Assert.True(S.PlayTime > 3 * 3600, "Mehrere Stunden Spielzeit simuliert (" + (S.PlayTime / 3600).ToString("0.0") + " h)");
         Assert.True(bot.Steps >= S.PlayTime / 0.25 * 0.95, "Jede Spielsekunde über Game.Tick simuliert (" + bot.Steps + " Schritte)");
         Assert.True(S.Stat("collected") > 3000, "Tausende Objekte über Game.Apply eingesammelt (" + S.Stat("collected") + ")");
         Assert.True(bot.CraneHauls >= 3, "Tor-Wracks mit dem Kran geborgen");
-        Console.WriteLine("           Kampagne: " + (S.PlayTime / 3600).ToString("0.00") + " h Spielzeit (Bot), " + bot.Real.Elapsed.TotalSeconds.ToString("0.0") + " s Echtzeit, Notabschaltungen " + bot.Shutdowns);
+        Console.WriteLine("           Kampagne: " + (S.PlayTime / 3600).ToString("0.00") + " h Spielzeit (Bot), " + bot.Real.Elapsed.TotalSeconds.ToString("0.0") + " s Echtzeit, Notabschaltungen " + bot.Shutdowns + ", Schlaf im Hangar/Schiff " + bot.HangarSleeps + "/" + bot.ShipSleeps);
     }
 }

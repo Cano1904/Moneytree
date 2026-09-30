@@ -75,6 +75,8 @@ public static class Program
 
     public static int Main(string[] args)
     {
+        // RP_EIGENE_SHADER=1: eigene Shader gelten als unterstützt UND der (standardmäßig abgeschaltete) Oberflächen-Shader ist erlaubt
+        SurfaceLook.ForceDetailShaders = Environment.GetEnvironmentVariable("RP_EIGENE_SHADER") == "1";
         // Laufzeitprüfung (Intro, Spiel auf allen Planeten, Abspann): dotnet run -- run [intro|game|ending|all]
         if (args.Length > 0 && args[0] == "run") return Checks.Main(args.Length > 1 ? args[1] : "all");
         if (args.Length > 0 && args[0] == "check")
@@ -175,6 +177,17 @@ public static class Program
             }
             Console.WriteLine($"Wicklung: {seen.Count} Meshes, {allTris} Dreiecke geprüft, {badTris} verkehrt in {badMeshes} Meshes");
         }
+        // Farbpalette: zeigen die Paletten-UVs (UV0) auf belegte Texel, und sind die Teile farbig statt weiß?
+        {
+            var palScene = new List<(Mesh, Matrix4x4, Material[])>(scene);
+            var miko = RobotModel.Create(null, "MIKO_Pruefung");
+            foreach (var mf in miko.gameObject.GetComponentsInChildren<MeshFilter>(true))
+            {
+                var mr = mf.gameObject.GetComponent<MeshRenderer>();
+                if (mr != null && mf.sharedMesh != null) palScene.Add((mf.sharedMesh, Matrix4x4.identity, mr.sharedMaterials));
+            }
+            CheckPalette(palScene);
+        }
         // Flora
         var flora = wvGo.AddComponent<FloraRenderer>();
         var floraUpdate = typeof(FloraRenderer).GetMethod("Update", BindingFlags.NonPublic | BindingFlags.Instance);
@@ -204,6 +217,48 @@ public static class Program
         return 0;
     }
 
+    /// <summary>
+    /// Prüft alle Untermeshes mit Paletten-Material (Hauptextur „RP_Palette…“/„MIKO_Palette“): UV0 muss auf die Mitte eines
+    /// belegten Texels zeigen; gezählt wird, wie viele Ecken (nahezu) reinweiß wären. Meldet Auffälligkeiten.
+    /// </summary>
+    static void CheckPalette(List<(Mesh mesh, Matrix4x4 m, Material[] mats)> list)
+    {
+        int verts = 0, white = 0, empty = 0, offCenter = 0, noUv = 0, subs = 0;
+        var colors = new HashSet<Color>();
+        var shaders = new SortedDictionary<string, int>();
+        foreach (var (mesh, m, mats) in list)
+        {
+            for (int s = 0; s < mesh.subMeshCount && s < mats.Length; s++)
+            {
+                var mat = mats[s];
+                if (mat == null || !(mat.mainTexture is Texture2D pt) || pt.name == null) continue;
+                if (!pt.name.StartsWith("RP_Palette") && pt.name != "MIKO_Palette") continue;
+                subs++;
+                string sn = (mat.shader != null && !string.IsNullOrEmpty(mat.shader.name) ? mat.shader.name + ":" : "") + (mat.name ?? "?");
+                shaders[sn] = shaders.TryGetValue(sn, out var c0) ? c0 + 1 : 1;
+                if (mesh.UV.Count != mesh.V.Count) { noUv++; continue; }
+                var seenIdx = new HashSet<int>();
+                foreach (var i in mesh.T[s])
+                {
+                    if (!seenIdx.Add(i)) continue;
+                    verts++;
+                    var uv = mesh.UV[i];
+                    float fx = uv.x * pt.W, fy = uv.y * pt.H;
+                    if (Math.Abs(fx - Math.Floor(fx) - 0.5f) > 0.01f || Math.Abs(fy - Math.Floor(fy) - 0.5f) > 0.01f) offCenter++;
+                    var c = pt.Sample(uv) * mat.color;
+                    if (c.r == 0 && c.g == 0 && c.b == 0 && c.a == 0) { empty++; continue; }
+                    if (c.r > 0.95f && c.g > 0.95f && c.b > 0.95f) white++;
+                    colors.Add(new Color((float)Math.Round(c.r, 2), (float)Math.Round(c.g, 2), (float)Math.Round(c.b, 2), 1));
+                }
+            }
+        }
+        var sh = new List<string>(); foreach (var kv in shaders) sh.Add(kv.Key + " x" + kv.Value);
+        Console.WriteLine($"Palette: {subs} Untermeshes ({string.Join(", ", sh)}), {verts} Ecken, {colors.Count} Farben, {white} weiß, {empty} auf unbelegtem Texel, {offCenter} neben der Texelmitte, {noUv} ohne UV0");
+        if (subs == 0 || verts == 0) Console.WriteLine("  FEHLER: keine Paletten-Teile gefunden");
+        if (empty > 0 || offCenter > 0 || noUv > 0) Console.WriteLine("  FEHLER: Paletten-UVs fehlerhaft");
+        if (verts > 0 && white > verts * 0.05f) Console.WriteLine("  FEHLER: mehr als 5 % der Paletten-Ecken reinweiß");
+    }
+
     static List<(string name, Vector3 pos, Vector3 target)> Views(string planet)
     {
         var l = new List<(string, Vector3, Vector3)>();
@@ -211,6 +266,9 @@ public static class Program
         l.Add(("basis", new Vector3(2, gy + 9, -112), new Vector3(2, gy + 1, -138)));
         l.Add(("stationen", new Vector3(-6, gy + 2.5f, -120), new Vector3(-16, gy + 1.5f, -132)));
         l.Add(("schiff", new Vector3(14, gy + 3, -128), new Vector3(27, gy + 3, -143)));
+        l.Add(("hangar", new Vector3(-1.5f, gy + 2.2f, -142.8f), new Vector3(-4.5f, gy + 1.2f, -148.5f)));
+        l.Add(("laderaum", new Vector3(21.2f, gy + 2.6f, -143.8f), new Vector3(30f, gy + 1.8f, -142.6f)));
+        l.Add(("heck", new Vector3(8f, gy + 4f, -136f), new Vector3(24f, gy + 2f, -143f)));
         l.Add(("strasse", new Vector3(3, gy + 2.2f, -100), new Vector3(3, gy + 7, -60)));
         l.Add(("luft", new Vector3(-60, 110, -260), new Vector3(0, 0, -20)));
         l.Add(("horizont", new Vector3(0, gy + 8f, -60), new Vector3(-150, 20, 60)));
@@ -274,7 +332,27 @@ public static class Program
         {
             Vector3 P(Vector3 p) { var d = p - pos; return new Vector3(Vector3.Dot(d, r), Vector3.Dot(d, u), Vector3.Dot(d, f)); }
             var va = P(a); var vb = P(b); var vc = P(c);
-            if (va.z < 0.3f || vb.z < 0.3f || vc.z < 0.3f) return;
+            const float near = 0.3f;
+            if (va.z < near && vb.z < near && vc.z < near) return;
+            if (va.z < near || vb.z < near || vc.z < near)
+            {
+                // An der Nahebene abschneiden (sonst fehlen große Flächen, die hinter die Kamera reichen – z. B. Innenräume)
+                var poly = new List<Vector3>();
+                var src = new[] { va, vb, vc };
+                for (int e = 0; e < 3; e++)
+                {
+                    var p0 = src[e]; var p1 = src[(e + 1) % 3];
+                    bool in0 = p0.z >= near, in1 = p1.z >= near;
+                    if (in0) poly.Add(p0);
+                    if (in0 != in1) poly.Add(Vector3.Lerp(p0, p1, (near - p0.z) / (p1.z - p0.z)));
+                }
+                for (int e = 1; e + 1 < poly.Count; e++) RasterView(poly[0], poly[e], poly[e + 1], col);
+                return;
+            }
+            RasterView(va, vb, vc, col);
+        }
+        void RasterView(Vector3 va, Vector3 vb, Vector3 vc, Color col)
+        {
             float ax = W * 0.5f + va.x / va.z * foc, ay = H * 0.5f - va.y / va.z * foc;
             float bx = W * 0.5f + vb.x / vb.z * foc, by = H * 0.5f - vb.y / vb.z * foc;
             float cx = W * 0.5f + vc.x / vc.z * foc, cy = H * 0.5f - vc.y / vc.z * foc;

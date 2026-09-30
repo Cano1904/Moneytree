@@ -59,6 +59,9 @@ namespace RePlanet.Core
             // Während der Notabschaltung (Abschleppdrohne unterwegs) sind nur Einstellungen/Verwaltung möglich
             if (p.TowTimer > 0 && kind != "trust" && kind != "cosm" && kind != "endingSeen" && kind != "introSeen" && kind != "wake")
                 return ActResult.Fail("MIKO ist abgeschaltet – die Abschleppdrohne ist unterwegs.");
+            // Im Hangar bzw. Laderaum: geschützt, aber keine Werkzeuge und nichts sammeln
+            if (Rules.IndoorsBlockedActions.Contains(kind) && Rules.Indoors(Rules.ShelterKind(S, S.Cur, p.Pos)))
+                return ActResult.Fail(Rules.IndoorsDenied);
             try
             {
                 switch (kind)
@@ -737,7 +740,7 @@ namespace RePlanet.Core
             if (S.Cur.Dyn.TryGetValue(v.Carry, out d))
             {
                 d.CarriedBy = null;
-                float y = Terrain.HeightAt(S.CurrentPlanet, at.x, at.z);
+                float y = WorldGen.Get(S.CurrentPlanet).GroundAt(at.x, at.z);
                 d.Pos = new V3(at.x, y, at.z);
                 d.Area = PlanetLayout.AreaOf(at.z);
                 UpdateDyn(d);

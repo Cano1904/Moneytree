@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 
 namespace RePlanet.Core
@@ -69,9 +70,63 @@ namespace RePlanet.Core
 
     public class Mound { public V3 Pos; public float Radius, Height; public int Area; }
 
+    /// <summary>
+    /// Begehbarer Schutzraum (Hangar im Hauptgebäude, Laderaum des Transportschiffs): feste Wände als Kollisionsboxen,
+    /// freie Innenfläche und freie Eingangsöffnung (Tor bzw. Heckrampe). Wer darin steht, ist vor Nacht und Sturm
+    /// geschützt, kann schlafen, aber keine Werkzeuge benutzen.
+    /// </summary>
+    public class ShelterRoom
+    {
+        /// <summary><see cref="Rules.ShelterHangar"/> oder <see cref="Rules.ShelterShip"/>.</summary>
+        public int Kind;
+        public string Id, Name;
+        /// <summary>Freie Innenfläche; Y0 = Boden, H = lichte Höhe.</summary>
+        public Box Inner;
+        /// <summary>Eingangsöffnung (Toröffnung in der Wand bzw. Rampe vor dem Heck).</summary>
+        public Box Door;
+        /// <summary>Mitte des Innenraums (Schlafplatz) und Vorplatz vor dem Eingang.</summary>
+        public V3 Spot, Outside;
+        /// <summary>Richtung von innen nach außen durch den Eingang (Einheitsvektor in XZ).</summary>
+        public float OutX, OutZ;
+
+        public bool Contains(V3 p, float margin = 0f)
+        {
+            return Inner.Contains(p.x, p.z, margin) && p.y > Inner.Y0 - 1.2f && p.y < Inner.Y0 + Inner.H;
+        }
+
+        /// <summary>Punkt in die Innenfläche ziehen (Abstand <paramref name="inset"/> zu den Wänden).</summary>
+        public V3 Clamp(V3 p, float inset)
+        {
+            float hx = Math.Max(0f, Inner.Hx - inset), hz = Math.Max(0f, Inner.Hz - inset);
+            return new V3(Math.Max(Inner.Cx - hx, Math.Min(Inner.Cx + hx, p.x)), p.y, Math.Max(Inner.Cz - hz, Math.Min(Inner.Cz + hz, p.z)));
+        }
+    }
+
+    /// <summary>Begehbare Fläche über dem Gelände (Laderaumboden, Rampe). Höhe steigt linear von (X0|Y0) nach (X1|Y1) bzw. entlang z.</summary>
+    public class FloorPatch
+    {
+        public float X0, X1, Z0, Z1, Y0, Y1;
+        /// <summary>0 = Anstieg entlang x (von X0 nach X1), 1 = entlang z (von Z0 nach Z1).</summary>
+        public int Axis;
+        public bool Contains(float x, float z) { return x >= Math.Min(X0, X1) && x <= Math.Max(X0, X1) && z >= Math.Min(Z0, Z1) && z <= Math.Max(Z0, Z1); }
+        public float HeightAt(float x, float z)
+        {
+            float t = Axis == 0 ? (X1 == X0 ? 1f : (x - X0) / (X1 - X0)) : (Z1 == Z0 ? 1f : (z - Z0) / (Z1 - Z0));
+            t = Math.Max(0f, Math.Min(1f, t));
+            return Y0 + (Y1 - Y0) * t;
+        }
+    }
+
     public class BaseLayout
     {
         public V3 Center, Spawn, DropZone, GarageSpot, BoatSpot, ShipPad;
+        /// <summary>Befahrbare Schutzräume: Hangar im Hauptgebäude (Rolltor) und Laderaum des Transportschiffs (Heckrampe).</summary>
+        public ShelterRoom Hangar, Ship;
+        public readonly List<ShelterRoom> Rooms = new List<ShelterRoom>();
+        /// <summary>Blickrichtung der Schiffsnase (Grad um die Hochachse, 90 = +X). Darstellung und Anflugszene richten sich danach.</summary>
+        public float ShipYaw = 90f;
+        /// <summary>Höhe des Laderaumbodens (Welt-y).</summary>
+        public float ShipFloorY;
         public float DropRadius = 7f;
         public Dictionary<string, V3> Stations = new Dictionary<string, V3>();
         public float GridX0, GridZ0, Cell = 2f;
@@ -104,7 +159,23 @@ namespace RePlanet.Core
         public float[] AreaWeight = new float[3];
         public int[] AreaCount = new int[3];
         public List<float[]> Roads = new List<float[]>(); // x0,z0,x1,z1,width
+        /// <summary>Begehbare Flächen über dem Gelände (Schiffsrampe, Laderaumboden).</summary>
+        public List<FloorPatch> Floors = new List<FloorPatch>();
         public const float Half = 150f;
+
+        /// <summary>Bodenhöhe für Bewegung: Gelände oder – falls höher – eine begehbare Fläche (Rampe, Laderaum).</summary>
+        public float GroundAt(float x, float z)
+        {
+            float g = Terrain.HeightAt(Id, x, z);
+            for (int i = 0; i < Floors.Count; i++)
+            {
+                var f = Floors[i];
+                if (!f.Contains(x, z)) continue;
+                float h = f.HeightAt(x, z);
+                if (h > g) g = h;
+            }
+            return g;
+        }
 
         public static int AreaOf(float z) { return z < -50f ? 0 : (z < 50f ? 1 : 2); }
 

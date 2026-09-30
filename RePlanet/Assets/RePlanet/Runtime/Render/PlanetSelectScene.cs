@@ -14,6 +14,11 @@ namespace RePlanet
     /// <see cref="Overlay"/>) und startet dann die Welt; die Landung zeigt <see cref="ShipArrival"/>.
     /// Die Bühne liegt weit abseits der Spielwelt; die Menüwelt wird währenddessen ausgeblendet. Nebel, Hintergrund,
     /// Sichtweite und Licht werden nur für diese Szene gesetzt und danach zurückgestellt.
+    /// Licht: Die Sonne steht links vor der Kamera (Planeten zu gut zwei Dritteln beleuchtet, weiche Tag-Nacht-Grenze
+    /// rechts); die Planeten rechnen ihr Licht selbst (Resources/RePlanetPlanet.shader: Terminator-Streulicht, Ozeanglanz,
+    /// Atmosphärenschimmer, Nachtseite in kühlem Streulicht) und haben einen Atmosphärensaum
+    /// (Resources/RePlanetPlanetAtmosphere.shader, Gegenlicht-Sichel). Fehlen die Shader: Standard-Material + Leuchtring.
+    /// Für den Bildlook setzt die Szene eine feste Belichtung, kräftigen Bloom und satte Farben (Atmosphere.Look).
     /// </summary>
     [DefaultExecutionOrder(900)]
     public class PlanetSelectScene : MonoBehaviour
@@ -47,7 +52,8 @@ namespace RePlanet
         sealed class Body
         {
             public string Id;
-            public Transform T, Clouds, Rim;
+            public Transform T, Clouds, Rim, Atmo;
+            public Material SurfMat, AtmoMat;
             public float R;
             public bool Locked;
             public Color RimColor;
@@ -60,7 +66,12 @@ namespace RePlanet
         readonly List<float> shipSpeed = new List<float>(), shipPhase = new List<float>();
         Transform stage, belt, stationRing;
         Material beacon;
-        Vector3 sunDir = new Vector3(-0.55f, 0.18f, 0.82f).normalized;
+        // Richtung ZUR Sonne: links oben, leicht hinter der Kamera (die Kamera blickt etwa nach +z)
+        Vector3 sunDir = new Vector3(-0.88f, 0.3f, -0.36f).normalized;
+        static readonly Color SunLight = new Color(1f, 0.95f, 0.86f);
+        const float SunIntensity = 1.5f, PlanetLight = 2.6f;
+        Shader planetShader, atmoShader;
+        bool shadersLoaded;
         bool built, active, descending, started;
         string focusId;
         float descentT, orbit, idleT;
@@ -193,21 +204,23 @@ namespace RePlanet
             if (cam == null) return;
             // Bildlook für das All (nach Atmosphere, dank Ausführungsreihenfolge)
             cam.clearFlags = CameraClearFlags.SolidColor;
-            cam.backgroundColor = new Color(0.006f, 0.007f, 0.016f);
+            cam.backgroundColor = new Color(0.012f, 0.013f, 0.032f);
             cam.farClipPlane = 40000f;
             cam.nearClipPlane = 0.5f;
             RenderSettings.fog = false;
+            // Umgebungslicht: kühles Streulicht aus dem All, damit Schattenseiten (Station, Asteroiden, Frachter) Form zeigen
             RenderSettings.ambientMode = AmbientMode.Trilight;
-            RenderSettings.ambientSkyColor = new Color(0.07f, 0.075f, 0.12f);
-            RenderSettings.ambientEquatorColor = new Color(0.05f, 0.045f, 0.07f);
-            RenderSettings.ambientGroundColor = new Color(0.03f, 0.025f, 0.03f);
+            RenderSettings.ambientSkyColor = new Color(0.2f, 0.21f, 0.32f);
+            RenderSettings.ambientEquatorColor = new Color(0.13f, 0.12f, 0.2f);
+            RenderSettings.ambientGroundColor = new Color(0.08f, 0.06f, 0.1f);
             var sun = Atmosphere.I != null ? Atmosphere.I.Sun : RenderSettings.sun;
             if (sun != null)
             {
                 sun.transform.rotation = Quaternion.LookRotation(-sunDir);
-                sun.color = new Color(1f, 0.93f, 0.82f);
-                sun.intensity = 1.35f;
+                sun.color = SunLight;
+                sun.intensity = SunIntensity;
             }
+            SpaceLook();
 
             orbit += dt * 1.6f;
             idleT += dt;
@@ -216,6 +229,13 @@ namespace RePlanet
             {
                 b.T.Rotate(0f, dt * (b.Locked ? 0.4f : 1.2f), 0f, Space.Self);
                 if (b.Clouds != null) b.Clouds.Rotate(0f, dt * 0.7f, 0f, Space.Self);
+                if (b.SurfMat != null) b.SurfMat.SetVector("_SunDirW", sunDir);
+                if (b.AtmoMat != null)
+                {
+                    b.AtmoMat.SetVector("_SunDirW", sunDir);
+                    var c = b.T.position;
+                    b.AtmoMat.SetVector("_Center", new Vector4(c.x, c.y, c.z, b.R));
+                }
             }
             if (belt != null) belt.Rotate(0f, dt * 0.35f, 0f, Space.Self);
             if (stationRing != null) stationRing.Rotate(0f, 0f, dt * 6f, Space.Self);
@@ -276,6 +296,36 @@ namespace RePlanet
             foreach (var bb in billboards) if (bb != null) bb.rotation = rot;
         }
 
+        /// <summary>
+        /// Bildlook im All (nach Atmosphere, dank Ausführungsreihenfolge; Atmosphere rechnet ihn jedes Bild neu, nach dem
+        /// Verlassen der Szene gilt also wieder der normale Look): feste Belichtung statt der automatischen (das All ist
+        /// fast schwarz), kräftiger Bloom für Sonne, Sterne und Nebel, satte Farben, keine Konturen/Verdeckung/Strahlen.
+        /// </summary>
+        void SpaceLook()
+        {
+            var at = Atmosphere.I;
+            if (at == null) return;
+            var L = at.Look;
+            L.AutoExposure = false;
+            L.Exposure = 0.95f;
+            L.Contrast = 1.08f;
+            L.Saturation = 1.28f;
+            L.Vibrance = 0.55f;
+            L.SplitAmount = 0.2f;
+            L.ShadowTint = new Color(0.36f, 0.3f, 0.78f);
+            L.HighlightTint = new Color(1f, 0.86f, 0.7f);
+            L.Vignette = 0.42f;
+            L.VignetteColor = new Color(0.14f, 0.1f, 0.24f);
+            L.Bloom = 0.38f;
+            L.BloomThreshold = 0.85f;
+            L.ShaftStrength = 0f;
+            L.Outline = 0f;
+            L.AO = 0f;
+            L.FogSky = 0f;
+            L.SunDir = sunDir;
+            L.SunColor = SunLight * SunIntensity;
+        }
+
         /// <summary>Kameralage für einen Planeten: seitlich-vorn, der Planet sitzt rechts der Bildmitte (links ist Platz für die Auswahl).</summary>
         void FocusPose(Body b, float orbitDeg, out Vector3 pos, out Vector3 look)
         {
@@ -332,17 +382,25 @@ namespace RePlanet
                 if (d.sqrMagnitude < 1e-4f) continue;
                 d.Normalize();
                 var c = Color.Lerp(new Color(0.7f, 0.82f, 1f), new Color(1f, 0.85f, 0.7f), rnd());
-                c *= 0.5f + rnd() * 0.9f; c.a = 1f;
-                float size = (18f + rnd() * 40f) * (rnd() < 0.03f ? 2.6f : 1f);
+                c *= 0.7f + rnd() * 0.3f; c.a = 1f;
+                // gut sichtbar: 2–5 Pixel bei 1080p, einzelne große Sterne
+                float size = (34f + rnd() * 60f) * (rnd() < 0.04f ? 2.4f : 1f);
                 Quad(verts, uvs, cols, tris, d * 16000f, d, size, c);
             }
             // Farbige Nebel (große, schwache Flächen)
-            Color[] neb = { new Color(0.45f, 0.22f, 0.7f), new Color(0.15f, 0.4f, 0.8f), new Color(0.85f, 0.35f, 0.25f), new Color(0.9f, 0.55f, 0.2f), new Color(0.2f, 0.6f, 0.65f) };
-            for (int k = 0; k < 26; k++)
+            Color[] neb = { new Color(0.55f, 0.22f, 0.85f), new Color(0.15f, 0.45f, 0.95f), new Color(0.95f, 0.3f, 0.45f), new Color(1f, 0.55f, 0.2f), new Color(0.15f, 0.8f, 0.75f) };
+            for (int k = 0; k < 34; k++)
             {
                 var d = (band * new Vector3(Mathf.Cos(k * 0.61f), (rnd() - 0.5f) * 0.35f, Mathf.Sin(k * 0.61f))).normalized;
-                var c = neb[k % neb.Length] * (0.10f + rnd() * 0.12f); c.a = 1f;
-                Quad(verts, uvs, cols, tris, d * 15000f, d, 2600f + rnd() * 4200f, c);
+                var c = neb[k % neb.Length] * (0.22f + rnd() * 0.22f); c.a = 1f;
+                Quad(verts, uvs, cols, tris, d * 15000f, d, 3000f + rnd() * 5200f, c);
+            }
+            // helle Nebelkerne (kleiner, kräftiger) für Tiefe
+            for (int k = 0; k < 10; k++)
+            {
+                var d = (band * new Vector3(Mathf.Cos(k * 1.7f + 0.4f), (rnd() - 0.5f) * 0.25f, Mathf.Sin(k * 1.7f + 0.4f))).normalized;
+                var c = Color.Lerp(neb[(k * 2) % neb.Length], Color.white, 0.25f) * (0.35f + rnd() * 0.2f); c.a = 1f;
+                Quad(verts, uvs, cols, tris, d * 14800f, d, 1100f + rnd() * 1600f, c);
             }
             var m = new Mesh { name = "Sterne", indexFormat = IndexFormat.UInt32 };
             m.SetVertices(verts); m.SetUVs(0, uvs); m.SetColors(cols); m.SetTriangles(tris, 0);
@@ -419,12 +477,39 @@ namespace RePlanet
             surf.transform.localScale = Vector3.one * radius;
             surf.AddComponent<MeshFilter>().sharedMesh = sphere;
             var mr = surf.AddComponent<MeshRenderer>();
-            var mat = new Material(Mats.Template(Mats.Opaque)) { name = "Planet_" + pd.Id };
-            mat.mainTexture = SurfaceTexture(pd, index);
-            mat.color = b.Locked ? new Color(0.42f, 0.44f, 0.5f) : Color.white;
-            if (mat.HasProperty("_Glossiness")) mat.SetFloat("_Glossiness", pd.Water ? 0.45f : 0.12f);
+            var rim = UISkinColor(pd.SkyHorizon);
+            b.RimColor = rim;
+            LoadShaders();
+            var surfTex = SurfaceTexture(pd, index);
+            Material mat = null;
+            if (planetShader != null)
+            {
+                try
+                {
+                    mat = new Material(planetShader) { name = "Planet_" + pd.Id };
+                    mat.mainTexture = surfTex;
+                    // gesperrte Planeten: etwas blasser und entsättigt, aber gut beleuchtet (sie sollen sichtbar bleiben)
+                    mat.color = b.Locked ? new Color(0.68f, 0.7f, 0.78f) : Color.white;
+                    mat.SetVector("_SunDirW", sunDir);
+                    // eigenes, kräftigeres Licht für die Planeten (Held der Szene; die Oberflächentexturen sind eher dunkel)
+                    mat.SetColor("_SunColor", SunLight * PlanetLight);
+                    mat.SetColor("_NightColor", Color.Lerp(new Color(0.05f, 0.06f, 0.12f), rim * 0.08f, 0.35f));
+                    mat.SetColor("_AtmoColor", AtmoTint(pd.Id, rim) * (b.Locked ? 0.55f : 1f));
+                    mat.SetVector("_Params", new Vector4(b.Locked ? 0.6f : 1f, pd.Water ? 1f : 0.35f, 1f, b.Locked ? 0.7f : 1.15f));
+                    b.SurfMat = mat;
+                }
+                catch (Exception e) { Debug.LogWarning("[RE:PLANET] Planeten-Shader: " + e.Message); mat = null; }
+            }
+            if (mat == null)
+            {
+                mat = new Material(Mats.Template(Mats.Opaque)) { name = "Planet_" + pd.Id };
+                mat.mainTexture = surfTex;
+                mat.color = b.Locked ? new Color(0.6f, 0.62f, 0.68f) : Color.white;
+                if (mat.HasProperty("_Glossiness")) mat.SetFloat("_Glossiness", pd.Water ? 0.45f : 0.12f);
+            }
             mr.sharedMaterial = mat;
             mr.shadowCastingMode = ShadowCastingMode.Off;
+            mr.receiveShadows = false;
             // Wolkenhülle
             var cl = new GameObject("Wolken");
             cl.transform.SetParent(t, false);
@@ -437,15 +522,62 @@ namespace RePlanet
             cr.sharedMaterial = cmat;
             cr.shadowCastingMode = ShadowCastingMode.Off;
             b.Clouds = cl.transform;
-            // Atmosphärensaum (Leuchtfläche, zur Kamera gedreht)
-            var rim = UISkinColor(pd.SkyHorizon);
-            b.RimColor = rim;
-            var rimC = b.Locked ? rim * 0.25f : rim * 0.9f;
-            b.Rim = Billboard(root, localPos, radius * 2.5f, RimTexture(), rimC, "Saum_" + pd.Id);
+            // Atmosphärensaum: eigene Hülle (Dichte aus dem Sichtstrahl) oder – ohne Shader – Leuchtfläche zur Kamera
+            if (atmoShader != null)
+            {
+                try
+                {
+                    const float H = 0.045f;
+                    var at = new GameObject("Atmosphaere");
+                    at.transform.SetParent(t, false);
+                    at.transform.localScale = Vector3.one * radius * (1f + H * 6f);
+                    at.AddComponent<MeshFilter>().sharedMesh = sphere;
+                    var ar = at.AddComponent<MeshRenderer>();
+                    var am = new Material(atmoShader) { name = "Atmosphaere_" + pd.Id };
+                    am.SetColor("_AtmoColor", AtmoTint(pd.Id, rim) * (b.Locked ? 0.45f : 1f));
+                    am.SetVector("_SunDirW", sunDir);
+                    am.SetColor("_SunColor", SunLight * SunIntensity);
+                    var c = root.TransformPoint(localPos);
+                    am.SetVector("_Center", new Vector4(c.x, c.y, c.z, radius));
+                    am.SetVector("_Params", new Vector4(b.Locked ? 0.6f : 1f, H, 1f, 0.3f));
+                    ar.sharedMaterial = am;
+                    ar.shadowCastingMode = ShadowCastingMode.Off;
+                    ar.receiveShadows = false;
+                    b.Atmo = at.transform;
+                    b.AtmoMat = am;
+                }
+                catch (Exception e) { Debug.LogWarning("[RE:PLANET] Atmosphären-Shader: " + e.Message); b.AtmoMat = null; }
+            }
+            if (b.AtmoMat == null)
+            {
+                var rimC = b.Locked ? rim * 0.35f : rim * 0.9f;
+                b.Rim = Billboard(root, localPos, radius * 2.5f, RimTexture(), rimC, "Saum_" + pd.Id);
+            }
             return b;
         }
 
         static Color UISkinColor(uint rgb) { return new Color(((rgb >> 16) & 255) / 255f, ((rgb >> 8) & 255) / 255f, (rgb & 255) / 255f, 1f); }
+
+        void LoadShaders()
+        {
+            if (shadersLoaded) return;
+            shadersLoaded = true;
+            planetShader = Mats.CustomShader("RePlanetPlanet", "RePlanet/Planet");
+            atmoShader = Mats.CustomShader("RePlanetPlanetAtmosphere", "RePlanet/PlanetAtmosphere");
+        }
+
+        /// <summary>Atmosphärenfarbe je Planet (kräftig wie im Stilvorbild: Türkis, Glutorange, Blau, Violett).</summary>
+        static Color AtmoTint(string id, Color rim)
+        {
+            switch (id)
+            {
+                case "terra": return new Color(0.35f, 0.75f, 1f);
+                case "pyra": return new Color(1f, 0.5f, 0.2f);
+                case "pelagia": return new Color(0.3f, 0.95f, 0.95f);
+                case "nivalis": return new Color(0.62f, 0.55f, 1f);
+                default: return Color.Lerp(rim, new Color(0.4f, 0.7f, 1f), 0.4f);
+            }
+        }
 
         static Color CloudTint(string id, bool locked)
         {

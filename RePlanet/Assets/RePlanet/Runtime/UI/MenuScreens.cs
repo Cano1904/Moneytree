@@ -56,41 +56,29 @@ namespace RePlanet
         {
             if (Time.unscaledTime > mainRefresh) RefreshMainMenu();
             Vignette();
-            // Mittige Abdunklung hinter Titel und Knopfspalte (weich zu den Seiten)
+            // Mittige Abdunklung hinter Titel und Knopfspalte (stufenloser Verlauf zu den Seiten)
             float bw = Mathf.Min(440f, VW - 80f);
             float cx = VW * 0.5f;
             if (Event.current.type == EventType.Repaint)
             {
-                for (int i = 0; i < 10; i++)
-                {
-                    float a = (UISkin.Contrast ? 0.7f : 0.36f) * (1f - i / 10f);
-                    float half = bw * 0.5f + 40f + i * 36f;
-                    UISkin.Rect(new Rect(cx - half, 0, 36f, VH), new Color(0.01f, 0.05f, 0.07f, a));
-                    UISkin.Rect(new Rect(cx + half - 36f, 0, 36f, VH), new Color(0.01f, 0.05f, 0.07f, a));
-                }
-                UISkin.Rect(new Rect(cx - bw * 0.5f - 40f + 36f, 0, bw + 80f - 72f, VH), new Color(0.01f, 0.05f, 0.07f, UISkin.Contrast ? 0.7f : 0.36f));
+                float half = bw * 0.5f + 400f;
+                var col = new Color(0.01f, 0.05f, 0.07f, UISkin.Contrast ? 0.7f : 0.42f);
+                UISkin.Tex(new Rect(cx - half, 0, half * 2f, VH), ColumnFade(), col);
             }
 
             float titleH = Mathf.Min(150f, VH * 0.16f);
-            var ts = UISkin.Title;
-            int oldSize = ts.fontSize;
-            ts.fontSize = (int)Mathf.Clamp(titleH * 0.8f, 48, 120);
-            ts.alignment = TextAnchor.MiddleCenter;
             float top = Mathf.Max(24f, VH * 0.07f);
-            UISkin.Shadow(new Rect(0, top, VW, titleH), UISkin.Col("RE", UISkin.Text) + UISkin.Col(":", UISkin.Accent) + UISkin.Col("PLANET", UISkin.Text), ts);
-            ts.fontSize = oldSize;
-            var sub = UISkin.Subtitle;
-            sub.alignment = TextAnchor.MiddleCenter;
-            UISkin.Shadow(new Rect(0, top + titleH - 6, VW, 44), L("Eine zweite Chance"), sub);
+            float reveal = DrawLogo(top, titleH);
+            DrawTagline(top + titleH + 2f, reveal);
 
             bool canContinue = mainSlot != null;
-            float y = top + titleH + 64f;
+            float y = top + titleH + 70f;
             int n = 6; // Fortsetzen, Neues Spiel, Koop, Spielstände, Einstellungen, Beenden
             float bh = Mathf.Clamp((VH - y - 110f) / n - 10f, 34f, 54f);
             float step = bh + 10f;
             float left = cx - bw * 0.5f;
 
-            if (UINav.Button(new Rect(left, y, bw, bh), L("Fortsetzen"), canContinue))
+            if (MenuButton(new Rect(left, y, bw, bh), L("Fortsetzen"), canContinue))
             {
                 app.Continue(mainSlot);
             }
@@ -102,27 +90,158 @@ namespace RePlanet
                 GUI.Label(new Rect(0, y - 8, VW, 24), UISkin.Col(info, UISkin.TextDim), SmallCenter());
                 y += 18f;
             }
-            if (UINav.Button(new Rect(left, y, bw, bh), L("Neues Spiel"))) UIState.Open(UIScreen.NewGame);
+            if (MenuButton(new Rect(left, y, bw, bh), L("Neues Spiel"))) UIState.Open(UIScreen.NewGame);
             y += step;
-            if (UINav.Button(new Rect(left, y, bw, bh), L("Koop"))) OpenSub(UIScreen.Coop, UIScreen.MainMenu);
+            if (MenuButton(new Rect(left, y, bw, bh), L("Koop"))) OpenSub(UIScreen.Coop, UIScreen.MainMenu);
             y += step;
-            if (UINav.Button(new Rect(left, y, bw, bh), L("Spielstände"))) OpenSub(UIScreen.Saves, UIScreen.MainMenu);
+            if (MenuButton(new Rect(left, y, bw, bh), L("Spielstände"))) OpenSub(UIScreen.Saves, UIScreen.MainMenu);
             y += step;
-            if (UINav.Button(new Rect(left, y, bw, bh), L("Einstellungen"))) OpenSub(UIScreen.Settings, UIScreen.MainMenu);
+            if (MenuButton(new Rect(left, y, bw, bh), L("Einstellungen"))) OpenSub(UIScreen.Settings, UIScreen.MainMenu);
             y += step;
             if (confirm == "quit")
             {
                 float hw = (bw - 10) * 0.5f;
-                if (UINav.Button(new Rect(left, y, hw, bh), L("Ja, beenden"), true, UISkin.ButtonSel)) app.QuitGame();
-                if (UINav.Button(new Rect(left + hw + 10, y, hw, bh), L("Abbrechen"))) confirm = null;
+                if (MenuButton(new Rect(left, y, hw, bh), L("Ja, beenden"), true, true)) app.QuitGame();
+                if (MenuButton(new Rect(left + hw + 10, y, hw, bh), L("Abbrechen"))) confirm = null;
             }
-            else if (UINav.Button(new Rect(left, y, bw, bh), L("Beenden"))) confirm = "quit";
+            else if (MenuButton(new Rect(left, y, bw, bh), L("Beenden"))) confirm = "quit";
 
             // Steuerung und Versionsnummer (klein, unten mittig)
             string ver = L("Version ") + Application.version;
             string hint = InputMap.UsingPad ? L("Steuerkreuz/Stick · A: Bestätigen · B: Zurück") : L("Pfeiltasten/Maus · Eingabe: Bestätigen · Esc: Zurück");
             GUI.Label(new Rect(0, VH - 58, VW, 24), UISkin.Col(hint, UISkin.TextDim), SmallCenter());
             GUI.Label(new Rect(0, VH - 34, VW, 24), UISkin.Col(ver, UISkin.TextDim * new Color(1, 1, 1, 0.7f)), SmallCenter());
+        }
+
+        // ------------------------------------------------------------------ Hauptmenü: Logo, Unterzeile, Knöpfe
+        static Texture2D columnFade;
+
+        /// <summary>Waagerechter Verlauf (Mitte deckend, Ränder weich auslaufend) für die Abdunklung hinter dem Menü.</summary>
+        static Texture2D ColumnFade()
+        {
+            if (columnFade != null) return columnFade;
+            const int n = 256;
+            columnFade = new Texture2D(n, 1, TextureFormat.RGBA32, false) { hideFlags = HideFlags.HideAndDontSave, wrapMode = TextureWrapMode.Clamp, filterMode = FilterMode.Bilinear };
+            var px = new Color[n];
+            for (int i = 0; i < n; i++)
+            {
+                float d = Mathf.Abs((i + 0.5f) / n * 2f - 1f);      // 0 Mitte … 1 Rand
+                float a = 1f - Mathf.SmoothStep(0.45f, 1f, d);       // innerer Bereich voll, dann weich aus
+                px[i] = new Color(1f, 1f, 1f, a);
+            }
+            columnFade.SetPixels(px);
+            columnFade.Apply();
+            return columnFade;
+        }
+
+        float logoStart = -10f, lastMainDraw = -10f;
+        const string LogoWord = "RE:PLANET";
+
+        /// <summary>
+        /// Schriftzug „RE:PLANET“ in der Logo-Schrift, gesperrt, mit weichem Türkis-Glühen, Schlagschatten und einer
+        /// Lichtkante, die alle 7 s darüber wandert. Beim Öffnen des Menüs fahren die Buchstaben nacheinander ein.
+        /// Gibt den Einblend-Fortschritt (0–1) zurück.
+        /// </summary>
+        float DrawLogo(float top, float h)
+        {
+            float now = Time.unscaledTime;
+            if (now - lastMainDraw > 0.5f) logoStart = now; // Menü (wieder) geöffnet
+            lastMainDraw = now;
+            float t = now - logoStart;
+            float done = Mathf.Clamp01((t - 0.2f) / (0.45f + LogoWord.Length * 0.07f));
+            if (Event.current.type != EventType.Repaint) return done;
+
+            var st = UISkin.Logo;
+            int size = (int)Mathf.Clamp(h * 0.7f, 44, 112);
+            st.fontSize = size;
+            float track = size * 0.09f;
+            float total = UISkin.TrackedWidth(st, LogoWord, track);
+            float x0 = (VW - total) * 0.5f, x = x0;
+            float sweep = Mathf.Repeat(now, 7f) / 1.3f - 0.15f; // Lichtkante läuft von links nach rechts, dann Pause
+            bool hc = UISkin.Contrast;
+            var old = st.normal.textColor;
+            for (int i = 0; i < LogoWord.Length; i++)
+            {
+                string ch = UISkin.Chr(LogoWord[i]);
+                float cw = st.CalcSize(UISkin.Tmp(ch)).x;
+                float a = Mathf.Clamp01((t - 0.2f - i * 0.07f) / 0.45f);
+                a = a * a * (3f - 2f * a);
+                var r = new Rect(x, top + (1f - a) * size * 0.2f, cw + 6f, h);
+                bool colon = LogoWord[i] == ':';
+                float centre = (x - x0 + cw * 0.5f) / Mathf.Max(1f, total);
+                float shine = hc ? 0f : Mathf.Clamp01(1f - Mathf.Abs(sweep - centre) * 7f);
+                if (!hc)
+                {
+                    // Glühen: acht leicht versetzte, sehr transparente Kopien
+                    Color g = colon ? UISkin.Accent : UISkin.Teal;
+                    g.a = (0.045f + 0.07f * shine) * a;
+                    st.normal.textColor = g;
+                    float rad = size * 0.05f;
+                    for (int k = 0; k < 8; k++)
+                    {
+                        float ang = k * Mathf.PI * 0.25f;
+                        GUI.Label(new Rect(r.x + Mathf.Cos(ang) * rad, r.y + Mathf.Sin(ang) * rad, r.width, r.height), ch, st);
+                    }
+                }
+                st.normal.textColor = new Color(0f, 0f, 0f, (hc ? 1f : 0.55f) * a);
+                GUI.Label(new Rect(r.x + 3f, r.y + 4f, r.width, r.height), ch, st);
+                Color c = colon ? UISkin.Accent : UISkin.Text;
+                c = Color.Lerp(c, Color.white, shine * 0.7f);
+                c.a = a;
+                st.normal.textColor = c;
+                GUI.Label(r, ch, st);
+                x += cw + track;
+            }
+            st.normal.textColor = old;
+            return done;
+        }
+
+        /// <summary>Unterzeile „EINE ZWEITE CHANCE“, weit gesperrt, zwischen zwei zur Mitte hin aufleuchtenden Linien.</summary>
+        void DrawTagline(float y, float reveal)
+        {
+            if (Event.current.type != EventType.Repaint || reveal <= 0f) return;
+            var st = UISkin.Tagline;
+            st.fontSize = (int)Mathf.Clamp(VH * 0.021f, 15, 24);
+            string text = L("Eine zweite Chance").ToUpperInvariant();
+            float track = st.fontSize * 0.45f;
+            float w = UISkin.TrackedWidth(st, text, track);
+            float h = st.fontSize * 1.8f;
+            float x = (VW - w) * 0.5f;
+            float a = reveal * reveal;
+            var tc = UISkin.Contrast ? UISkin.Text : Color.Lerp(UISkin.TextDim, UISkin.Text, 0.35f);
+            tc.a = a;
+            UISkin.Tracked(x + 1.5f, y + 2f, h, text, st, track, new Color(0, 0, 0, 0.5f * a));
+            UISkin.Tracked(x, y, h, text, st, track, tc);
+            // Linien links und rechts (außen transparent, zur Schrift hin kräftiger), mit Akzentpunkt
+            float len = Mathf.Min(240f, VW * 0.15f) * reveal, gap = st.fontSize * 1.1f, cy = y + h * 0.5f;
+            const int seg = 16;
+            for (int i = 0; i < seg; i++)
+            {
+                float f = (i + 1f) / seg;
+                var lc = UISkin.Teal; lc.a = 0.6f * f * a;
+                float sw = len / seg;
+                UISkin.Rect(new Rect(x - gap - len + i * sw, cy - 0.75f, sw + 0.5f, 1.5f), lc);
+                UISkin.Rect(new Rect(x + w + gap + len - (i + 1) * sw, cy - 0.75f, sw + 0.5f, 1.5f), lc);
+            }
+            var dc = UISkin.Accent; dc.a = a;
+            UISkin.Tex(new Rect(x - gap + 2f, cy - 3f, 6f, 6f), UISkin.Circle, dc);
+            UISkin.Tex(new Rect(x + w + gap - 8f, cy - 3f, 6f, 6f), UISkin.Circle, dc);
+        }
+
+        /// <summary>Hauptmenü-Knopf: Großbuchstaben in Exo 2, bei Maus/Fokus orange Akzentleisten links und rechts.</summary>
+        bool MenuButton(Rect r, string text, bool enabled = true, bool warm = false)
+        {
+            bool clicked = UINav.Button(r, text.ToUpperInvariant(), enabled, warm ? UISkin.MenuButtonSel : UISkin.MenuButton, UISkin.MenuButtonOff);
+            if (enabled && Event.current.type == EventType.Repaint && (UINav.IsHover(r) || (UINav.LastFocused && UINav.KeyboardMode)))
+            {
+                var c = UISkin.Accent;
+                UISkin.Rect(new Rect(r.x + 2f, r.y + 7f, 3f, r.height - 14f), c);
+                UISkin.Rect(new Rect(r.xMax - 5f, r.y + 7f, 3f, r.height - 14f), c);
+                c.a = 0.18f;
+                UISkin.Rect(new Rect(r.x + 5f, r.y + 7f, 10f, r.height - 14f), c);
+                UISkin.Rect(new Rect(r.xMax - 15f, r.y + 7f, 10f, r.height - 14f), c);
+            }
+            return clicked;
         }
 
         // ================================================================== Neues Spiel

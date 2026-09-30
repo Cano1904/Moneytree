@@ -2,8 +2,12 @@
 // Grundfarbe aus der Farbpalette (UV0, Alpha = Glätte), dazu je Ecke (UV1): x = Oberflächenklasse + Zufallswert je Bauteil,
 // y = Bodennähe (1 am Wandfuß). Daraus entstehen im Objektraum projiziert: Putz mit Wasserflecken, Regenschlieren und
 // Farbklecksen, Beton mit Schalungsfugen, Ziegel im Verband, Wellblech mit Rostläufern, Lack mit Kratzern, Rost und
-// Kantenabrieb, Asphalt mit Körnung und Rissen, Gummi, Holz, Fliesen, Stein. Relief über die Bildschirmableitung der
-// Höhe (keine Tangenten im Mesh nötig), Detail blendet mit der Entfernung aus. Parameter: Runtime/Render/SurfaceLook.cs.
+// Kantenabrieb, Asphalt mit Körnung und Rissen, Gummi, Holz, Fliesen, Stein. Detail blendet mit der Entfernung aus.
+// Parameter: Runtime/Render/SurfaceLook.cs.
+// Nur aktiv, wenn die Einstellung „Detail-Shader“ an ist (Standard: aus – dann Standard-Shader mit Palette).
+// Absichtlich OHNE Normalen-Ausgabe (o.Normal/INTERNAL_DATA/Ersatz-Tangenten): Die frühere Relief-Berechnung über
+// Bildschirmableitungen war der riskanteste Teil (in Unity erschienen die Teile reinweiß). Fugen und Relief wirken jetzt
+// über Grundfarbe und Umgebungsverdeckung; alle Ausgaben sind begrenzt (keine NaN/Unendlich-Werte in den HDR-Puffer).
 Shader "RePlanet/Surface"
 {
     Properties
@@ -14,7 +18,7 @@ Shader "RePlanet/Surface"
         _Glossiness ("Glätte", Range(0, 1)) = 0.2
         _Metallic ("Metall", Range(0, 1)) = 0
         _EmissionColor ("Leuchten", Color) = (0, 0, 0, 1)
-        _Look ("Detail, Schmutz, Relief, Nahbereich (m)", Vector) = (1, 1, 1, 70)
+        _Look ("Detail, Schmutz, Fugentiefe, Nahbereich (m)", Vector) = (1, 1, 1, 70)
         _DirtColor ("Schmutzfarbe", Color) = (0.3, 0.25, 0.2, 1)
         _SurfClass ("Klasse erzwingen (-1 = je Ecke)", Float) = -1
         _GlowTex ("Leuchten je Palettenfarbe", 2D) = "black" {}
@@ -47,20 +51,14 @@ Shader "RePlanet/Surface"
             float3 oPos;
             float3 oNrm;
             float3 worldPos;
-            float3 worldNormal;
-            INTERNAL_DATA
         };
 
         void vert(inout appdata_full v, out Input o)
         {
             UNITY_INITIALIZE_OUTPUT(Input, o);
-            float3 n = normalize(v.normal);
-            // Die Meshes haben keine Tangenten: eine beliebige, zur Normale senkrechte genügt für die Umrechnung unten
-            float3 refAxis = abs(n.y) < 0.9 ? float3(0, 1, 0) : float3(1, 0, 0);
-            v.tangent = float4(normalize(cross(refAxis, n)), 1.0);
             o.sdata = float4(v.texcoord1.xy, 0, 0);
             o.oPos = v.vertex.xyz;
-            o.oNrm = n;
+            o.oNrm = v.normal;
         }
 
         float Hash21(float2 p)
@@ -88,7 +86,8 @@ Shader "RePlanet/Surface"
             float rnd = frac(IN.sdata.x);
             float low = saturate(IN.sdata.y);
             float3 p = IN.oPos;
-            float3 n = normalize(IN.oNrm);
+            // Normale ohne normalize(): eine Null-Normale (entartetes Dreieck) ergäbe sonst NaN
+            float3 n = IN.oNrm * rsqrt(max(dot(IN.oNrm, IN.oNrm), 1e-8));
             float3 an = abs(n);
             // Projektion auf die dominante Achse: Wände (x entlang, y = Höhe), Böden/Dächer (xz)
             float isTop = step(max(an.x, an.z), an.y);
@@ -108,13 +107,13 @@ Shader "RePlanet/Surface"
             half4 dS = tex2D(_DetailTex, float2(uvn.x * 0.55, uv.y * 0.045 + rnd * 3.0));
 
             // Kantenabrieb: starke Normalenkrümmung (Fasen) im Verhältnis zur Pixelgröße
-            float curv = length(fwidth(IN.oNrm)) / max(length(fwidth(IN.oPos)), 1e-4);
+            float curv = min(length(fwidth(IN.oNrm)) / max(length(fwidth(IN.oPos)), 1e-4), 100.0);
             float edge = saturate((curv - 6.0) / 18.0) * nearF;
 
             float3 alb = pal.rgb * (1.0 + (rnd - 0.5) * 0.1);
             float smooth = _Glossiness * pal.a; // Palette: Alpha = Glätte je Farbe
             float metal = _Metallic;
-            float h = 0.0;          // Relief in Metern
+            float h = 0.0;          // Relief in Metern (negativ = Fuge/Riss) – wirkt als Verdeckung
             float occ = 1.0;
             float3 rustCol = float3(0.42, 0.2, 0.09) * lerp(0.75, 1.15, dC.g);
             float dirtK = 1.0;
@@ -240,31 +239,23 @@ Shader "RePlanet/Surface"
             }
 
             // Schmutz am Fuß (Spritzwasser, Staub) und leichte allgemeine Verschmutzung
-            float grime = pow(low, 1.5) * lerp(0.55, 1.0, dA.r) * _Look.y * dirtK;
+            float grime = low * sqrt(low) * lerp(0.55, 1.0, dA.r) * _Look.y * dirtK;
             grime = saturate(grime + smoothstep(0.7, 1.0, dA.a) * 0.12 * _Look.y);
             alb = lerp(alb, _DirtColor.rgb * lerp(0.7, 1.1, dC.g), grime * 0.6);
             smooth *= 1.0 - grime * 0.6;
-            occ = 1.0 - pow(low, 3.0) * 0.35;
+            occ = 1.0 - low * low * low * 0.35;
 
-            // Relief: Oberflächengradient aus Bildschirmableitungen (Mikkelsen) in Weltkoordinaten
-            float3 Nw = WorldNormalVector(IN, float3(0, 0, 1));
-            float3 Tw = WorldNormalVector(IN, float3(1, 0, 0));
-            float3 Bw = WorldNormalVector(IN, float3(0, 1, 0));
-            float hs = h * _Look.z * nearF;
-            float3 dpdx = ddx(IN.worldPos), dpdy = ddy(IN.worldPos);
-            float dhdx = ddx(hs), dhdy = ddy(hs);
-            float3 r1 = cross(dpdy, Nw), r2 = cross(Nw, dpdx);
-            float det = dot(dpdx, r1);
-            float3 grad = (det < 0 ? -1.0 : 1.0) * (dhdx * r1 + dhdy * r2);
-            float3 nbRaw = abs(det) * Nw - grad;
-            float3 Nb = dot(nbRaw, nbRaw) > 1e-20 ? normalize(nbRaw) : Nw;
-            o.Normal = normalize(float3(dot(Nb, Tw), dot(Nb, Bw), dot(Nb, Nw)));
+            // Relief ohne Normalen: Fugen, Risse und Mörtel als Verdeckung (dunkler in der Tiefe), im Nahbereich
+            float groove = saturate(-h * 90.0) * nearF * _Look.z;
+            occ *= 1.0 - groove * 0.45;
 
-            o.Albedo = lerp(pal.rgb, saturate(alb), _Look.x);
+            float3 albedo = lerp(pal.rgb, saturate(alb), saturate(_Look.x));
+            o.Albedo = saturate(albedo);
             o.Metallic = saturate(metal);
-            o.Smoothness = saturate(smooth);
-            o.Occlusion = occ;
-            o.Emission = _EmissionColor.rgb + tex2D(_GlowTex, IN.uv_MainTex).rgb * _GlowScale;
+            o.Smoothness = saturate(smooth) * 0.95;
+            o.Occlusion = saturate(occ);
+            float3 emi = _EmissionColor.rgb + tex2D(_GlowTex, IN.uv_MainTex).rgb * _GlowScale;
+            o.Emission = clamp(emi, 0.0, 16.0);
             o.Alpha = 1.0;
         }
         ENDCG

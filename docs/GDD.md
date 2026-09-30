@@ -11,8 +11,8 @@ und etwas wächst. Jede Handlung ist sichtbar: Müll verschwindet wirklich, Mate
 leuchten wieder auf. Kein Kampf, kein Zeitdruck außer Nacht und Wetter – dafür das Gefühl, etwas Kaputtes heil zu machen.
 Allein oder mit bis zu drei Freunden.
 
-**Ton:** goldene Melancholie, die in Hoffnung umschlägt. Inspiriert von der Grundstimmung von WALL·E, aber mit eigenen
-Figuren, eigener Welt und eigenen Namen (siehe [LIZENZEN.md](LIZENZEN.md)).
+**Ton:** goldene Melancholie, die in Hoffnung umschlägt. Eigene Figuren, eigene Welt und eigene Namen
+(siehe [LIZENZEN.md](LIZENZEN.md)).
 
 ## 2. Die Spielschleife
 
@@ -140,6 +140,10 @@ die ökologischen Aktionen des Bereichs möglich. Großprojekte schalten Kosmeti
 - **Ungeschützt** in Nacht oder Sturm verliert MIKO Energie (nachts 0,55, im Sturm 0,9 Energie pro Sekunde, beides addiert sich).
   Schutz bieten der Stützpunkt, vorhandene Unterschlüpfe im Gelände (Symbol auf der Karte) und selbst gebaute
   **Notunterschlüpfe** (80 Credits, höchstens 8 pro Planet). Im Fahrzeug ist man ebenfalls geschützt.
+- **Hineinfahren:** In den **Hangar** des Hauptquartiers (Rolltor öffnet sich bei Annäherung, nachts und bei Sturm
+  schon ab 13 m) und in den **Laderaum des Transportschiffs** (Heckrampe) kann MIKO zu Fuß oder mit dem Rover hineinfahren.
+  Drinnen ist man vor Nacht und Sturm geschützt, kann schlafen und im Hangar laden – gesammelt wird drinnen nichts.
+  Wer nicht hineinfahren will, muss nicht: die übrigen Unterschlüpfe gelten weiter.
 - **Schlafen** geht nachts oder im Sturm in einem Unterschlupf. Schlafen alle verbundenen Spieler, wird die Nacht
   übersprungen bzw. der Sturm beendet – Akku voll, Spielstand gesichert.
 - **Notabschaltung:** Ist der Akku ungeschützt leer, schaltet MIKO ab; nach wenigen Sekunden bringt eine Abschleppdrohne
@@ -159,8 +163,7 @@ die ökologischen Aktionen des Bereichs möglich. Großprojekte schalten Kosmeti
 
 ## 10. Geschichte
 
-**Intro (ca. 100 s Echtzeit-Zwischensequenz, überspringbar).** Die Handlung folgt der Grundidee von WALL·E – mit eigenen
-Figuren, Namen und Bildern:
+**Intro (ca. 100 s Echtzeit-Zwischensequenz, überspringbar).** Die Handlung:
 
 1. *Es gab einmal eine Welt, die alles hatte. Und alles, was sie hatte, warf sie fort.* – Skyline aus Müllwürfel-Türmen.
 2. *KONSUMA versprach uns das Glück: „Alles. Sofort. Immer neu.“ … bis der Müll unsere Städte überragte.* – Megastore.

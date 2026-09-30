@@ -48,7 +48,7 @@ def parse_palettes():
             return float(mm.group(1)) if mm else default
         p["SunAzimuth"] = num("SunAzimuth", 0); p["CloudScale"] = num("CloudScale", 0.9); p["CloudDensity"] = num("CloudDensity", 2.4); p["Aurora"] = num("Aurora", 0)
         p["Bank"] = num("Bank", 0.8); p["BankHeight"] = num("BankHeight", 1.0)
-        p["Saturation"] = num("Saturation", 1.2); p["Contrast"] = num("Contrast", 1.18)
+        p["Saturation"] = num("Saturation", 1.2); p["Contrast"] = num("Contrast", 1.08)
         for key, default in (("GradeShadow", "4D7390"), ("GradeHighlight", "FFD9A6")):
             mm = re.search(key + r" = Mats\.C\(0x([0-9A-Fa-f]+)\)", body)
             p[key] = hexcol(mm.group(1) if mm else default)
@@ -243,10 +243,13 @@ def lum(c): return c[..., 0] * 0.2126 + c[..., 1] * 0.7152 + c[..., 2] * 0.0722
 def post_grade(col, P, pal, dark, dusk, storm):
     """Farbkorrektur wie Resources/RePlanetPostFX.shader (Pass Zusammensetzen) mit den Werten aus Atmosphere.UpdateLook
     (ohne Bloom, Sonnenstrahlen, Korn – nur Belichtung, Kontrast, ACES, Split-Toning, Sättigung/Vibrance, Vignette)."""
-    exposure = 0.85 + (1.05 - 0.85) * dark
+    # Belichtung wie Atmosphere.AutoExposureFor (Näherung: Tag 0,48, Sturm heller angepasst, Nacht 1,35) mal
+    # Himmelsbelichtung (Atmosphere.SkyExposureDay 1,3 am Tag → 1,0 nachts)
+    auto = min(0.48 * (1 + 0.6 * storm), 1.35)
+    exposure = (auto + (1.35 - auto) * dark) * (1.3 + (1.0 - 1.3) * dark)
     contrast = P["Contrast"] + (1.05 - P["Contrast"]) * storm * 0.7
-    satur = (P["Saturation"] + (1.0 - P["Saturation"]) * storm * 0.6) * (1 + (0.92 - 1) * dark)
-    split = (0.3 + 0.12 * dark) * (1 - storm * 0.4)
+    satur = (P["Saturation"] + (1.08 - P["Saturation"]) * storm * 0.5) * (1 + (1.02 - 1) * dark)
+    split = (0.18 + 0.04 * dark) * (1 - storm * 0.3)
     st = lin(mix(P["GradeShadow"], pal["Zenith"], dark * 0.5))
     ht = lin(mix(P["GradeHighlight"], pal["Sun"], dusk * 0.5))
     c = np.maximum(col * exposure, 0)
@@ -259,7 +262,7 @@ def post_grade(col, P, pal, dark, dusk, storm):
     s = satur * (1 + 0.45 * (1 - (mx - mn) / np.maximum(mx, 1e-4)))
     c = np.maximum(l + (c - l) * s, 0)
     H, W = c.shape[:2]; y, x = np.mgrid[0:H, 0:W]; u = x / W - 0.5; v = y / H - 0.5
-    vg = np.clip((2 * (u * u + v * v)) ** 1.25 * 0.5, 0, 1)[..., None]
+    vg = np.clip((2 * (u * u + v * v)) ** 1.25 * 0.35, 0, 1)[..., None]
     vc = lin(mix(np.array([0.2, 0.18, 0.26], np.float32), P["GradeShadow"] * 0.5, 0.5))
     return c + (c * vc - c) * vg
 
