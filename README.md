@@ -16,7 +16,7 @@ prozedural im Projekt erzeugt – es gibt keine Fremd-Assets.
 
 | Bereich | Wie geprüft | Ergebnis |
 | --- | --- | --- |
-| Spiellogik, Wirtschaft, Speichern, Tag/Nacht/Wetter, komplette Solo-Kampagne per Bot (reines C#, `Core/`) | 40 automatisierte .NET-Tests in `Tests/` (`cd Tests && dotnet run`), Details in `docs/TESTBERICHT.md` | 40/40 bestanden |
+| Spiellogik, Wirtschaft, Speichern, Tag/Nacht/Wetter, komplette Solo-Kampagne per Bot (reines C#, `Core/`) | 53 automatisierte .NET-Tests in `Tests/` (`cd Tests && dotnet run`), Details in `docs/TESTBERICHT.md` | 53/53 bestanden |
 | Koop-Logik (4 TCP-Clients, gleichzeitiges Greifen, doppelte Aktionen, Gastrechte, später Beitritt, Wiederverbinden, Host-Verlassen, Betrugsversuche) | `Tests/NetTests.cs` über Loopback-TCP | bestanden (kein Test über echte Internetverbindungen) |
 | Koop-Netzwerk über TCP (Sitzung erstellen, Beitritt per Code, Sichtbarkeit, Speichern auf dem Server) | Rauchtest `Server/SmokeTest` gegen den dedizierten Server | läuft ohne Unity |
 | Unity-Skripte (`Runtime/`, `Editor/`) | kompiliert gegen Unity-Referenz-Assemblies (`Tools/CompileCheck`) | kompiliert fehlerfrei |
@@ -96,12 +96,16 @@ Alle Tastatur- und Mausbelegungen sind im Spiel unter Einstellungen › Steuerun
 | Roboterlaut (Emote) | G | Steuerkreuz ← |
 | Spielmenü | Tab | Steuerkreuz ↑ |
 | Bauansicht | B | Steuerkreuz → |
-| Bauwerk drehen (in der Bauansicht) | R | – |
+| Bauansicht: Cursor / platzieren / drehen | Maus / Linksklick oder E / R | linker Stick / A / Y |
+| Bauansicht: Bauwerk / Kategorie wechseln | Mausrad, Bild↑↓ / 1–6 oder Reiter | LB/RB / LT/RT |
+| Bauansicht: umsetzen / abreißen / abbrechen | Knöpfe unten links / Rechtsklick hebt Auswahl auf | X / Back (zweimal) / B |
 | Karte | M | Back / View |
 | Aufträge | J | – |
 | Inventar | I | – |
 | Fotomodus | P (Kamera auf/ab: E / Q) | R3 (rechten Stick drücken) |
 | Schnellspeichern | F5 | – |
+| Radio an/aus | T (auch Spielmenü › Radio) | Spielmenü › Radio |
+| Leistungsanzeige (FPS, Bildzeit, Draw-Calls) | F3 | – |
 | Pause | Esc | Start / Menu |
 | Menüs | Pfeiltasten, Eingabe, Esc, Q/E für Reiter | Steuerkreuz/linker Stick, A, B, LB/RB |
 | Intro/Abspann überspringen | Esc, Eingabe oder Leertaste gedrückt halten | A gedrückt halten |
@@ -147,6 +151,8 @@ Ordner (`--saves`, Standard `./server-saves/<Sitzungscode>.rpsave`).
 ```bash
 cd Tests && dotnet run                          # automatisierte Tests (Ergebnis zusätzlich in test-results.txt)
 cd Tests && dotnet run -c Release -- balance    # Kampagnen-Bot für Balancing-Messungen
+cd Tests && dotnet run -c Release -- locmissing # deutsche Texte ohne englische Übersetzung auflisten
+cd Tests && dotnet run -c Release -- loc "Text" # Übersetzung eines (auch zusammengesetzten) Textes prüfen
 
 # Unity-Skripte gegen Referenz-Assemblies kompilieren (einmalig: Tools/CompileCheck/fetch-unity-refs.sh)
 cd Tools/CompileCheck/Core    && dotnet build

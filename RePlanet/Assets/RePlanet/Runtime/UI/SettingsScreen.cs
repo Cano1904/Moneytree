@@ -372,7 +372,7 @@ namespace RePlanet
         {
             int li = Mathf.Max(0, Array.IndexOf(Loc.Languages, s.Language));
             int nli = UINav.Choice(new Rect(0, y, w, RowH), L("Sprache") + L(" / Language"), li, Loc.LanguageNames);
-            if (nli != li) { s.Language = Loc.Languages[nli]; Loc.Lang = s.Language; Loc.ApplyToData(); MarkSettings(); }
+            if (nli != li) { s.Language = Loc.Languages[nli]; Loc.Lang = s.Language; Loc.ApplyToData(); BuildMode.Category = null; MarkSettings(); }
             y += RowStep;
             GUI.Label(new Rect(10, y, w * 0.4f, RowH), L("Spielername"), UISkin.Label);
             string nm = UINav.TextField(new Rect(w * 0.42f, y + 2, w * 0.58f - 6, RowH - 4), s.PlayerName, 20, "set_name");
