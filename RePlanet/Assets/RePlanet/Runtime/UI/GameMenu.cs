@@ -11,8 +11,8 @@ namespace RePlanet
     /// </summary>
     public partial class UIRoot
     {
-        static readonly string[] MenuTabs = { "inventory", "missions", "map", "workshop", "storage", "archive", "robot", "coop" };
-        static readonly string[] MenuTabNames = { "Inventar", "Aufträge", "Karte", "Werkstatt", "Lager", "Archiv", "Roboter", "Koop" };
+        static readonly string[] MenuTabs = { "inventory", "missions", "map", "workshop", "storage", "archive", "achievements", "robot", "coop" };
+        static readonly string[] MenuTabNames = { "Inventar", "Aufträge", "Karte", "Werkstatt", "Lager", "Archiv", "Erfolge", "Roboter", "Koop" };
         string menuTab = "inventory";
         string menuStation;
         int wsSub;
@@ -113,6 +113,7 @@ namespace RePlanet
                 case "workshop": TabWorkshop(app, content); break;
                 case "storage": TabStorage(app, content); break;
                 case "archive": TabArchive(app, content); break;
+                case "achievements": TabAchievements(app, content); break;
                 case "robot": TabRobot(app, content); break;
                 case "coop":
                     {
@@ -772,10 +773,15 @@ namespace RePlanet
             y += 30;
             bool pending = false;
             foreach (var d in ps.Dyn.Values) if (d.Delivery) { pending = true; break; }
-            GUI.Label(new Rect(0, y, sw - 340, 42), "Schrottlieferung: 14 Teile Müll landen am Abladeplatz – ideal zum Sortieren und für Aufträge.", UISkin.LabelSmall);
-            if (UINav.Button(new Rect(sw - 320, y, 320, 42), pending ? "Lieferung liegt noch bereit" : "Lieferung bestellen", !pending && InBaseLocal(app), UISkin.Button))
+            float dWait;
+            string dWhy = Rules.DeliveryCheck(w, ps, out dWait);
+            int dFee = GameData.DeliveryFee(w.CurrentPlanet);
+            GUI.Label(new Rect(0, y, sw - 340, 42), "Schrottlieferung: " + GameData.DeliveryParts + " Teile Müll landen am Abladeplatz – ideal zum Sortieren und für Aufträge. Gebühr " + dFee + " Credits, danach " + Mathf.RoundToInt(GameData.DeliveryCooldown) + " s Pause.", UISkin.LabelSmall);
+            string dLabel = pending ? "Lieferung liegt noch bereit" : dWait > 0 ? "Nächste in " + Rules.FormatWait(dWait) : "Lieferung bestellen (" + dFee + " Cr)";
+            if (UINav.Button(new Rect(sw - 320, y, 320, 42), dLabel, dWhy == null && InBaseLocal(app), UISkin.Button))
                 MenuAct(app, new JObj().Set("a", "delivery"), "Lieferung ist unterwegs zum Abladeplatz.");
             y += 48;
+            if (dWhy != null && !pending && dWait <= 0) { GUI.Label(new Rect(sw - 320, y - 4, 320, 22), UISkin.Col(dWhy, UISkin.Warn), UISkin.LabelTiny); y += 20; }
             if (!InBaseLocal(app)) { GUI.Label(new Rect(sw - 320, y - 4, 320, 22), UISkin.Col("Nur am Stützpunkt", UISkin.TextDim), UISkin.LabelTiny); y += 20; }
             UINav.EndScroll(y + 10);
         }
@@ -870,6 +876,15 @@ namespace RePlanet
                 case "muschel": return "ring";
                 case "muetze": return "house";
                 case "faehnchen": return "flag";
+                case "krone": return "star";
+                case "blatt": return "leaf";
+                case "blitz": return "hazard";
+                case "mond": return "moon";
+                case "komet": return "star";
+                case "tropfen": return "drop";
+                case "rundumleuchte": return "sun";
+                case "gluehbirne": return "dot";
+                case "propeller": return "plus";
             }
             return null;
         }

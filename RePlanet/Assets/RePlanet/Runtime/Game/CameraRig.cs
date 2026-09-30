@@ -45,7 +45,7 @@ namespace RePlanet
             go.AddComponent<FlareLayer>();
             Post = go.AddComponent<PostFX>();
             // Weitere Darstellungsbausteine gehören an das Hauptobjekt
-            foreach (var t in new[] { typeof(Atmosphere), typeof(TrashRenderer), typeof(ActorsView), typeof(FxView), typeof(FloraRenderer) })
+            foreach (var t in new[] { typeof(Atmosphere), typeof(TrashRenderer), typeof(ActorsView), typeof(FxView), typeof(FloraRenderer), typeof(FeaturesView) })
                 if (GetComponent(t) == null) gameObject.AddComponent(t);
         }
 

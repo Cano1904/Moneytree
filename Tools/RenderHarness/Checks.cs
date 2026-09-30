@@ -17,7 +17,7 @@ using UnityEngine;
 using Object = UnityEngine.Object;
 using Random = UnityEngine.Random;
 
-public static class Checks
+public static partial class Checks
 {
     // ================================================================== Bildtakt wie Unity
     const BindingFlags BF = BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic;
@@ -490,6 +490,7 @@ public static class Checks
             PlaySome(app, 7f, "Sturm (Tag)");
             ExposureInfo("Sturm (Tag)");
             BuildOut(app, g, pid, planet);
+            FeatureChecks(app, g, pid, planet);
             // Fotomodus mit Vorher-Ansicht
             PhotoMode.Active = true; PhotoMode.ShowBefore = true;
             Run(1.5f);

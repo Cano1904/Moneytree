@@ -643,6 +643,21 @@ namespace RePlanet
                     }
                     Part(n, sph, Mat(new Color(1f, 0.85f, 0.2f)), new Vector3(-0.28f, 0.46f, 0), Vector3.one * 0.05f, Vector3.zero, "center");
                     break;
+                case "rundumleuchte": // orangefarbene Warnleuchte auf dem Kopf
+                    Part(n, cyl, Mat(new Color(0.2f, 0.2f, 0.22f)), new Vector3(0, 0.3f, -0.05f), new Vector3(0.14f, 0.04f, 0.14f), Vector3.zero, "base");
+                    Part(n, sph, Mats.Get(Mats.Emissive, col, col * 1.6f), new Vector3(0, 0.38f, -0.05f), new Vector3(0.18f, 0.16f, 0.18f), Vector3.zero, "dome");
+                    break;
+                case "gluehbirne": // Glühbirne am Draht
+                    Part(n, cyl, Mat(new Color(0.3f, 0.3f, 0.3f)), new Vector3(0.22f, 0.4f, -0.05f), new Vector3(0.015f, 0.2f, 0.015f), Vector3.zero, "wire");
+                    Part(n, cyl, Mat(new Color(0.6f, 0.6f, 0.62f)), new Vector3(0.22f, 0.6f, -0.05f), new Vector3(0.05f, 0.04f, 0.05f), Vector3.zero, "socket");
+                    Part(n, sph, Mats.Get(Mats.Emissive, col, col * 1.4f), new Vector3(0.22f, 0.7f, -0.05f), new Vector3(0.12f, 0.14f, 0.12f), Vector3.zero, "bulb");
+                    break;
+                case "propeller": // Propellermütze
+                    Part(n, sph, m, new Vector3(0, 0.22f, -0.02f), new Vector3(0.56f, 0.28f, 0.42f), Vector3.zero, "cap");
+                    Part(n, cyl, Mat(new Color(0.3f, 0.3f, 0.3f)), new Vector3(0, 0.4f, -0.02f), new Vector3(0.02f, 0.06f, 0.02f), Vector3.zero, "axle");
+                    Part(n, cube, Mat(new Color(1f, 0.82f, 0.25f)), new Vector3(0, 0.47f, -0.02f), new Vector3(0.44f, 0.01f, 0.06f), new Vector3(0, 25, 0), "blade1");
+                    Part(n, cube, Mat(new Color(0.9f, 0.3f, 0.3f)), new Vector3(0, 0.47f, -0.02f), new Vector3(0.44f, 0.01f, 0.06f), new Vector3(0, 115, 0), "blade2");
+                    break;
             }
             return n.gameObject;
         }
@@ -671,6 +686,11 @@ namespace RePlanet
                         case "flocke": inside = r < 0.9f && (Mathf.Abs(Mathf.Sin(a * 3f)) < 0.18f || r < 0.2f); break;
                         case "zahnrad": inside = (r < 0.6f + (Mathf.Cos(a * 8f) > 0.3f ? 0.25f : 0f)) && r > 0.25f; break;
                         case "herz": { float xx = u * 1.1f, yy = -v * 1.1f + 0.3f; inside = Mathf.Pow(xx * xx + yy * yy - 0.5f, 3f) - xx * xx * yy * yy * yy < 0; break; }
+                        case "krone": inside = Mathf.Abs(u) < 0.75f && v > -0.55f && v < -0.1f || (Mathf.Abs(u) < 0.75f && v >= -0.1f && v < 0.6f - 0.9f * Mathf.Abs(Mathf.Sin(u * 4.7f))); break;
+                        case "blitz": inside = Mathf.Abs(u - (v > 0 ? 0.35f * v : 0.35f * v) + (v > 0 ? 0.12f : -0.12f)) < 0.2f && Mathf.Abs(v) < 0.85f; break;
+                        case "mond": inside = r < 0.8f && Mathf.Sqrt((u - 0.35f) * (u - 0.35f) + (v - 0.2f) * (v - 0.2f)) > 0.6f; break;
+                        case "komet": inside = Mathf.Sqrt((u - 0.35f) * (u - 0.35f) + (v - 0.35f) * (v - 0.35f)) < 0.3f || (Mathf.Abs(u - v) < 0.18f * (1f + u + v) * 0.5f && u + v < 0.7f && u + v > -1.2f); break;
+                        case "tropfen": inside = Mathf.Sqrt(u * u + (v + 0.25f) * (v + 0.25f)) < 0.5f || (v > -0.25f && v < 0.85f && Mathf.Abs(u) < 0.5f * (0.85f - v) / 1.1f); break;
                         default: inside = r < 0.8f; break;
                     }
                     bool border = !inside && r < 0.98f;

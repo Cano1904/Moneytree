@@ -277,7 +277,7 @@ namespace RePlanet
             foreach (var z in l.Zones)
             {
                 bool clean = Rules.ZoneCleared(ps, z.Index);
-                Mark(W2M(z.Center.x, z.Center.z), clean ? "dot" : "ring", clean ? UISkin.Good : UISkin.Warn, clean ? 14 : 18, "Lichtpunkt „" + z.Name + "“" + (clean ? " – sauber" : " – verschmutzt"));
+                Mark(W2M(z.Center.x, z.Center.z), clean ? "dot" : "ring", clean ? UISkin.Good : UISkin.Warn, clean ? 14 : 18, "Lichtpunkt „" + z.Name + "“" + (clean ? " – leuchtet (Schnellreise-Ziel)" : " – verschmutzt"));
             }
             // Reparaturpunkte
             foreach (var s in l.Repairs)
@@ -308,6 +308,7 @@ namespace RePlanet
             // Unterschlüpfe
             foreach (var s in l.Shelters) Mark(W2M(s.Pos.x, s.Pos.z), "house", UISkin.Story, 17, pd.ShelterName);
             foreach (var s in ps.Shelters) Mark(W2M(s.x, s.z), "house", new Color(0.6f, 0.95f, 1f), 15, "Notunterschlupf (selbst gebaut)");
+            FeatureMarks2D(app);
 
             // Fahrzeuge
             foreach (var v in ps.Vehicles.Values)
@@ -415,6 +416,13 @@ namespace RePlanet
                 y += 22;
             }
             y += 8;
+            // Schnellreise über leuchtende Lichtpunkte (ersetzt bei offener Liste die Legende)
+            if (FastTravelButton(app, new Rect(r.x, y, Mathf.Min(r.width, 320f), 38)))
+            {
+                DrawFastTravelList(app, new Rect(r.x, y + 46, r.width, r.yMax - (mode == 0 ? 110 : 160) - (y + 46)));
+                y = r.yMax;
+            }
+            else y += 46;
             GUI.Label(new Rect(r.x, y, r.width, 28), "Legende", UISkin.H3);
             y += 30;
             float colW = r.width;
