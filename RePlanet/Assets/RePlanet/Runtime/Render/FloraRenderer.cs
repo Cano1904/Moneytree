@@ -11,6 +11,8 @@ namespace RePlanet
     /// Anemonen, Eiskristalle …). Wächst sichtbar mit der Ökologie des Bereichs (Begrünung als eigene Aktion –
     /// Reinigen allein lässt keine Wiesen entstehen); zäher Pionier-Bewuchs ist von Anfang an spärlich da.
     /// Zeichnung per GPU-Instancing mit vorab angelegten Puffern (keine Allokation pro Bild).
+    /// Wind: Jede Pflanze wiegt sich mit Windstärke und -richtung (Scherung der Instanzmatrix auf der CPU – kein
+    /// eigener Shader nötig, funktioniert mit jedem Material); Böen laufen als Welle über die Wiesen.
     /// </summary>
     public class FloraRenderer : MonoBehaviour
     {
@@ -19,6 +21,9 @@ namespace RePlanet
         {
             public Mesh Mesh; public Material[] Mats; public bool Big, Pioneer; public float Weight, SMin, SMax;
             public readonly List<Matrix4x4[]> Buf = new List<Matrix4x4[]>();
+            /// <summary>Ruhelage (ohne Wind) und Wiegen je Instanz: cos/sin der Phase, Ausschlag.</summary>
+            public readonly List<Matrix4x4[]> Base = new List<Matrix4x4[]>();
+            public readonly List<Vector3[]> Wave = new List<Vector3[]>();
             public int Count;
         }
 
@@ -249,6 +254,7 @@ namespace RePlanet
             }
             bool shadows = GameApp.I == null || GameApp.I.Settings.Shadows >= 2;
             if (!SystemInfo.supportsInstancing) return;
+            ApplyWind(w);
             foreach (var k in kinds)
             {
                 int n = k.Count;
@@ -287,9 +293,57 @@ namespace RePlanet
                 float s = p.Scale * (k.Pioneer ? 1f : Mathf.Clamp01((g - p.Threshold) * 6f));
                 int i = k.Count++;
                 int c = i / 1023;
-                while (k.Buf.Count <= c) k.Buf.Add(new Matrix4x4[1023]);
-                k.Buf[c][i % 1023] = Matrix4x4.TRS(p.Pos, Quaternion.Euler(0, p.Rot, 0), Vector3.one * s);
+                while (k.Buf.Count <= c) { k.Buf.Add(new Matrix4x4[1023]); k.Base.Add(new Matrix4x4[1023]); k.Wave.Add(new Vector3[1023]); }
+                var mx = Matrix4x4.TRS(p.Pos, Quaternion.Euler(0, p.Rot, 0), Vector3.one * s);
+                k.Buf[c][i % 1023] = mx;
+                k.Base[c][i % 1023] = mx;
+                // Phase aus der Lage: Böen laufen als Welle über die Wiese; hohe, weiche Pflanzen schwingen stärker
+                float ph = p.Pos.x * 0.21f + p.Pos.z * 0.17f + p.Q * 2.5f;
+                float amp = k.Big ? 0.012f : k.Pioneer ? 0.09f : 0.13f;
+                k.Wave[c][i % 1023] = new Vector3(Mathf.Cos(ph), Mathf.Sin(ph), amp * (0.8f + p.Q * 0.4f));
             }
+        }
+
+        /// <summary>Letzte Windwerte (Prüfumgebung/Anzeige): Stärke 0..1 und größter Ausschlag (Scherung).</summary>
+        public float WindStrength { get; private set; }
+        public float MaxShear { get; private set; }
+
+        /// <summary>
+        /// Wiegen im Wind: Scherung der Instanzmatrix um den Fußpunkt (x' = x + sx·y, z' = z + sz·y). Bei reiner
+        /// Drehung um die Hochachse genügen zwei Multiplikationen je Instanz, die Schwingung kommt ohne Winkelfunktion
+        /// je Instanz aus (sin(t + φ) = sin t · cos φ + cos t · sin φ).
+        /// </summary>
+        void ApplyWind(WorldState w)
+        {
+            float dx = 1f, dz = 0.3f, wind = 0.2f;
+            if (w != null && planet != null && w.Planets.ContainsKey(planet)) wind = Rules.Wind(w, planet, out dx, out dz);
+            WindStrength = wind;
+            float t = Time.time;
+            float f = 1.5f + wind * 2.4f;
+            float S = Mathf.Sin(t * f), C = Mathf.Cos(t * f);
+            float lean = wind * wind * 0.9f, osc = 0.25f + wind * 0.95f;
+            float maxShear = 0f;
+            foreach (var k in kinds)
+            {
+                int n = k.Count;
+                for (int c = 0; c * 1023 < n; c++)
+                {
+                    int cnt = Mathf.Min(1023, n - c * 1023);
+                    var src = k.Base[c]; var dst = k.Buf[c]; var wv = k.Wave[c];
+                    for (int i = 0; i < cnt; i++)
+                    {
+                        var a = wv[i];
+                        float sh = a.z * (lean + (S * a.x + C * a.y) * osc);
+                        var m = src[i];
+                        float up = m.m11;
+                        m.m01 += dx * sh * up;
+                        m.m21 += dz * sh * up;
+                        dst[i] = m;
+                        if (sh > maxShear) maxShear = sh;
+                    }
+                }
+            }
+            MaxShear = maxShear;
         }
     }
 }
