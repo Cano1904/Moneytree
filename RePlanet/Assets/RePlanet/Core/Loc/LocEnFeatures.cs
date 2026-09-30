@@ -48,6 +48,7 @@ namespace RePlanet.Core
             e("{0} abwarten …", "Waiting out the {0} …"); e("Warte auf Mitspieler ({0}/{1}) – erst wenn alle abwarten, läuft die Zeit schneller.", "Waiting for other players ({0}/{1}) – time only speeds up once everyone is waiting.");
             e("Die Zeit läuft ×{0} schneller. Noch etwa {1} s Sturm.", "Time runs ×{0} faster. About {1} s of storm left."); e(" aufstehen", " get up");
             e("Nächste in {0}", "Next in {0}"); e("Lieferung bestellen ({0} Cr)", "Order delivery ({0} cr)"); e(" – leuchtet (Schnellreise-Ziel)", " – lit (fast travel destination)");
+            e("neutral", "neutral"); e("fröhlich", "happy"); e("neugierig", "curious"); e("müde", "tired"); e("ängstlich", "anxious"); e("schläfrig", "sleepy"); e("frierend", "freezing");
             e("Sturm abwarten", "Wait out the storm"); e("Team", "Team"); e("Team: {0}", "Team: {0}");
             // ------------------------------------------------ Interaktionen mit Helfern
             e("[{0}] Helfer hier arbeiten lassen (Umkreis {1} m)", "[{0}] Let the helper work here (radius {1} m)"); e("Helfer absetzen", "Drop off helper");
