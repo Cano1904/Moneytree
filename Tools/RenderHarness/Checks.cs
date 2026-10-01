@@ -1,6 +1,6 @@
 // Laufzeitprüfung ohne Unity: startet das Spiel wie Unity (GameApp → alle Bausteine), treibt Awake/Start/Update/
 // LateUpdate/OnGUI Bild für Bild und meldet jede Ausnahme mit Stacktrace. Szenarien:
-//   menu    – Menüweg ins Intro („Los geht's!“ per Maus/Tastatur/Controller, langer Aufbau, gehaltene Tasten, Musik später fertig)
+//   menu    – Hauptmenü 20 s stabil (ChecksMenu: Belichtung, Umschalten, Kamera, Sonde, Logo-Uhr), Menüweg ins Intro („Los geht's!“ per Maus/Tastatur/Controller, langer Aufbau, gehaltene Tasten, Musik später fertig)
 //   intro   – Menüweg + kompletter Intro-Ablauf 0…102 s (Bühnenaufbau aller Einstellungen, jede Qualitätsstufe), Überspringen
 //   game    – neues Spiel, alle vier Planeten (Planetenwechsel, Tag, Nacht, Sturm, Fotomodus-Vorher, Fahren/Laufen)
 //   ending  – Abspann komplett
@@ -183,6 +183,7 @@ public static partial class Checks
         CollectWarnings();
 
         bool all = what == "all";
+        if (all || what == "menu") MenuStabilityChecks(app);
         if (all || what == "intro" || what == "menu") MenuPathChecks(app);
         if (all || what == "intro") IntroChecks(app);
         if (all || what == "game") GameChecks(app, all || what == "game");

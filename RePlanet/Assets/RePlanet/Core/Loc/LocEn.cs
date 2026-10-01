@@ -11,6 +11,7 @@ namespace RePlanet.Core
             FillEnglishData(e);
             FillEnglishCore(e);
             FillEnglishFeatures(e);
+            FillEnglishTablet(e);
         }
     }
 }

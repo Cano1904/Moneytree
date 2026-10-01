@@ -17,6 +17,13 @@ namespace RePlanet
 
         static string L(string de) { return Loc.T(de); }
 
+        /// <summary>Reiter im Tablet anmelden (hinter „Archiv“).</summary>
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
+        static void Register()
+        {
+            UIRoot.RegisterMenuTab(TabId, TabName, "diamond", (ui, app, c) => Draw(app, c), "archive");
+        }
+
         static readonly Color[] RarityCol = { new Color(0.82f, 0.84f, 0.86f), new Color(0.45f, 0.7f, 1f), new Color(1f, 0.78f, 0.3f) };
 
         public static void Draw(GameApp app, Rect c)

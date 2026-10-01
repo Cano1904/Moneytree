@@ -99,6 +99,25 @@ Shader-Prüfung OK, Server-Rauchtest 17/17.
 - Offen/ungetestet in Unity: Aussehen und Größe der Tiere, Wolkenschatten-Stärke, Spurtransparenz auf dem
   Gelände-Shader (Z-Kämpfe?), Pfützen-Glanz, Fahrverhalten an Kreuzungen, echte Bildrate.
 
+## Flackern im Hauptmenü, Spielmenü als Feldtablet
+- **Flackern – Ursachen (ohne Unity untersucht):**
+  - *Nachgewiesen (Code + Prüfumgebung):* Der Logo-Einflug startete neu, sobald zwischen zwei Menü-Bildern > 0,5 s lagen –
+    jeder Ruckler ließ alle Buchstaben verschwinden und neu einfliegen. Mit derselben Bildfolge (Ruckler 0,8 s und 1,5 s)
+    startet die alte Logik 3×, `MenuLogoClock` 1×. Behoben.
+  - *Nachgewiesen (Code), Wirkung vermutet:* Die „Fortsetzen“-Zeile las alle 3 s den kompletten Spielstand im OnGUI
+    (Datei lesen + Parsen + Speicherbereinigung) → regelmäßige Ruckler. Jetzt nur bei geänderter Dateizeit.
+  - *Vermutet:* Echtzeit-Reflexionssonde mit Zeitscheiben (einzelne Würfelseiten über mehrere Bilder) liefert die
+    Nebelfarbe der Nachbearbeitung → jetzt ohne Zeitscheiben (64 px, nur Himmel). Schriftatlas-Neuaufbauten mitten im Bild
+    → Menüschriften werden vorab angefordert; Zähler in der Leistungsanzeige (F3) zeigt, ob es noch passiert.
+    Weitere Ruckler-Quelle (nicht geändert): `AudioManager.PumpProducts` legt je Bild einen ganzen Satz Musik-Clips an.
+  - *Ausgeschlossen in der Prüfumgebung (20 s Menü, 60 Hz, mit Ruckler):* Belichtung, Nebel, Sonne, Umgebungslicht
+    konstant (Streuung 0,00 %), keine Kamerawechsel, keine ein-/ausschaltenden Renderer/Lichter, Draws je Bild 123…126.
+    Nicht abgedeckt: echte GPU, Nachbearbeitungs-Shader, Unitys Sonde/Schriftatlas.
+- **Feldtablet:** siehe ARCHITEKTUR („Oberfläche“). Vorschaubild `docs/vorschau/tablet_vorschau.png` (Python/PIL, kein Spielbild).
+- Nicht in Unity getestet: Aussehen des Tablets, Lesbarkeit unter Glas/Scanlinien, Animationen und Maus/Fokus während der
+  Öffnen-Animation (GUI.matrix), 4:3 mit großer Textgröße, englische Beschriftungen der Reiter, ob das Flackern beim
+  Nutzer damit weg ist (bitte mit F3 „Schriftatlas neu“/„Logo-Starts“ beobachten).
+
 ## Grenzen (Stand dieser Umgebung)
 - Kein Unity-Editor, kein Unity-Laufzeittest, keine echten Spiel-Screenshots, keine gebaute .exe.
 - Shader wurden nicht mit Unitys Compiler übersetzt (nur glslang-Prüfung).
