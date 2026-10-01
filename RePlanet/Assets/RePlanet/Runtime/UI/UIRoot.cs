@@ -139,11 +139,12 @@ namespace RePlanet
         {
             UINav.ResetFocus();
             confirm = null;
+            OnTabletScreenChanged(from, to);
             if (from == UIScreen.Menu && to != UIScreen.Menu) UIState.Station = null;
             switch (to)
             {
                 case UIScreen.Menu: OnMenuOpened(); break;
-                case UIScreen.MainMenu: RefreshMainMenu(); break;
+                case UIScreen.MainMenu: RefreshMainMenu(); OnMainMenuOpened(from); break;
                 case UIScreen.Saves: RefreshSaves(); break;
                 case UIScreen.NewGame: OnNewGameOpened(); break;
                 case UIScreen.PlanetSelect: planetPreviewed = null; break;
@@ -412,6 +413,7 @@ namespace RePlanet
                     {
                         if (!(PhotoMode.Active && PhotoMode.HideHud)) DrawHud(app);
                         if (BuildMode.Active) DrawBuild(app);
+                        else DrawTabletClosing(app);
                     }
                     break;
                 case UIScreen.MainMenu: DrawMainMenu(app); break;

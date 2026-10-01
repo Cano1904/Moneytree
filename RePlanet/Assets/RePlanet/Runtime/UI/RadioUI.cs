@@ -23,7 +23,7 @@ namespace RePlanet
             var right = new Rect(c.x + lw + 20, c.y, c.width - lw - 20, c.height);
 
             // ------------------------------------------------ Links: Gerät
-            UISkin.PanelBoxLight(left);
+            Card(left);
             float x = left.x + 24, y = left.y + 20, bw = left.width - 48;
             GUI.Label(new Rect(x, y, bw, 40), L("Radio"), UISkin.H2);
             y += 50;

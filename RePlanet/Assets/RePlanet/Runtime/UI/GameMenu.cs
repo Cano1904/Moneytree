@@ -5,14 +5,13 @@ using UnityEngine;
 namespace RePlanet
 {
     /// <summary>
-    /// Spielmenü (Tab) mit Reitern: Inventar, Aufträge, Karte, Werkstatt, Lager, Archiv, Roboter, Radio, Koop.
+    /// Inhalte des Spielmenüs (Tab): Inventar, Aufträge, Karte, Werkstatt, Lager, Archiv, Erfolge, Roboter, Radio, Koop.
+    /// Rahmen, Reiterleiste und Animationen: <see cref="UIRoot"/> in TabletMenu.cs (MIKOs Feldtablet).
     /// Q/E bzw. LB/RB wechseln die Reiter. Käufe/Verkäufe laufen als Aktionen über den Server – der prüft
     /// Nähe zu Stationen und Berechtigungen; die UI zeigt die Gründe vorab an.
     /// </summary>
     public partial class UIRoot
     {
-        static readonly string[] MenuTabs = { "inventory", "missions", "map", "workshop", "storage", "archive", "achievements", "robot", "radio", "coop" };
-        static readonly string[] MenuTabNames = { "Inventar", "Aufträge", "Karte", "Werkstatt", "Lager", "Archiv", "Erfolge", "Roboter", "Radio", "Koop" };
         string menuTab = "inventory";
         string menuStation;
         int wsSub;
@@ -40,24 +39,9 @@ namespace RePlanet
                 }
             }
             SetMenuTab(tab);
+            tabSwitchAt = -10f; // beim Öffnen fährt das ganze Tablet hoch, kein zusätzlicher Reiterwechsel
             actMsg = null;
             LoadCosmSel();
-        }
-
-        void SetMenuTab(string t)
-        {
-            if (System.Array.IndexOf(MenuTabs, t) < 0) t = "inventory";
-            if (menuTab != t) { UINav.ResetFocus(); AudioManager.Ui("ui_click"); }
-            menuTab = t;
-            UIState.MenuTab = t;
-            confirm = null;
-        }
-
-        void CycleMenuTab(int d)
-        {
-            int i = System.Array.IndexOf(MenuTabs, menuTab);
-            if (i < 0) i = 0;
-            SetMenuTab(MenuTabs[(i + d + MenuTabs.Length) % MenuTabs.Length]);
         }
 
         /// <summary>Aktion senden und Ergebnis im Menü anzeigen.</summary>
@@ -69,62 +53,6 @@ namespace RePlanet
                 if (r.Ok) { if (okText != null) { actMsg = okText; actMsgErr = false; actMsgUntil = Time.unscaledTime + 5f; } }
                 else { actMsg = r.Err ?? "Nicht möglich."; actMsgErr = true; actMsgUntil = Time.unscaledTime + 6f; }
             });
-        }
-
-        void DrawGameMenu(GameApp app)
-        {
-            if (!app.InGame) { UIState.Open(UIScreen.MainMenu); return; }
-            Dim(0.55f);
-            var r = new Rect(24, 20, VW - 48, VH - 40);
-            UISkin.PanelBox(r);
-            // Reiterleiste
-            string[] names = new string[MenuTabNames.Length];
-            for (int i = 0; i < names.Length; i++) names[i] = L(MenuTabNames[i]);
-            int cur = System.Array.IndexOf(MenuTabs, menuTab);
-            float tabsX = r.x + 56, tabsW = r.width - 56 - 380;
-            GUI.Label(new Rect(r.x + 16, r.y + 14, 36, 42), UISkin.Col(InputMap.UsingPad ? "LB" : "Q", UISkin.TextDim), UISkin.LabelCenter);
-            GUI.Label(new Rect(tabsX + tabsW + 2, r.y + 14, 36, 42), UISkin.Col(InputMap.UsingPad ? "RB" : "E", UISkin.TextDim), UISkin.LabelCenter);
-            int nt = UINav.Tabs(new Rect(tabsX, r.y + 14, tabsW, 42), cur, names);
-            if (nt != cur) SetMenuTab(MenuTabs[nt]);
-            var w = app.W;
-            GUI.Label(new Rect(r.xMax - 330, r.y + 14, 180, 42), "<b>" + Num(w.Credits) + L("</b> Cr"), UISkin.LabelRight);
-            if (UINav.Button(new Rect(r.xMax - 140, r.y + 16, 120, 38), "✕ " + L("Zurück"), true, UISkin.ButtonSmall)) Back();
-            UISkin.Rect(new Rect(r.x + 16, r.y + 64, r.width - 32, 2), new Color(UISkin.Accent.r, UISkin.Accent.g, UISkin.Accent.b, 0.5f));
-            var content = new Rect(r.x + 22, r.y + 76, r.width - 44, r.height - 90);
-            if (actMsg != null && Time.unscaledTime < actMsgUntil)
-            {
-                var mr = new Rect(content.x, content.yMax - 40, content.width, 40);
-                content.height -= 48;
-                UISkin.RoundRect(mr, actMsgErr ? new Color(0.4f, 0.08f, 0.05f, 0.9f) : new Color(0.05f, 0.3f, 0.15f, 0.9f));
-                GUI.Label(new Rect(mr.x + 16, mr.y, mr.width - 32, mr.height), (actMsgErr ? "⚠ " : "✓ ") + L(actMsg), UISkin.Label);
-            }
-            switch (menuTab)
-            {
-                case "inventory": TabInventory(app, content); break;
-                case "missions": TabMissions(app, content); break;
-                case "map":
-                    {
-                        float side = Mathf.Min(380f, content.width * 0.3f);
-                        float ms = Mathf.Min(content.height, content.width - side - 30);
-                        DrawMap(app, new Rect(content.x, content.y, ms, ms));
-                        DrawMapSide(app, new Rect(content.x + ms + 30, content.y, content.width - ms - 30, content.height));
-                        break;
-                    }
-                case "workshop": TabWorkshop(app, content); break;
-                case "storage": TabStorage(app, content); break;
-                case "archive": TabArchive(app, content); break;
-                case "achievements": TabAchievements(app, content); break;
-                case "robot": TabRobot(app, content); break;
-                case "radio": TabRadio(app, content); break;
-                case "coop":
-                    {
-                        const int key = 408;
-                        UINav.BeginScroll(key, content);
-                        float y = DrawCoopContent(app, UINav.ScrollWidth(key, content), 0);
-                        UINav.EndScroll(y + 10);
-                        break;
-                    }
-            }
         }
 
         // ================================================================== Hilfen
@@ -166,10 +94,16 @@ namespace RePlanet
             return st;
         }
 
+        /// <summary>Abschnittsüberschrift im Tablet-Stil: Akzentmarke, Exo 2, feine Linie. Liefert die Höhe darunter.</summary>
         float Section(string title, float x, float w, float y)
         {
-            GUI.Label(new Rect(x, y, w, 32), title, UISkin.H3);
-            UISkin.Rect(new Rect(x, y + 32, w, 1), new Color(1, 1, 1, 0.12f));
+            if (Event.current.type == EventType.Repaint)
+            {
+                UISkin.RoundRect(new Rect(x, y + 8, 4, 17), UISkin.Accent);
+                var lc = UISkin.Contrast ? new Color(1, 1, 1, 0.5f) : new Color(UISkin.Teal.r, UISkin.Teal.g, UISkin.Teal.b, 0.28f);
+                UISkin.Rect(new Rect(x, y + 33, w, 1), lc);
+            }
+            GUI.Label(new Rect(x + 12, y, w - 12, 32), title, UISkin.SectionHead);
             return y + 40;
         }
 
@@ -192,7 +126,7 @@ namespace RePlanet
             // Behälter
             float vol = Item.Volume(me.Bin), cap = Mathf.Max(1f, w.BinCapacity);
             float y = left.y;
-            GUI.Label(new Rect(left.x, y, left.width, 34), L("Behälter"), UISkin.H3);
+            GUI.Label(new Rect(left.x, y, left.width, 34), L("Behälter"), UISkin.SectionHead);
             GUI.Label(new Rect(left.x, y, left.width, 34), vol.ToString("0.#") + " / " + cap.ToString("0") + L(" Vol."), UISkin.LabelRight);
             y += 38;
             UISkin.Bar(new Rect(left.x, y, left.width, 14), vol / cap, vol >= cap - 0.01f ? UISkin.Warn : UISkin.Accent);
@@ -223,7 +157,7 @@ namespace RePlanet
                 if (!GameData.Trash.TryGetValue(tid, out t)) continue;
                 int n = binGroups[k];
                 var row = new Rect(0, cy, sw, 58);
-                UISkin.RoundRect(row, new Color(1, 1, 1, 0.045f));
+                Card(row);
                 GUI.Label(new Rect(12, cy + 4, sw * 0.5f, 26), "<b>" + n + "×</b> " + t.Name + (pressed ? UISkin.Col(L("  (gepresst)"), UISkin.Teal) : "") + (t.Hazard > 0 ? UISkin.Col(L("  ⚠ Gefahrstoff"), UISkin.Bad) : ""), UISkin.Label);
                 float mx = 12;
                 foreach (var kv in t.Yield)
@@ -287,8 +221,10 @@ namespace RePlanet
             string obj = L(Objective(w));
             float oh = UISkin.TextHeight(UISkin.Wrap, obj, w1 - 40) + 50;
             var or = new Rect(0, y, w1, oh);
-            UISkin.RoundRect(or, new Color(UISkin.Accent.r, UISkin.Accent.g, UISkin.Accent.b, 0.16f));
-            GUI.Label(new Rect(16, y + 8, w1 - 32, 28), UISkin.Col("AKTUELLES ZIEL", UISkin.Accent), UISkin.LabelBold);
+            Card(or, true);
+            if (Event.current.type == EventType.Repaint) UISkin.RoundRect(or, new Color(UISkin.Accent.r, UISkin.Accent.g, UISkin.Accent.b, 0.1f));
+            UISkin.Tex(new Rect(16, y + 12, 20, 20), UISkin.Shape("flag"), UISkin.Accent);
+            GUI.Label(new Rect(44, y + 8, w1 - 60, 28), UISkin.Col(L("Aktuelles Ziel").ToUpperInvariant(), UISkin.Accent), UISkin.StatusBold);
             GUI.Label(new Rect(16, y + 38, w1 - 32, oh - 40), obj, UISkin.Wrap);
             y += oh + 16;
             for (int pass = 0; pass < 3; pass++)
@@ -356,7 +292,8 @@ namespace RePlanet
             float dh = UISkin.TextHeight(UISkin.WrapSmall, m.Desc, width - 24);
             float h = 36 + dh + (status == 1 && m.Target > 1 ? 24 : 0) + 30;
             var r = new Rect(0, y, width, h);
-            UISkin.RoundRect(r, new Color(1, 1, 1, status == 1 ? 0.07f : 0.035f));
+            Card(r);
+            if (status == 2 && Event.current.type == EventType.Repaint) UISkin.RoundRect(r, new Color(0f, 0f, 0f, 0.18f));
             if (status == 1) UISkin.RoundRect(new Rect(r.x + 3, r.y + 6, 5, r.height - 12), UISkin.Accent);
             string title = (status == 2 ? UISkin.Col("✓ ", UISkin.Good) : "") + "<b>" + m.Title + "</b>" + UISkin.Col("  · " + tag + (mpd != null ? " · " + mpd.Name : ""), UISkin.TextDim);
             GUI.Label(new Rect(14, y + 6, width - 28, 28), title, UISkin.Label);
@@ -394,7 +331,8 @@ namespace RePlanet
             float dh = UISkin.TextHeight(UISkin.WrapSmall, pr.Desc, width - 24);
             float h = 34 + dh + 32 + (why != null ? 26 : 0) + (started && !done ? 20 : 0) + 8;
             var r = new Rect(0, y, width, h);
-            UISkin.RoundRect(r, new Color(1, 1, 1, done ? 0.03f : 0.06f));
+            Card(r);
+            if (done && Event.current.type == EventType.Repaint) UISkin.RoundRect(r, new Color(0f, 0f, 0f, 0.18f));
             string status = done ? UISkin.Col(L("✓ abgeschlossen"), UISkin.Good) : started ? UISkin.Col(L("im Bau ") + (st.Progress * 100).ToString("0") + " %", UISkin.Accent) : UISkin.Col("offen", UISkin.TextDim);
             GUI.Label(new Rect(14, y + 5, width - 28, 28), "<b>" + pr.Name + "</b>" + (pr.Great ? UISkin.Col("  GROSSPROJEKT", UISkin.Story) : "") + "   " + status, UISkin.Label);
             float yy = y + 33;
@@ -481,7 +419,7 @@ namespace RePlanet
             float dh = UISkin.TextHeight(UISkin.WrapSmall, t.Desc, textW);
             float h = Mathf.Max(96f, 34 + dh + 30);
             var r = new Rect(0, y, width, h);
-            UISkin.RoundRect(r, new Color(1, 1, 1, 0.05f));
+            Card(r, reason == null);
             GUI.Label(new Rect(14, y + 6, textW, 28), "<b>" + t.Name + "</b>" + UISkin.Col(L("   Stufe ") + lvl + "/" + t.MaxLevel, UISkin.TextDim), UISkin.Label);
             GUI.Label(new Rect(14, y + 34, textW, dh + 4), t.Desc, UISkin.WrapSmall);
             string eff = t.Effect + ": " + UISkin.Col(t.Levels[lvl].Label, UISkin.Text) + (maxed ? "" : "  →  " + UISkin.Col(t.Levels[lvl + 1].Label, UISkin.Good));
@@ -516,7 +454,7 @@ namespace RePlanet
                 float dh = UISkin.TextHeight(UISkin.WrapSmall, v.Desc, textW);
                 float h = Mathf.Max(100f, 34 + dh + 32);
                 var r = new Rect(0, y, sw, h);
-                UISkin.RoundRect(r, new Color(1, 1, 1, 0.05f));
+                Card(r, reason == null);
                 UISkin.Tex(new Rect(14, y + 10, 28, 28), UISkin.Shape("truck"), owned ? UISkin.Good : UISkin.Accent);
                 GUI.Label(new Rect(52, y + 8, textW - 40, 28), "<b>" + v.Name + "</b>" + (owned ? UISkin.Col(L("   ✓ vorhanden"), UISkin.Good) : "") + (v.Planet != null ? UISkin.Col(L("   nur ") + GameData.Planets[v.Planet].Name, UISkin.TextDim) : ""), UISkin.Label);
                 GUI.Label(new Rect(14, y + 40, textW, dh + 4), v.Desc, UISkin.WrapSmall);
@@ -833,7 +771,7 @@ namespace RePlanet
             }
             UINav.EndScroll(y);
 
-            UISkin.PanelBoxLight(right);
+            Card(right);
             LoreDef sel;
             if (loreSel != null && GameData.Lore.TryGetValue(loreSel, out sel) && w.Lore.Contains(loreSel))
             {
@@ -905,7 +843,7 @@ namespace RePlanet
             var pv = new Rect(0, y, pvS, pvS + 20);
             DrawRobotPreview(pv);
             float tx = pvS + 24;
-            GUI.Label(new Rect(tx, y, sw - tx, 30), L("Aussehen von MIKO"), UISkin.H3);
+            GUI.Label(new Rect(tx, y, sw - tx, 30), L("Aussehen von MIKO"), UISkin.SectionHead);
             y = Para(L("Kosmetik ist rein optisch. Freigeschaltetes bleibt in deinem Profil – auch in anderen Welten und im Koop."), tx, sw - tx, y + 36);
             bool changed = cosmSel[0] != app.Profile.Color || cosmSel[1] != app.Profile.Accent || cosmSel[2] != app.Profile.Sticker || cosmSel[3] != app.Profile.Attach;
             if (UINav.Button(new Rect(tx, y + 6, 240, 44), L("Übernehmen"), changed, UISkin.ButtonSel))
@@ -971,7 +909,7 @@ namespace RePlanet
         void DrawRobotPreview(Rect r)
         {
             if (Event.current.type != EventType.Repaint) return;
-            UISkin.RoundRect(r, new Color(0, 0, 0, 0.3f));
+            Card(r);
             CosmeticDef body, acc, st, at;
             GameData.Cosmetics.TryGetValue(cosmSel[0] ?? "", out body);
             GameData.Cosmetics.TryGetValue(cosmSel[1] ?? "", out acc);

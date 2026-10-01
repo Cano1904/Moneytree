@@ -15,6 +15,7 @@
     <Compile Include="$(Src)/Core/**/*.cs" />
     <Compile Include="$(Src)/Runtime/Game/*.cs;$(Src)/Runtime/Render/*.cs;$(Src)/Runtime/Audio/Narrator.cs"
              Exclude="$(Src)/Runtime/Render/PostFX.cs;$(Src)/Runtime/Render/TerrainLook.cs" />
-    <Compile Include="UnityStub.cs;UnityStub2.cs;GameStub.cs;Program.cs;Checks.cs;ChecksFeatures.cs;ChecksLife.cs" />
+    <Compile Include="$(Src)/Runtime/UI/MenuLogoClock.cs" />
+    <Compile Include="UnityStub.cs;UnityStub2.cs;GameStub.cs;Program.cs;Checks.cs;ChecksFeatures.cs;ChecksLife.cs;ChecksMenu.cs" />
   </ItemGroup>
 </Project>
