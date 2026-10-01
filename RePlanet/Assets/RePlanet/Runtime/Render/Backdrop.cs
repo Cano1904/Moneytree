@@ -52,6 +52,9 @@ namespace RePlanet
         readonly float[] density = { 1f, 1f, 1f };
         readonly float[] targetDensity = { 1f, 1f, 1f };
         readonly Plane[] planes = new Plane[6];
+        /// <summary>Streumüll-Grüppchen näher als dies (m, Mitte) an der Kamera werden nicht gezeichnet.</summary>
+        public const float NearCull = 1.7f;
+        readonly Matrix4x4[] nearBuf = new Matrix4x4[1023];
         readonly List<Box> tmpBoxes = new List<Box>();
         Dictionary<long, List<Vector2>> trashHash;
 
@@ -928,7 +931,17 @@ namespace RePlanet
             {
                 switch (name)
                 {
-                    case "can": b.CylinderX(new Vector3(0, 0.065f, 0), 0.065f, 0.2f, 7); break;
+                    case "can":
+                        {
+                            // liegende Getränkedose: Mantel mit eingezogenen Enden, Bördelrand, Deckel mit Lasche, leichte Delle
+                            b.CylinderX(new Vector3(0, 0.065f, 0), 0.064f, 0.17f, 12);
+                            b.CylinderX(new Vector3(-0.1f, 0.065f, 0), 0.056f, 0.02f, 12);
+                            b.CylinderX(new Vector3(0.1f, 0.065f, 0), 0.056f, 0.02f, 12);
+                            b.TorusRot(new Vector3(0.112f, 0.065f, 0), new Vector3(0, 0, 90), 0.054f, 0.006f, 12, 3);
+                            b.BoxRot(new Vector3(0.113f, 0.09f, 0), new Vector3(0.006f, 0.025f, 0.018f), new Vector3(0, 0, 0));
+                            b.BoxJ(new Vector3(-0.02f, 0.12f, 0.03f), new Vector3(0.07f, 0.012f, 0.04f), new Vector3(10, 0, 0), 0.01f, 5);
+                            break;
+                        }
                     case "canflat": b.BoxJ(new Vector3(0, 0.03f, 0), new Vector3(0.14f, 0.05f, 0.2f), new Vector3(0, 0, 8), 0.02f, 3); b.Cylinder(new Vector3(0, 0.0f, 0.1f), 0.06f, 0.02f, 6); break;
                     case "bottle":
                         {
@@ -1326,7 +1339,24 @@ namespace RePlanet
                     for (int j = 0; j < chunks.Length && n > 0; j++)
                     {
                         int m = Mathf.Min(n, chunks[j].Length);
-                        if (instancing) Graphics.DrawMeshInstanced(kind.Mesh, 0, kind.Mat, chunks[j], m, null, sh, true, 0, null);
+                        if (instancing)
+                        {
+                            // Zelle unter der Kamera: Kleinteile direkt vor der Nahebene auslassen – eine Dose 0,5 m vor der
+                            // Kamera (Kamera am Hang dicht über dem Boden) füllte sonst als riesiger Klotz das halbe Bild
+                            if (!kind.Heap && dist < 2f)
+                            {
+                                int mm = 0;
+                                var src = chunks[j];
+                                for (int q = 0; q < m; q++)
+                                {
+                                    float dx = src[q].m03 - cp.x, dy = src[q].m13 - cp.y, dz = src[q].m23 - cp.z;
+                                    if (dx * dx + dy * dy + dz * dz < NearCull * NearCull) continue;
+                                    nearBuf[mm++] = src[q];
+                                }
+                                if (mm > 0) Graphics.DrawMeshInstanced(kind.Mesh, 0, kind.Mat, nearBuf, mm, null, sh, true, 0, null);
+                            }
+                            else Graphics.DrawMeshInstanced(kind.Mesh, 0, kind.Mat, chunks[j], m, null, sh, true, 0, null);
+                        }
                         n -= m; drawn += m;
                     }
                 }

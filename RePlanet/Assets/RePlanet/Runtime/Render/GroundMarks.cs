@@ -57,7 +57,8 @@ namespace RePlanet
         readonly List<Puddle> puddles = new List<Puddle>();
         InstanceBatch[] puddleBatches;
         Material puddleMat;
-        float wet;
+        float wet, wetSent = -1f;
+        static readonly int idWet = Shader.PropertyToID("_RP_Wetness");
 
         /// <summary>Statistik: lebende Spurstücke, gezeichnete Spurstücke, sichtbare Pfützen, Staubstöße insgesamt.</summary>
         public int LiveStamps { get; private set; }
@@ -365,6 +366,8 @@ namespace RePlanet
                 }
             }
             wet = Mathf.MoveTowards(wet, target, dt * 0.08f);
+            // Gelände-Shader: Senken im Asphalt glänzen nur bei Nässe (trocken matte Flecken)
+            if (Mathf.Abs(wet - wetSent) > 0.005f || wetSent < 0f) { wetSent = wet; Shader.SetGlobalFloat(idWet, wet); }
         }
 
         // ================================================================== Zeichnen

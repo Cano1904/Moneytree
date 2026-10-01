@@ -20,6 +20,8 @@ namespace RePlanet
         class Kind
         {
             public Mesh Mesh; public Material[] Mats; public bool Big, Pioneer; public float Weight, SMin, SMax;
+            /// <summary>Nur für die Hügel-Ausstattung (Büschel, Steine auf Wiesenhängen); Still = wiegt nicht im Wind.</summary>
+            public bool Hill, Still;
             public readonly List<Matrix4x4[]> Buf = new List<Matrix4x4[]>();
             /// <summary>Ruhelage (ohne Wind) und Wiegen je Instanz: cos/sin der Phase, Ausschlag.</summary>
             public readonly List<Matrix4x4[]> Base = new List<Matrix4x4[]>();
@@ -173,9 +175,10 @@ namespace RePlanet
                         new[] { O(new Color(0.95f, 0.45f, 0.7f)), O(new Color(0.35f, 0.55f, 0.3f)), G(new Color(1f, 0.85f, 0.4f), 1.6f) }, 0.3f, 0.9f, 1.6f, true);
                     break;
             }
+            AddHillKinds(p);
             var rng = new Rng(def.Seed + 1234);
             float wSum = 0, wPio = 0;
-            foreach (var k in kinds) { if (k.Pioneer) wPio += k.Weight; else wSum += k.Weight; }
+            foreach (var k in kinds) { if (k.Hill) continue; if (k.Pioneer) wPio += k.Weight; else wSum += k.Weight; }
             // Bewuchs konzentriert sich um Pflanzstellen, Projektplätze und Lichtpunkte – dazu locker verstreut
             var anchors = new List<V3>();
             foreach (var e in layout.Eco) anchors.Add(e.Pos);
@@ -198,7 +201,7 @@ namespace RePlanet
                 int kind = -1;
                 for (int k = 0; k < kinds.Count; k++)
                 {
-                    if (kinds[k].Pioneer != pio) continue;
+                    if (kinds[k].Pioneer != pio || kinds[k].Hill) continue;
                     pick -= kinds[k].Weight;
                     if (pick <= 0) { kind = k; break; }
                 }
@@ -212,6 +215,58 @@ namespace RePlanet
                     Pos = new Vector3(x, h - 0.02f, z), Rot = rng.Range(0, 360f), Scale = rng.Range(kd.SMin, kd.SMax),
                     Threshold = pio ? -1f : rng.Next() * 0.95f, Q = rng.Next(), Kind = kind, Area = PlanetLayout.AreaOf(z)
                 });
+            }
+            PlaceHillDressing(p, layout, def.Seed + 4321);
+        }
+
+        /// <summary>
+        /// Hügel-Ausstattung (PELAGIA-Inseln, TERRA-Parks): Grasbüschel in zwei Tönen und flache Steine auf Wiesenhängen –
+        /// von Anfang an da (gehört zum Gelände, nicht zur Begrünung), damit grüne Hänge nicht einfarbig wirken.
+        /// </summary>
+        void AddHillKinds(string p)
+        {
+            if (p != "pelagia" && p != "terra") return;
+            var rockM = O(p == "pelagia" ? new Color(0.62f, 0.58f, 0.56f) : new Color(0.55f, 0.53f, 0.5f), 0.15f);
+            var rockD = O(p == "pelagia" ? new Color(0.46f, 0.44f, 0.46f) : new Color(0.42f, 0.4f, 0.38f), 0.1f);
+            var tuftA = O(p == "pelagia" ? new Color(0.36f, 0.58f, 0.3f) : new Color(0.4f, 0.55f, 0.28f));
+            var tuftB = O(p == "pelagia" ? new Color(0.62f, 0.66f, 0.36f) : new Color(0.6f, 0.58f, 0.32f));
+            var k1 = Add("hilltuft_a", b => GrassTuft(b, 9, 0.42f, 31), new[] { tuftA }, 1f, 0.8f, 1.5f, false, true); k1.Hill = true;
+            var k2 = Add("hilltuft_b", b => GrassTuft(b, 6, 0.3f, 37), new[] { tuftB }, 1f, 0.7f, 1.3f, false, true); k2.Hill = true;
+            var k3 = Add("hillrock", b => { b.Crumple(new Vector3(0, 0.02f, 0), 0.32f, 0.45f, 5, 0.25f, 7, 4); b.Sub = 1; b.Crumple(new Vector3(0.36f, 0f, 0.12f), 0.16f, 0.5f, 9, 0.3f, 6, 3); b.Sub = 0; },
+                new[] { rockM, rockD }, 1f, 0.6f, 1.6f, false, true); k3.Hill = true; k3.Still = true;
+        }
+
+        void PlaceHillDressing(string p, PlanetLayout layout, int seed)
+        {
+            int ta = -1, tb = -1, rk = -1;
+            for (int k = 0; k < kinds.Count; k++) { if (!kinds[k].Hill) continue; if (kinds[k].Still) rk = k; else if (ta < 0) ta = k; else tb = k; }
+            if (ta < 0 || tb < 0 || rk < 0) return;
+            var rng = new Rng(seed);
+            int placed = 0, want = p == "pelagia" ? 2600 : 900;
+            for (int i = 0; i < want * 8 && placed < want; i++)
+            {
+                float x = rng.Range(-146f, 146f), z = rng.Range(-146f, 146f);
+                float h = Terrain.HeightAt(p, x, z);
+                if (p == "pelagia" && h < 0.7f) continue;
+                if (p == "terra" && z < 52f) continue; // TERRA: nur die Parkhügel im Norden
+                float hx = Terrain.HeightAt(p, x + 1f, z) - h, hz = Terrain.HeightAt(p, x, z + 1f) - h;
+                float slope = Mathf.Sqrt(hx * hx + hz * hz);
+                if (slope < 0.06f && rng.Next() > 0.25f) continue; // bevorzugt an Hängen
+                if (slope > 0.9f) continue;
+                bool rock = rng.Next() < (0.18f + slope * 0.35f);
+                int kind = rock ? rk : (rng.Next() < 0.6f ? ta : tb);
+                if (!Free(layout, x, z, rock ? 0.8f : 0.4f)) continue;
+                var kd = kinds[kind];
+                plants.Add(new Plant { Pos = new Vector3(x, h - (rock ? 0.08f : 0.02f), z), Rot = rng.Range(0, 360f), Scale = rng.Range(kd.SMin, kd.SMax), Threshold = -1f, Q = rng.Next(), Kind = kind, Area = PlanetLayout.AreaOf(z) });
+                placed++;
+                // Büschel stehen in kleinen Gruppen
+                if (!rock)
+                    for (int c = 0; c < 2; c++)
+                    {
+                        float cx = x + rng.Range(-0.9f, 0.9f), cz = z + rng.Range(-0.9f, 0.9f);
+                        if (!Free(layout, cx, cz, 0.4f)) continue;
+                        plants.Add(new Plant { Pos = new Vector3(cx, Terrain.HeightAt(p, cx, cz) - 0.02f, cz), Rot = rng.Range(0, 360f), Scale = rng.Range(kd.SMin, kd.SMax) * 0.85f, Threshold = -1f, Q = rng.Next(), Kind = kind, Area = PlanetLayout.AreaOf(cz) });
+                    }
             }
         }
 
@@ -299,7 +354,7 @@ namespace RePlanet
                 k.Base[c][i % 1023] = mx;
                 // Phase aus der Lage: Böen laufen als Welle über die Wiese; hohe, weiche Pflanzen schwingen stärker
                 float ph = p.Pos.x * 0.21f + p.Pos.z * 0.17f + p.Q * 2.5f;
-                float amp = k.Big ? 0.012f : k.Pioneer ? 0.09f : 0.13f;
+                float amp = k.Still ? 0f : k.Big ? 0.012f : k.Pioneer ? 0.09f : 0.13f;
                 k.Wave[c][i % 1023] = new Vector3(Mathf.Cos(ph), Mathf.Sin(ph), amp * (0.8f + p.Q * 0.4f));
             }
         }

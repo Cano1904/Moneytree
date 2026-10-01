@@ -149,7 +149,7 @@ namespace RePlanet
             // TERRA: goldener Horizont unter türkisem Zenit, großer blasser Mond knapp über dem Horizont
             { "terra", new PlanetSky {
                 Day = Pal(0x1F8FA8, 0xF7C77E, 0xF2D4A0, 0x6B5E4E, 0xFFF0D0, 0x3E6A7A, 0xFFB060, 0x2AA0A8, 0xFFE2A8, 0xD8C49A, 0.34f, 0.12f, 0.42f),
-                Dusk = Pal(0x243A6E, 0xFF8A40, 0xF4A060, 0x4A3A36, 0xFFB070, 0x3A4A70, 0xFF7A45, 0x2A6A8A, 0xFF9A50, 0xD08A5E, 0.4f, 0.25f, 0.6f),
+                Dusk = Pal(0x283E70, 0xF8985A, 0xEAA878, 0x4A3E3A, 0xFFBE8A, 0x3A4A70, 0xF2865A, 0x2A6A8A, 0xFFB27A, 0xC49478, 0.4f, 0.25f, 0.55f), // weniger Orange: Gebäude behalten ihre Farbe
                 Night = Pal(0x0A0E2C, 0x2A2C5C, 0x363866, 0x15121E, 0x46507E, 0x10122C, 0x6A5AB8, 0x2A4A90, 0xB8C8FF, 0x1E2246, 0.35f, 0.55f, 0.45f),
                 Storm = Pal(0x8A6A48, 0xD0A070, 0xC89A68, 0x6A5038, 0xE0B888, 0x6A4E36, 0xB07A48, 0x5A3E28, 0xFFD8A0, 0xB88E62, 0.95f, 0.05f, 0.9f),
                 P1 = Body(new Vector3(0.45f, 0.2f, 0.8f), 13f, 0xC8D0E0, 0x8C96AE, 0x9EC8FF, 0.15f, 1.7f, 1f),
@@ -332,7 +332,8 @@ namespace RePlanet
             else
             {
                 Sun.transform.rotation = sunRot;
-                Sun.color = pal.Sun;
+                // Dämmerung: Sonnenfarbe etwas entsättigen (Lichtfarbe färbt sonst jede Fassade orange)
+                Sun.color = Tame(pal.Sun, duskAmt * DuskTame);
                 Sun.intensity = Mathf.Lerp(0.35f, GameData.Planets.ContainsKey(planet) ? GameData.Planets[planet].SunIntensity : 1.1f, Mathf.Clamp01(elev * 2.5f)) * (1f - stormBlend * 0.55f);
             }
             // Fotomodus-Belichtung: mit Nachbearbeitung wirkt sie dort (vor dem Tonemapping), sonst auf Licht und Himmel
@@ -418,7 +419,8 @@ namespace RePlanet
             // Nebel: Farbe = Horizontdunst, damit Landschaft und Himmel verschmelzen
             float view = GameApp.I != null ? GameApp.I.Settings.ViewDistance : 1f;
             float fogDensity = Mathf.Lerp(ps.FogDay, ps.FogStorm, stormBlend) * FogDensityScale / Mathf.Max(0.5f, view);
-            var fogColor = Color.Lerp(pal.Fog, pal.Haze, 0.35f);
+            float duskTame = DuskTame * Mathf.Clamp01(1f - Mathf.Abs(SunElevation) * 3.2f) * (1f - dark);
+            var fogColor = Tame(Color.Lerp(pal.Fog, pal.Haze, 0.35f), duskTame * 0.7f);
             if (Underwater)
             {
                 fogColor = Color.Lerp(new Color(0.05f, 0.25f, 0.3f), new Color(0.02f, 0.06f, 0.1f), dark);
@@ -431,8 +433,8 @@ namespace RePlanet
             float day = 1f - dark;
             var nightFloor = new Color(0.07f, 0.075f, 0.13f) * dark;
             RenderSettings.ambientSkyColor = Max(Color.Lerp(pal.Zenith, pal.CloudLight, 0.3f) * Mathf.Lerp(1.0f, 0.62f, dark), nightFloor) * bright + Color.white * lightning * 0.5f;
-            RenderSettings.ambientEquatorColor = Max(Color.Lerp(pal.Horizon, pal.Haze, 0.3f) * Mathf.Lerp(0.8f, 0.42f, dark), nightFloor * 0.8f) * bright;
-            RenderSettings.ambientGroundColor = (pal.Ground * 0.55f + pal.Sun * 0.12f * day * (1f - stormBlend)) * bright;
+            RenderSettings.ambientEquatorColor = Max(Tame(Color.Lerp(pal.Horizon, pal.Haze, 0.3f), duskTame) * Mathf.Lerp(0.8f, 0.42f, dark), nightFloor * 0.8f) * bright;
+            RenderSettings.ambientGroundColor = (pal.Ground * 0.55f + Tame(pal.Sun, duskTame) * 0.12f * day * (1f - stormBlend)) * bright;
             if (cam != null)
             {
                 cam.farClipPlane = Mathf.Lerp(420f, 900f, Mathf.Clamp01((view - 0.5f)));
@@ -446,6 +448,17 @@ namespace RePlanet
         float stormBlend;
 
         static Color Max(Color a, Color b) { return new Color(Mathf.Max(a.r, b.r), Mathf.Max(a.g, b.g), Mathf.Max(a.b, b.b), 1f); }
+
+        /// <summary>Anteil, um den Sonnen-, Umgebungs- und Nebelfarbe in der Dämmerung zum Grau gleicher Helligkeit gezogen werden.</summary>
+        public const float DuskTame = 0.35f;
+
+        /// <summary>Farbe Richtung Grau gleicher Helligkeit ziehen (0 = unverändert, 1 = grau).</summary>
+        public static Color Tame(Color c, float k)
+        {
+            float l = Lum(c);
+            var g = new Color(l, l, l, c.a);
+            return Color.Lerp(c, g, Mathf.Clamp01(k));
+        }
 
         /// <summary>Bildlook für die Nachbearbeitung aus Palette, Tageszeit und Wetter.</summary>
         void UpdateLook(PlanetSky ps, Palette pal, Vector3 sunDir, float elev, float dark, float duskAmt, float fogBase)
@@ -461,7 +474,7 @@ namespace RePlanet
             L.FogFalloff = Underwater ? 0f : 0.035f;
             L.FogBase = fogBase;
             L.FogLinear = Underwater ? 0.8f : 0.35f + stormBlend * 0.6f;
-            L.FogSunScatter = Underwater ? 0f : (0.35f + duskAmt * 0.5f) * (1f - dark) * (1f - stormBlend * 0.6f);
+            L.FogSunScatter = Underwater ? 0f : (0.35f + duskAmt * 0.3f) * (1f - dark) * (1f - stormBlend * 0.6f);
             L.FogMax = Underwater ? 1f : 0.9f; // Ferne nie ganz im Dunst: Silhouetten bleiben
             L.AutoExposure = true; // Kalibrierung siehe oben
             L.Exposure = 1f;
@@ -471,11 +484,11 @@ namespace RePlanet
             L.SplitAmount = Mathf.Lerp(0.18f, 0.22f, dark) * (1f - stormBlend * 0.3f); // schwächer: kein cremiger Schleier
             // nachts Schatten Richtung Violett statt Türkis-Blau, Lichter bleiben warm (Lampen, Fenster)
             L.ShadowTint = Color.Lerp(ps.GradeShadow, Color.Lerp(pal.Zenith, new Color(0.35f, 0.25f, 0.6f), 0.5f), dark * 0.6f);
-            L.HighlightTint = Color.Lerp(ps.GradeHighlight, pal.Sun, duskAmt * 0.5f);
+            L.HighlightTint = Color.Lerp(ps.GradeHighlight, Tame(pal.Sun, DuskTame), duskAmt * 0.25f); // Lichter nur leicht in Sonnenfarbe
             L.VignetteColor = Color.Lerp(new Color(0.2f, 0.18f, 0.26f), ps.GradeShadow * 0.5f, 0.5f);
             L.Vignette = 0.35f;
             // Bloom nur für wirklich Helles (Sonne, Lampen, Leuchtschilder) – nicht für sonnige Wände
-            L.Bloom = Mathf.Lerp(0.12f, 0.3f, Mathf.Max(duskAmt, dark));
+            L.Bloom = Mathf.Lerp(0.12f, 0.3f, Mathf.Max(duskAmt * 0.6f, dark));
             L.BloomThreshold = Mathf.Lerp(1.1f, 0.8f, dark);
             L.Outline = 0.6f;
             L.OutlineFadeStart = 35f; L.OutlineFadeEnd = 140f;

@@ -239,6 +239,17 @@ namespace RePlanet
                     c = Color.Lerp(c, grime, dirt * 0.55f);
                     float green = Mathf.Clamp01(eco[area]) * Mathf.Clamp01(n1 * 2f - 0.6f);
                     if (planet != "pelagia" || h > 0.4f) c = Color.Lerp(c, grass, green * 0.8f);
+                    // Wiesen auch ohne eigenen Gelände-Shader lebendig: Büschel (≈ 2–3 m) und einzelne dunkle/helle Flecken
+                    float greenness = Mathf.Clamp01((c.g - Mathf.Max(c.r, c.b)) * 7f);
+                    if (greenness > 0.01f)
+                    {
+                        float clump = Noise.Value(wx * 0.38f, wz * 0.38f, def.Seed + 13);
+                        float speck = Noise.Value(wx * 1.1f, wz * 1.1f, def.Seed + 17);
+                        var g2c = c * (0.86f + clump * 0.26f);
+                        if (speck > 0.82f) g2c = new Color(g2c.r * 0.72f, g2c.g * 0.8f, g2c.b * 0.7f);
+                        else if (speck < 0.12f) g2c = new Color(g2c.r * 1.15f, g2c.g * 1.08f, g2c.b * 0.8f);
+                        c = Color.Lerp(c, g2c, greenness);
+                    }
                     // Straßen
                     float rd = RoadDist(layout, wx, wz);
                     if (rd < 0)

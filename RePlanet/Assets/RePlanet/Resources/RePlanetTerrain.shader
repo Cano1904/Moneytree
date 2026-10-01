@@ -41,6 +41,8 @@ Shader "RePlanet/Terrain"
         float4 _RoadB[16];      // x Breite
         float _RoadCount;
         float4 _RoadColor, _RoadStyle, _BaseRect;
+        // Nässe 0..1 (global aus Runtime/Render/GroundMarks.cs; nicht gesetzt = 0 = trocken)
+        float _RP_Wetness;
 
         float LineMask(float d, float halfW, float aa) { return 1.0 - smoothstep(halfW - aa, halfW + aa, d); }
 
@@ -81,6 +83,32 @@ Shader "RePlanet/Terrain"
             float nearF = saturate(1.0 - dist / 55.0);
             float det = tex2D(_NoiseTex, wp.xz * 0.23).b * 0.6 + tex2D(_NoiseTex, wp.xz * 0.97).a * 0.4;
             base *= lerp(1.0, 0.8 + det * 0.4, nearF * _Look.z);
+
+            // Wiese: wo die Grundfarbe grün ist (Gras, Begrünung), Farbwechsel zwischen gelb- und blaugrünen Flächen,
+            // dunklere Grasbüschel-Flecken, helle trockene Halmspitzen und kahle Erdstellen an mäßigen Hängen (Trittspuren)
+            float slope0 = 1.0 - saturate(n.y);
+            float grassM = saturate((base.g - max(base.r, base.b)) * 7.0);
+            if (grassM > 0.001)
+            {
+                float hue = tex2D(_NoiseTex, wp.xz * 0.011 + 0.21).r;
+                float3 gWarm = base * float3(1.12, 1.04, 0.72);
+                float3 gCool = base * float3(0.8, 0.98, 1.08);
+                float3 grass = lerp(gWarm, gCool, smoothstep(0.3, 0.7, hue));
+                float clump = tex2D(_NoiseTex, wp.xz * 0.115 + 0.53).g;
+                grass *= lerp(0.8, 1.12, clump);
+                float aaG = fwidth(wp.x) * 2.0 + 0.02;
+                float speck = tex2D(_NoiseTex, wp.xz * 1.35 + 0.77).a;
+                float tuftD = smoothstep(0.74 - aaG, 0.8 + aaG, speck) * nearF;
+                float tuftL = smoothstep(0.24 + aaG, 0.18 - aaG, speck) * nearF;
+                grass = lerp(grass, grass * float3(0.58, 0.7, 0.55), tuftD * 0.8);
+                grass = lerp(grass, grass * float3(1.25, 1.18, 0.75), tuftL * 0.6);
+                // kahle Stellen: an Hängen und in Senken der Erosionsmaske
+                float ero = tex2D(_NoiseTex, wp.xz * 0.042 + 0.11).r + slope0 * 0.9;
+                float bare = smoothstep(0.78, 0.86, ero) * (1.0 - smoothstep(0.32, 0.45, slope0));
+                float3 soil = lerp(_RockA.rgb, float3(0.47, 0.36, 0.24), 0.6) * lerp(0.82, 1.08, tex2D(_NoiseTex, wp.xz * 0.6).b);
+                grass = lerp(grass, soil, bare * 0.85);
+                base = lerp(base, grass, grassM);
+            }
 
             // Fels an steilen Hängen: Gesteinsschichtung (Höhenbänder, verwirbelt) + triplanares Detail
             float slope = 1.0 - saturate(n.y);
@@ -158,7 +186,11 @@ Shader "RePlanet/Terrain"
                 float crackN = tex2D(_NoiseTex, wp.xz * 0.13 + 0.2).g;
                 float crackP = tex2D(_NoiseTex, wp.xz * 0.031 + 0.5).r;
                 float crack = LineMask(abs(crackN - 0.5), 0.012, fwidth(crackN) + 0.004) * smoothstep(0.45, 0.6, crackP) * _RoadStyle.z;
-                float puddle = smoothstep(0.64, 0.7, tex2D(_NoiseTex, wp.xz * 0.055 + 0.13).b) * (1.0 - _RoadStyle.w);
+                // Senken im Belag: trocken nur dunkle Schmutz-/Ölflecken (matt), erst bei Nässe spiegelnde Pfützen.
+                // Vorher spiegelten sie immer mit Glätte 0,88 den hellen Abendhimmel → helle „Papier-/Schneeflecken“.
+                float sink = tex2D(_NoiseTex, wp.xz * 0.055 + 0.13).b;
+                float puddle = smoothstep(0.7, 0.75, sink) * (1.0 - _RoadStyle.w);
+                float wetNow = saturate(_RP_Wetness);
                 float gutter = saturate(1.0 - (bestHW - abs(bestS)) / 0.6);
                 float3 asph = _RoadColor.rgb * lerp(0.78, 1.15, agg) * lerp(0.9, 1.08, fine);
                 asph = lerp(asph, asph * 0.78, smoothstep(0.66, 0.7, patchN));
@@ -187,8 +219,17 @@ Shader "RePlanet/Terrain"
                 float3 paint = lerp(float3(0.82, 0.82, 0.78), float3(0.95, 0.75, 0.2), _RoadStyle.x);
                 float3 roadAlb = lerp(asph, paint, mark);
                 float roadSmooth = lerp(0.12, 0.35, mark) * (1.0 - crack);
-                roadAlb = lerp(roadAlb, roadAlb * 0.55, puddle);
-                roadSmooth = lerp(roadSmooth, 0.88, puddle);
+                // trockener Fleck: dunkler, leicht bräunlich, mit Rand (Schmutzkante); nass: Wasserfilm
+                float rim = smoothstep(0.66, 0.7, sink) - puddle;
+                float3 stain = roadAlb * float3(0.66, 0.63, 0.6);
+                roadAlb = lerp(roadAlb, roadAlb * 0.82 + float3(0.012, 0.01, 0.006), saturate(rim) * 0.6 * (1.0 - wetNow));
+                roadAlb = lerp(roadAlb, lerp(stain, roadAlb * 0.5, wetNow), puddle);
+                roadSmooth = lerp(roadSmooth, lerp(0.22, 0.86, wetNow), puddle);
+                // Abrieb in den Fahrspuren und Laub/Splitt am Rinnstein (gibt dem Asphalt Struktur statt heller Flecken)
+                float lane = smoothstep(0.35, 0.0, abs(abs(bestS) - bestHW * 0.5)) * (1.0 - _RoadStyle.w);
+                roadAlb *= lerp(1.0, lerp(0.93, 1.04, agg), lane * 0.5);
+                float grit = step(0.83, tex2D(_NoiseTex, wp.xz * 2.7 + 0.41).a) * gutter;
+                roadAlb = lerp(roadAlb, base * 0.7, grit * 0.5 * (1.0 - _RoadStyle.w));
                 roadAlb = lerp(roadAlb, float3(0.92, 0.95, 1.0), _RoadStyle.w * smoothstep(0.35, 0.7, fine) * 0.6);
                 // Gehwegplatten (0,6 m) und Bordstein
                 float2 wuv = wp.xz / 0.6;
