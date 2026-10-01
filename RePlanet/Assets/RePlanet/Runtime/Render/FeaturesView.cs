@@ -206,6 +206,7 @@ namespace RePlanet
                     r = RobotModel.Create(root, "Helfer_" + s.Id);
                     if (r.Headlight != null) r.Headlight.enabled = false;
                     r.transform.localScale = Vector3.one * 0.78f;
+                    r.WakeBeepVolume = 0.12f; // pausieren im Sturm: nur leiser Piepser danach
                     bots[s.Id] = r;
                 }
                 if (!fixedBot)

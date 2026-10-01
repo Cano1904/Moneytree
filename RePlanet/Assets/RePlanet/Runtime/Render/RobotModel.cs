@@ -181,6 +181,7 @@ namespace RePlanet
             BuildArm(dark, steel, rubber);
             BuildHeads(dark, steel);
             BuildExtras(dark, steel);
+            BuildSleepParts();
         }
 
         // ------------------------------------------------------------------ Fahrwerk
@@ -353,13 +354,18 @@ namespace RePlanet
                     P(mb, SSteel).CylinderX(new Vector3(sx * 0.46f, 0, -0.02f), 0.04f, 0.012f, 12);
                     for (int k = 0; k < 3; k++) P(mb, SDark).Box(new Vector3(sx * 0.425f, -0.13f + k * 0.03f, -0.12f), new Vector3(0.012f, 0.012f, 0.08f));
                 }
-                // kurze Antenne mit Kugel
-                P(mb, SSteel).Cylinder(new Vector3(-0.28f, 0.18f, -0.12f), 0.012f, 0.14f, 6);
-                P(mb, SAccent).Sphere(new Vector3(-0.28f, 0.33f, -0.12f), 0.022f, 8, 5);
                 // Schrauben am Visierrahmen
                 foreach (var sx in new[] { -0.37f, 0.37f })
                     foreach (var sy in new[] { -0.12f, 0.1f })
                         P(mb, SChrome).BevelBox(new Vector3(sx, sy, 0.192f), new Vector3(0.022f, 0.022f, 0.01f), 0.004f);
+            });
+            // kurze Antenne mit Kugel (eigenes Gelenk: klappt beim Schlafen nach hinten)
+            antenna = Node(head, "antenna", new Vector3(-0.28f, 0.18f, -0.12f));
+            Group(antenna, "antennaMesh", Vector3.zero, float.NaN, mb =>
+            {
+                P(mb, SDark).Cylinder(new Vector3(0, -0.005f, 0), 0.022f, 0.025f, 10);
+                P(mb, SSteel).Cylinder(Vector3.zero, 0.012f, 0.14f, 6);
+                P(mb, SAccent).Sphere(new Vector3(0, 0.15f, 0), 0.022f, 8, 5);
             });
             // Glasvisier (leicht gewölbt wirkend durch Fasen), eigene Ebene
             visor = Group(head, "visor", Vector3.zero, float.NaN, mb => mb.For(visorMat).BevelBox(new Vector3(0, -0.01f, 0.19f), new Vector3(0.72f, 0.23f, 0.03f), 0.012f), false);
@@ -717,15 +723,18 @@ namespace RePlanet
         /// <summary>Animation pro Frame.</summary>
         public void Animate(float dt, float speed, float loadFrac, string tool, bool acting, bool swimming, bool sleeping, bool off, float night, Vector3 lookDirWorld)
         {
+            // Schlafhaltung erst nach der Fahrt zum Ladeplatz (SleepDrive), Aufwachen zügig
+            bool asleepNow = sleeping && SleepDrive >= 0.97f;
+            sleepK = Mathf.MoveTowards(sleepK, asleepNow ? 1f : 0f, dt / (asleepNow ? 1.4f : 0.6f));
             // Räder
             wheelRot += speed * dt / 0.28f * Mathf.Rad2Deg;
             for (int i = 0; i < 3; i++) wheels[i].localRotation = Quaternion.Euler(wheelRot * (i == 2 ? 1.27f : 1f), 0, 0);
             // Federung: schwere Ladung drückt den Körper tiefer, Fahrt wippt leicht
             bob += dt * (4f + speed * 1.4f);
-            float sag = -0.07f * loadFrac - (sleeping ? 0.12f : 0f);
+            float sag = -0.07f * loadFrac - 0.12f * sleepK;
             float wobble = Mathf.Sin(bob) * 0.012f * Mathf.Clamp01(speed / 6f) * (1f + loadFrac);
             body.localPosition = new Vector3(0, 0.62f + sag + wobble, 0);
-            body.localRotation = Quaternion.Euler(-Mathf.Clamp(speed * 0.6f, 0, 4f) * (1 + loadFrac) + (sleeping ? 6 : 0), 0, Mathf.Sin(bob * 0.5f) * 0.6f * Mathf.Clamp01(speed / 6f));
+            body.localRotation = Quaternion.Euler(-Mathf.Clamp(speed * 0.6f, 0, 4f) * (1 + loadFrac) + 6f * sleepK, 0, Mathf.Sin(bob * 0.5f) * 0.6f * Mathf.Clamp01(speed / 6f));
             if (swimming) root.localPosition = new Vector3(0, Mathf.Sin(Time.time * 1.8f) * 0.06f, 0); else root.localPosition = Vector3.zero;
             // Behälter-Füllstand (Brocken-Mesh ist 1 m hoch, wird auf die Füllhöhe gestaucht)
             float fillH = Mathf.Max(0.02f, loadFrac * 0.44f);
@@ -743,7 +752,7 @@ namespace RePlanet
             blinkT -= dt;
             if (blinkT <= 0) { blink = 0.15f; blinkT = Random.Range(2.5f, 6f); }
             if (blink > 0) blink -= dt;
-            float eyeH = off ? 0.02f : sleeping ? 0.015f : blink > 0 ? 0.02f : 0.1f;
+            float eyeH = off ? 0.02f : sleepK > 0.45f ? 0.015f : blink > 0 ? 0.02f : 0.1f;
             var local = head.InverseTransformDirection(lookDirWorld);
             lookLocal = Vector3.Lerp(lookLocal, new Vector3(Mathf.Clamp(local.x, -1, 1) * 0.05f, Mathf.Clamp(local.y, -1, 1) * 0.03f, 0), dt * 6f);
             eyeL.localScale = new Vector3(0.15f, eyeH, 0.03f);
@@ -759,7 +768,7 @@ namespace RePlanet
                 else if (emoteKind == "sad") { tLower = 0.35f; tTilt = 18f; }
                 else { tAsym = 0.4f; }
             }
-            else if (sleeping) tLower = 0.9f;
+            else if (sleepK > 0.45f) tLower = 0.9f;
             else { tLower = loadFrac * 0.12f; MoodLids(ref tLower, ref tRaise, ref tTilt, ref tAsym); }
             float k = Mathf.Clamp01(dt * 10f);
             lidLower = Mathf.Lerp(lidLower, tLower, k); lidRaise = Mathf.Lerp(lidRaise, tRaise, k);
@@ -779,10 +788,12 @@ namespace RePlanet
                 lidDown[i].gameObject.SetActive(lidDown[i].localScale.y > 0.002f);
             }
             var ec = off ? new Color(0.8f, 0.1f, 0.05f) * (Mathf.Sin(Time.time * 6f) > 0 ? 1f : 0.2f) : emoteT > 0 ? eyeColor : MoodEyeColor(dt);
-            Mats.SetEmission(eyeMat, ec * (sleeping ? 0.4f : 2.2f * (off || emoteT > 0 ? 1f : MoodGlow())));
+            Mats.SetEmission(eyeMat, ec * (sleepK > 0.45f ? 0.4f : 2.2f * (off || emoteT > 0 ? 1f : MoodGlow())));
             head.localRotation = Quaternion.Euler(emoteT > 0 ? Mathf.Sin(emoteT * 18f) * 6f : 0, emoteT > 0 ? Mathf.Sin(emoteT * 11f) * 8f : 0, emoteT > 0 && emoteKind == "curious" ? 10f * Mathf.Min(1f, emoteT) : 0f);
             // Mimik und Gesten (Stimmung, Winken, Hüpfen, Kopfneigen, Zittern) – siehe MikoFace.cs
             ApplyFace(dt, speed, acting, swimming, sleeping, off);
+            // Schlaf: Ladeplatz-Haltung, geschlossene Augen, Atmen, Z, Ladekabel; Aufwachen mit Strecken – RobotSleep.cs
+            ApplySleep(dt, sleeping && !off);
             // Scheinwerfer in der Dunkelheit
             float lamp = off || sleeping ? 0f : night;
             if (Headlight != null) Headlight.intensity = Mathf.Lerp(0f, 2.4f, lamp);

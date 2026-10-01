@@ -26,6 +26,8 @@ public static partial class Checks
         public float Settle = 1.5f;
         /// <summary>Nach dem Einstellen zusätzlich so lange weiterlaufen (z. B. für Schlaf-Animationen).</summary>
         public float After;
+        /// <summary>Nach dem Schlafen aufwecken und so lange weiterlaufen lassen (Strecken).</summary>
+        public float WakeAfter;
     }
 
     static List<Shot> ShotList()
@@ -65,11 +67,15 @@ public static partial class Checks
             l.Add(new Shot { Name = p + "_hangar_innen", Planet = p, Phase = 0.35f, Miko = new Vector3(-2.5f, gy, -145.2f), MikoYawDeg = 180f, Cam = new Vector3(0.8f, gy + 2.6f, -142.6f), Target = new Vector3(-4.5f, gy + 1.0f, -148.2f) });
             l.Add(new Shot { Name = p + "_station_nacht", Planet = p, Phase = 0.9f, Miko = new Vector3(0f, gy, -134f), MikoYawDeg = 180f, Cam = new Vector3(3f, gy + 4.5f, -116f), Target = new Vector3(-1f, gy + 3f, -145f) });
         }
-        // Schlaf im Hangar (TERRA): MIKO auf dem Ladeplatz, Nahaufnahme
+        // Schlaf im Hangar (je Planet): MIKO fährt auf den Ladering, Nahaufnahme; dazu Aufwachen (Strecken)
+        foreach (var p in GameData.PlanetOrder)
         {
-            var b = WorldGen.Get("terra").Base; float gy = b.Center.y;
-            l.Add(new Shot { Name = "terra_schlaf", Planet = "terra", Phase = 0.9f, Miko = new Vector3(b.Hangar.Spot.x, gy, b.Hangar.Spot.z), MikoYawDeg = 180f, Sleep = true, After = 4f, Cam = new Vector3(b.Hangar.Spot.x + 2.2f, gy + 1.6f, b.Hangar.Spot.z + 2.4f), Target = new Vector3(b.Hangar.Spot.x, gy + 0.6f, b.Hangar.Spot.z) });
-            l.Add(new Shot { Name = "terra_wach", Planet = "terra", Phase = 0.9f, Miko = new Vector3(b.Hangar.Spot.x, gy, b.Hangar.Spot.z), MikoYawDeg = 180f, Sleep = false, After = 1f, Cam = new Vector3(b.Hangar.Spot.x + 2.2f, gy + 1.6f, b.Hangar.Spot.z + 2.4f), Target = new Vector3(b.Hangar.Spot.x, gy + 0.6f, b.Hangar.Spot.z) });
+            var b = WorldGen.Get(p).Base; float gy = b.Center.y; var r = b.Hangar.Inner;
+            var ring = new Vector3(r.Cx + r.Hx - 2.0f, gy, r.Cz - 1.5f);
+            var cam = new Vector3(ring.x - 1.7f, gy + 1.45f, ring.z + 2.7f); var tgt = new Vector3(ring.x + 0.1f, gy + 0.65f, ring.z);
+            l.Add(new Shot { Name = p + "_schlaf", Planet = p, Phase = 0.9f, Miko = new Vector3(b.Hangar.Spot.x, gy, b.Hangar.Spot.z), MikoYawDeg = 0f, Sleep = true, After = 5f, Cam = cam, Target = tgt });
+            if (p == "terra")
+                l.Add(new Shot { Name = p + "_aufwachen", Planet = p, Phase = 0.9f, Miko = new Vector3(b.Hangar.Spot.x, gy, b.Hangar.Spot.z), MikoYawDeg = 0f, Sleep = true, After = 7.3f, Cam = cam, Target = tgt });
         }
         // Bildfehler aus den Nutzer-Screenshots nachgestellt
         l.Add(new Shot { Name = "terra_bug20_abend", Planet = "terra", Phase = 0.55f, Miko = new Vector3(-2f, 0f, -128f), MikoYawDeg = 180f, RigYaw = 182f, RigPitch = 8f });
@@ -135,6 +141,15 @@ public static partial class Checks
                 Info("Schlafen: " + (sr.Ok ? "ok" : sr.Err));
             }
             if (s.After > 0f) Run(s.After, 1f / 30f, t => { if (!float.IsNaN(s.RigYaw)) CameraRig.I.Yaw = s.RigYaw; });
+            if (s.WakeAfter > 0f)
+            {
+                g.Apply(pid, new JObj().Set("a", "wake").Set("rid", "wk" + s.Name), true);
+                Run(s.WakeAfter);
+            }
+            {
+                var rob = ActorsView.I != null ? ActorsView.I.RobotOf(pid) : null;
+                if (rob != null) Info($"Schlafhaltung {rob.SleepAmount:0.00}, Fahrt {ActorsView.I.SleepBlendOf(pid):0.00}, Strecken {rob.Stretching}, MIKO-Figur bei {rob.transform.position}");
+            }
             // ein Bild mit Aufzeichnung der Instanz-Draws
             Graphics.Calls.Clear(); Graphics.Record = true;
             Frame(1f / 30f);

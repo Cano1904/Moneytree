@@ -68,10 +68,50 @@ namespace RePlanet
             buildings.Clear(); buildingAnim.Clear(); buildingSig = "";
         }
 
+        /// <summary>Übergang zum Ladeplatz je Spieler (0 wach … 1 am Ladeplatz).</summary>
+        readonly Dictionary<string, float> sleepBlend = new Dictionary<string, float>();
+        /// <summary>Wie weit der Spieler zum Schlafplatz gefahren ist (0..1; Kamera, Prüfumgebung).</summary>
+        public float SleepBlendOf(string pid) { float v; return pid != null && sleepBlend.TryGetValue(pid, out v) ? v : 0f; }
+
+        /// <summary>
+        /// Schläft die Figur sichtbar? Solange der Server <c>Sleeping</c> meldet (Koop: andere sind noch wach) – und nach
+        /// jedem Schlafbefehl mindestens <see cref="SleepShowMin"/> s: Allein wird die Nacht sofort übersprungen, die kurze
+        /// Schlafszene (Ladeplatz, Z, Aufwachen) läuft dann in den Morgen hinein. Bewegt sich der Spieler, endet sie sofort.
+        /// Auslöser ist das Serverereignis „sleep“ – alle Mitspieler sehen dieselbe Szene.
+        /// </summary>
+        public bool SleepingVisual(PlayerData p)
+        {
+            if (p == null || p.Vehicle != null || p.TowTimer > 0) return false;
+            if (p.Sleeping) return true;
+            float t0; V3 at;
+            if (!sleepShow.TryGetValue(p.Id, out t0) || !sleepAnchor.TryGetValue(p.Id, out at)) return false;
+            if (Time.time - t0 > SleepShowMin) { sleepShow.Remove(p.Id); return false; }
+            if (V3.DistXZ(p.Pos, at) > 0.8f) { sleepShow.Remove(p.Id); return false; }
+            return true;
+        }
+        public const float SleepShowMin = 6.5f;
+        readonly Dictionary<string, float> sleepShow = new Dictionary<string, float>();
+        readonly Dictionary<string, V3> sleepAnchor = new Dictionary<string, V3>();
+        bool fxHooked;
+
+        void OnFx(JObj f)
+        {
+            if (f.Str("k") != "sleep") return;
+            var w = GameApp.I != null ? GameApp.I.W : null;
+            string pid = f.Str("pid");
+            PlayerData p;
+            if (w == null || pid == null || !w.Players.TryGetValue(pid, out p)) return;
+            sleepShow[pid] = Time.time;
+            sleepAnchor[pid] = p.Pos;
+        }
+
+        void OnDestroy() { if (fxHooked && GameApp.I != null) GameApp.I.OnFx -= OnFx; }
+
         void Update()
         {
             var app = GameApp.I;
             var wv = WorldView.I;
+            if (!fxHooked && app != null) { app.OnFx += OnFx; fxHooked = true; }
             if (app == null || wv == null || wv.Layout == null) return;
             var w = app.W;
             if (w == null || !app.InGame && app.Mode != AppMode.Ending)
@@ -108,6 +148,30 @@ namespace RePlanet
                     if (client.Players.TryGetValue(p.Id, out ip) && ip.Sample(client.RenderTime, out v, out y, out f)) { pos = new Vector3(v.x, v.y, v.z); yaw = y; flags = f; }
                     else { pos = new Vector3(p.Pos.x, p.Pos.y, p.Pos.z); yaw = p.Yaw; }
                 }
+                // Schlafen: MIKO fährt auf den Ladeplatz (nur Darstellung, für alle Spieler gleich), beim Aufwachen zurück
+                {
+                    float sb;
+                    sleepBlend.TryGetValue(p.Id, out sb);
+                    bool sl = SleepingVisual(p);
+                    sb = Mathf.MoveTowards(sb, sl ? 1f : 0f, dt / (sl ? 2.4f : 1.5f));
+                    sleepBlend[p.Id] = sb;
+                    Vector3 spot; float spotYaw;
+                    if (sb > 0f && SleepSpots.Find(wv.Layout, w, p, out spot, out spotYaw) && (spot - pos).sqrMagnitude < 30f * 30f)
+                    {
+                        float k = M.Smooth(sb);
+                        var real = pos;
+                        pos = Vector3.Lerp(real, new Vector3(spot.x, Mathf.Lerp(real.y, spot.y, k), spot.z), k);
+                        var d = new Vector3(spot.x - real.x, 0f, spot.z - real.z);
+                        float head = d.sqrMagnitude > 0.09f ? Mathf.Atan2(d.x, d.z) : spotYaw;
+                        // hinfahren: erst zum Ziel drehen, dann fahren, am Ende in die Ladeposition drehen; zurück: rückwärts
+                        float yawDeg = sl
+                            ? Mathf.LerpAngle(Mathf.LerpAngle(yaw * Mathf.Rad2Deg, head * Mathf.Rad2Deg, Mathf.Clamp01(sb * 4f)), spotYaw * Mathf.Rad2Deg, Mathf.Clamp01((sb - 0.75f) * 4f))
+                            : Mathf.LerpAngle(yaw * Mathf.Rad2Deg, spotYaw * Mathf.Rad2Deg, k);
+                        yaw = yawDeg * Mathf.Deg2Rad;
+                        r.SleepDrive = sl ? sb : 1f;
+                    }
+                    else r.SleepDrive = 1f;
+                }
                 bool inVehicle = p.Vehicle != null;
                 r.gameObject.SetActive(!inVehicle);
                 Vector3 prev;
@@ -126,7 +190,7 @@ namespace RePlanet
                 bool swimming = Terrain.WaterLevel(w.CurrentPlanet) > -50 && pos.y < Terrain.WaterLevel(w.CurrentPlanet) - 0.1f && Terrain.HeightAt(w.CurrentPlanet, pos.x, pos.z) < -0.6f;
                 var look = me && Camera.main != null ? Camera.main.transform.forward : r.transform.forward;
                 r.SetToolHead(p.Tool);
-                r.Animate(dt, speed, load, p.Tool, (flags & 1) != 0, swimming, p.Sleeping, p.TowTimer > 0, dark, look);
+                r.Animate(dt, speed, load, p.Tool, (flags & 1) != 0, swimming, SleepingVisual(p), p.TowTimer > 0, dark, look);
                 // Anhänger
                 if (w.TechLevel("trailer") > 0 && !inVehicle) Trailer(p.Id, r.transform, dt);
                 else if (trailers.ContainsKey(p.Id)) { Destroy(trailers[p.Id].gameObject); trailers.Remove(p.Id); }

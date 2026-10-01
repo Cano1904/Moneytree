@@ -107,6 +107,9 @@ namespace RePlanet
                 dist = Mathf.Lerp(dist, Mathf.Min(dist, PlayerController.I.InVehicle ? 5.2f : 3.4f), indoorBlend);
                 pitch = Mathf.Lerp(pitch, Mathf.Clamp(pitch, -12f, 22f), indoorBlend);
             }
+            // Schlafen: Blick auf MIKO am Ladeplatz, langsame Kreisfahrt und sanftes Atmen der Entfernung; beim Aufwachen
+            // zurück zur Blickrichtung von vorher
+            SleepCamera(app, ref target, ref dist, ref pitch, dt);
             if (BuildMode.Active) { pitch = 55f; dist = 26f; target = new Vector3(0, target.y, -104); }
             var rot = Quaternion.Euler(pitch, Yaw, 0);
             var wanted = target - rot * Vector3.forward * dist;
@@ -150,6 +153,28 @@ namespace RePlanet
         }
 
         float indoorBlend;
+        float sleepCam, yawBeforeSleep;
+        bool sleepOrbit;
+
+        /// <summary>Kamera während des Schlafs (eigener Spieler): Ziel = MIKO am Ladeplatz, Kreisfahrt 5°/s, etwas näher und höher.</summary>
+        void SleepCamera(GameApp app, ref Vector3 target, ref float dist, ref float pitch, float dt)
+        {
+            var me = app.Me;
+            var av = ActorsView.I;
+            if (me == null || app.Client == null || av == null) { sleepCam = 0f; sleepOrbit = false; return; }
+            bool asleep = av.SleepingVisual(me) && !BuildMode.Active && !UIState.BlocksGameplay;
+            if (asleep && !sleepOrbit) { sleepOrbit = true; yawBeforeSleep = Yaw; }
+            sleepCam = Mathf.MoveTowards(sleepCam, asleep ? 1f : 0f, dt / (asleep ? 2.5f : 1.3f));
+            float sb = av.SleepBlendOf(app.Client.Pid);
+            var rob = av.RobotOf(app.Client.Pid);
+            if (sb > 0f && rob != null) target = Vector3.Lerp(target, rob.transform.position + Vector3.up * 1.0f, M.Smooth(sb));
+            if (sleepCam <= 0f) { sleepOrbit = false; return; }
+            float k = M.Smooth(sleepCam);
+            if (asleep) Yaw += 5f * dt * k;
+            else if (sleepOrbit) Yaw = Mathf.MoveTowardsAngle(Yaw, yawBeforeSleep, dt * 90f);
+            dist = Mathf.Lerp(dist, Mathf.Min(dist, 4.4f) + Mathf.Sin(Time.time * 0.3f) * 0.35f, k);
+            pitch = Mathf.Lerp(pitch, 26f, k * 0.85f);
+        }
 
         /// <summary>Schutzraum (Hangar, Laderaum), in dem MIKO gerade ist, oder null.</summary>
         static ShelterRoom IndoorRoom()
