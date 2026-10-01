@@ -10,7 +10,7 @@ public static class Program
 {
     class Tri { public Vector3 A, B, C; public Color Col; }
 
-    static readonly List<(Mesh mesh, Matrix4x4 m, Material[] mats)> scene = new List<(Mesh, Matrix4x4, Material[])>();
+    internal static readonly List<(Mesh mesh, Matrix4x4 m, Material[] mats)> scene = new List<(Mesh, Matrix4x4, Material[])>();
 
     /// <summary>Anzahl der Dreiecke, deren Vorderseite (Cross(b−a, c−a)) von den Ecken-Normalen weg zeigt.</summary>
     static (int bad, int total) CheckMesh(Mesh m)
@@ -79,6 +79,8 @@ public static class Program
         SurfaceLook.ForceDetailShaders = Environment.GetEnvironmentVariable("RP_EIGENE_SHADER") == "1";
         // Laufzeitprüfung (Intro, Spiel auf allen Planeten, Abspann): dotnet run -- run [intro|game|ending|all]
         if (args.Length > 0 && args[0] == "run") return Checks.Main(args.Length > 1 ? args[1] : "all");
+        // Bilder aus dem laufenden Spiel (alle Figuren, Anlagen, Instanzen): dotnet run -- shots <Ordner> [Filter]
+        if (args.Length > 0 && args[0] == "shots") return Checks.Shots(args.Length > 1 ? args[1] : "shots", args.Length > 2 ? args[2] : null);
         if (args.Length > 0 && args[0] == "check")
         {
             Console.WriteLine("Primitive:");
@@ -120,7 +122,11 @@ public static class Program
             var mf = t.gameObject.GetComponent<MeshFilter>(); var mr = t.gameObject.GetComponent<MeshRenderer>();
             if (active && mf != null && mr != null && mf.sharedMesh != null)
             {
-                scene.Add((mf.sharedMesh, t.localToWorldMatrix, mr.sharedMaterials));
+                var sm = mr.sharedMaterials;
+                // Gelände: eigener Shader fehlt in der Prüfumgebung → mit der gemalten Geländetextur zeichnen
+                if ((sm.Length == 0 || sm[0] == null) && (mf.sharedMesh.name ?? "").StartsWith("terrain"))
+                    sm = new[] { new Material((Shader)null) { name = "Gelände", mainTexture = typeof(WorldView).GetField("terrainTex", BindingFlags.NonPublic | BindingFlags.Instance).GetValue(wv) } };
+                scene.Add((mf.sharedMesh, t.localToWorldMatrix, sm));
                 renderers++; verts += mf.sharedMesh.V.Count;
                 for (int s = 0; s < mf.sharedMesh.subMeshCount; s++) { tris += mf.sharedMesh.T[s].Count / 3; if (mf.sharedMesh.T[s].Count > 0) subDraws++; }
             }
@@ -265,6 +271,20 @@ public static class Program
     {
         var l = new List<(string, Vector3, Vector3)>();
         float gy = Terrain.HeightAt(planet, 0, -125);
+        // Eigene Ansichten: RP_VIEWS="name,px,py,pz,tx,ty,tz;…" (y relativ zur Stützpunkthöhe)
+        var custom = Environment.GetEnvironmentVariable("RP_VIEWS");
+        if (!string.IsNullOrEmpty(custom))
+        {
+            var inv = System.Globalization.CultureInfo.InvariantCulture;
+            foreach (var spec in custom.Split(';'))
+            {
+                var f = spec.Split(',');
+                if (f.Length != 7) continue;
+                float F(int i) => float.Parse(f[i], inv);
+                l.Add((f[0], new Vector3(F(1), gy + F(2), F(3)), new Vector3(F(4), gy + F(5), F(6))));
+            }
+            return l;
+        }
         l.Add(("basis", new Vector3(2, gy + 9, -112), new Vector3(2, gy + 1, -138)));
         l.Add(("stationen", new Vector3(-6, gy + 2.5f, -120), new Vector3(-16, gy + 1.5f, -132)));
         l.Add(("schiff", new Vector3(14, gy + 3, -128), new Vector3(27, gy + 3, -143)));
@@ -288,10 +308,20 @@ public static class Program
         return l;
     }
 
-    static void Render(string file, Vector3 pos, Vector3 target, List<(Mesh, Matrix4x4, Material[])> extra, string planet)
+    internal static void Render(string file, Vector3 pos, Vector3 target, List<(Mesh, Matrix4x4, Material[])> extra, string planet)
     {
         const int W = 960, H = 540;
         var zb = new float[W * H]; var px = new float[W * H * 3];
+        // Fehlersuche: RP_PICK="x,y;x,y" meldet je Bildpunkt das vorderste Mesh (Name, Material, Tiefe)
+        var pickIdx = new Dictionary<int, string>();
+        string curName = null;
+        var pickEnv = Environment.GetEnvironmentVariable("RP_PICK");
+        if (!string.IsNullOrEmpty(pickEnv))
+            foreach (var pp in pickEnv.Split(';'))
+            {
+                var xy = pp.Split(',');
+                if (xy.Length == 2 && int.TryParse(xy[0], out var qx) && int.TryParse(xy[1], out var qy) && qx >= 0 && qx < W && qy >= 0 && qy < H) pickIdx[qy * W + qx] = "–";
+            }
         var fog = planet == "pyra" ? new Color(0.85f, 0.6f, 0.45f) : planet == "pelagia" ? new Color(0.7f, 0.85f, 0.88f) : planet == "nivalis" ? new Color(0.7f, 0.78f, 0.88f) : new Color(0.88f, 0.78f, 0.65f);
         for (int y = 0; y < H; y++)
             for (int x = 0; x < W; x++)
@@ -305,6 +335,7 @@ public static class Program
         var L = new Vector3(-0.4f, 0.75f, -0.5f).normalized;
         bool water = planet == "pelagia";
         var ground = Mats.C(GameData.Planets[planet].Ground);
+        Texture2D terrTex = null; float terrLit = 1f;
         void Draw(Mesh mesh, Matrix4x4 m, Material[] mats)
         {
             if (mesh.name == "water") return;
@@ -325,7 +356,10 @@ public static class Program
                     float lit = 0.45f + 0.55f * Math.Max(0, Vector3.Dot(n, L));
                     var baseCol = terrain ? ground : mat.color;
                     if (mat.mainTexture is Texture2D pt && mesh.UV.Count == mesh.V.Count) baseCol = pt.Sample(mesh.UV[tl[k]]);
+                    // Gelände: Textur je Bildpunkt (UV = Weltlage, wie WorldView.BuildTerrain)
+                    terrTex = terrain ? mat.mainTexture as Texture2D : null; terrLit = lit;
                     var col = baseCol * lit + mat.emission * 0.6f;
+                    if (pickIdx.Count > 0) curName = mesh.name + " [" + (mat.name ?? "?") + "] Dreieck " + (k / 3) + " " + a + " " + b + " " + c;
                     Raster(a, b, c, col);
                 }
             }
@@ -375,8 +409,15 @@ public static class Program
                     int i = y * W + x;
                     if (z >= zb[i]) continue;
                     zb[i] = z;
+                    if (pickIdx.Count > 0 && pickIdx.ContainsKey(i)) pickIdx[i] = curName + " Tiefe " + z.ToString("0.00");
                     float fd = z * 0.0068f; float fogK = 1f - (float)Math.Exp(-fd * fd);
-                    var cc = Color.Lerp(col, fog, fogK);
+                    var pc = col;
+                    if (terrTex != null)
+                    {
+                        var wp = pos + r * ((qx - W * 0.5f) / foc * z) - u * ((qy - H * 0.5f) / foc * z) + f * z;
+                        pc = terrTex.Sample(new Vector2((wp.x + 150f) / 300f, (wp.z + 150f) / 300f)) * terrLit;
+                    }
+                    var cc = Color.Lerp(pc, fog, fogK);
                     px[i * 3] = cc.r; px[i * 3 + 1] = cc.g; px[i * 3 + 2] = cc.b;
                 }
         }
@@ -400,6 +441,7 @@ public static class Program
                     px[i * 3] = px[i * 3] * 0.35f + wc.r * 0.65f; px[i * 3 + 1] = px[i * 3 + 1] * 0.35f + wc.g * 0.65f; px[i * 3 + 2] = px[i * 3 + 2] * 0.35f + wc.b * 0.65f;
                 }
         }
+        foreach (var kv in pickIdx) Console.WriteLine($"  Bildpunkt {kv.Key % W},{kv.Key / W}: {kv.Value}");
         using (var fs = new FileStream(file, FileMode.Create))
         {
             var head = System.Text.Encoding.ASCII.GetBytes($"P6 {W} {H} 255\n");
