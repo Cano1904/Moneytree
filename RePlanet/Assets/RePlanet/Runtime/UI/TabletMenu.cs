@@ -299,7 +299,7 @@ namespace RePlanet
             // Gummi-Stoßecken (orange), je ein „L“ aus zwei abgerundeten Leisten
             var bump = Color.Lerp(UISkin.Accent, new Color(0.25f, 0.1f, 0.02f), 0.25f);
             var bumpHi = Color.Lerp(UISkin.Accent, Color.white, 0.25f); bumpHi.a = 0.5f;
-            float k = B * 0.42f, len = B * 2.6f;
+            float k = B * 0.55f, len = B * 3f;
             for (int c = 0; c < 4; c++)
             {
                 bool right = (c & 1) == 1, bottom = c >= 2;
@@ -325,10 +325,10 @@ namespace RePlanet
 
             // Schrauben in den Ecken der Einfassung
             float ss = Mathf.Max(9f, B * 0.36f);
-            UISkin.Tex(new Rect(o.x + S * 0.62f - ss * 0.5f, o.y + B * 0.62f - ss * 0.5f, ss, ss), UISkin.TabletScrew, Color.white);
-            UISkin.Tex(new Rect(o.xMax - S * 0.62f - ss * 0.5f, o.y + B * 0.62f - ss * 0.5f, ss, ss), UISkin.TabletScrew, Color.white);
-            UISkin.Tex(new Rect(o.x + S * 0.62f - ss * 0.5f, o.yMax - B * 0.62f - ss * 0.5f, ss, ss), UISkin.TabletScrew, Color.white);
-            UISkin.Tex(new Rect(o.xMax - S * 0.62f - ss * 0.5f, o.yMax - B * 0.62f - ss * 0.5f, ss, ss), UISkin.TabletScrew, Color.white);
+            UISkin.Tex(new Rect(o.x + S * 0.8f - ss * 0.5f, o.y + B * 0.75f - ss * 0.5f, ss, ss), UISkin.TabletScrew, Color.white);
+            UISkin.Tex(new Rect(o.xMax - S * 0.8f - ss * 0.5f, o.y + B * 0.75f - ss * 0.5f, ss, ss), UISkin.TabletScrew, Color.white);
+            UISkin.Tex(new Rect(o.x + S * 0.8f - ss * 0.5f, o.yMax - B * 0.75f - ss * 0.5f, ss, ss), UISkin.TabletScrew, Color.white);
+            UISkin.Tex(new Rect(o.xMax - S * 0.8f - ss * 0.5f, o.yMax - B * 0.75f - ss * 0.5f, ss, ss), UISkin.TabletScrew, Color.white);
 
             // Kamera oben mittig
             float cs = Mathf.Max(8f, B * 0.36f), ccx = o.center.x, ccy = o.y + B * 0.5f;
@@ -351,7 +351,7 @@ namespace RePlanet
             }
 
             // Lautsprecherschlitze unten links, Gravur unten mittig
-            float gx0 = o.x + S + 10f, gy0 = o.yMax - B * 0.5f;
+            float gx0 = o.x + B * 3f + 12f, gy0 = o.yMax - B * 0.5f;
             for (int i = 0; i < 7; i++)
                 UISkin.RoundRect(new Rect(gx0 + i * 7f, gy0 - B * 0.18f, 3f, B * 0.36f), new Color(0f, 0f, 0f, 0.4f));
             string src = L("MIKO · Feldtablet");
@@ -513,7 +513,7 @@ namespace RePlanet
                     tabPillW = tw;
                     var pr = new Rect(tabPillX, bar.y + 4f, tw, th);
                     UISkin.Sliced(pr, UISkin.BtnSel);
-                    if (!hc) UISkin.RoundRect(new Rect(pr.center.x - tw * 0.22f, pr.yMax - 4f, tw * 0.44f, 3f), UISkin.Accent);
+                    if (!hc) UISkin.RoundRect(new Rect(pr.center.x - tw * 0.2f, pr.yMax - 3.5f, tw * 0.4f, 2.5f), UISkin.Accent);
                 }
             }
 
@@ -528,10 +528,10 @@ namespace RePlanet
                 if (rep && hover && !sel) UISkin.RoundRect(tile, new Color(1f, 1f, 1f, hc ? 0.15f : 0.07f));
                 bool label = allLabels || sel;
                 float isz = Mathf.Min(th * (label ? 0.44f : 0.56f), 28f);
-                float iy = label ? tile.y + th * 0.12f : tile.center.y - isz * 0.5f;
+                float iy = label ? tile.y + th * 0.1f : tile.center.y - isz * 0.5f;
                 Color ic = sel ? UISkin.Accent : hover ? UISkin.Text : UISkin.TextDim;
                 UISkin.Tex(new Rect(tile.center.x - isz * 0.5f, iy, isz, isz), UISkin.Shape(d.Icon), ic);
-                if (label) GUI.Label(new Rect(tile.x - 20f, iy + isz + 1f, tile.width + 40f, th - (iy - tile.y) - isz - 2f), L(d.Name), sel ? UISkin.TabLabelSel : UISkin.TabLabel);
+                if (label) GUI.Label(new Rect(tile.x - 20f, iy + isz, tile.width + 40f, th - (iy - tile.y) - isz - 6f), L(d.Name), sel ? UISkin.TabLabelSel : UISkin.TabLabel);
                 if (click && !sel) SetMenuTab(d.Id);
             }
 

@@ -26,7 +26,9 @@ RePlanet/Assets/RePlanet/
 │   │              AudioCity (Stadtklänge), Narrator (Erzähler: Intro, Abspann, Zeilen im Spiel)
 │   └── UI/        UIRoot (IMGUI: Hauptmenü, Einstellungen, HUD, Spielmenü, Karte (3D mit Symbolen, 2D-Rückfall), Bau-/Fotomodus);
 │                  HudHints: ruhiges HUD je Einstellung „Hinweise“ (Aus / Minimal / Ausführlich);
-│                  RadioUI (Spielmenü-Reiter Radio), PerfOverlay (Leistungsanzeige, F3), BuildUI (Bauansicht mit Controller)
+│                  RadioUI (Spielmenü-Reiter Radio), PerfOverlay (Leistungsanzeige, F3), BuildUI (Bauansicht mit Controller),
+│                  TabletMenu (Spielmenü als MIKOs Feldtablet, datengetriebene Reiter), UISkinTablet (Tablet-Texturen/-Symbole),
+│                  MenuLogoClock (Zeitbasis des Logo-Einflugs im Hauptmenü)
 ├── Editor/      Projekt-Setup (Material-Vorlagen, Szene, Build-Einstellungen) und Build-Menü
 └── Resources/   RePlanetSky.shader (eigener Himmel) + vom Setup erzeugte Material-Vorlagen
 ```
@@ -147,6 +149,29 @@ Schichten wachsen mit der Wiederherstellung des Bereichs, in dem MIKO steht: Sin
 (sobald ihr Projekt fertig ist), fernes Stadtleben (Verkehr, Straßenbahn, Stimmen) mit der Zahl fertiger Projekte. Nacht,
 Sturm und Unterschlupf dämpfen; Lautstärke = Einstellung „Umgebung“.
 
+## Oberfläche: Spielmenü-Tablet und Hauptmenü (`Runtime/UI`)
+
+* **Spielmenü = MIKOs Feldtablet** (`TabletMenu.cs`, Inhalte der Reiter weiter in `GameMenu.cs`, `FeaturesUI.cs`, `RadioUI.cs`,
+  `CoopScreen.cs`, `MapView.cs`): Gehäuse (Petrol, orange Gummiecken, Schrauben, Kamera, drei ruhig leuchtende Status-LEDs,
+  Griffrillen, Lautsprecherschlitze, Gravur), Bildschirm mit Leuchten, Glasreflex, sehr schwachen Scanlinien und festem
+  Rauschen (nichts davon bewegt sich → kein Flackern), Statusleiste (MIKO-OS, Planet, Planetenuhr, Signal Solo/Koop, Credits,
+  Akku), App-Reiterleiste (prozedurale Symbole, gleitende Auswahl-Pille, Q/E bzw. LB/RB, Schließen-Kachel).
+  Aufteilung `TabletLayout()`: Rand 2 % von VH, Einfassung 3,4 % von VH (seitlich ×1,2), höchstens 2,2 : 1 – 16:9, 16:10,
+  21:9 (mittig) und 4:3 passen; Beschriftungen nur, wenn alle hineinpassen, sonst Symbole + Name der gewählten App.
+* **Animationen:** Öffnen 0,28 s (Hochgleiten + 94→100 %), Hochfahren 0,24 s (stetige Lichtlinie, entfällt bei „Weniger
+  Blitzeffekte“), Reiterwechsel 0,18 s (Einblenden + 18 px Gleiten), Schließen 0,2 s (Abtauchen, nur Darstellung). Umsetzung
+  über `GUI.matrix` und eine globale Deckkraft `UISkin.Fade` (wird von Rect/Tex/Sliced/RoundRect/OutlineRect/Bar
+  berücksichtigt). Hoher Kontrast: schwarz/weiß/gelb, keine Effekte, nur kurzes Einblenden.
+* **Reiter datengetrieben:** `UIRoot.RegisterMenuTab(id, deutscherName, symbol, (ui, app, rect) => …, after, visible)`;
+  eingebaute Reiter stehen in `MenuTabs`/`MenuTabNames`/`MenuTabIcons`. Neue Symbole in `UISkinTablet.TabletShapeHit`.
+* **Leistung:** alle Texturen einmal in `UISkin.BuildTablet` (bei Moduswechsel neu), Status-Texte nur bei Wertänderung neu,
+  Reiterlisten wiederverwendet – keine Texturen und keine Listen pro Bild.
+* **Hauptmenü-Flackern:** Logo-Einflug über `MenuLogoClock` (Neustart nur beim echten Öffnen, Ruckler zählen höchstens 0,1 s),
+  „Fortsetzen“-Info liest den Spielstand nur bei geänderter Dateizeit, Menüschriften vorab im Atlas (`UISkin.Prewarm`),
+  Reflexionssonde ohne Zeitscheiben. Diagnose in der Leistungsanzeige (F3): Atlas-Neuaufbauten und Logo-Starts.
+  Prüfung `Tools/RenderHarness` → `ChecksMenu` (20 s Menü-Hintergrund, Logo-Uhr mit Rucklern).
+* Vorschau ohne Unity: `python3 Tools/TabletPreview/tablet_preview.py` → `docs/vorschau/tablet_vorschau.png`.
+
 ## Lokalisierung (`Core/Loc`)
 
 * Deutsch ist Schlüssel und Kanon: Core und Server erzeugen immer deutsche Texte. Übersetzt wird bei der Anzeige
@@ -164,5 +189,7 @@ Sturm und Unterschlupf dämpfen; Lautstärke = Einstellung „Umgebung“.
 * Neues Gebäude: `GameData.DefineBuildings` + Modell in `ActorsView.BuildMachine`.
 * Neue Sprache: Kennung in `Loc.Languages`/`LanguageNames`, Tabelle wie `LocEn*.cs`; `LocTests` zeigt fehlende Einträge (`dotnet run -- locmissing`).
 * Neue Erzählerzeile: `Story.L(...)` + Auslöser in `Game.OnStoryFx`, Text in `docs/SPRECHERTEXT_ELEVENLABS.md` und `Tools/Voice/generate_elevenlabs.py`.
+* Neuer Spielmenü-Reiter: `UIRoot.RegisterMenuTab(...)` (z. B. per `[RuntimeInitializeOnLoadMethod]` in einer eigenen partial-Datei),
+  Name englisch in `LocEn*.cs`, Symbol aus `UISkin.Shape`.
 * Neues Radio-Stück: `Story.R(...)` (Musikstück + Stem-Mischung) + Regel in `Story.Eligible`.
 * Balancing: Werte in `Core/Data/GameData.cs`; Wirkung mit dem Kampagnen-Bot messen (`cd Tests && dotnet run -c Release -- balance`).
