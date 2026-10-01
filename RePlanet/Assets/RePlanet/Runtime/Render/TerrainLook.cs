@@ -104,6 +104,8 @@ namespace RePlanet
                 m.SetVector("_RoadStyle", new Vector4(planet == "pelagia" ? 1f : 0f, planet == "terra" || planet == "nivalis" ? 1f : 0f, planet == "pyra" ? 0.4f : 1f, planet == "nivalis" ? 1f : 0f));
                 var bs = layout.Base;
                 m.SetVector("_BaseRect", new Vector4(bs.MinX, bs.MinZ, bs.MaxX, bs.MaxZ));
+                m.SetVector("_GridRect", new Vector4(bs.GridX0, bs.GridZ0, bs.GridX0 + bs.GridW * bs.Cell, bs.GridZ0 + bs.GridH * bs.Cell));
+                m.SetVector("_GridCell", new Vector4(bs.Cell, bs.DropZone.x, bs.DropZone.z, bs.DropRadius));
             }
             catch (Exception e) { Debug.LogWarning("[RE:PLANET] Straßen im Gelände-Shader: " + e.Message); }
         }

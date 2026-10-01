@@ -22,6 +22,8 @@ Shader "RePlanet/Terrain"
         _RoadStyle ("Markierung gelb, Gehweg, Risse, Schnee", Vector) = (0, 1, 1, 0)
         _RoadCount ("Anzahl Straßen", Float) = 0
         _BaseRect ("Stützpunkt (ohne Markierungen)", Vector) = (0, 0, 0, 0)
+        _GridRect ("Bauraster (x0, z0, x1, z1)", Vector) = (0, 0, 0, 0)
+        _GridCell ("Bauraster: Zelle, Abwurfplatz x, z, Radius", Vector) = (2, 0, 0, 0)
     }
 
     SubShader
@@ -40,7 +42,7 @@ Shader "RePlanet/Terrain"
         float4 _RoadA[16];      // xy Anfang, zw Ende (Welt-xz)
         float4 _RoadB[16];      // x Breite
         float _RoadCount;
-        float4 _RoadColor, _RoadStyle, _BaseRect;
+        float4 _RoadColor, _RoadStyle, _BaseRect, _GridRect, _GridCell;
         // Nässe 0..1 (global aus Runtime/Render/GroundMarks.cs; nicht gesetzt = 0 = trocken)
         float _RP_Wetness;
 
@@ -175,7 +177,9 @@ Shader "RePlanet/Terrain"
             walkMask *= (1.0 - roadMask) * _RoadStyle.y * (1.0 - inBase);
             curbMask *= (1.0 - roadMask) * _RoadStyle.y * (1.0 - inBase);
             float flat = saturate(n.y * 4.0 - 3.0);
-            roadMask *= flat;
+            // Im Stützpunkt kein Asphalt: Die Hauptstraße lief bisher als 16 m breiter dunkler Streifen (mit Rinnen,
+            // Rissen, Pfützen) unter dem Vorplatz hindurch – dort jetzt ein eigener Plattenbelag (siehe unten)
+            roadMask *= flat * (1.0 - inBase);
             if (roadMask > 0.001 || walkMask > 0.001 || curbMask > 0.001)
             {
                 float aa = max(fwidth(wp.x), fwidth(wp.z)) * 1.2 + 0.004;
@@ -242,6 +246,29 @@ Shader "RePlanet/Terrain"
                 smoothness = lerp(smoothness, roadSmooth, roadMask);
                 albedo = lerp(albedo, walkAlb, walkMask * flat);
                 albedo = lerp(albedo, curbAlb, curbMask * flat);
+            }
+
+            // ---------------- Vorplatz des Stützpunkts: Betonplatten (3 m) mit Fugen, Bauraster und Abwurfkreis scharf
+            // analytisch (die Linien in der 0,6-m-Geländetextur waren lückenhaft und unregelmäßig)
+            if (inBase > 0.5 && _GridCell.x > 0.0)
+            {
+                float aaB = max(fwidth(wp.x), fwidth(wp.z)) + 0.01;
+                float2 suv = wp.xz / 3.0;
+                float2 sf = abs(frac(suv) - 0.5);
+                float sJoint = 1.0 - smoothstep(0.5 - aaB / 3.0 - 0.006, 0.5 - 0.004, max(sf.x, sf.y));
+                float slabV = lerp(0.93, 1.05, frac(sin(dot(floor(suv), float2(41.3, 17.9))) * 4375.85));
+                float3 conc = lerp(float3(0.6, 0.59, 0.56), base, 0.35) * slabV * lerp(0.9, 1.04, tex2D(_NoiseTex, wp.xz * 0.4).b);
+                conc = lerp(conc * 0.72, conc, sJoint);
+                // Ölflecken und Reifenabrieb, dezent
+                conc *= lerp(1.0, 0.82, smoothstep(0.72, 0.8, tex2D(_NoiseTex, wp.xz * 0.07 + 0.31).g));
+                float inGrid = step(_GridRect.x, wp.x) * step(wp.x, _GridRect.z) * step(_GridRect.y, wp.z) * step(wp.z, _GridRect.w);
+                float2 g = abs(frac((wp.xz - _GridRect.xy) / _GridCell.x + 0.5) - 0.5) * _GridCell.x;
+                float gl = (1.0 - smoothstep(0.04, 0.04 + aaB, min(g.x, g.y))) * inGrid;
+                conc = lerp(conc, float3(0.95, 0.58, 0.2), gl * 0.55);
+                float dr = abs(distance(wp.xz, _GridCell.yz) - (_GridCell.w - 0.17));
+                conc = lerp(conc, float3(1.0, 0.75, 0.2), (1.0 - smoothstep(0.15, 0.15 + aaB, dr)) * 0.9);
+                albedo = lerp(albedo, conc, flat);
+                smoothness = 0.14;
             }
 
             o.Albedo = albedo;

@@ -166,6 +166,14 @@ public static partial class Checks
             else { var ct = CameraRig.I.Cam.transform; cam = ct.position; target = cam + ct.forward * 10f; }
             var me = app.Me;
             Info($"Zwischensequenz {CameraRig.I.Cinematic}, Modus {app.Mode}, UI {UIState.Screen}, {renderers} Renderer, {extra.Count} Instanzen, Kamera {cam} → {target}, MIKO {PlayerController.I.RenderPos} schläft {me.Sleeping}");
+            // Schlagschatten der Gebäude (RP_SCHATTEN=1): Sonne wie im Spiel (Atmosphere), Boxen aus dem Layout
+            if (Environment.GetEnvironmentVariable("RP_SCHATTEN") == "1" && Atmosphere.I != null && Atmosphere.I.Sun != null)
+            {
+                Program.ShadowLayout = WorldGen.Get(s.Planet);
+                Program.SunDir = -Atmosphere.I.Sun.transform.forward;
+                Info($"Sonne: Richtung {Program.SunDir}, Höhe {Mathf.Asin(Mathf.Clamp(Program.SunDir.normalized.y, -1f, 1f)) * Mathf.Rad2Deg:0.0}°, Schattenweite {QualitySettings.shadowDistance:0} m");
+            }
+            else Program.ShadowLayout = null;
             Program.Render(System.IO.Path.Combine(outDir, s.Name + ".ppm"), cam, target, extra, s.Planet);
         }
         CollectWarnings();

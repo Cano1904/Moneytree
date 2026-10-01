@@ -308,6 +308,27 @@ public static class Program
         return l;
     }
 
+    /// <summary>Optional: Schlagschatten der Kollisionsboxen (Gebäude) auf dem Gelände, Richtung ZUR Sonne.</summary>
+    internal static PlanetLayout ShadowLayout;
+    internal static Vector3 SunDir;
+
+    static bool InBoxShadow(Vector3 wp)
+    {
+        var tmp = shadowTmp;
+        var d = SunDir.normalized;
+        if (d.y < 0.02f) return false;
+        for (float t = 0.6f; t < 160f; t += 0.6f)
+        {
+            float x = wp.x + d.x * t, y = wp.y + 0.05f + d.y * t, z = wp.z + d.z * t;
+            if (y > 45f || Math.Abs(x) > 200 || Math.Abs(z) > 200) return false;
+            ShadowLayout.Query(x, z, 0.05f, tmp);
+            foreach (var b in tmp)
+                if (b.Solid && b.Kind != "gateblock" && b.Contains(x, z, 0f) && y > b.Y0 && y < b.Y0 + b.H) return true;
+        }
+        return false;
+    }
+    static readonly List<Box> shadowTmp = new List<Box>();
+
     internal static void Render(string file, Vector3 pos, Vector3 target, List<(Mesh, Matrix4x4, Material[])> extra, string planet)
     {
         const int W = 960, H = 540;
@@ -416,6 +437,7 @@ public static class Program
                     {
                         var wp = pos + r * ((qx - W * 0.5f) / foc * z) - u * ((qy - H * 0.5f) / foc * z) + f * z;
                         pc = terrTex.Sample(new Vector2((wp.x + 150f) / 300f, (wp.z + 150f) / 300f)) * terrLit;
+                        if (ShadowLayout != null && z < 140f && InBoxShadow(wp)) pc *= 0.5f;
                     }
                     var cc = Color.Lerp(pc, fog, fogK);
                     px[i * 3] = cc.r; px[i * 3 + 1] = cc.g; px[i * 3 + 2] = cc.b;

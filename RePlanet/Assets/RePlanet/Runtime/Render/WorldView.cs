@@ -251,7 +251,7 @@ namespace RePlanet
                         c = Color.Lerp(c, g2c, greenness);
                     }
                     // Straßen
-                    float rd = RoadDist(layout, wx, wz);
+                    float rd = layout.Base.InBase(wx, wz) ? 99f : RoadDist(layout, wx, wz); // im Stützpunkt kein Asphaltstreifen
                     if (rd < 0)
                     {
                         c = road * (0.92f + n2 * 0.1f);
@@ -269,8 +269,11 @@ namespace RePlanet
                     var b = layout.Base;
                     if (wx >= b.GridX0 && wx <= b.GridX0 + b.GridW * b.Cell && wz >= b.GridZ0 && wz <= b.GridZ0 + b.GridH * b.Cell)
                     {
-                        float gx = (wx - b.GridX0) % b.Cell, gz = (wz - b.GridZ0) % b.Cell;
-                        if (gx < 0.12f || gz < 0.12f) c = Color.Lerp(c, new Color(1f, 0.6f, 0.2f), 0.35f);
+                        // Abstand zur nächsten Rasterlinie; eine Texelbreite (300 m / N) → jede Linie gleich breit, keine Lücken
+                        float gx = Mathf.Abs(Mathf.Repeat(wx - b.GridX0 + b.Cell * 0.5f, b.Cell) - b.Cell * 0.5f);
+                        float gz = Mathf.Abs(Mathf.Repeat(wz - b.GridZ0 + b.Cell * 0.5f, b.Cell) - b.Cell * 0.5f);
+                        float half = 150f / N;
+                        if (gx < half || gz < half) c = Color.Lerp(c, new Color(1f, 0.6f, 0.2f), 0.3f);
                     }
                     if (V3.DistXZ(new V3(wx, 0, wz), b.DropZone) < b.DropRadius && V3.DistXZ(new V3(wx, 0, wz), b.DropZone) > b.DropRadius - 0.35f) c = new Color(1f, 0.75f, 0.2f);
                     c.a = 1f;
