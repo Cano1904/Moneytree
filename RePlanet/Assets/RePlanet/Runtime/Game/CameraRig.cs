@@ -244,7 +244,7 @@ namespace RePlanet
                 var ps = w.Planet(wv.Planet);
                 foreach (var m in wv.Layout.Mounds)
                 {
-                    float s = PhotoMode.Active && PhotoMode.ShowBefore ? 1f : WorldView.MoundScale(ps, m.Area);
+                    float s = PhotoMode.Active && PhotoMode.ShowBefore ? 1f : Rules.MoundScale(ps, m);
                     if (s < 0.06f) continue;
                     // Form wie MeshKit.Mound: Halbkugel mit Rauschen (±25 %) und Gerümpel auf der Oberfläche
                     float r = m.Radius * s * 1.25f, dx = p.x - m.Pos.x, dz = p.z - m.Pos.z;

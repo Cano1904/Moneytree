@@ -57,6 +57,7 @@ namespace RePlanet.Core
             DefineLore();
             DefineCosmetics();
             DefineFeatures();
+            DefineTreasures();
             Validate();
         }
 

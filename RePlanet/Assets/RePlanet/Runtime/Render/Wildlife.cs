@@ -369,10 +369,21 @@ namespace RePlanet
             }
         }
 
+        /// <summary>Zusätzliche Schreckquellen (x, y, z, Radiusfaktor) mit Ablaufzeit (Time.time) – z. B. zischendes TNT, Explosionen.</summary>
+        static readonly List<KeyValuePair<Vector4, float>> scares = new List<KeyValuePair<Vector4, float>>();
+
+        /// <summary>Tiere fliehen eine Weile vor dieser Stelle (Radius = Fluchtweite der Art × factor).</summary>
+        public static void Scare(Vector3 pos, float factor, float seconds)
+        {
+            scares.Add(new KeyValuePair<Vector4, float>(new Vector4(pos.x, pos.y, pos.z, factor), Time.time + seconds));
+            if (scares.Count > 32) scares.RemoveAt(0);
+        }
+
         /// <summary>Wovor Tiere fliehen: Roboter aller Spieler (x, y, z, Radiusfaktor) und Fahrzeuge (größerer Radius).</summary>
         void GatherThreats(WorldState w)
         {
             threats.Clear();
+            for (int i = scares.Count - 1; i >= 0; i--) { if (Time.time > scares[i].Value) scares.RemoveAt(i); else threats.Add(scares[i].Key); }
             var av = ActorsView.I;
             if (av == null || w == null) return;
             foreach (var p in w.Players.Values)

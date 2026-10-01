@@ -94,13 +94,13 @@ namespace RePlanet
                 envSync = 0.5f;
                 var l = WorldGen.Get(w.CurrentPlanet);
                 var scales = new float[l.Mounds.Count];
-                for (int i = 0; i < scales.Length; i++) scales[i] = WorldView.MoundScale(w.Cur, l.Mounds[i].Area);
+                for (int i = 0; i < scales.Length; i++) scales[i] = Rules.MoundScale(w.Cur, i);
                 env.Sync(w, scales);
             }
             InVehicle = me.Vehicle != null;
             Hud.InVehicle = InVehicle; Hud.VehicleId = me.Vehicle;
             bool blocked = UIState.BlocksGameplay;
-            bool frozen = me.TowTimer > 0 || me.Sleeping;
+            bool frozen = me.TowTimer > 0 || me.Sleeping || TntFrozen;
             VehicleState veh = null;
             if (InVehicle) w.Cur.Vehicles.TryGetValue(me.Vehicle, out veh);
 
@@ -140,6 +140,7 @@ namespace RePlanet
                 Motor.StepRobot(ref ms, env, mx, mz, sprint, vertical, speedMul, w.TechLevel("dive") > 0, dt, windX, windZ);
                 Hud.Swimming = ms.Swimming; Hud.Diving = ms.Diving;
             }
+            StepTnt(w, me, blocked || frozen || PhotoMode.Active || BuildMode.Active || veh != null, dt);
             RenderPos = U(ms.Pos);
             RenderYaw = ms.Yaw;
 

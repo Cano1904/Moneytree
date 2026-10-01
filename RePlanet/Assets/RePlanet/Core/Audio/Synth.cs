@@ -1792,7 +1792,8 @@ namespace RePlanet.Core
             "wind_terra", "wind_pyra", "wind_pelagia", "wind_nivalis", "storm_terra", "storm_pyra", "storm_pelagia", "storm_nivalis",
             "night_ambience", "thunder",
             "radio_jingle_1", "radio_jingle_2", "radio_jingle_3",
-            "city_birds", "city_gulls", "city_leaves", "city_fountain", "city_life"
+            "city_birds", "city_gulls", "city_leaves", "city_fountain", "city_life",
+            "tnt_fuse", "tnt_beep", "tnt_beep_hi", "tnt_throw", "tnt_boom", "debris_land", "treasure", "dizzy"
         };
 
         /// <summary>true für lange Ambience-Loops (werden im Spiel erst bei Bedarf geladen).</summary>
@@ -2298,7 +2299,7 @@ namespace RePlanet.Core
                         return o;
                     }
             }
-            return SfxExtra(id, rng) ?? new float[64];
+            return SfxExtra(id, rng) ?? SfxFun(id, rng) ?? new float[64];
         }
 
         /// <summary>Planetentypische Sturmzutaten: Trümmerklappern (TERRA), Blechschlagen (PYRA), Regen/Gischt (PELAGIA), Graupel (NIVALIS).</summary>

@@ -50,6 +50,16 @@ namespace RePlanet
             return o.D != null && o.D.Delivery && HideDeliveriesUntil > 0f && Time.time < HideDeliveriesUntil && !RevealedDeliveries.Contains(o.D.Id);
         }
 
+        /// <summary>Nur Darstellung: dynamische Objekte (Dyn-Id) bis zu diesem Zeitpunkt ausblenden – z. B. Stücke eines gesprengten
+        /// Müllbergs, die noch durch die Luft fliegen (<see cref="TntView"/>).</summary>
+        public static readonly Dictionary<string, float> HiddenUntil = new Dictionary<string, float>();
+
+        static bool HiddenFx(ObjView o)
+        {
+            float t;
+            return o.D != null && HiddenUntil.Count > 0 && HiddenUntil.TryGetValue(o.D.Id, out t) && Time.time < t;
+        }
+
         void Awake()
         {
             I = this;
@@ -193,7 +203,7 @@ namespace RePlanet
             {
                 foreach (var t in wv.Layout.Trash) Add(Rules.FromStatic(ps, t), cp, far, near, true);
             }
-            else foreach (var o in Rules.All(ps)) { if (!HiddenDelivery(o)) Add(o, cp, far, near, false); }
+            else foreach (var o in Rules.All(ps)) { if (!HiddenDelivery(o) && !HiddenFx(o)) Add(o, cp, far, near, false); }
         }
 
         void Add(ObjView o, Vector3 cp, float far, float near, bool before)

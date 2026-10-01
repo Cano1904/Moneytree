@@ -75,6 +75,8 @@ namespace RePlanet.Core
         public bool Underwater, Frozen, Delivery;
         /// <summary>Ereignisfund: 0 = keiner, 1 = Meteoritenschauer, 2 = Versorgungsabwurf, 3 = freigelegte Deponie.</summary>
         public int Ev;
+        /// <summary>Stück eines gesprengten Müllbergs: Index des Bergs + 1 (0 = keins) – zählt beim Einsammeln zum Hauptmüll.</summary>
+        public int Heap;
         public TrashType Def { get { return GameData.Trash[Type]; } }
         public JObj ToJson()
         {
@@ -83,6 +85,7 @@ namespace RePlanet.Core
             if (Frozen) o["fr"] = true;
             if (Delivery) o["dl"] = true;
             if (Ev > 0) o["ev"] = Ev;
+            if (Heap > 0) o["hp"] = Heap;
             if (CarriedBy != null) o["cb"] = CarriedBy;
             return o;
         }
@@ -94,7 +97,7 @@ namespace RePlanet.Core
             return new DynObj
             {
                 Id = o.Str("id"), Type = t, Pos = V3.FromArr(o.Floats("p")), Rot = o.Float("r"), Area = M.Clamp(o.Int("a"), 0, 2),
-                Underwater = o.Bool("uw"), Frozen = o.Bool("fr"), Delivery = o.Bool("dl"), CarriedBy = o.Str("cb"), Ev = M.Clamp(o.Int("ev"), 0, 3)
+                Underwater = o.Bool("uw"), Frozen = o.Bool("fr"), Delivery = o.Bool("dl"), CarriedBy = o.Str("cb"), Ev = M.Clamp(o.Int("ev"), 0, 3), Heap = Math.Max(0, o.Int("hp"))
             };
         }
     }
@@ -130,7 +133,7 @@ namespace RePlanet.Core
         public float Progress;
     }
 
-    public class PlanetState
+    public partial class PlanetState
     {
         public string Id;
         public BitSet Removed;
@@ -212,7 +215,7 @@ namespace RePlanet.Core
         }
 
         // ------------------------------------------------------------ Serialisierung (Teile)
-        public static readonly string[] Parts = { "rm", "thaw", "dyn", "storage", "buildings", "projects", "repairs", "eco", "views", "vehicles", "weather", "misc", "shelters", "bots", "ev" };
+        public static readonly string[] Parts = { "rm", "thaw", "dyn", "storage", "buildings", "projects", "repairs", "eco", "views", "vehicles", "weather", "misc", "shelters", "bots", "ev", "tnt" };
 
         public object PartToJson(string part)
         {
@@ -248,6 +251,7 @@ namespace RePlanet.Core
                 case "misc": return new JObj().Set("ci", ContractIdx).Set("vis", Visited).Set("dn", Math.Round(NextDelivery, 1));
                 case "bots": { var l = new List<object>(); foreach (var b in Bots.Values) l.Add(b.ToJson()); return l; }
                 case "ev": return new JObj().Set("next", Math.Round(NextEvent, 1)).Set("n", EventCount);
+                case "tnt": return TntToJson();
             }
             return null;
         }
@@ -344,6 +348,7 @@ namespace RePlanet.Core
                         if (evo != null) { NextEvent = evo.Num("next"); EventCount = evo.Int("n"); }
                         break;
                     }
+                case "tnt": TntFromJson(v as JObj); break;
             }
         }
 
@@ -393,11 +398,14 @@ namespace RePlanet.Core
         public bool Waiting;           // Laufzeit: wartet im Unterschlupf einen Sturm ab („Abwarten“)
         public float TowTimer = -1f;   // Laufzeit: > 0 = Notabschaltung, Abschleppdrohne unterwegs
         public int ShelterKind;        // Laufzeit: 0 draußen, 1 Stützpunkt, 2 Unterschlupf im Gelände
+        /// <summary>Mitgeführte TNT-Ladungen (gespeichert, höchstens <see cref="GameData.TntMaxCarry"/>).</summary>
+        public int Tnt;
 
         public JObj ToJson(bool forSave)
         {
             var o = new JObj().Set("id", Id).Set("n", Name).Set("bin", Item.ListToJson(Bin)).Set("e", Json.R(Energy, 1)).Set("p", Pos.ToJson()).Set("y", Json.R(Yaw, 3))
                 .Set("cos", Json.Arr(Color, Accent, Sticker, Attach));
+            if (Tnt > 0) o["tnt"] = Tnt;
             if (!forSave) { o["v"] = Vehicle; o["on"] = Online; o["tool"] = Tool; o["sl"] = Sleeping; o["wt"] = Waiting; o["ex"] = Exposed; o["tow"] = Json.R(TowTimer, 1); o["sk"] = ShelterKind; }
             return o;
         }
@@ -409,6 +417,7 @@ namespace RePlanet.Core
                 Sleeping = o.Bool("sl"), Waiting = o.Bool("wt"), Exposed = o.Bool("ex"), TowTimer = o.Float("tow", -1f), ShelterKind = o.Int("sk") };
             var cos = o.Strs("cos");
             if (cos.Count == 4) { p.Color = cos[0]; p.Accent = cos[1]; p.Sticker = cos[2]; p.Attach = cos[3]; }
+            p.Tnt = M.Clamp(o.Int("tnt"), 0, GameData.TntMaxCarry);
             return p;
         }
     }
@@ -422,7 +431,7 @@ namespace RePlanet.Core
     }
 
     /// <summary>Der gesamte Spielstand (gehört dem Host).</summary>
-    public class WorldState
+    public partial class WorldState
     {
         public const int CurrentVersion = 3;
         public int Version = CurrentVersion;
@@ -467,7 +476,7 @@ namespace RePlanet.Core
         public float BinCapacity { get { return TechVal("bin") + TechVal("trailer"); } }
         public float MaxEnergy { get { return TechVal("battery"); } }
 
-        public static readonly string[] Parts = { "credits", "ship", "unlocked", "tech", "owned", "missions", "lore", "cosm", "stats", "flags", "ach", "story" };
+        public static readonly string[] Parts = { "credits", "ship", "unlocked", "tech", "owned", "missions", "lore", "cosm", "stats", "flags", "ach", "story", "tnt", "treasure" };
 
         public object PartToJson(string part)
         {
@@ -489,6 +498,8 @@ namespace RePlanet.Core
                 case "ach": return new List<object>(Achievements);
                 case "stats": { var o = new JObj(); foreach (var kv in Stats) o[kv.Key] = kv.Value; return o; }
                 case "story": return new JObj().Set("radio", new List<object>(RadioUnlocked)).Set("told", new List<object>(Narrated));
+                case "tnt": return new JObj().Set("hits", TntHitsPlayers);
+                case "treasure": return TreasureToJson();
                 case "flags": return new JObj().Set("cd", CampaignDone).Set("es", EndingSeen).Set("tg", TrustGuests).Set("is", IntroSeen).Set("pt", Math.Round(PlayTime, 2)).Set("nd", NextDyn).Set("wn", WorldName).Set("cr", Created).Set("sp", StartPlanet);
             }
             return null;
@@ -543,6 +554,8 @@ namespace RePlanet.Core
                     }
                     StoryLoaded = true;
                     break;
+                case "tnt": { var to2 = v as JObj; TntHitsPlayers = to2 == null || to2.Bool("hits", true); break; }
+                case "treasure": TreasureFromJson(v as JObj); break;
                 case "flags":
                     var fo = v as JObj;
                     if (fo != null)

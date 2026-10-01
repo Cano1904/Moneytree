@@ -11,8 +11,8 @@ namespace RePlanet
     /// </summary>
     public partial class UIRoot
     {
-        static readonly string[] MenuTabs = { "inventory", "missions", "map", "workshop", "storage", "archive", "achievements", "robot", "radio", "coop" };
-        static readonly string[] MenuTabNames = { "Inventar", "Aufträge", "Karte", "Werkstatt", "Lager", "Archiv", "Erfolge", "Roboter", "Radio", "Koop" };
+        static readonly string[] MenuTabs = { "inventory", "missions", "map", "workshop", "storage", "archive", TreasureTab.TabId, "achievements", "robot", "radio", "coop" };
+        static readonly string[] MenuTabNames = { "Inventar", "Aufträge", "Karte", "Werkstatt", "Lager", "Archiv", TreasureTab.TabName, "Erfolge", "Roboter", "Radio", "Koop" };
         string menuTab = "inventory";
         string menuStation;
         int wsSub;
@@ -114,6 +114,7 @@ namespace RePlanet
                 case "storage": TabStorage(app, content); break;
                 case "archive": TabArchive(app, content); break;
                 case "achievements": TabAchievements(app, content); break;
+                case TreasureTab.TabId: TreasureTab.Draw(app, content); break;
                 case "robot": TabRobot(app, content); break;
                 case "radio": TabRadio(app, content); break;
                 case "coop":
@@ -463,6 +464,7 @@ namespace RePlanet
                 }
                 y += 6;
             }
+            y = TntShop.Row(app, sw, y, inBase);
             UINav.EndScroll(y);
         }
 

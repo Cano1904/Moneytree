@@ -13,7 +13,7 @@ namespace RePlanet
         Tool1, Tool2, Tool3, Tool4, Tool5, Tool6, Tool7,
         Press, Menu, Map, Build, Photo, Pause, DiveUp, DiveDown,
         Vehicle, VehicleReset, Emote, Sleep, Shelter, Missions, Inventory, QuickSave, RotateBuild,
-        Radio, PerfOverlay
+        Radio, PerfOverlay, ThrowTnt
     }
 
     /// <summary>
@@ -35,7 +35,7 @@ namespace RePlanet
             { GameAction.Vehicle, KeyCode.F }, { GameAction.VehicleReset, KeyCode.X }, { GameAction.Emote, KeyCode.G }, { GameAction.Sleep, KeyCode.Z },
             { GameAction.Shelter, KeyCode.N }, { GameAction.Missions, KeyCode.J }, { GameAction.Inventory, KeyCode.I }, { GameAction.QuickSave, KeyCode.F5 },
             { GameAction.RotateBuild, KeyCode.R },
-            { GameAction.Radio, KeyCode.T }, { GameAction.PerfOverlay, KeyCode.F3 },
+            { GameAction.Radio, KeyCode.T }, { GameAction.PerfOverlay, KeyCode.F3 }, { GameAction.ThrowTnt, KeyCode.Q },
         };
 
         public static readonly Dictionary<GameAction, string> Names = new Dictionary<GameAction, string>
@@ -50,7 +50,7 @@ namespace RePlanet
             { GameAction.Vehicle, "Ein-/Aussteigen" }, { GameAction.VehicleReset, "Fahrzeug zurücksetzen" }, { GameAction.Emote, "Roboterlaut" }, { GameAction.Sleep, "Schlafen" },
             { GameAction.Shelter, "Notunterschlupf bauen" }, { GameAction.Missions, "Aufträge" }, { GameAction.Inventory, "Inventar" }, { GameAction.QuickSave, "Schnellspeichern" },
             { GameAction.RotateBuild, "Bauwerk drehen" },
-            { GameAction.Radio, "Radio an/aus" }, { GameAction.PerfOverlay, "Leistungsanzeige" },
+            { GameAction.Radio, "Radio an/aus" }, { GameAction.PerfOverlay, "Leistungsanzeige" }, { GameAction.ThrowTnt, "TNT werfen (halten, loslassen)" },
         };
 
         static readonly Dictionary<GameAction, KeyCode> bindings = new Dictionary<GameAction, KeyCode>(Defaults);
@@ -74,6 +74,7 @@ namespace RePlanet
                 case GameAction.Photo: return KeyCode.JoystickButton9;
                 case GameAction.DiveUp: return KeyCode.JoystickButton0;
                 case GameAction.RotateBuild: return KeyCode.JoystickButton3; // nur in der Bauansicht (Y)
+                case GameAction.ThrowTnt: return KeyCode.JoystickButton1; // B: halten = zielen, loslassen = werfen (im Wasser taucht B ab – dort wird nicht geworfen)
                 default: return KeyCode.None;
             }
         }

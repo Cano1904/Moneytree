@@ -496,7 +496,7 @@ namespace RePlanet
             for (int i = 0; i < mounds.Count && i < Layout.Mounds.Count; i++)
             {
                 var m = Layout.Mounds[i];
-                float s = before ? 1f : MoundScale(ps, m.Area);
+                float s = before ? 1f : Rules.MoundScale(ps, i);
                 mounds[i].localScale = new Vector3(m.Radius * s, m.Height * s, m.Radius * s);
                 mounds[i].gameObject.SetActive(s > 0.06f);
             }

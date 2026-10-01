@@ -56,12 +56,15 @@ namespace RePlanet.Core
             if (a == null) return ActResult.Fail("Ungültige Aktion.");
             if (!S.Players.TryGetValue(pid, out p) || !p.Online) return ActResult.Fail("Spieler nicht verbunden.");
             string kind = a.Str("a", "");
+            actor = pid;
             // Während der Notabschaltung (Abschleppdrohne unterwegs) sind nur Einstellungen/Verwaltung möglich
             if (p.TowTimer > 0 && kind != "trust" && kind != "cosm" && kind != "endingSeen" && kind != "introSeen" && kind != "wake")
                 return ActResult.Fail("MIKO ist abgeschaltet – die Abschleppdrohne ist unterwegs.");
             // Im Hangar bzw. Laderaum: geschützt, aber keine Werkzeuge und nichts sammeln
             if (Rules.IndoorsBlockedActions.Contains(kind) && Rules.Indoors(Rules.ShelterKind(S, S.Cur, p.Pos)))
                 return ActResult.Fail(Rules.IndoorsDenied);
+            // Nach einem TNT-Treffer kurz benommen: keine Werkzeuge, keine Würfe
+            if (StunBlocked.Contains(kind) && Stunned(p.Id)) return ActResult.Fail("MIKO ist noch ganz benommen …");
             try
             {
                 switch (kind)
@@ -118,6 +121,9 @@ namespace RePlanet.Core
                     case "botfix": return ActBotFix(p, a);
                     case "botfollow": return ActBotFollow(p, a);
                     case "botstay": return ActBotStay(p, a);
+                    case "buytnt": return ActBuyTnt(p, a);
+                    case "tnt": return ActThrowTnt(p, a);
+                    case "tnthits": return ActTntHits(a, isHost);
                 }
             }
             catch (Exception e)
