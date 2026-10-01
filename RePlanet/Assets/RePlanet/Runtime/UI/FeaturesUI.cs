@@ -46,8 +46,9 @@ namespace RePlanet
         {
             bool got = w.Achievements.Contains(a.Id);
             float prog = Rules.AchievementProgress(w, a);
-            if (Event.current.type == EventType.Repaint)
-                UISkin.RoundRect(r, got ? new Color(UISkin.Good.r * 0.3f, UISkin.Good.g * 0.3f, UISkin.Good.b * 0.3f, 0.55f) : new Color(0, 0, 0, 0.28f));
+            Card(r);
+            if (got && Event.current.type == EventType.Repaint)
+                UISkin.RoundRect(r, new Color(UISkin.Good.r * 0.3f, UISkin.Good.g * 0.3f, UISkin.Good.b * 0.3f, 0.35f));
             UISkin.Tex(new Rect(r.x + 12, r.y + 14, 30, 30), UISkin.Shape(got ? "star" : "ring"), got ? UISkin.Warn : new Color(1, 1, 1, 0.35f));
             GUI.Label(new Rect(r.x + 52, r.y + 6, r.width - 230, 28), "<b>" + a.Name + "</b>", UISkin.Label);
             GUI.Label(new Rect(r.x + 52, r.y + 32, r.width - 230, 24), UISkin.Col(a.Desc, UISkin.TextDim), UISkin.LabelTiny);

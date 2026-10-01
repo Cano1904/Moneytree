@@ -22,17 +22,35 @@ namespace RePlanet
         readonly Dictionary<string, Texture2D> gradients = new Dictionary<string, Texture2D>();
         static readonly string[] SlotLabels = { "Automatisch", "Spielstand 1", "Spielstand 2", "Spielstand 3" };
 
-        void RefreshMainMenu()
+        System.DateTime mainSlotStamp;
+
+        /// <summary>
+        /// Zuletzt benutzten Spielstand für „Fortsetzen“ ermitteln. full = false (regelmäßig alle 3 s im Menü) prüft nur
+        /// Dateizeiten und liest den Spielstand nur, wenn sich etwas geändert hat – früher wurde die ganze Datei alle 3 s im
+        /// OnGUI gelesen und geparst (Ruckler/Speicherbereinigung, siehe Flackern im Hauptmenü).
+        /// </summary>
+        void RefreshMainMenu(bool full = true)
         {
             var app = GameApp.I;
+            mainRefresh = Time.unscaledTime + 3f;
             if (app == null || app.Saves == null) return;
             try
             {
-                mainSlot = app.Saves.MostRecentSlot();
+                string slot = app.Saves.MostRecentSlot();
+                var stamp = slot != null ? SlotStamp(app, slot) : default(System.DateTime);
+                if (!full && slot == mainSlot && stamp == mainSlotStamp) return;
+                mainSlot = slot;
+                mainSlotStamp = stamp;
                 mainSlotInfo = mainSlot != null ? app.Saves.Info(mainSlot) : null;
             }
             catch (System.Exception e) { mainSlot = null; mainSlotInfo = null; Debug.LogWarning(e.Message); }
-            mainRefresh = Time.unscaledTime + 3f;
+        }
+
+        static System.DateTime SlotStamp(GameApp app, string slot)
+        {
+            var p = app.Saves.PathOf(slot);
+            if (!File.Exists(p)) p = app.Saves.BackupOf(slot);
+            return File.Exists(p) ? File.GetLastWriteTimeUtc(p) : default(System.DateTime);
         }
 
         void RefreshSaves()
@@ -54,7 +72,7 @@ namespace RePlanet
         // ================================================================== Hauptmenü
         void DrawMainMenu(GameApp app)
         {
-            if (Time.unscaledTime > mainRefresh) RefreshMainMenu();
+            if (Time.unscaledTime > mainRefresh) RefreshMainMenu(false);
             Vignette();
             // Mittige Abdunklung hinter Titel und Knopfspalte (stufenloser Verlauf zu den Seiten)
             float bw = Mathf.Min(440f, VW - 80f);
@@ -70,6 +88,9 @@ namespace RePlanet
             float top = Mathf.Max(24f, VH * 0.07f);
             float reveal = DrawLogo(top, titleH);
             DrawTagline(top + titleH + 2f, reveal);
+
+            // Knopfschrift vorab in den Atlas (siehe UISkin.Prewarm)
+            if (UISkin.MenuButton.font != null) UISkin.Prewarm(UISkin.MenuButton.font, UISkin.MenuGlyphsUpper, UISkin.MenuButton.fontSize, UISkin.MenuButton.fontStyle);
 
             bool canContinue = mainSlot != null;
             float y = top + titleH + 70f;
@@ -134,38 +155,46 @@ namespace RePlanet
             return columnFade;
         }
 
-        float logoStart = -10f, lastMainDraw = -10f;
+        readonly MenuLogoClock logoClock = new MenuLogoClock();
         const string LogoWord = "RE:PLANET";
+
+        /// <summary>Logo-Einflug neu starten – nur wenn das Hauptmenü wirklich neu erscheint (nicht nach Einstellungen & Co.).</summary>
+        void OnMainMenuOpened(UIScreen from)
+        {
+            bool sub = from == UIScreen.Settings || from == UIScreen.Saves || from == UIScreen.Coop || from == UIScreen.NewGame || from == UIScreen.Credits || from == UIScreen.Message;
+            if (!sub) logoClock.Restart();
+        }
+
+        /// <summary>Neustarts der Logo-Animation (Leistungsanzeige).</summary>
+        int LogoStarts { get { return logoClock.Starts; } }
 
         /// <summary>
         /// Schriftzug „RE:PLANET“ in der Logo-Schrift, gesperrt, mit weichem Türkis-Glühen, Schlagschatten und einer
         /// Lichtkante, die alle 7 s darüber wandert. Beim Öffnen des Menüs fahren die Buchstaben nacheinander ein.
+        /// Zeitbasis ist <see cref="MenuLogoClock"/>: ein langsames Bild startet die Animation nicht mehr neu.
         /// Gibt den Einblend-Fortschritt (0–1) zurück.
         /// </summary>
         float DrawLogo(float top, float h)
         {
-            float now = Time.unscaledTime;
-            if (now - lastMainDraw > 0.5f) logoStart = now; // Menü (wieder) geöffnet
-            lastMainDraw = now;
-            float t = now - logoStart;
-            float done = Mathf.Clamp01((t - 0.2f) / (0.45f + LogoWord.Length * 0.07f));
+            float t = logoClock.Tick(Time.frameCount, Time.unscaledDeltaTime);
+            float done = MenuLogoClock.Reveal(t, LogoWord.Length);
             if (Event.current.type != EventType.Repaint) return done;
 
             var st = UISkin.Logo;
             int size = (int)Mathf.Clamp(h * 0.7f, 44, 112);
             st.fontSize = size;
+            UISkin.Prewarm(st.font, LogoWord, size, st.fontStyle);
             float track = size * 0.09f;
             float total = UISkin.TrackedWidth(st, LogoWord, track);
             float x0 = (VW - total) * 0.5f, x = x0;
-            float sweep = Mathf.Repeat(now, 7f) / 1.3f - 0.15f; // Lichtkante läuft von links nach rechts, dann Pause
+            float sweep = Mathf.Repeat(t + 4.5f, 7f) / 1.3f - 0.15f; // Lichtkante läuft von links nach rechts, dann Pause
             bool hc = UISkin.Contrast;
             var old = st.normal.textColor;
             for (int i = 0; i < LogoWord.Length; i++)
             {
                 string ch = UISkin.Chr(LogoWord[i]);
                 float cw = st.CalcSize(UISkin.Tmp(ch)).x;
-                float a = Mathf.Clamp01((t - 0.2f - i * 0.07f) / 0.45f);
-                a = a * a * (3f - 2f * a);
+                float a = MenuLogoClock.LetterAlpha(t, i);
                 var r = new Rect(x, top + (1f - a) * size * 0.2f, cw + 6f, h);
                 bool colon = LogoWord[i] == ':';
                 float centre = (x - x0 + cw * 0.5f) / Mathf.Max(1f, total);
@@ -203,6 +232,7 @@ namespace RePlanet
             var st = UISkin.Tagline;
             st.fontSize = (int)Mathf.Clamp(VH * 0.021f, 15, 24);
             string text = L("Eine zweite Chance").ToUpperInvariant();
+            UISkin.Prewarm(st.font, text, st.fontSize, st.fontStyle);
             float track = st.fontSize * 0.45f;
             float w = UISkin.TrackedWidth(st, text, track);
             float h = st.fontSize * 1.8f;

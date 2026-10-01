@@ -177,7 +177,8 @@ namespace UnityEngine
         public ReflectionProbeMode mode; public ReflectionProbeRefreshMode refreshMode; public ReflectionProbeTimeSlicingMode timeSlicingMode;
         public Vector3 size, center; public int resolution; public float intensity = 1f, farClipPlane = 1000f, nearClipPlane = 0.3f; public bool boxProjection, hdr;
         public ReflectionProbeClearFlags clearFlags; public Color backgroundColor; public int cullingMask = -1; public float blendDistance; public int importance = 1;
-        public int RenderProbe() => 1;
+        public static int Renders;
+        public int RenderProbe() { Renders++; return 1; }
         public bool IsFinishedRendering(int id) => true;
         public Texture texture => null;
     }

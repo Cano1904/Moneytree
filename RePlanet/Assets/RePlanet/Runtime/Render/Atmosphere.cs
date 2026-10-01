@@ -508,7 +508,9 @@ namespace RePlanet
                 probe = go.AddComponent<ReflectionProbe>();
                 probe.mode = UnityEngine.Rendering.ReflectionProbeMode.Realtime;
                 probe.refreshMode = UnityEngine.Rendering.ReflectionProbeRefreshMode.ViaScripting;
-                probe.timeSlicingMode = UnityEngine.Rendering.ReflectionProbeTimeSlicingMode.IndividualFaces;
+                // Ohne Zeitscheiben: die Sonde (64 px, nur Himmel) ist billig; über mehrere Bilder verteilt wären ihre Würfelseiten
+                // zeitweise unterschiedlich alt/unvollständig – die Nachbearbeitung nimmt daraus die Nebelfarbe (Verdacht: Flackern)
+                probe.timeSlicingMode = UnityEngine.Rendering.ReflectionProbeTimeSlicingMode.NoTimeSlicing;
                 probe.clearFlags = UnityEngine.Rendering.ReflectionProbeClearFlags.Skybox;
                 probe.cullingMask = 0; // nur Himmel
                 probe.resolution = 64;
