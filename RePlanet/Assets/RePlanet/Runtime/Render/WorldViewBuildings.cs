@@ -147,7 +147,8 @@ namespace RePlanet
                         break;
                     case "core":
                     case "garage":
-                        break; // Stützpunkt wird separat aufgebaut
+                    case "stationdeco":
+                        break; // Stützpunkt wird separat aufgebaut (WorldViewBase, WorldViewStations)
                     case "pavilion":
                         Pavilion(mb, bx, rng, col);
                         break;

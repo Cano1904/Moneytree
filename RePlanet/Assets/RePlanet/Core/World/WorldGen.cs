@@ -152,12 +152,32 @@ namespace RePlanet.Core
             BuildHangar(c, gy);
             BuildShipHold(c, gy);
             AddBox(c, -26, -146, 5, 3.5f, 5, "garage", 0, 0xBFB6A0);
+            StationExtras(c, gy);
             foreach (var kv in b.Stations)
             {
                 if (kv.Key == "storage" || kv.Key == "ship" || kv.Key == "garage" || kv.Key == "build" || kv.Key == "charge") continue;
                 AddBox(c, kv.Value.x, kv.Value.z - 1.2f, 0.7f, 0.5f, 2.0f, "terminal", 0, 0xFF8C2E);
             }
             c.KeepOut.Add(new float[] { 0, -125, 0 }); // Platzhalter (Basisrechteck wird separat geprüft)
+        }
+
+        /// <summary>
+        /// Planetentypische Anbauten der Station (zusätzlich, ändern nichts an Hangar, Stationen und Wegen): PYRA – Felsflanke,
+        /// in die der Bunker halb eingegraben ist (links neben der Halle, x −11,6…−8); PELAGIA – Hafenbecken des Bootshauses
+        /// in der Ecke zwischen Halle und Garage (x −19,5…−10,5, z −150…−143,5, Kaimauer mit Geländer). Beide liegen in einer
+        /// Sackgasse ohne Stationen, Fahrzeug- oder Spielerplätze. Wandteile heißen „stationdeco“ (Darstellung in WorldViewStations).
+        /// </summary>
+        static void StationExtras(Ctx c, float gy)
+        {
+            switch (c.P)
+            {
+                case "pyra":
+                    AddWall(c, -11.6f, -8f, -150f, -143.5f, gy - 0.5f, 5.0f, "stationdeco", 0, 0x8E3F2A);
+                    break;
+                case "pelagia":
+                    AddWall(c, -19.5f, -10.5f, -150f, -143.5f, gy - 1.5f, 2.6f, "stationdeco", 1, 0x6F8A92);
+                    break;
+            }
         }
 
         /// <summary>Box aus Kanten (x0..x1, z0..z1) mit fester Unterkante (nicht ans Gelände angepasst).</summary>
