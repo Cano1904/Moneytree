@@ -1,59 +1,60 @@
-# Graph Report - Moneytree  (2026-09-30)
+# Graph Report - Moneytree  (2026-10-02)
 
 ## Corpus Check
-- 145 files · ~435,330 words
+- 171 files · ~584,738 words
 - Verdict: corpus is large enough that graph structure adds value.
 - Unclassified: 22 file(s) not represented in the graph (top: .shader 9, .cginc 5, .asmdef 3)
 
 ## Summary
-- 4601 nodes · 17293 edges · 168 communities (144 shown, 24 thin omitted)
-- Extraction: 87% EXTRACTED · 13% INFERRED · 0% AMBIGUOUS · INFERRED: 2170 edges (avg confidence: 0.83)
+- 4954 nodes · 19130 edges · 177 communities (152 shown, 25 thin omitted)
+- Extraction: 87% EXTRACTED · 13% INFERRED · 0% AMBIGUOUS · INFERRED: 2451 edges (avg confidence: 0.83)
 - Token cost: 0 input · 0 output
 
 ## Graph Freshness
-- Built from commit: `79db7d5a`
+- Built from commit: `ab00a332`
 - Run `git rev-parse HEAD` and compare to check if the graph is stale.
 - Run `graphify update .` after code changes (no API cost).
 
 ## Community Hubs (Navigation)
 - Game
-- WorldGen
+- PlanetLayout
 - GameData
 - CampaignBot
 - UIRoot
 - GameApp
-- Wildlife
+- .HeightAt
 - RePlanetSetup
 - .Min
-- Program
-- NetRig
+- GameClient
+- SessionHub
 - WorldView
 - Arr
-- WorldState
+- .Get
 - .Music
-- UISkin
+- .Clamp
 - AudioManager
-- .L
-- .Sin
+- Rect
+- .Euler
 - sky_preview.py
 - GameAction
-- PlanetLayout
+- ObjView
 - Atmosphere
-- .Pole
+- .Next
 - FxView
-- RePlanet.Core
+- system_collections_generic
 - UIScreen
-- RobotModel
-- .LogException
-- system
-- Transport.cs
+- V3
+- .Max
+- .Step
+- RePlanet.Core
+- LocalServerTransport
 - .True
 - Loc
-- Texture2D
+- Color32
 - InputMap
 - manifest.json
-- .Clamp
-- GameObject
+- PlayerController
+- .Get
 - .Main
 - AudioSource
 - KeyCode
@@ -63,9 +64,9 @@
 - JObj
 - TrashRenderer
 - CityLife
-- Material
+- Vector4
 - Vector2
-- .Darkness
+- .MusicVolume
 - Synth
 - RenderTextureFormat
 - SaveStore
@@ -75,24 +76,24 @@
 - RE:PLANET – Eine zweite Chance
 - BitSet
 - RE:PLANET – Wirtschaftstabellen
-- Backdrop
+- .Range
 - GroundMarks
 - .Run
 - RE:PLANET – Herkunft der Inhalte, Lizenzen und Markenhinweise
 - WindLook
-- GameApp.cs
+- system_io
 - RePlanetBuild.cs
-- .Max
+- Material
 - RE:PLANET – Trailer- und Clip-Ideen
 - Camera
-- Automatisierte Tests und Balancing
+- .R
 - Müll je Planet und Bereich
 - Großprojekte
-- Color
+- PlanetSelectScene
 - .Clamp
 - UnityStub2.cs
 - Cat
-- ShipArrival
+- .EnsureEffects
 - RePlanet.Server.csproj
 - SmokeTest.csproj
 - RePlanet.Tests.csproj
@@ -103,10 +104,11 @@
 - fetch-unity-refs.sh
 - Vector3
 - PostFX
+- TntView
 - MapCamera
-- Mathf
+- Texture
 - Narrator
-- AnimationCurve
+- Session
 - .Main
 - .LifeChecks
 - Component
@@ -125,13 +127,13 @@
 - .BuildWindows
 - TcpServerTransport
 - SystemLanguage
-- Font
+- FeaturesView
 - AudioManager
-- LifeCommon
+- .Shots
 - AudioClip
 - AudioReverbPreset
 - MonoBehaviour
-- AmbientMode
+- TreasureView
 - TextureFormat
 - ToastKind
 - EventType
@@ -142,27 +144,28 @@
 - ParticleSystemShapeType
 - CompareFunction
 - SystemInfo
-- .HeightAt
+- MathUtil.cs
 - Input
 - RE:PLANET – Sprechertext Intro und Abspann
 - RE:PLANET – Sprechertext für ElevenLabs
 - ParticleSystemRenderMode
 - RenderQueue
 - CameraRig
-- PrimitiveType
+- Json
 - LightShadowResolution
 - ParticleSystemRenderSpace
 - MaterialGlobalIlluminationFlags
 - FullScreenMode
-- UINav
+- .Rect
 - ParticleSystemCurveMode
 - Windows-Build automatisch auf GitHub
 - Testanleitung für echte Spieltests (Leistung und Koop)
-- .RenderLine
+- MenuLogoClock
 - Scene
-- LightShadows
+- .Card
+- EndingDirector
 - CullMode
-- InstanceBatch
+- Profile
 - Harness.csproj
 - unityengine
 - unityengine_rendering
@@ -170,27 +173,36 @@
 - RE:PLANET – Architektur
 - .ParseMel
 - ParticleSystemGradientMode
-- .SaveLife
+- GameStub.cs
+- .Check
 - DepthTextureMode
 - LightType
 - ParticleSystemSortMode
 - 9. Aufträge und Nebeninhalte
-- FogMode
+- .ShotList
 - LightmapBakeType
 - RenderTextureReadWrite
 - ScaleMode
+- TreasureDef
+- Interp
+- AudioDataLoadState
+- CameraClearFlags
+- NetEventType
+- Building
+- AudioRolloffMode
+- MonoOrStereoscopicEye
 
 ## God Nodes (most connected - your core abstractions)
-1. `Vector3` - 372 edges
-2. `UIRoot` - 223 edges
-3. `WorldView` - 185 edges
-4. `Material` - 185 edges
-5. `Game` - 170 edges
-6. `GameApp` - 161 edges
-7. `IntroDirector` - 129 edges
-8. `KeyCode` - 123 edges
-9. `JObj` - 122 edges
-10. `AudioManager` - 109 edges
+1. `Vector3` - 395 edges
+2. `UIRoot` - 249 edges
+3. `WorldView` - 208 edges
+4. `Material` - 198 edges
+5. `Game` - 193 edges
+6. `GameApp` - 176 edges
+7. `JObj` - 145 edges
+8. `RePlanet.Core` - 129 edges
+9. `WorldState` - 129 edges
+10. `IntroDirector` - 129 edges
 
 ## Surprising Connections (you probably didn't know these)
 - `Lokalisierung (`Core/Loc`)` --references--> `GameData`  [INFERRED]
@@ -207,206 +219,210 @@
 ## Import Cycles
 - None detected.
 
-## Communities (168 total, 24 thin omitted)
+## Communities (177 total, 25 thin omitted)
 
 ### Community 0 - "Game"
-Cohesion: 0.13
-Nodes (6): Dictionary, ActResult, Game, Now, TimeScale, PlayerData
+Cohesion: 0.10
+Nodes (12): Dictionary, List, ActResult, Drone, Game, Now, TimeScale, Dictionary (+4 more)
 
-### Community 1 - "WorldGen"
-Cohesion: 0.18
-Nodes (6): Ctx, Dictionary, Func, List, Ctx, WorldGen
+### Community 1 - "PlanetLayout"
+Cohesion: 0.10
+Nodes (16): Ctx, Dictionary, List, BaseLayout, FloorPatch, GateLayout, PlanetLayout, Id (+8 more)
 
 ### Community 2 - "GameData"
 Cohesion: 0.06
-Nodes (27): CultureInfo, Erweiterungspunkte, Dictionary, List, BuildingDef, CosmeticDef, GateDef, Grade (+19 more)
+Nodes (28): CultureInfo, Erweiterungspunkte, Dictionary, List, BuildingDef, CosmeticDef, GateDef, Grade (+20 more)
 
 ### Community 3 - "CampaignBot"
-Cohesion: 0.08
+Cohesion: 0.10
 Nodes (15): Stopwatch, BalanceRun, CampaignBot, L, PS, S, Shutdowns, T (+7 more)
 
 ### Community 4 - "UIRoot"
-Cohesion: 0.05
-Nodes (19): MapMark, MapTex, ProfilerRecorder, List, UIRoot, List, Dictionary, List (+11 more)
+Cohesion: 0.04
+Nodes (27): DateTime, MapMark, MapTex, ProfilerRecorder, Toast, List, UIRoot, List (+19 more)
 
 ### Community 5 - "GameApp"
-Cohesion: 0.06
-Nodes (24): List, Hud, Toast, UIState, BlocksGameplay, Action, List, Type (+16 more)
+Cohesion: 0.07
+Nodes (16): UIState, BlocksGameplay, List, Type, GameApp, CoopActive, CoopOpen, I (+8 more)
 
-### Community 6 - "Wildlife"
-Cohesion: 0.10
-Nodes (15): Animal, Group, Dictionary, List, RuntimeInitializeOnLoadMethod, Animal, Group, Wildlife (+7 more)
+### Community 6 - ".HeightAt"
+Cohesion: 0.06
+Nodes (28): Animal, Group, Flag, Puddle, Stamp, Wheel, List, LifeCommon (+20 more)
 
 ### Community 7 - "RePlanetSetup"
-Cohesion: 0.11
+Cohesion: 0.12
 Nodes (16): Changes, MatSpec, Action, Func, List, MenuItem, Changes, MatSpec (+8 more)
 
-### Community 9 - "Program"
-Cohesion: 0.27
-Nodes (4): Func, IEnumerable, List, Program
+### Community 9 - "GameClient"
+Cohesion: 0.08
+Nodes (19): Action, Dictionary, GameClient, Me, PendingCount, RenderTime, IClientTransport, Connected (+11 more)
 
-### Community 10 - "NetRig"
-Cohesion: 0.09
-Nodes (17): IDisposable, HostServer, Online, Port, Func, List, Test, NetRig (+9 more)
+### Community 10 - "SessionHub"
+Cohesion: 0.10
+Nodes (10): 1. Überblick, HostServer, Online, Port, Action, Func, IEnumerable, SessionHub (+2 more)
 
 ### Community 11 - "WorldView"
-Cohesion: 0.06
-Nodes (35): Facade, IList, Rng, Box, Dictionary, ChunkBuilder, ChunkCount, VertexCount (+27 more)
+Cohesion: 0.05
+Nodes (52): Stationen je Planet und Schlaf (`Runtime/Render/WorldViewStations.cs`, `RobotSleep.cs`), Facade, Box, Look, Dictionary, ChunkBuilder, ChunkCount, VertexCount (+44 more)
 
 ### Community 12 - "Arr"
-Cohesion: 0.15
-Nodes (4): Arr, BarLen, Beat, Spec
+Cohesion: 0.13
+Nodes (6): LineDef, Func, Arr, BarLen, Beat, Spec
 
-### Community 13 - "WorldState"
-Cohesion: 0.03
-Nodes (60): Erzähler im Spiel und Radio (`Core/Sim/Story.cs`), Welt und Speicherung, Zusatzsysteme (Lieferlimit, Sturm abwarten, Helfer, Erfolge, Schnellreise, Ereignisse), MissionDef, Dictionary, List, List, Rules (+52 more)
+### Community 13 - ".Get"
+Cohesion: 0.04
+Nodes (36): Erzähler im Spiel und Radio (`Core/Sim/Story.cs`), TNT und Schätze im Müll, Zusatzsysteme (Lieferlimit, Sturm abwarten, Helfer, Erfolge, Schnellreise, Ereignisse), Stems, MissionDef, Dictionary, List, List (+28 more)
 
 ### Community 14 - ".Music"
-Cohesion: 0.21
+Cohesion: 0.24
 Nodes (8): Arr, Chord, MusicSet, Dictionary, Chord, BassNote, Top, MusicSet
 
-### Community 15 - "UISkin"
-Cohesion: 0.13
-Nodes (6): Dictionary, UISkin, Contrast, GUIContent, GUIStyle, RectOffset
+### Community 15 - ".Clamp"
+Cohesion: 0.04
+Nodes (28): Oberfläche: Spielmenü-Tablet und Hauptmenü (`Runtime/UI`), TabletRects, Dictionary, UISkin, Contrast, Dictionary, HashSet, FontRebuilds (+20 more)
 
 ### Community 16 - "AudioManager"
 Cohesion: 0.05
 Nodes (25): Job, LoopVoice, MusicClips, Dictionary, List, AudioManager, Dictionary, HashSet (+17 more)
 
-### Community 17 - ".L"
-Cohesion: 0.12
-Nodes (9): Lokalisierung (`Core/Loc`), Rect, center, max, min, xMax, xMin, yMax (+1 more)
+### Community 17 - "Rect"
+Cohesion: 0.14
+Nodes (9): ScrollCtx, Rect, center, max, min, xMax, xMin, yMax (+1 more)
 
-### Community 18 - ".Sin"
-Cohesion: 0.06
-Nodes (20): Car, Kind, Plant, Action, List, FloraRenderer, MaxShear, WindStrength (+12 more)
+### Community 18 - ".Euler"
+Cohesion: 0.04
+Nodes (28): Agent, Car, Kind, Plant, Action, List, FloraRenderer, MaxShear (+20 more)
 
 ### Community 19 - "sky_preview.py"
-Cohesion: 0.08
-Nodes (43): glob, math, numpy, os, pil, re, subprocess, sys (+35 more)
+Cohesion: 0.06
+Nodes (61): glob, math, numpy, os, pil, re, subprocess, sys (+53 more)
 
 ### Community 20 - "GameAction"
 Cohesion: 0.05
-Nodes (37): GameAction, AltTool, Build, DiveDown, DiveUp, Emote, Interact, Inventory (+29 more)
+Nodes (38): GameAction, AltTool, Build, DiveDown, DiveUp, Emote, Interact, Inventory (+30 more)
 
-### Community 21 - "PlanetLayout"
-Cohesion: 0.15
-Nodes (13): Dictionary, List, BaseLayout, FloorPatch, GateLayout, Mound, PlanetLayout, Id (+5 more)
+### Community 21 - "ObjView"
+Cohesion: 0.07
+Nodes (16): HashSet, IEnumerable, ObjView, DynObj, Def, Dictionary, List, Treasures (+8 more)
 
 ### Community 22 - "Atmosphere"
-Cohesion: 0.09
-Nodes (15): LookInfo, PlanetSky, Dictionary, List, Atmosphere, CloudCover, Darkness, I (+7 more)
+Cohesion: 0.07
+Nodes (21): Color32Key, IEquatable, LookInfo, PlanetSky, Dictionary, List, Atmosphere, CloudCover (+13 more)
 
-### Community 23 - ".Pole"
+### Community 23 - ".Next"
 Cohesion: 0.22
 Nodes (3): OnePole, PNoise, Svf
 
 ### Community 24 - "FxView"
-Cohesion: 0.09
-Nodes (16): Arc, Darstellung, Ghost, IEnumerator, List, Stack, FxView, Density (+8 more)
+Cohesion: 0.19
+Nodes (8): Arc, Ghost, IEnumerator, List, Stack, FxView, Density, I
 
-### Community 25 - "RePlanet.Core"
-Cohesion: 0.11
-Nodes (12): RePlanet.Core, UnityEngine, UnityEngine.Rendering, RePlanet, Terrain, BuildMode, PhotoMode, FeatureToasts (+4 more)
+### Community 25 - "system_collections_generic"
+Cohesion: 0.08
+Nodes (9): UnityEngine, UnityEngine.Rendering, RePlanet, Terrain, BuildMode, PhotoMode, SurfKind, SleepSpots (+1 more)
 
 ### Community 26 - "UIScreen"
 Cohesion: 0.11
 Nodes (18): UIScreen, Coop, Credits, Ending, Intro, Loading, MainMenu, Map (+10 more)
 
-### Community 27 - "RobotModel"
-Cohesion: 0.16
-Nodes (7): RobotModel, CurrentGesture, GestureCount, Mood, Action, Dictionary, List
+### Community 27 - "V3"
+Cohesion: 0.09
+Nodes (9): Welt und Speicherung, V3, IsFinite, Length, LengthXZ, ShelterRoom, List, Test (+1 more)
 
-### Community 29 - ".LogException"
+### Community 28 - ".Max"
+Cohesion: 0.04
+Nodes (12): Drop, Engine, List, RuntimeInitializeOnLoadMethod, Drop, ShipArrival, CinematicActive, Density (+4 more)
+
+### Community 29 - ".Step"
+Cohesion: 0.20
+Nodes (3): List, Hud, Exception
+
+### Community 30 - "RePlanet.Core"
+Cohesion: 0.10
+Nodes (6): RePlanet.Core, system, system_diagnostics, system_linq, Probe, unity_profiling
+
+### Community 31 - "LocalServerTransport"
 Cohesion: 0.12
-Nodes (6): Action, List, EndingDirector, Exception, Exception, UnityException
-
-### Community 30 - "system"
-Cohesion: 0.06
-Nodes (18): RePlanet.DocGen, RePlanet.Server, RePlanet.SmokeTest, IntroTimeline, Shot, Shot, system, system_collections (+10 more)
-
-### Community 31 - "Transport.cs"
-Cohesion: 0.07
-Nodes (22): ConcurrentQueue, Dictionary, List, IClientTransport, Connected, Error, Failed, IServerTransport (+14 more)
+Nodes (9): ConcurrentQueue, Dictionary, List, LocalClientTransport, Connected, Error, Failed, LocalServerTransport (+1 more)
 
 ### Community 32 - ".True"
-Cohesion: 0.09
-Nodes (24): Ergebnis des Testlaufs, Exception, Func, Test, EconomyTests, TestHelpers, Func, List (+16 more)
+Cohesion: 0.07
+Nodes (34): Ergebnis des Testlaufs, Exception, IDisposable, SaveCodec, Func, Test, EconomyTests, TestHelpers (+26 more)
 
 ### Community 33 - "Loc"
-Cohesion: 0.07
-Nodes (19): DataField, IDictionary, Dictionary, List, Regex, Loc, English, EnglishTable (+11 more)
+Cohesion: 0.06
+Nodes (22): DataField, IDictionary, Dictionary, List, Regex, Loc, English, EnglishTable (+14 more)
 
-### Community 34 - "Texture2D"
+### Community 34 - "Color32"
 Cohesion: 0.11
-Nodes (11): Style, TerrainLook, Style, GUIStyleState, Color32, Texture2D, blackTexture, format (+3 more)
+Nodes (8): Func, Style, TerrainLook, Style, EmitParams, Exception, Color32, UnityException
 
 ### Community 35 - "InputMap"
-Cohesion: 0.15
+Cohesion: 0.18
 Nodes (3): Dictionary, InputMap, UsingPad
 
 ### Community 36 - "manifest.json"
 Cohesion: 0.09
 Nodes (21): com.unity.modules.animation, com.unity.modules.audio, com.unity.modules.imageconversion, com.unity.modules.imgui, com.unity.modules.jsonserialize, com.unity.modules.particlesystem, com.unity.modules.physics, com.unity.modules.screencapture (+13 more)
 
-### Community 37 - ".Clamp"
-Cohesion: 0.09
-Nodes (4): PlanetDef, MapMark, GUI, GUISkin
+### Community 37 - "PlayerController"
+Cohesion: 0.08
+Nodes (19): VehicleState, Def, TntFlight, Action, Interaction, Interaction, PlayerController, Env (+11 more)
 
-### Community 38 - "GameObject"
+### Community 38 - ".Get"
 Cohesion: 0.05
-Nodes (19): Particle, Dictionary, List, ActorsView, I, LocalRobot, Particle, ParticleSystemRenderer (+11 more)
+Nodes (18): Knock, Billboard, ParticleSystemRenderer, GameObject, activeInHierarchy, gameObject, scene, transform (+10 more)
 
 ### Community 39 - ".Main"
-Cohesion: 0.20
+Cohesion: 0.22
 Nodes (5): Random, Ids, IDisposable, List, Program
 
 ### Community 40 - "AudioSource"
-Cohesion: 0.10
-Nodes (9): Cat, LoopVoice, Slot, Voice, AudioRolloffMode, Custom, Linear, Logarithmic (+1 more)
+Cohesion: 0.15
+Nodes (5): Cat, LoopVoice, Slot, Voice, AudioSource
 
 ### Community 41 - "KeyCode"
 Cohesion: 0.02
-Nodes (111): KeyCode, A, Alpha0, Alpha1, Alpha2, Alpha3, Alpha4, Alpha5 (+103 more)
+Nodes (110): KeyCode, A, Alpha0, Alpha1, Alpha2, Alpha3, Alpha4, Alpha5 (+102 more)
 
 ### Community 42 - "Mesh"
-Cohesion: 0.09
-Nodes (17): List, Mesh, colors, colors32, normals, subMeshCount, tangents, triangles (+9 more)
+Cohesion: 0.06
+Nodes (21): Call, List, Call, Graphics, MaterialPropertyBlock, Mesh, colors, colors32 (+13 more)
 
 ### Community 43 - "RE:PLANET – Eine zweite Chance · Game-Design-Dokument"
 Cohesion: 0.12
 Nodes (17): 10. Geschichte, 11. Koop, 12. Speichern, 13. Fotomodus, 14. Barrierefreiheit und Komfort, 15. Präsentation, 1. Vision, 2. Die Spielschleife (+9 more)
 
 ### Community 44 - "RE:PLANET – Koop (1–4 Spieler)"
-Cohesion: 0.14
-Nodes (13): 10. Fehlermeldungen und was sie bedeuten, 1. Überblick, 2. Koop starten, 4. Rechte und Vertrauensmodus, 5. Gemeinsam spielen – was sich im Koop ändert, 6. Späte Beitritte, Verlassen und Wiederverbinden, 7. Speichern im Koop, 8. Netzwerk einrichten: Ports, Firewall, Router (+5 more)
+Cohesion: 0.15
+Nodes (12): 10. Fehlermeldungen und was sie bedeuten, 2. Koop starten, 4. Rechte und Vertrauensmodus, 5. Gemeinsam spielen – was sich im Koop ändert, 6. Späte Beitritte, Verlassen und Wiederverbinden, 7. Speichern im Koop, 8. Netzwerk einrichten: Ports, Firewall, Router, 9. Dedizierter Server (+4 more)
 
 ### Community 45 - "JObj"
-Cohesion: 0.04
-Nodes (34): Dictionary, Durch Tests gefundene und behobene Fehler in der Spiellogik, RateLimit, Action, Dictionary, List, GameClient, Me (+26 more)
+Cohesion: 0.14
+Nodes (4): Dictionary, List, JObj, FeatureToasts
 
 ### Community 46 - "TrashRenderer"
-Cohesion: 0.15
-Nodes (11): Batch, TrashType, MainMaterial, TotalUnits, Ghost, Dictionary, HashSet, List (+3 more)
+Cohesion: 0.16
+Nodes (10): Batch, TrashType, MainMaterial, TotalUnits, Dictionary, HashSet, List, Batch (+2 more)
 
 ### Community 47 - "CityLife"
 Cohesion: 0.08
 Nodes (19): Flag, Holo, Dictionary, List, RuntimeInitializeOnLoadMethod, Car, CityLife, CarsAlive (+11 more)
 
-### Community 48 - "Material"
-Cohesion: 0.09
-Nodes (8): Dictionary, Mats, Func, Texture2D&gt;, TerrainLook, Material, shaderKeywords, Vector4
+### Community 48 - "Vector4"
+Cohesion: 0.15
+Nodes (4): Dictionary, Mats, List, Vector4
 
 ### Community 49 - "Vector2"
 Cohesion: 0.07
-Nodes (14): Color32Key, IEquatable, KeyValuePair, Color32Key, Palette, Matte, Vector2, magnitude (+6 more)
+Nodes (14): Dictionary, List, ActorsView, I, LocalRobot, List, Vector2, magnitude (+6 more)
 
-### Community 50 - ".Darkness"
+### Community 50 - ".MusicVolume"
 Cohesion: 0.20
-Nodes (8): Ambience und Effekte, Architektur, Intro-Score (100 s), Musik-Engine, Prüfen ohne Unity, RE:PLANET – Klang und Musik, Stems, Stücke und Stimmungen
+Nodes (7): Ambience und Effekte, Architektur, Intro-Score (100 s), Musik-Engine, Prüfen ohne Unity, RE:PLANET – Klang und Musik, Stücke und Stimmungen
 
 ### Community 51 - "Synth"
-Cohesion: 0.12
+Cohesion: 0.13
 Nodes (4): Note, Synth, WindStyle, WindStyle
 
 ### Community 52 - "RenderTextureFormat"
@@ -414,32 +430,32 @@ Cohesion: 0.13
 Nodes (14): RenderTextureFormat, ARGB1555, ARGB2101010, ARGB32, ARGB4444, ARGBHalf, Default, DefaultHDR (+6 more)
 
 ### Community 55 - "LocTests"
-Cohesion: 0.13
-Nodes (11): SortedSet, HashSet, KeyValuePair, List, Regex, Test, LocTests, Src (+3 more)
+Cohesion: 0.18
+Nodes (9): HashSet, KeyValuePair, List, Regex, LocTests, Src, Program, TestAttribute (+1 more)
 
 ### Community 56 - "ParticleSystem"
 Cohesion: 0.04
-Nodes (47): CollisionModule, ColorOverLifetimeModule, EmissionModule, EmitParams, ForceOverLifetimeModule, LimitVelocityOverLifetimeModule, MainModule, MinMaxCurve (+39 more)
+Nodes (47): CollisionModule, ColorOverLifetimeModule, EmissionModule, ForceOverLifetimeModule, LimitVelocityOverLifetimeModule, MainModule, MinMaxCurve, NoiseModule (+39 more)
 
 ### Community 57 - "RE:PLANET – Eine zweite Chance"
 Cohesion: 0.18
 Nodes (11): Dokumentation, Koop (1–4 Spieler), Projekt öffnen und spielen, Projektstruktur, RE:PLANET – Eine zweite Chance, Speicherorte, Stand – was geprüft ist und was nicht, Steuerung (+3 more)
 
 ### Community 58 - "BitSet"
-Cohesion: 0.27
+Cohesion: 0.24
 Nodes (4): IEnumerable, BitSet, Capacity, Count
 
 ### Community 59 - "RE:PLANET – Wirtschaftstabellen"
 Cohesion: 0.20
 Nodes (10): Aufträge (Missionen), Fahrzeuge, Gebäude (Stützpunkt), Grundwerte, Materialien, RE:PLANET – Wirtschaftstabellen, Recyclingaufträge (Auftragstafel), Reparaturen, Ökologie, Unterschlupf (+2 more)
 
-### Community 60 - "Backdrop"
+### Community 60 - ".Range"
 Cohesion: 0.11
-Nodes (12): Cell, Dictionary, Func, List, Backdrop, LastDrawn, RingVertices, TotalInstances (+4 more)
+Nodes (14): Cell, IList, Rng, Dictionary, Func, List, Backdrop, LastDrawn (+6 more)
 
 ### Community 61 - "GroundMarks"
-Cohesion: 0.08
-Nodes (17): Puddle, Dictionary, List, RuntimeInitializeOnLoadMethod, GroundMarks, BaseLife, Capacity, DrawnStamps (+9 more)
+Cohesion: 0.09
+Nodes (16): Puddle, Dictionary, List, RuntimeInitializeOnLoadMethod, GroundMarks, BaseLife, Capacity, DrawnStamps (+8 more)
 
 ### Community 63 - "RE:PLANET – Herkunft der Inhalte, Lizenzen und Markenhinweise"
 Cohesion: 0.25
@@ -447,31 +463,31 @@ Nodes (8): 1. Was im Projekt steckt und woher es kommt, 2. Unity, 3. Weitere Wer
 
 ### Community 64 - "WindLook"
 Cohesion: 0.08
-Nodes (18): Belebte Welt (Tiere, Spuren, Wind, Stadt erwacht 2.0, MIKOs Mimik), Entscheidungen, Erweiterungen (Radio, Stadtklänge, Controller-Bauansicht, Englisch, Erzähler, Leistungsanzeige), Grenzen (Stand dieser Umgebung), Nächste Schritte, Prüfwerkzeuge ohne Unity, RE:PLANET – Fortschritt, Entscheidungen, nächste Schritte, Stand (+10 more)
+Nodes (19): Belebte Welt (Tiere, Spuren, Wind, Stadt erwacht 2.0, MIKOs Mimik), Entscheidungen, Erweiterungen (Radio, Stadtklänge, Controller-Bauansicht, Englisch, Erzähler, Leistungsanzeige), Grenzen (Stand dieser Umgebung), Nächste Schritte, Prüfwerkzeuge ohne Unity, RE:PLANET – Fortschritt, Entscheidungen, nächste Schritte, Stand (+11 more)
 
-### Community 65 - "GameApp.cs"
-Cohesion: 0.25
-Nodes (7): AppMode, Ending, Intro, Loading, Menu, PlanetSelect, Playing
+### Community 65 - "system_io"
+Cohesion: 0.07
+Nodes (22): RePlanet.DocGen, RePlanet.Server, RePlanet.SmokeTest, EnergyInfo, AppMode, Ending, Intro, Loading (+14 more)
 
 ### Community 66 - "RePlanetBuild.cs"
 Cohesion: 0.38
 Nodes (5): RePlanet.EditorTools, unityeditor, unityeditor_build_reporting, unityeditor_scenemanagement, unityengine_scenemanagement
 
-### Community 67 - ".Max"
-Cohesion: 0.09
-Nodes (32): Agent, Ark, Bot, Crowd, Geo, Glow, GlowSet, Look (+24 more)
+### Community 67 - "Material"
+Cohesion: 0.06
+Nodes (34): Ark, Bot, Crowd, Geo, Glow, GlowSet, Look, MeshData (+26 more)
 
 ### Community 68 - "RE:PLANET – Trailer- und Clip-Ideen"
 Cohesion: 0.29
 Nodes (7): 1. „Eine Welle, ein Haufen Schrott weniger“ – die Magnetwelle, 2. „Das ist zu groß für dich, MIKO“ – Kran und Transporter räumen ein Wrack, 3. „Die Stadt erwacht“ – ein Großprojekt wird fertig, 4. „Such dir ein Dach“ – Sandsturm und Nacht, 5. „Vorher – nachher“ im Fotomodus (plus Koop-Finale), Allgemeine Hinweise für den Dreh, RE:PLANET – Trailer- und Clip-Ideen
 
 ### Community 69 - "Camera"
-Cohesion: 0.07
-Nodes (21): MonoOrStereoscopicEye, StereoscopicEye, CameraClearFlags, Depth, Nothing, Skybox, SolidColor, Camera (+13 more)
+Cohesion: 0.10
+Nodes (12): MonoOrStereoscopicEye, StereoscopicEye, Camera, current, main, pixelHeight, pixelWidth, worldToCameraMatrix (+4 more)
 
-### Community 71 - "Automatisierte Tests und Balancing"
-Cohesion: 0.29
-Nodes (6): Automatisierte Tests und Balancing, Balancing-Messwerte (nach Anpassung), Beobachtungen / offene Punkte, Kampagnen-Bot (`dotnet run -c Release -- balance`), Nicht getestet, RE:PLANET – Testbericht
+### Community 71 - ".R"
+Cohesion: 0.14
+Nodes (9): Automatisierte Tests und Balancing, Balancing-Messwerte (nach Anpassung), Beobachtungen / offene Punkte, Durch Tests gefundene und behobene Fehler in der Spiellogik, Kampagnen-Bot (`dotnet run -c Release -- balance`), Nicht getestet, RE:PLANET – Testbericht, List (+1 more)
 
 ### Community 72 - "Müll je Planet und Bereich"
 Cohesion: 0.33
@@ -481,60 +497,64 @@ Nodes (6): Alle Planeten, Müll je Planet und Bereich, NIVALIS – Die eingefror
 Cohesion: 0.40
 Nodes (5): Großprojekte, NIVALIS – Die eingefrorene Zukunft, PELAGIA – Der vermüllte Ozeanplanet, PYRA – Die rostrote Industriewelt, TERRA – Die vergessene Erde
 
-### Community 74 - "Color"
-Cohesion: 0.06
-Nodes (27): Look, List, RuntimeInitializeOnLoadMethod, Body, PlanetSelectScene, Active, Descending, Focused (+19 more)
+### Community 74 - "PlanetSelectScene"
+Cohesion: 0.10
+Nodes (11): Body, List, RuntimeInitializeOnLoadMethod, Body, PlanetSelectScene, Active, Descending, Focused (+3 more)
 
 ### Community 75 - ".Clamp"
-Cohesion: 0.14
-Nodes (6): List, Motor, MotorEnv, Tmp, MoverState, M
+Cohesion: 0.13
+Nodes (7): VehicleDef, List, Motor, MotorEnv, Tmp, MoverState, M
 
 ### Community 76 - "UnityStub2.cs"
-Cohesion: 0.06
-Nodes (39): Attribute, List, AudioHighPassFilter, AudioLowPassFilter, AudioSettings, dspTime, outputSampleRate, Cubemap (+31 more)
+Cohesion: 0.05
+Nodes (46): Attribute, AudioHighPassFilter, AudioLowPassFilter, AudioSettings, dspTime, outputSampleRate, DefaultExecutionOrderAttribute, ExecuteAlways (+38 more)
 
 ### Community 77 - "Cat"
 Cohesion: 0.50
 Nodes (4): Cat, Ambient, Sfx, Ui
 
-### Community 78 - "ShipArrival"
-Cohesion: 0.07
-Nodes (15): Body, Drop, Engine, List, RuntimeInitializeOnLoadMethod, Drop, Engine, ShipArrival (+7 more)
+### Community 78 - ".EnsureEffects"
+Cohesion: 0.17
+Nodes (10): AnimationCurve, length, Gradient, GradientAlphaKey, GradientColorKey, Keyframe, MinMaxGradient, ParticleSystemStopBehavior (+2 more)
 
 ### Community 87 - "Vector3"
-Cohesion: 0.02
-Nodes (55): Beam, Capsule, IEnumerable, SkyBody, Flag, Dictionary, List, Stack (+47 more)
+Cohesion: 0.03
+Nodes (41): IEnumerable, SkyBody, List, FreighterModel, Arc, Ghost, Engine, Flyer (+33 more)
 
 ### Community 88 - "PostFX"
-Cohesion: 0.14
+Cohesion: 0.17
 Nodes (5): PostFX, I, LastExposure, Running, RenderTexture
 
-### Community 90 - "MapCamera"
+### Community 89 - "TntView"
 Cohesion: 0.08
+Nodes (20): Boom, Charge, Flyer, Knock, Dictionary, List, RuntimeInitializeOnLoadMethod, Charge (+12 more)
+
+### Community 90 - "MapCamera"
+Cohesion: 0.07
 Nodes (17): List, MapCamera, Cam, Distance, Failed, Following, HasFrame, I (+9 more)
 
-### Community 91 - "Mathf"
-Cohesion: 0.08
-Nodes (11): LookInfo, RenderSettings, Mathf, Texture, height, width, TextureWrapMode, Clamp (+3 more)
+### Community 91 - "Texture"
+Cohesion: 0.17
+Nodes (10): LookInfo, Cubemap, Texture2DArray, Texture, height, width, TextureWrapMode, Mirror (+2 more)
 
 ### Community 92 - "Narrator"
-Cohesion: 0.12
+Cohesion: 0.10
 Nodes (12): Cue, 7. Untertitel, Pending, Dictionary, List, Cue, Narrator, GameLineActive (+4 more)
 
-### Community 93 - "AnimationCurve"
-Cohesion: 0.39
-Nodes (3): AnimationCurve, length, Keyframe
+### Community 93 - "Session"
+Cohesion: 0.15
+Nodes (11): RateLimit, Dictionary, List, Queue, RateLimit, RidCache, Session, Closed (+3 more)
 
 ### Community 94 - ".Main"
-Cohesion: 0.23
-Nodes (5): List, Program, Tri, P, ColorUtility
+Cohesion: 0.17
+Nodes (6): List, Program, Tri, F, P, ColorUtility
 
 ### Community 96 - "Component"
-Cohesion: 0.09
-Nodes (7): Action, HashSet, Component, IsDead, tag, transform, World
+Cohesion: 0.11
+Nodes (6): Harness, Type, Component, IsDead, tag, transform
 
 ### Community 97 - "SurfaceLook"
-Cohesion: 0.23
+Cohesion: 0.17
 Nodes (4): Icon, SurfaceLook, Custom, DetailShadersAllowed
 
 ### Community 98 - "MikoGestures"
@@ -547,63 +567,59 @@ Nodes (21): AnisotropicFiltering, Disable, Enable, ForceEnable, ColorSpace, Gamm
 
 ### Community 101 - "Renderer"
 Cohesion: 0.07
-Nodes (22): TrailRenderer, MaterialPropertyBlock, MotionVectorGenerationMode, Camera, ForceNoMotion, Object, Renderer, bounds (+14 more)
+Nodes (26): TrailRenderer, MotionVectorGenerationMode, Camera, ForceNoMotion, Object, Renderer, bounds, isVisible (+18 more)
 
 ### Community 102 - "TcpClientTransport"
-Cohesion: 0.15
+Cohesion: 0.16
 Nodes (12): BlockingCollection, 3. Ablauf einer Verbindung, Schutzmechanismen, NetworkStream, Conn, Framing, TcpClientTransport, Connected (+4 more)
 
 ### Community 103 - "ReflectionProbe"
-Cohesion: 0.11
+Cohesion: 0.10
 Nodes (17): ReflectionProbe, texture, ReflectionProbeClearFlags, Skybox, SolidColor, ReflectionProbeMode, Baked, Custom (+9 more)
 
 ### Community 104 - "Matrix4x4"
-Cohesion: 0.09
-Nodes (17): Call, Dictionary, DecoGrid, Call, Graphics, Matrix4x4, identity, inverse (+9 more)
+Cohesion: 0.10
+Nodes (12): Darstellung, Dictionary, DecoGrid, InstanceBatch, Count, Matrix4x4, identity, inverse (+4 more)
 
 ### Community 105 - "Checks"
 Cohesion: 0.13
-Nodes (8): BindingFlags, Checks, Dictionary, Exception, HashSet, List, MethodInfo, Type
+Nodes (10): BindingFlags, Saved, Checks, Dictionary, HashSet, List, MethodInfo, Type (+2 more)
 
 ### Community 106 - "MainModule"
 Cohesion: 0.10
 Nodes (20): MinMaxGradient, ColorOverLifetimeModule, MainModule, ParticleSystemCullingMode, AlwaysSimulate, Automatic, Pause, PauseAndCatchup (+12 more)
 
 ### Community 107 - "UnityStub.cs"
-Cohesion: 0.07
-Nodes (24): Bounds, extents, max, min, FilterMode, Bilinear, Point, Trilinear (+16 more)
+Cohesion: 0.04
+Nodes (47): Dictionary, Bounds, extents, max, min, FilterMode, Bilinear, Point (+39 more)
 
 ### Community 108 - "Object"
 Cohesion: 0.10
-Nodes (5): RuntimeInitializeOnLoadMethod, MethodInfo, Object, IsDead, Resources
+Nodes (7): RuntimeInitializeOnLoadMethod, Action, HashSet, MethodInfo, Object, IsDead, World
 
 ### Community 109 - ".BuildWindows"
-Cohesion: 0.16
+Cohesion: 0.15
 Nodes (7): MenuItem, RePlanetBuild, Result, Result, TimeSpan, Debug, isDebugBuild
 
 ### Community 110 - "TcpServerTransport"
 Cohesion: 0.18
-Nodes (5): Conn, Thread, TcpServerTransport, Port, TcpListener
+Nodes (6): Conn, Thread, NetIds, TcpServerTransport, Port, TcpListener
 
 ### Community 111 - "SystemLanguage"
 Cohesion: 0.12
 Nodes (14): Application, platform, systemLanguage, RuntimePlatform, LinuxPlayer, OSXPlayer, WindowsPlayer, SystemLanguage (+6 more)
 
-### Community 112 - "Font"
-Cohesion: 0.08
-Nodes (22): FontStyle, Bold, BoldAndItalic, Italic, Normal, CharacterInfo, Font, TextAlignment (+14 more)
+### Community 112 - "FeaturesView"
+Cohesion: 0.13
+Nodes (13): Beam, Capsule, Dictionary, List, Stack, Beam, Capsule, FeaturesView (+5 more)
 
 ### Community 113 - "AudioManager"
 Cohesion: 0.13
 Nodes (6): AudioManager, I, IntroReady, IntroTime, VoiceGain, VoiceParent
 
-### Community 114 - "LifeCommon"
-Cohesion: 0.14
-Nodes (7): List, LifeCommon, BeforeView, Quality, QualityScale, SmallShadows, ViewScale
-
 ### Community 115 - "AudioClip"
-Cohesion: 0.16
-Nodes (8): MusicClips, AudioClip, loadState, AudioDataLoadState, Failed, Loaded, Loading, Unloaded
+Cohesion: 0.24
+Nodes (4): Flackern im Hauptmenü, Spielmenü als Feldtablet, MusicClips, AudioClip, loadState
 
 ### Community 116 - "AudioReverbPreset"
 Cohesion: 0.14
@@ -613,9 +629,9 @@ Nodes (14): AudioReverbPreset, Arena, Auditorium, Bathroom, Cave, Concerthall, G
 Cohesion: 0.14
 Nodes (8): Floater, PostFX, I, Running, UIRoot, IEnumerator, Coroutine, MonoBehaviour
 
-### Community 118 - "AmbientMode"
-Cohesion: 0.40
-Nodes (5): AmbientMode, Custom, Flat, Skybox, Trilight
+### Community 118 - "TreasureView"
+Cohesion: 0.17
+Nodes (8): Pop, List, RuntimeInitializeOnLoadMethod, Pop, TreasureView, Glints, I, Pops
 
 ### Community 119 - "TextureFormat"
 Cohesion: 0.15
@@ -633,12 +649,8 @@ Nodes (11): Event, EventType, KeyDown, KeyUp, Layout, MouseDown, MouseDrag, Mous
 Cohesion: 0.17
 Nodes (12): BlendMode, DstAlpha, DstColor, One, OneMinusDstAlpha, OneMinusDstColor, OneMinusSrcAlpha, OneMinusSrcColor (+4 more)
 
-### Community 123 - "Shader"
-Cohesion: 0.19
-Nodes (3): Dictionary, Shader, isSupported
-
 ### Community 124 - ".UpdateRadio"
-Cohesion: 0.27
+Cohesion: 0.25
 Nodes (5): Dictionary, List, NarrationLine, RadioTrack, Story
 
 ### Community 125 - "HideFlags"
@@ -646,8 +658,8 @@ Cohesion: 0.20
 Nodes (10): HideFlags, DontSave, DontSaveInBuild, DontSaveInEditor, DontUnloadUnusedAsset, HideAndDontSave, HideInHierarchy, HideInInspector (+2 more)
 
 ### Community 126 - "ParticleSystemShapeType"
-Cohesion: 0.20
-Nodes (10): ParticleSystemShapeType, Box, Circle, Cone, Donut, Edge, Hemisphere, Mesh (+2 more)
+Cohesion: 0.18
+Nodes (11): ParticleSystemShapeType, Box, Circle, Cone, Donut, Edge, Hemisphere, Mesh (+3 more)
 
 ### Community 127 - "CompareFunction"
 Cohesion: 0.20
@@ -658,7 +670,7 @@ Cohesion: 0.20
 Nodes (9): SystemInfo, deviceUniqueIdentifier, graphicsDeviceName, graphicsMemorySize, maxTextureSize, operatingSystem, supportsComputeShaders, supportsInstancing (+1 more)
 
 ### Community 130 - "Input"
-Cohesion: 0.17
+Cohesion: 0.12
 Nodes (7): Dictionary, HashSet, Input, anyKey, anyKeyDown, inputString, mouseScrollDelta
 
 ### Community 131 - "RE:PLANET – Sprechertext Intro und Abspann"
@@ -678,12 +690,8 @@ Cohesion: 0.29
 Nodes (7): RenderQueue, AlphaTest, Background, Geometry, GeometryLast, Overlay, Transparent
 
 ### Community 135 - "CameraRig"
-Cohesion: 0.22
-Nodes (7): DecoGrid, List, CameraRig, Cam, I, Post, AudioListener
-
-### Community 136 - "PrimitiveType"
-Cohesion: 0.29
-Nodes (7): PrimitiveType, Capsule, Cube, Cylinder, Plane, Quad, Sphere
+Cohesion: 0.13
+Nodes (8): DecoGrid, List, CameraRig, Cam, I, Post, AudioListener, Resources
 
 ### Community 137 - "LightShadowResolution"
 Cohesion: 0.33
@@ -701,9 +709,9 @@ Nodes (6): MaterialGlobalIlluminationFlags, AnyEmissive, BakedEmissive, Emissive
 Cohesion: 0.22
 Nodes (9): FullScreenMode, ExclusiveFullScreen, FullScreenWindow, MaximizedWindow, Windowed, Resolution, Screen, currentResolution (+1 more)
 
-### Community 141 - "UINav"
-Cohesion: 0.09
-Nodes (7): Dictionary, List, Stack, ScrollCtx, UINav, ScrollCtx, Vector2Int
+### Community 141 - ".Rect"
+Cohesion: 0.07
+Nodes (11): Lokalisierung (`Core/Loc`), Action, Settings, PathFile, TntShop, Dictionary, List, Stack (+3 more)
 
 ### Community 142 - "ParticleSystemCurveMode"
 Cohesion: 0.40
@@ -717,21 +725,29 @@ Nodes (3): Build starten und herunterladen, Einmalige Einrichtung (im GitHub-Rep
 Cohesion: 0.50
 Nodes (3): 1. Leistung messen, 2. Koop mit zwei PCs testen, Testanleitung für echte Spieltests (Leistung und Koop)
 
+### Community 145 - "MenuLogoClock"
+Cohesion: 0.33
+Nodes (3): MenuLogoClock, Starts, T
+
 ### Community 146 - "Scene"
 Cohesion: 0.50
 Nodes (4): Scene, Delivery, Landing, None
 
-### Community 147 - "LightShadows"
-Cohesion: 0.50
-Nodes (4): LightShadows, Hard, None, Soft
+### Community 147 - ".Card"
+Cohesion: 0.33
+Nodes (3): Dictionary, RuntimeInitializeOnLoadMethod, TreasureTab
+
+### Community 148 - "EndingDirector"
+Cohesion: 0.32
+Nodes (3): Action, List, EndingDirector
 
 ### Community 149 - "CullMode"
 Cohesion: 0.50
 Nodes (4): CullMode, Back, Front, Off
 
-### Community 150 - "InstanceBatch"
+### Community 150 - "Profile"
 Cohesion: 0.29
-Nodes (3): InstanceBatch, Count, Species
+Nodes (4): Dictionary, HashSet, Profile, PathFile
 
 ### Community 154 - "EmissionModule"
 Cohesion: 0.53
@@ -749,9 +765,9 @@ Nodes (5): MelNote, Note, List, LineDef, MelNote
 Cohesion: 0.33
 Nodes (6): ParticleSystemGradientMode, Color, Gradient, RandomColor, TwoColors, TwoGradients
 
-### Community 159 - ".SaveLife"
-Cohesion: 0.40
-Nodes (3): Saved, Dictionary, Saved
+### Community 159 - ".Check"
+Cohesion: 0.33
+Nodes (3): EmitParams, List, NanGuard
 
 ### Community 160 - "DepthTextureMode"
 Cohesion: 0.40
@@ -766,12 +782,12 @@ Cohesion: 0.40
 Nodes (5): ParticleSystemSortMode, Distance, None, OldestInFront, YoungestInFront
 
 ### Community 163 - "9. Aufträge und Nebeninhalte"
-Cohesion: 0.50
-Nodes (4): 9. Aufträge und Nebeninhalte, Helferroboter, Schnellreise über Lichtpunkte, Weltereignisse
+Cohesion: 0.33
+Nodes (6): 9. Aufträge und Nebeninhalte, Helferroboter, Schnellreise über Lichtpunkte, Schätze im Müll (Vitrine), TNT: Müllberge sprengen (und Freunde durch die Luft werfen), Weltereignisse
 
-### Community 164 - "FogMode"
-Cohesion: 0.50
-Nodes (4): FogMode, Exponential, ExponentialSquared, Linear
+### Community 164 - ".ShotList"
+Cohesion: 0.33
+Nodes (5): IntroTimeline, Shot, Shot, List, Shot
 
 ### Community 165 - "LightmapBakeType"
 Cohesion: 0.50
@@ -785,25 +801,53 @@ Nodes (4): RenderTextureReadWrite, Default, Linear, sRGB
 Cohesion: 0.50
 Nodes (4): ScaleMode, ScaleAndCrop, ScaleToFit, StretchToFill
 
+### Community 169 - "Interp"
+Cohesion: 0.50
+Nodes (4): List, Interp, Snap, Snap
+
+### Community 170 - "AudioDataLoadState"
+Cohesion: 0.40
+Nodes (5): AudioDataLoadState, Failed, Loaded, Loading, Unloaded
+
+### Community 171 - "CameraClearFlags"
+Cohesion: 0.40
+Nodes (5): CameraClearFlags, Depth, Nothing, Skybox, SolidColor
+
+### Community 172 - "NetEventType"
+Cohesion: 0.50
+Nodes (4): NetEventType, Connect, Disconnect, Message
+
+### Community 173 - "Building"
+Cohesion: 0.50
+Nodes (3): Building, Def, W
+
+### Community 175 - "AudioRolloffMode"
+Cohesion: 0.50
+Nodes (4): AudioRolloffMode, Custom, Linear, Logarithmic
+
+### Community 176 - "MonoOrStereoscopicEye"
+Cohesion: 0.50
+Nodes (4): MonoOrStereoscopicEye, Left, Mono, Right
+
 ## Knowledge Gaps
-- **996 isolated node(s):** `BassNote`, `Top`, `Note`, `Beat`, `BarLen` (+991 more)
-  These have ≤1 connection - possible missing edges or undocumented components. (Counts symbols only; 1378 node(s) total have ≤1 connection when file, concept and rationale nodes are included.)
-- **24 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
+- **1024 isolated node(s):** `BassNote`, `Top`, `Note`, `Beat`, `BarLen` (+1019 more)
+  These have ≤1 connection - possible missing edges or undocumented components. (Counts symbols only; 1440 node(s) total have ≤1 connection when file, concept and rationale nodes are included.)
+- **25 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
 
 ## Suggested Questions
 _Questions this graph is uniquely positioned to answer:_
 
-- **Why does `Vector3` connect `Vector3` to `Input`, `UIRoot`, `GameApp`, `Wildlife`, `CameraRig`, `.Min`, `WorldView`, `WorldState`, `UINav`, `AudioManager`, `.Sin`, `Atmosphere`, `InstanceBatch`, `FxView`, `RePlanet.Core`, `RobotModel`, `.Clamp01`, `Texture2D`, `InputMap`, `.Clamp`, `GameObject`, `AudioSource`, `Mesh`, `JObj`, `TrashRenderer`, `CityLife`, `Backdrop`, `GroundMarks`, `WindLook`, `.Max`, `Camera`, `Color`, `ShipArrival`, `PostFX`, `MapCamera`, `Mathf`, `.Main`, `.LifeChecks`, `MikoGestures`, `.Get`, `QualitySettings`, `ReflectionProbe`, `Matrix4x4`, `Checks`, `UnityStub.cs`, `Object`, `.BuildWindows`, `AudioManager`, `LifeCommon`, `MonoBehaviour`?**
-  _High betweenness centrality (0.167) - this node is a cross-community bridge._
-- **Why does `WorldView` connect `WorldView` to `.HeightAt`, `CampaignBot`, `WorldState`, `.Sin`, `PlanetLayout`, `RePlanet.Core`, `.Clamp01`, `Texture2D`, `.Clamp`, `GameObject`, `JObj`, `TrashRenderer`, `Material`, `ParticleSystem`, `Backdrop`, `.Max`, `Color`, `ShipArrival`, `Vector3`, `.Main`, `Matrix4x4`, `Font`, `MonoBehaviour`, `Shader`?**
-  _High betweenness centrality (0.065) - this node is a cross-community bridge._
-- **Why does `RE:PLANET – Architektur` connect `RE:PLANET – Architektur` to `FxView`, `.L`, `GameData`, `WorldState`?**
-  _High betweenness centrality (0.055) - this node is a cross-community bridge._
-- **Are the 25 inferred relationships involving `Vector3` (e.g. with `.EnsureWaterNormal()` and `.Animate()`) actually correct?**
-  _`Vector3` has 25 INFERRED edges - model-reasoned connections that need verification._
+- **Why does `Vector3` connect `Vector3` to `Input`, `UIRoot`, `.HeightAt`, `CameraRig`, `.Min`, `WorldView`, `.Rect`, `.Clamp`, `AudioManager`, `.Euler`, `Atmosphere`, `FxView`, `system_collections_generic`, `V3`, `.Max`, `.Step`, `.Check`, `Color32`, `.ShotList`, `PlayerController`, `.Get`, `AudioSource`, `Mesh`, `JObj`, `.PadBuildCursor`, `CityLife`, `TrashRenderer`, `Vector2`, `.Range`, `GroundMarks`, `Material`, `Camera`, `PlanetSelectScene`, `PostFX`, `TntView`, `MapCamera`, `Texture`, `.Main`, `.LifeChecks`, `MikoGestures`, `.Get`, `QualitySettings`, `ReflectionProbe`, `Matrix4x4`, `Checks`, `UnityStub.cs`, `Object`, `.BuildWindows`, `FeaturesView`, `AudioManager`, `MonoBehaviour`, `TreasureView`, `ParticleSystemShapeType`?**
+  _High betweenness centrality (0.102) - this node is a cross-community bridge._
+- **Why does `UIRoot` connect `UIRoot` to `Game`, `system_io`, `Input`, `GameApp`, `.Min`, `.Rect`, `.Clamp`, `Rect`, `MenuLogoClock`, `GameAction`, `SaveStore`, `MonoBehaviour`, `system_collections_generic`, `UIScreen`, `RePlanet.Core`?**
+  _High betweenness centrality (0.057) - this node is a cross-community bridge._
+- **Why does `GameApp` connect `GameApp` to `Game`, `Input`, `UIRoot`, `.Min`, `GameClient`, `SessionHub`, `.Get`, `.Rect`, `.Clamp`, `Rect`, `Profile`, `.Max`, `PlayerController`, `JObj`, `SaveStore`, `system_io`, `PlanetSelectScene`, `PostFX`, `.LifeChecks`, `Checks`, `Object`, `.Shots`, `MonoBehaviour`?**
+  _High betweenness centrality (0.056) - this node is a cross-community bridge._
+- **Are the 28 inferred relationships involving `Vector3` (e.g. with `.EnsureWaterNormal()` and `.Animate()`) actually correct?**
+  _`Vector3` has 28 INFERRED edges - model-reasoned connections that need verification._
 - **What connects `BassNote`, `Top`, `Note` to the rest of the system?**
-  _996 weakly-connected nodes found - possible documentation gaps or missing edges._
+  _1024 weakly-connected nodes found - possible documentation gaps or missing edges._
 - **Should `Game` be split into smaller, more focused modules?**
-  _Cohesion score 0.125642490005711 - nodes in this community are weakly interconnected._
-- **Should `GameData` be split into smaller, more focused modules?**
-  _Cohesion score 0.061419753086419754 - nodes in this community are weakly interconnected._
+  _Cohesion score 0.10418508694370764 - nodes in this community are weakly interconnected._
+- **Should `PlanetLayout` be split into smaller, more focused modules?**
+  _Cohesion score 0.09871031746031746 - nodes in this community are weakly interconnected._
