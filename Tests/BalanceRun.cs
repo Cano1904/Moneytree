@@ -10,6 +10,9 @@ public static class BalanceRun
     public static int Run(bool human)
     {
         var bot = human ? CampaignBot.Human() : new CampaignBot();
+        if (Environment.GetEnvironmentVariable("BOT_NO_TNT") != null) bot.UseTnt = false;
+        var detour = Environment.GetEnvironmentVariable("BOT_DETOUR");
+        if (detour != null) bot.Detour *= float.Parse(detour, System.Globalization.CultureInfo.InvariantCulture);
         bot.RealTimeLimit = 280;
         Console.WriteLine("Profil: " + bot.ProfileName);
         try { bot.Run(); }
@@ -55,6 +58,8 @@ public static class BalanceRun
         l.Add("Stürme abgewartet: " + Min(bot.StormWaitTime) + " Spielzeit (bei ×" + Game.WaitTimeScale + " Zeitraffer ≈ " + Min(bot.StormWaitTime / Game.WaitTimeScale) + " Echtzeit)");
         l.Add("Geschätzte Echtzeit (Spielzeit abzüglich Zeitraffer beim Abwarten): " + ((S.PlayTime - bot.StormWaitTime * (1 - 1 / Game.WaitTimeScale)) / 3600).ToString("0.00") + " h");
         l.Add("Erfolge: " + S.Achievements.Count + "/" + GameData.Achievements.Count + " (" + string.Join(", ", GameData.Achievements.Where(a => S.Achievements.Contains(a.Id)).Select(a => a.Name)) + ")");
+        l.Add("TNT: " + bot.TntThrows + " Würfe, " + bot.TntBlasts + " Sprengstufen, " + bot.TntPieces + " Stücke eingesammelt, " + bot.TntSpent + " Credits ausgegeben" + (bot.UseTnt ? "" : " (abgeschaltet)"));
+        l.Add("Schätze gefunden: " + Treasures.FoundCount(S, null) + "/" + GameData.Treasures.Count);
         l.Add("Ereignisse: " + S.Stat("events") + ", Ereignisfunde geborgen: " + S.Stat("eventItems"));
         l.Add("Credits am Ende: " + S.Credits + ", insgesamt verdient: " + S.Stat("credEarned") + ", Objekte gesammelt: " + S.Stat("collected"));
         l.Add("Aktionen: " + bot.Actions + ", abgelehnt: " + bot.Rejections);

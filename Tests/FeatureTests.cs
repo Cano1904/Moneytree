@@ -341,13 +341,13 @@ public static class FeatureTests
     {
         PlayerData p;
         var g = TestHelpers.NewGame(out p);
-        Assert.Equal(20, GameData.Achievements.Count, "20 Erfolge");
+        Assert.Equal(25, GameData.Achievements.Count, "20 Erfolge + 5 Schatz-Sätze");
         foreach (var a in GameData.Achievements)
         {
             Assert.True(GameData.Cosmetics.ContainsKey(a.Reward), a.Id + ": Belohnung existiert");
             Assert.True(GameData.Cosmetics[a.Reward].Hint.Contains(a.Name), a.Id + ": Hinweis nennt den Erfolg");
         }
-        Assert.Equal(20, GameData.Achievements.Select(a => a.Reward).Distinct().Count(), "Jede Belohnung einmalig");
+        Assert.Equal(GameData.Achievements.Count, GameData.Achievements.Select(a => a.Reward).Distinct().Count(), "Jede Belohnung einmalig");
         Assert.False(g.S.Achievements.Contains("ach_sammeln1"), "Anfangs nicht erreicht");
         var def = GameData.AchievementById("ach_sammeln1");
         Assert.True(Rules.AchievementProgress(g.S, def) < 0.01f, "Fortschritt 0");

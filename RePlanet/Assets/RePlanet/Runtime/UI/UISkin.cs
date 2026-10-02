@@ -9,7 +9,7 @@ namespace RePlanet
     /// orange Akzente. Hoher-Kontrast-Modus mit schwarzem Grund, weißer Schrift und gelben Rahmen.
     /// Texturen und Stile werden einmal erzeugt und nur bei Moduswechsel neu gebaut.
     /// </summary>
-    public static class UISkin
+    public static partial class UISkin
     {
         // ------------------------------------------------------------ Farben
         public static Color Text, TextDim, Accent, Teal, Good, Warn, Bad, Story, PanelCol, FocusCol, BarBack;
@@ -175,6 +175,7 @@ namespace RePlanet
             Field.padding = new RectOffset(10, 10, 6, 6);
             Field.alignment = TextAnchor.MiddleLeft;
             Field.clipping = TextClipping.Clip;
+            BuildTablet(hc);
         }
 
         static void LoadFonts()
@@ -481,6 +482,8 @@ namespace RePlanet
                 case "truck": return (u > -0.85f && u < 0.35f && v > -0.4f && v < 0.45f) || (u >= 0.35f && u < 0.85f && v > -0.4f && v < 0.15f) || Mathf.Sqrt((u + 0.5f) * (u + 0.5f) + (v + 0.55f) * (v + 0.55f)) < 0.2f || Mathf.Sqrt((u - 0.5f) * (u - 0.5f) + (v + 0.55f) * (v + 0.55f)) < 0.2f;
                 case "square_full": return au < 0.8f && av < 0.8f;
             }
+            bool extra;
+            if (TabletShapeHit(shape, u, v, out extra)) return extra; // Tablet-Symbole (UISkinTablet.cs)
             return r < 0.8f;
         }
 
@@ -489,7 +492,7 @@ namespace RePlanet
         {
             if (Event.current.type != EventType.Repaint) return;
             var old = GUI.color;
-            GUI.color = c;
+            GUI.color = Faded(c);
             GUI.DrawTexture(r, White);
             GUI.color = old;
         }
@@ -498,7 +501,7 @@ namespace RePlanet
         {
             if (Event.current.type != EventType.Repaint || t == null) return;
             var old = GUI.color;
-            GUI.color = c;
+            GUI.color = Faded(c);
             GUI.DrawTexture(r, t, ScaleMode.StretchToFill, true);
             GUI.color = old;
         }
@@ -530,7 +533,7 @@ namespace RePlanet
                 slicedStyles[t] = st;
             }
             var old = GUI.color;
-            GUI.color = tint;
+            GUI.color = Faded(tint);
             st.Draw(r, false, false, false, false);
             GUI.color = old;
         }
@@ -540,7 +543,7 @@ namespace RePlanet
         {
             if (Event.current.type != EventType.Repaint) return;
             var old = GUI.color;
-            GUI.color = c;
+            GUI.color = Faded(c);
             SlicedStyle(ref roundStyle, Round, 10).Draw(r, false, false, false, false);
             GUI.color = old;
         }
@@ -550,7 +553,7 @@ namespace RePlanet
         {
             if (Event.current.type != EventType.Repaint) return;
             var old = GUI.color;
-            GUI.color = c;
+            GUI.color = Faded(c);
             SlicedStyle(ref outlineStyle, Outline, 12).Draw(r, false, false, false, false);
             GUI.color = old;
         }
@@ -562,11 +565,11 @@ namespace RePlanet
             f = Mathf.Clamp01(f);
             var st = SlicedStyle(ref barStyle, BarTex, 7);
             var old = GUI.color;
-            GUI.color = BarBack;
+            GUI.color = Faded(BarBack);
             st.Draw(r, false, false, false, false);
             if (f > 0.001f)
             {
-                GUI.color = fill;
+                GUI.color = Faded(fill);
                 float w = r.width * f;
                 if (w >= r.height) st.Draw(new Rect(r.x, r.y, w, r.height), false, false, false, false);
                 else GUI.DrawTexture(new Rect(r.x + 2, r.y + 2, Mathf.Max(0, w - 2), r.height - 4), White);
@@ -583,10 +586,10 @@ namespace RePlanet
             if (Event.current.type != EventType.Repaint) return;
             var sh = Shape(md.Shape);
             var old = GUI.color;
-            GUI.color = new Color(0, 0, 0, 0.7f);
+            GUI.color = Faded(new Color(0, 0, 0, 0.7f));
             GUI.DrawTexture(new Rect(r.x + 1.5f, r.y + 1.5f, r.width, r.height), sh, ScaleMode.ScaleToFit, true);
-            GUI.color = Hex(md.Color);
-            if (md.Color == 0x2E2A26) GUI.color = Hex(0x8A8078); // Altöl auf dunklem Grund sichtbar machen
+            GUI.color = Faded(Hex(md.Color));
+            if (md.Color == 0x2E2A26) GUI.color = Faded(Hex(0x8A8078)); // Altöl auf dunklem Grund sichtbar machen
             GUI.DrawTexture(r, sh, ScaleMode.ScaleToFit, true);
             GUI.color = old;
         }

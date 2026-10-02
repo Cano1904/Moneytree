@@ -182,7 +182,7 @@ die ökologischen Aktionen des Bereichs möglich. Großprojekte schalten Kosmeti
   ist). So bleiben Lieferungen eine verlässliche Reserve, aber keine Endlos-Geldquelle.
 - **Fundstücke** (16 Stück, 4 je Planet) erzählen in kurzen Texten, wie es zur Vermüllung kam – im Archiv nachlesbar.
 - **Kosmetik** ohne Spielvorteil: Farben, Akzentfarben, Aufkleber und Anbauteile (z. B. Antenne, Blume, Strickmütze).
-- **Erfolge** (20 Stück, Reiter „Erfolge“ im Spielmenü mit Fortschrittsbalken): serverseitig aus der Statistik gezählt
+- **Erfolge** (25 Stück: 20 aus der Statistik + 5 Schatz-Sätze, Reiter „Erfolge“ im Spielmenü mit Fortschrittsbalken): serverseitig aus der Statistik gezählt
   (Sammeln, Strecke, Verkäufe, Ballen, Sortieren, Entsorgen, Zerlegen, Kran, Reparaturen, Fundstücke, Begrünung,
   abgewartete Stürme, durchschlafene Nächte, Helferroboter, Ereignisfunde, Schnellreisen, Lieferungen). Jeder Erfolg
   schaltet genau ein kosmetisches Teil frei (6 Farben, 5 Akzente, 6 Aufkleber, 3 Anbauteile wie Rundumleuchte, Glühbirne,
@@ -220,6 +220,65 @@ Ab 15 Minuten Spielzeit passiert auf dem aktuellen Planeten alle 12–18 Minuten
   (10–14 Teile aus der Müllliste des Bereichs).
 Jedes Ereignis wird per Hinweis angekündigt; die Funde sind als Stern auf der Karte markiert. Höchstens 40 Ereignisfunde
 liegen gleichzeitig herum.
+
+### TNT: Müllberge sprengen (und Freunde durch die Luft werfen)
+
+Die großen **Müllberge** am Rand jedes Bereichs (je Planet 21, bisher reine Kulisse, die mit der Sauberkeit schrumpft)
+lassen sich mit **TNT** sprengen.
+
+- **Kaufen:** in der Werkstatt (Reiter Werkstatt › Upgrades, Zeile „TNT-Ladung“): TERRA 25, PYRA 35, PELAGIA 30, NIVALIS 45
+  Credits je Ladung, höchstens **3 Ladungen** dabei (je Roboter, gespeichert).
+- **Werfen:** Taste halten (Tastatur **Q**, Controller **B** an Land) = zielen und Wurfkraft aufladen (≈ 1 s bis voll). Richtung und
+  Höhe folgen der Kamera; eine **gepunktete Flugbahn** und eine **Landemarke** zeigen vorab, wo die Ladung liegen bleibt (grüner Ring =
+  sprengt einen Müllberg, orange = nur Knall, blau = erlischt; dazu der Sprengradius als großer Ring). Loslassen wirft, Interagieren
+  bricht ab. Die Flugbahn rechnet der Server (fester Zeitschritt, Schwerkraft, Abprallen an Wänden und Boden, Ausrollen; auf einem
+  Müllberg bleibt sie liegen, im Wasser versinkt sie). 4,5–16,5 m/s Abwurf, voller Wurf ≈ 25 m. Zwischen zwei Würfen 1,2 s.
+- **Zündschnur:** 4 s ab dem Wurf (mindestens 0,8 s nach der Landung), Funken, Zischen, Countdown-Piepser je Sekunde, in der
+  letzten Sekunde schnell; der Zeitzünder am Bündel blinkt.
+- **Sprengen:** Explodiert die Ladung höchstens 3 m vom Rand eines Müllbergs, verliert er eine **Stufe** (Radius bis 6,5 m:
+  2 Stufen, größer: 3 Stufen) und zerfällt in **14 Stücke** (+2 bei großen Bergen) aus der Müllliste seines Bereichs – nur kleine,
+  greif- oder magnetisierbare Teile (≤ 6 kg). **15 % gehen als Staub verloren** (also 12 bzw. 14 Stücke). Danach legt sich **12 s**
+  lang der Staub (Abklingzeit je Berg). Eingesammelte Stücke zählen zum **Hauptmüll** ihres Bereichs – höchstens **25 %** der
+  Bereichsmenge; darüber hinaus bringen sie nur Material. Ohne TNT ändert sich nichts (die Berge schrumpfen wie bisher mit der Sauberkeit).
+- **Nicht** im Stützpunkt (Wurf gesperrt; landet eine Ladung dort, erlischt die Zündschnur und die Ladung kommt zurück), nicht
+  drinnen, nicht im Wasser (Wurf gesperrt, Ladung versinkt), nicht im Sturm, nicht aus dem Fahrzeug. Treibende Müllinseln
+  (PELAGIA) und Berge hinter verschlossenen Sperren sind nicht sprengbar.
+- **Sprengradius 6,5 m:** Roboter (auch der Werfer selbst) fliegen **harmlos** 2,2–5,4 m durch die Luft (nah dran weiter),
+  überschlagen sich, landen nie in Wänden oder tiefem Wasser, haben **Ruß** auf dem Augen-Display (6 s), **Sternchen** kreisen um
+  den Kopf, und sie sind **1,6 s benommen** (keine Steuerung, keine Werkzeuge). Keine Energie, keine Gegenstände, kein Fortschritt
+  gehen verloren; Spieler im Fahrzeug oder in einem Unterschlupf sind geschützt. Der Werfer bekommt „Treffer!“, der Getroffene
+  „… hat dich mit TNT erwischt!“.
+- **Koop:** Host-Einstellung „TNT trifft Mitspieler“ (Koop-Bildschirm, Standard an, mit der Welt gespeichert). Aus = nur der
+  Werfer selbst fliegt, wenn er zu nah steht.
+- **Nie beschädigt:** Gebäude, Stützpunkt, Projekte, Reparaturpunkte, Helferroboter (laufen vor zischenden Ladungen weg, stehen
+  danach unversehrt am Rand) und Tiere (fliehen).
+- **Darstellung:** Bündel aus drei roten Stangen mit Klebeband, Zeitzünder und Zündschnur; Explosion mit Lichtblitz (bei „weniger
+  Lichtblitze“ schwach), Feuerball, Rauchsäule, Staubring, Schuttbrocken, Kamerawackeln (nur wenn eingeschaltet); die Stücke des
+  Bergs fliegen sichtbar zu ihren Landestellen und erscheinen erst dort.
+- **Balancing:** Sprengen ist eine Abkürzung, kein Muss – es kostet Geld und Wege. Kampagnen-Bot (je 3 Läufe mit Umweg ×0,98/1,0/1,02):
+  ohne TNT 9,86/9,83/10,05 h, mit TNT 9,88/9,94/9,72 h (Bot setzt 19–26 Ladungen ein); Mensch-Modell ohne TNT 17,64/17,24/17,57 h,
+  mit TNT 17,54/17,78/18,10 h. Für den Bot zeitneutral (Mittel 9,85 statt 9,91 h), beim langsameren Mensch-Modell im Mittel ≈ 3 % länger
+  (Wege zu den Bergen, Kaufkosten, je Stück eine Aufnahme) – TNT ist eine Wahl (und ein Spaß), keine Pflicht.
+
+### Schätze im Müll (Vitrine)
+
+In manchem Müll steckt ein **Schatz**: 30 Einzelstücke mit Namen, kurzem Text und Seltenheit – TERRA 8 (Haushalt, Spielzeug:
+Comicheft, Heldenfigur, Postkarte, Spielmodul, Teddy, Schneekugel, Schallplatte, Spieluhr), PYRA 7 (Arbeit: Brotdose,
+Schraubenschlüssel, Transistorradio, Schutzhelm, Pokal, Zahnrad-Anhänger, Taschenuhr), PELAGIA 8 (Meer: Muschel, Sandschaufel,
+Taucherbrille, Holzsegelboot, Flaschenpost, Kompass, Leuchtturm-Spardose, Perlenkette), NIVALIS 7 (Forschung: Thermoskanne,
+Schachfigur, Taschenrechner, Polarlicht-Foto, Forschertagebuch, Plüschpinguin, Kristall-Speicherwürfel).
+
+- **Verteilung:** aus einem **Weltsamen** (gespeichert, im Koop für alle gleich) – häufige Schätze in den ersten beiden Bereichen,
+  seltene weiter hinten oder in schwierigem Müll, legendäre im letzten Bereich in Müll, der ein Werkzeug braucht (eingefroren, unter
+  Wasser, zerlegen, starker Magnet). Jeder Schatz existiert einmal pro Welt.
+- **Finden:** Wer (oder welcher Helfer/welche Drohne) den Müll einsammelt bzw. zerlegt, findet den Schatz. Aus der Nähe (14 m)
+  **funkelt** solcher Müll. Beim Fund steigt das kleine Modell funkelnd auf, ein Glockenmotiv erklingt, Hinweis „Fund!“.
+- **Vitrine:** eigener Reiter im Spielmenü-Tablet – je Planet alle Stücke, gefundene mit Symbol, Name, Seltenheit und Text, fehlende
+  als dunkle Silhouette „???“. Schätze sind **unverkäuflich** und kommen nie in den Behälter.
+- **Belohnung:** ein vollständiger Planetensatz gibt einen Erfolg mit Kosmetik (Kramkiste → Akzent Bernstein, Werkbankfunde →
+  Farbe Messing, Strandgut → Farbe Perlmutt, Eisarchiv → Akzent Polarblau), alle 30 → „Kurator der Vitrine“ (Farbe Schatzgold).
+- **Ältere Spielstände:** der Samen wird aus Weltname und Erstellzeit abgeleitet; steckt ein Schatz in schon eingesammeltem Müll,
+  zieht er in ein noch liegendes Objekt um (gespeichert) – jeder Satz bleibt vollständig findbar.
 
 ## 10. Geschichte
 

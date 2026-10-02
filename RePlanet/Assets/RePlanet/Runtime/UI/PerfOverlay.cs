@@ -8,7 +8,8 @@ namespace RePlanet
     /// <summary>
     /// Leistungsanzeige oben links (Einstellung „Leistungsanzeige“, Taste F3): FPS aktuell / Minimum und Mittel der letzten
     /// 5 Sekunden, Bildzeit (Mittel/Spitze), Draw-Calls/Batches/SetPass/Dreiecke (über ProfilerRecorder – in manchen
-    /// Release-Builds liefert Unity diese Zähler nicht, dann „–“), Speicher, Qualitätsstufe und Auflösung.
+    /// Release-Builds liefert Unity diese Zähler nicht, dann „–“), Speicher, Qualitätsstufe und Auflösung,
+    /// dazu Flacker-Diagnose (Neuaufbauten der Schriftatlanten, Starts der Logo-Animation).
     /// Die Bildzeiten werden immer mitgeschrieben (billig); Zähler laufen nur, solange die Anzeige sichtbar ist.
     /// </summary>
     public partial class UIRoot
@@ -137,7 +138,10 @@ namespace RePlanet
             string preset = Loc.T(Settings.QualityNames[Mathf.Clamp(s.Quality, 0, Settings.QualityNames.Length - 1)]);
             string l4 = Loc.F("Qualität {0} (Unity: {1}) · {2}×{3} · Render {4} % · Speicher {5} MB", preset, q, Screen.width, Screen.height,
                 Mathf.RoundToInt(s.RenderScale * 100f), (mem / (1024f * 1024f)).ToString("0", ci));
-            return l1 + "\n" + UISkin.Col(l2 + "\n" + l3 + "\n" + l4, UISkin.Text);
+            // Flacker-Diagnose: Neuaufbauten der Schriftatlanten (je einer kann ein Bild mit falschen Glyphen zeigen) und
+            // Starts der Logo-Animation im Hauptmenü (mehr als einer pro Öffnen = Neustart)
+            string l5 = Loc.F("Schriftatlas neu: {0} · Logo-Starts: {1}", UISkin.FontRebuilds, LogoStarts);
+            return l1 + "\n" + UISkin.Col(l2 + "\n" + l3 + "\n" + l4, UISkin.Text) + "\n" + UISkin.Col(l5, UISkin.TextDim);
         }
 
         /// <summary>Höhe der Anzeige (0 = aus) – das HUD rückt oben links darunter.</summary>

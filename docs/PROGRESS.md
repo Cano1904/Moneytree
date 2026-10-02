@@ -114,6 +114,35 @@ Shader-Prüfung OK, Server-Rauchtest 17/17.
 - Nicht in Unity getestet: Aussehen der Stationen und Lichter, Gelände-Shader-Änderungen, Rauch, Leuchtfeuer, Schlafszene,
   Kamerafahrt, Wirkung der Farbkorrektur.
 
+## Flackern im Hauptmenü, Spielmenü als Feldtablet
+- **Flackern – Ursachen (ohne Unity untersucht):**
+  - *Nachgewiesen (Code + Prüfumgebung):* Der Logo-Einflug startete neu, sobald zwischen zwei Menü-Bildern > 0,5 s lagen –
+    jeder Ruckler ließ alle Buchstaben verschwinden und neu einfliegen. Mit derselben Bildfolge (Ruckler 0,8 s und 1,5 s)
+    startet die alte Logik 3×, `MenuLogoClock` 1×. Behoben.
+  - *Nachgewiesen (Code), Wirkung vermutet:* Die „Fortsetzen“-Zeile las alle 3 s den kompletten Spielstand im OnGUI
+    (Datei lesen + Parsen + Speicherbereinigung) → regelmäßige Ruckler. Jetzt nur bei geänderter Dateizeit.
+  - *Vermutet:* Echtzeit-Reflexionssonde mit Zeitscheiben (einzelne Würfelseiten über mehrere Bilder) liefert die
+    Nebelfarbe der Nachbearbeitung → jetzt ohne Zeitscheiben (64 px, nur Himmel). Schriftatlas-Neuaufbauten mitten im Bild
+    → Menüschriften werden vorab angefordert; Zähler in der Leistungsanzeige (F3) zeigt, ob es noch passiert.
+    Weitere Ruckler-Quelle (nicht geändert): `AudioManager.PumpProducts` legt je Bild einen ganzen Satz Musik-Clips an.
+  - *Ausgeschlossen in der Prüfumgebung (20 s Menü, 60 Hz, mit Ruckler):* Belichtung, Nebel, Sonne, Umgebungslicht
+    konstant (Streuung 0,00 %), keine Kamerawechsel, keine ein-/ausschaltenden Renderer/Lichter, Draws je Bild 123…126.
+    Nicht abgedeckt: echte GPU, Nachbearbeitungs-Shader, Unitys Sonde/Schriftatlas.
+- **Feldtablet:** siehe ARCHITEKTUR („Oberfläche“). Vorschaubild `docs/vorschau/tablet_vorschau.png` (Python/PIL, kein Spielbild).
+- Nicht in Unity getestet: Aussehen des Tablets, Lesbarkeit unter Glas/Scanlinien, Animationen und Maus/Fokus während der
+  Öffnen-Animation (GUI.matrix), 4:3 mit großer Textgröße, englische Beschriftungen der Reiter, ob das Flackern beim
+  Nutzer damit weg ist (bitte mit F3 „Schriftatlas neu“/„Logo-Starts“ beobachten).
+
+## TNT werfen und Schätze im Müll
+- **TNT:** Ladungen in der Werkstatt (25/35/30/45 Credits, höchstens 3), werfen mit Zielvorschau (Q bzw. Controller B), Zündschnur 4 s,
+  Müllberge zerfallen stufenweise in sammelbare Stücke (15 % Staub, Anteil am Hauptmüll bis 25 % je Bereich), Treffer werfen Roboter
+  harmlos durch die Luft (Ruß, Sterne, 1,6 s benommen), Host-Einstellung „TNT trifft Mitspieler“. Nichts wird beschädigt.
+- **Schätze:** 30 Einzelstücke, Verteilung aus dem Weltsamen, Funkeln aus der Nähe, Fund-Anzeige, Tablet-Reiter „Vitrine“, 5 Satz-Erfolge
+  mit Kosmetik, unverkäuflich.
+- **Balancing:** Kampagnen-Bot vorher 9,83 h (Mensch-Modell 17,24 h); mit TNT je nach Lauf 9,72–9,94 h (Mensch 17,54–18,10 h) – für den Bot zeitneutral, Mensch-Modell im Mittel ≈ 3 % länger, im Rahmen der Schwankung (Läufe mit Umweg ×0,98…1,02 ohne TNT: 9,83–10,05 h bzw. 17,24–17,64 h).
+- Nicht in Unity getestet: Wurfgefühl/Zielvorschau, Explosion (Licht, Partikel, Kamerawackeln), Überschlag und Ruß am Roboter, Funkeln,
+  Vitrine-Symbole, Klangbild der neuen Synth-Klänge, Controller-Belegung B.
+
 ## Grenzen (Stand dieser Umgebung)
 - Kein Unity-Editor, kein Unity-Laufzeittest, keine echten Spiel-Screenshots, keine gebaute .exe.
 - Shader wurden nicht mit Unitys Compiler übersetzt (nur glslang-Prüfung).

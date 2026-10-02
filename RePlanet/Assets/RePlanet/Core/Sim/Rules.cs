@@ -163,7 +163,7 @@ namespace RePlanet.Core
         {
             var l = WorldGen.Get(ps.Id);
             if (l.AreaWeight[area] <= 0) return 1f;
-            return M.Clamp01(ps.RemovedWeight[area] / l.AreaWeight[area]);
+            return M.Clamp01((ps.RemovedWeight[area] + HeapCredit(ps, area)) / l.AreaWeight[area]);
         }
 
         public static bool GateOpen(PlanetState ps, int gate)

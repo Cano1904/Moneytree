@@ -69,6 +69,7 @@ namespace RePlanet.Core
             foreach (var ps in S.Planets.Values) ps.RecomputeDerived();
             OnPlanetEnter(false);
             EvaluateMissions();
+            InitTreasures();
             EvaluateAchievements(false);
             InitStory();
         }
@@ -82,6 +83,7 @@ namespace RePlanet.Core
             w.CurrentPlanet = startPlanet;
             w.StartPlanet = startPlanet;
             w.Planet(startPlanet).Visited = true;
+            w.TreasureSeed = Treasures.NewSeed();
             foreach (var c in GameData.Cosmetics.Values) if (c.Default) w.CosmeticUnlocks.Add(c.Id);
             return w;
         }
@@ -401,17 +403,8 @@ namespace RePlanet.Core
                     Fx(new JObj().Set("k", "gate").Set("g", t.Gate).Set("area", def.AreaNames[t.Gate + 1]));
                     SaveReason = "Zugang freigelegt";
                 }
-                if (t.Gate < 0)
-                {
-                    float c = Rules.Cleanliness(ps, t.Area);
-                    if (lastClean[t.Area] < GameData.AreaCleanThreshold && c >= GameData.AreaCleanThreshold)
-                    {
-                        Fx(new JObj().Set("k", "areaclean").Set("a", t.Area).Set("name", GameData.Planets[ps.Id].AreaNames[t.Area]));
-                        SaveReason = "Bereich gereinigt";
-                    }
-                    CheckAreaFull(lastClean[t.Area], c);
-                    lastClean[t.Area] = c;
-                }
+                if (t.Gate < 0) CheckAreaClean(ps, t.Area);
+                FindTreasure(ps, t);
             }
             else
             {
@@ -420,10 +413,24 @@ namespace RePlanet.Core
                 {
                     dynRemovals.Add(o.Key);
                     dynUpserts.Remove(o.Key);
+                    OnHeapPieceRemoved(ps, o.D);
                 }
             }
             ps.Progress.Remove("cut:" + o.Key);
             ps.Progress.Remove("lift:" + o.Key);
+        }
+
+        /// <summary>Sauberkeit eines Bereichs hat sich geändert: Meldung „Hauptmüll entfernt“ bzw. „komplett sauber“ beim Überschreiten.</summary>
+        void CheckAreaClean(PlanetState ps, int area)
+        {
+            float c = Rules.Cleanliness(ps, area);
+            if (lastClean[area] < GameData.AreaCleanThreshold && c >= GameData.AreaCleanThreshold)
+            {
+                Fx(new JObj().Set("k", "areaclean").Set("a", area).Set("name", GameData.Planets[ps.Id].AreaNames[area]));
+                SaveReason = "Bereich gereinigt";
+            }
+            CheckAreaFull(lastClean[area], c);
+            lastClean[area] = c;
         }
 
         void CountCollected(TrashType t)
@@ -500,6 +507,7 @@ namespace RePlanet.Core
             if (dt <= 0) return;
             dt = Math.Min(dt, 0.5f);
             S.PlayTime += dt;
+            actor = null;
             var ps = S.Cur;
             var pdef = GameData.Planets[ps.Id];
 

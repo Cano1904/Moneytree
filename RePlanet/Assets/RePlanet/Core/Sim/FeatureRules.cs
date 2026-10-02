@@ -167,7 +167,9 @@ namespace RePlanet.Core
                 case "repairs": { long n = 0; foreach (var ps in s.Planets.Values) n += ps.Repaired.Count; return Math.Max(n, s.Stat("repairsDone")); }
                 case "lore": return s.Lore.Count;
                 case "helpers": { long n = 0; foreach (var ps in s.Planets.Values) n += ps.Bots.Count; return Math.Max(n, s.Stat("helpersFixed")); }
+                case "treasure": return Treasures.FoundCount(s, null);
             }
+            if (a.Counter.StartsWith("treasure:", StringComparison.Ordinal)) return Treasures.FoundCount(s, a.Counter.Substring(9));
             return s.Stat(a.Counter);
         }
 

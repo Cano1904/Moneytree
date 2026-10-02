@@ -445,6 +445,7 @@ namespace RePlanet.Core
         void TickFeatures(float dt)
         {
             UpdateHelpers(dt);
+            TickTnt(dt);
             UpdateEvents(dt);
             achTimer += dt;
             if (achTimer > 1f) { achTimer = 0; EvaluateAchievements(); }

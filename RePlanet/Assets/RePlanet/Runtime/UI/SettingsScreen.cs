@@ -30,7 +30,7 @@ namespace RePlanet
             GameAction.Interact, GameAction.UseTool, GameAction.AltTool, GameAction.ToolNext, GameAction.ToolPrev,
             GameAction.Tool1, GameAction.Tool2, GameAction.Tool3, GameAction.Tool4, GameAction.Tool5, GameAction.Tool6, GameAction.Tool7,
             GameAction.Press, GameAction.Vehicle, GameAction.VehicleReset, GameAction.DiveUp, GameAction.DiveDown,
-            GameAction.Sleep, GameAction.Shelter, GameAction.Emote,
+            GameAction.Sleep, GameAction.Shelter, GameAction.Emote, GameAction.ThrowTnt,
             GameAction.Menu, GameAction.Inventory, GameAction.Missions, GameAction.Map, GameAction.Build, GameAction.RotateBuild,
             GameAction.Photo, GameAction.QuickSave, GameAction.Pause, GameAction.Radio, GameAction.PerfOverlay,
         };
@@ -42,7 +42,7 @@ namespace RePlanet
             { "RT", "Werkzeug benutzen" },
             { "LT", "Magnet aufladen / Zweitfunktion" },
             { "A", "Interagieren · Auftauchen · im Menü: Bestätigen" },
-            { "B", "Abtauchen · im Menü: Zurück" },
+            { "B", "Abtauchen · an Land halten: TNT zielen, loslassen: werfen · im Menü: Zurück" },
             { "X", "Pressen" },
             { "Y", "Ein-/Aussteigen · Fotomodus: Panel ein/aus" },
             { "LB / RB", "Werkzeug wechseln · im Menü: Reiter wechseln" },

@@ -47,6 +47,11 @@ public class CampaignBot
     /// <summary>Credits-Verlauf: Spielzeit (s), Kontostand, insgesamt verdient.</summary>
     public readonly List<double[]> CreditHistory = new List<double[]>();
     public int Actions, Rejections, SheltersBuilt, Sleeps, StormSleeps, ShelterTrips, Deliveries, CraneHauls, Travels;
+    /// <summary>TNT: Müllberge sprengen, wo es sich lohnt (früh in einem Bereich, Berg in der Nähe, genug Geld übrig).</summary>
+    public bool UseTnt = true;
+    public int TntThrows, TntBlasts, TntPieces;
+    public long TntSpent;
+    readonly HashSet<string> blastSkip = new HashSet<string>();
     /// <summary>Nächte/Stürme im Hangar bzw. im Laderaum des Transportschiffs verbracht.</summary>
     public int HangarSleeps, ShipSleeps;
     public long DeliveryCredits;
@@ -781,6 +786,7 @@ public class CampaignBot
 
     void CollectRound(int area)
     {
+        if (TryBlast(area)) return;
         // Behälter füllen: bevorzugt im Zielbereich, sonst in allen zugänglichen Bereichen
         var o = Nearest(x => x.Area == area && x.Gate < 0 && x.IsStatic) ?? Nearest(x => x.Gate < 0 && Accessible(x.Area));
         if (o != null) { Process(o); return; }
@@ -796,6 +802,72 @@ public class CampaignBot
         if (need.Count == 0) { Deposit(); Wait(1f); return; }
         var want = need.OrderByDescending(kv => kv.Value).First().Key;
         Acquire(want);
+    }
+
+    /// <summary>
+    /// Sprengt einen nahen Müllberg im aktuellen Bereich, wenn es Zeit spart: Bereich schon zu 45–83 % sauber (der restliche Müll liegt verstreut), kein Sparziel offen, Anteil der Berg-Stücke
+    /// am Hauptmüll noch nicht ausgeschöpft, Berg höchstens 30 m entfernt, nach dem Kauf bleibt Geld für das Sparziel übrig.
+    /// Danach werden die Stücke (dicht beieinander) eingesammelt.
+    /// </summary>
+    bool TryBlast(int area)
+    {
+        if (!UseTnt || P.Vehicle != null || Danger()) return false;
+        float clean = Rules.Cleanliness(PS, area);
+        if (clean < 0.45f || clean > 0.83f || saveFor > 0) return false;
+        float cap = L.AreaWeight[area] * GameData.TntCleanShare;
+        if (Rules.HeapCredit(PS, area) >= cap - 15f) return false; // eine Sprengung (≈ 12 Stücke) muss sich noch anrechnen lassen
+        int price = GameData.TntPrice(S.CurrentPlanet);
+        int best = -1; float bd = 30f;
+        for (int i = 0; i < L.Mounds.Count; i++)
+        {
+            var m = L.Mounds[i];
+            if (m.Area != area || blastSkip.Contains(S.CurrentPlanet + i) || Rules.MoundBlastCheck(S, PS, i) != null) continue;
+            float d = V3.DistXZ(P.Pos, m.Pos) - m.Radius;
+            if (d < bd) { bd = d; best = i; }
+        }
+        if (best < 0) return false;
+        if (P.Tnt == 0)
+        {
+            long spare = S.Credits - saveFor - 400;
+            int n = (int)Math.Min(GameData.TntMaxCarry, spare / price);
+            if (n < 2) return false;
+            Deposit();
+            MoveTo(Station("workshop"), 3f);
+            if (!Act(new JObj().Set("a", "buytnt").Set("n", n))) return false;
+            TntSpent += (long)price * n;
+        }
+        var mound = L.Mounds[best];
+        float sc = Rules.MoundScale(PS, best);
+        var r = new Rng(best * 31 + (int)T);
+        float water = Terrain.WaterLevel(S.CurrentPlanet);
+        V3 spot = default(V3), dir = default(V3); float charge = 0; bool found = false;
+        for (int k = 0; k < 24 && !found; k++)
+        {
+            float a = M.Atan2(P.Pos.z - mound.Pos.z, P.Pos.x - mound.Pos.x) + (k % 2 == 0 ? 1 : -1) * (k / 2) * 0.35f;
+            float d = mound.Radius * sc + 8.5f + r.Range(0f, 3f);
+            float x = mound.Pos.x + M.Cos(a) * d, z = mound.Pos.z + M.Sin(a) * d;
+            if (Math.Abs(x) > 144 || Math.Abs(z) > 144 || L.Base.InBase(x, z) || L.BlockedStatic(x, z, 1f)) continue;
+            float y = L.GroundAt(x, z);
+            if (y < water + 0.3f || Rules.HeapAt(PS, new V3(x, 0, z), 1.5f) >= 0) continue;
+            for (int g = 0; g < area; g++) if (!Rules.GateOpen(PS, g)) continue;
+            spot = new V3(x, y, z);
+            TntFlight f;
+            if (Rules.TntAim(PS, spot, mound.Pos, Math.Max(1.5f, mound.Radius * sc * 0.6f), out dir, out charge, out f)
+                && (f.Mound == best || Rules.HeapAt(PS, f.Pos, GameData.TntHeapReach) == best)) found = true;
+        }
+        if (!found) { blastSkip.Add(S.CurrentPlanet + best); return false; }
+        MoveTo(spot, 0.3f);
+        if (Danger()) return true;
+        int stage0 = PS.Blasts(best);
+        if (!Act(new JObj().Set("a", "tnt").Set("dir", Json.Arr(dir.x, dir.y, dir.z)).Set("s", charge))) { blastSkip.Add(S.CurrentPlanet + best); return false; }
+        TntThrows++;
+        int guard = 0;
+        while (PS.Tnt.Count > 0 && guard++ < 100) Step(Dt);
+        if (PS.Blasts(best) > stage0) TntBlasts++;
+        guard = 0;
+        ObjView piece;
+        while (Rules.HeapCredit(PS, area) < cap && (piece = Nearest(x => x.D != null && x.D.Heap == best + 1)) != null && guard++ < 40) { Process(piece); TntPieces++; }
+        return true;
     }
 
     void Acquire(string item)

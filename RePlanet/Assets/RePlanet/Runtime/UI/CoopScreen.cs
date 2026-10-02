@@ -184,6 +184,10 @@ namespace RePlanet
             bool trust = UINav.Toggle(new Rect(0, y, w, 46), W.TrustGuests, L("Vertrauensmodus: Gäste dürfen teure Käufe (ab ") + Num(GameData.GuestExpensiveThreshold) + L(" Credits), Abriss und Reisen auslösen"));
             if (trust != W.TrustGuests) app.Act(new JObj().Set("a", "trust").Set("v", trust));
             y += 56;
+            // TNT trifft Mitspieler (mit der Welt gespeichert)
+            bool hits = UINav.Toggle(new Rect(0, y, w, 46), W.TntHitsPlayers, L("TNT trifft Mitspieler: Getroffene fliegen harmlos durch die Luft (aus = nur der Werfer selbst)"));
+            if (hits != W.TntHitsPlayers) app.Act(new JObj().Set("a", "tnthits").Set("v", hits));
+            y += 56;
             return CoopPlayerList(app, w, y);
         }
 
