@@ -82,11 +82,13 @@ public static partial class Checks
         Run(1f);
         var pb = FunFreeSpot(ps, new V3(0, 0, -60), 0, 40, 3);
         V3 pa = new V3(float.NaN, 0, 0);
-        for (int k = 0; k < 40 && pb.IsFinite; k++)
+        for (int k = 0; k < 120 && pb.IsFinite; k++)
         {
+            if (k > 0 && k % 30 == 0) pb = FunFreeSpot(ps, new V3(0, 0, -60), 0, 50, 3 + k);
             var cand = FunFreeSpot(ps, pb, 9f, 13f, 50 + k);
             TntFlight f;
-            if (cand.IsFinite && Rules.TntAim(ps, cand, pb, 1.2f, out dir, out charge, out f) && f.Land == 0 && Rules.HeapAt(ps, f.Pos, GameData.TntHeapReach) < 0) { pa = cand; break; }
+            if (cand.IsFinite && Rules.TntAim(ps, cand, pb, 1.2f, out dir, out charge, out f) && f.Land == 0 && Rules.HeapAt(ps, f.Pos, GameData.TntHeapReach) < 0
+                && V3.DistXZ(Rules.TntKnockTarget(ps, f.Pos, pb, 0f), pb) > 2f) { pa = cand; break; } // Platz zum Wegfliegen (nicht ins Wasser)
         }
         if (!pa.IsFinite || !pb.IsFinite) Fail("Keine Stelle für den Wurf auf den Mitspieler");
         else
