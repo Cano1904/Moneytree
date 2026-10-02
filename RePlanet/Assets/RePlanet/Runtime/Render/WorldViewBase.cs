@@ -96,8 +96,8 @@ namespace RePlanet
         {
             if (baseLampMat == null)
             {
-                baseLampMat = Mats.Unique(Mats.Emissive, new Color(1f, 0.9f, 0.75f));
-                Mats.SetEmission(baseLampMat, new Color(1f, 0.8f, 0.55f) * 0.3f);
+                baseLampMat = Mats.Unique(Mats.Emissive, Color.Lerp(baseLampCol, Color.white, 0.4f));
+                Mats.SetEmission(baseLampMat, baseLampCol * 0.3f);
             }
             float yaw = Mathf.Atan2(outward.x, outward.z) * Mathf.Rad2Deg;
             var o = mb.M;
@@ -112,8 +112,9 @@ namespace RePlanet
         /// <summary>Nachtbeleuchtung des Stützpunkts (von AnimateLights aufgerufen).</summary>
         void AnimateBaseLights(float dark)
         {
-            if (baseLampMat != null) Mats.SetEmission(baseLampMat, new Color(1f, 0.8f, 0.55f) * Mathf.Lerp(0.3f, 3.2f, dark));
+            if (baseLampMat != null) Mats.SetEmission(baseLampMat, baseLampCol * Mathf.Lerp(0.3f, 3.2f, dark));
             AnimateShelters();
+            AnimateStation(dark);
         }
 
         // ================================================================== Stützpunkt
@@ -122,12 +123,22 @@ namespace RePlanet
             var b = Layout.Base;
             baseLamps.Clear();
             var mb = new MultiBuilder { UsePalette = true };
+            var det = new MultiBuilder { UsePalette = true }; // Feindetail, wird ab 75 m ausgeblendet (WorldViewStations)
             if (trimMat == null) InitBuildingMats();
+            InitStationStyle();
             float gy = b.Center.y;
-            mb.GroundY = gy;
-            CoreBuilding(mb, gy);
+            mb.GroundY = gy; det.GroundY = gy;
+            // Eigene Station je Planet (gleiche Kollision und Wege): WorldViewStations.cs
+            switch (stationStyle)
+            {
+                case 1: PyraBunker(mb, det, gy); break;
+                case 2: PelagiaPier(mb, det, gy); break;
+                case 3: NivalisDome(mb, det, gy); break;
+                default: CoreBuilding(mb, gy); TerraDepotExtras(mb, det, gy); break;
+            }
             HangarInterior(mb, gy);
-            GarageBuilding(mb, gy);
+            HangarStyleDetails(mb, det, gy);
+            StationGarage(mb, det, gy);
             // Ladeplatz
             var ch = b.Stations["charge"];
             ChargeStation(mb, new Vector3(ch.x, gy, ch.z));
@@ -142,6 +153,7 @@ namespace RePlanet
                 if (!StationColors.TryGetValue(kv.Key, out col) || kv.Key == "storage" || kv.Key == "charge") continue;
                 var sp = new Vector3(kv.Value.x, gy, kv.Value.z);
                 var c = Mats.C(col);
+                StationPad(mb, det, sp);
                 switch (kv.Key)
                 {
                     case "sell": SellTerminal(mb, sp, c); break;
@@ -178,13 +190,15 @@ namespace RePlanet
             mb.For(Rubber(new Color(0.1f, 0.1f, 0.11f))).Box(new Vector3(st.x, gy + 0.15f, st.z - 0.9f), new Vector3(4.2f, 0.02f, 0.9f));
             HazardBand(mb, new Vector3(st.x, gy + 0.075f, st.z + 1.35f), 0, 4.8f, 0.03f, 0.18f);
             mb.Build("Base", Root, true);
+            if (!det.Empty) baseDetail = det.Build("BaseDetail", Root, false).transform;
             BuildHangarDoor(gy);
+            if (stationStyle == 2) BuildLighthouseBeam(gy);
         }
 
         // ------------------------------------------------------------------ Hauptgebäude mit Lager-Silos
         void CoreBuilding(MultiBuilder mb, float gy)
         {
-            var white = Mats.Surface(SurfKind.Plaster, new Color(0.9f, 0.88f, 0.82f));
+            var white = Brick(new Color(0.62f, 0.33f, 0.25f)); // altes Stadtdepot: Backstein
             var tealP = Paint(new Color(0.18f, 0.72f, 0.68f));
             var orange = Paint(new Color(1f, 0.55f, 0.18f));
             var steelD = Steel(new Color(0.24f, 0.25f, 0.27f));
@@ -264,15 +278,7 @@ namespace RePlanet
                 for (int g = 0; g < 4; g++) mb.For(steelD).Box(p + new Vector3(-0.245f, -0.18f + g * 0.12f, 0.1f), new Vector3(0.01f, 0.02f, 0.5f));
                 mb.For(Steel(new Color(0.6f, 0.62f, 0.63f))).Tube(p + new Vector3(0, -0.35f, -0.3f), new Vector3(-8.05f, gy + 0.3f, p.z - 0.3f), 0.025f, 5);
             }
-            // Dach: Solarmodule (Zellraster), Antennenmast, Klimageräte, Warnleuchte
-            var solar = Mats.Surface(SurfKind.Tiles, new Color(0.12f, 0.17f, 0.36f), 0.9f);
-            for (int i = 0; i < 3; i++)
-            {
-                var sp = new Vector3(-6f + i * 2.6f, gy + 7.9f, -146.5f);
-                mb.For(solar).BoxRot(sp, new Vector3(2.3f, 0.06f, 3.6f), new Vector3(-22, 0, 0));
-                mb.For(Steel(new Color(0.7f, 0.72f, 0.75f))).BoxRot(sp + new Vector3(0, -0.04f, 0), new Vector3(2.38f, 0.05f, 3.68f), new Vector3(-22, 0, 0));
-                foreach (var sx in new[] { -1f, 1f }) mb.For(steelD).Beam(sp + new Vector3(sx * 1f, -0.6f, 1.2f), sp + new Vector3(sx * 1f, -0.05f, 1.1f), 0.05f);
-            }
+            // Dach: Sheddach (TerraDepotExtras), Antennenmast, Klimagerät, Warnleuchte
             mb.For(railMat).Cylinder(new Vector3(1.8f, gy + 7.4f, -148f), 0.12f, 6f, 6);
             for (int k = 0; k < 3; k++) mb.For(railMat).Beam(new Vector3(1.8f, gy + 7.45f, -148f) + Quaternion.Euler(0, k * 120, 0) * new Vector3(1.2f, 0, 0), new Vector3(1.8f, gy + 10.5f, -148f), 0.03f);
             var o = mb.M;
@@ -619,9 +625,9 @@ namespace RePlanet
             var steelD = Steel(new Color(0.24f, 0.25f, 0.27f));
             var steelL = Steel(new Color(0.62f, 0.64f, 0.66f));
             var yellow = Paint(new Color(0.95f, 0.78f, 0.18f), 0.35f);
-            var teal = Paint(new Color(0.18f, 0.72f, 0.68f));
+            var teal = Paint(stationStyle == 1 ? new Color(0.9f, 0.45f, 0.15f) : stationStyle == 2 ? new Color(0.25f, 0.5f, 0.7f) : stationStyle == 3 ? new Color(0.2f, 0.26f, 0.38f) : new Color(0.18f, 0.72f, 0.68f));
             var wood = Mats.Surface(SurfKind.Wood, new Color(0.55f, 0.4f, 0.26f), 0.3f);
-            var warm = Glow(new Color(1f, 0.86f, 0.62f), 2.2f);
+            var warm = cabinMat ?? Glow(new Color(1f, 0.86f, 0.62f), 2.2f); // Kabinenlicht: dimmt, wenn jemand im Hangar schläft
             const float x0 = -7.6f, x1 = 2.6f, z0 = -149.1f, z1 = -141.9f, cx = -2.5f, cz = -145.5f;
             // Boden: glatter Beton, Stellplatz (gelbe Linien) und Fahrgasse vom Tor
             mb.For(Conc(new Color(0.52f, 0.52f, 0.5f))).Box(new Vector3(cx, gy + 0.015f, cz + 0.2f), new Vector3(x1 - x0, 0.03f, z1 - z0 + 0.4f));
@@ -724,8 +730,10 @@ namespace RePlanet
         void BuildHangarDoor(float gy)
         {
             const float fz = -141.5f, w = 5.4f, h = 4.3f;
+            if (stationStyle == 1) { BuildBlastDoor(gy); return; }
+            if (stationStyle == 3) { BuildAirlockDoors(gy); return; }
             var mb = new MultiBuilder { UsePalette = true };
-            var slat = Steel(new Color(0.72f, 0.74f, 0.76f));
+            var slat = stationStyle == 2 ? Wood(new Color(0.6f, 0.47f, 0.32f)) : Steel(new Color(0.72f, 0.74f, 0.76f));
             var steelD = Steel(new Color(0.24f, 0.25f, 0.27f));
             int n = 15;
             for (int k = 0; k < n; k++)
@@ -742,12 +750,61 @@ namespace RePlanet
             hangarDoor = go.transform;
             hangarOpen = 0f;
             hangarDoor.localScale = Vector3.one;
+            HangarLightAt(gy);
+        }
+
+        void HangarLightAt(float gy)
+        {
             var lg = new GameObject("HangarLicht");
             lg.transform.SetParent(Root, false);
             lg.transform.localPosition = new Vector3(-2.5f, gy + 5.0f, -145.5f);
             hangarLight = lg.AddComponent<Light>();
-            hangarLight.type = LightType.Point; hangarLight.range = 11f; hangarLight.color = new Color(1f, 0.8f, 0.58f); hangarLight.intensity = 1.6f;
+            hangarLight.type = LightType.Point; hangarLight.range = 11f; hangarLight.color = cabinCol; hangarLight.intensity = 1.6f;
             hangarLight.shadows = LightShadows.None;
+        }
+
+        /// <summary>PYRA: schweres Stahl-Hubtor (Drehpunkt unten, fährt beim Öffnen nach oben in den Torkasten).</summary>
+        void BuildBlastDoor(float gy)
+        {
+            const float fz = -141.5f, w = 5.4f, h = 4.3f;
+            var mb = new MultiBuilder { UsePalette = true };
+            var plate = Steel(new Color(0.36f, 0.33f, 0.31f));
+            var rib = Steel(new Color(0.24f, 0.22f, 0.21f));
+            var hazard = Paint(new Color(0.95f, 0.7f, 0.12f));
+            mb.For(plate).BevelBox(new Vector3(0, h * 0.5f, 0.12f), new Vector3(w, h, 0.3f), 0.04f);
+            for (int k = 0; k < 4; k++) mb.For(rib).BevelBox(new Vector3(0, 0.7f + k * 1.0f, 0.3f), new Vector3(w - 0.2f, 0.18f, 0.1f), 0.02f);
+            foreach (var sx in new[] { -1.8f, 0f, 1.8f }) mb.For(rib).Box(new Vector3(sx, h * 0.5f, 0.29f), new Vector3(0.14f, h - 0.3f, 0.08f));
+            for (int k = 0; k < 9; k++) mb.For(k % 2 == 0 ? hazard : darkMat).BoxRot(new Vector3(-w * 0.5f + 0.3f + k * 0.6f, 0.22f, 0.29f), new Vector3(0.42f, 0.36f, 0.02f), new Vector3(0, 0, 40));
+            for (int k = 0; k < 10; k++) mb.For(Steel(new Color(0.6f, 0.58f, 0.55f))).Sphere(new Vector3(-2.4f + k * 0.53f, h - 0.2f, 0.28f), 0.05f, 6, 4);
+            mb.For(Glow(new Color(1f, 0.5f, 0.1f), 1.6f)).Box(new Vector3(0, h - 0.5f, 0.28f), new Vector3(0.9f, 0.08f, 0.02f));
+            var go = mb.Build("HangarTor", Root, true);
+            go.transform.localPosition = new Vector3(0, gy, fz + 0.02f);
+            hangarDoor = go.transform;
+            hangarOpen = 0f;
+            HangarLightAt(gy);
+        }
+
+        /// <summary>NIVALIS: Schleusentor aus zwei isolierten Hälften, die zur Seite gleiten.</summary>
+        void BuildAirlockDoors(float gy)
+        {
+            const float fz = -141.5f, h = 4.3f;
+            var panel = Clad(new Color(0.8f, 0.85f, 0.92f), 0.45f);
+            var navy = Paint(new Color(0.2f, 0.26f, 0.38f), 0.45f);
+            var orange = Paint(new Color(0.95f, 0.45f, 0.15f), 0.5f);
+            for (int side = -1; side <= 1; side += 2)
+            {
+                var mb = new MultiBuilder { UsePalette = true };
+                mb.For(panel).BevelBox(new Vector3(0, h * 0.5f, 0.06f), new Vector3(2.62f, h, 0.18f), 0.04f);
+                mb.For(navy).Box(new Vector3(-side * 1.28f, h * 0.5f, 0.16f), new Vector3(0.08f, h, 0.04f));
+                for (int k = 0; k < 3; k++) mb.For(orange).Box(new Vector3(0, 1.0f + k * 1.2f, 0.16f), new Vector3(2.4f, 0.06f, 0.02f));
+                mb.For(WindowMat(0)).Box(new Vector3(-side * 0.5f, 2.9f, 0.16f), new Vector3(0.7f, 0.5f, 0.03f));
+                mb.For(Steel(new Color(0.6f, 0.62f, 0.66f))).Box(new Vector3(-side * 1.0f, 1.3f, 0.2f), new Vector3(0.08f, 0.5f, 0.06f));
+                var go = mb.Build(side < 0 ? "HangarTor" : "HangarTorR", Root, true);
+                go.transform.localPosition = new Vector3(side * 1.3f, gy, fz + 0.04f);
+                if (side < 0) hangarDoor = go.transform; else hangarDoorR = go.transform;
+            }
+            hangarOpen = 0f;
+            HangarLightAt(gy);
         }
 
         // ------------------------------------------------------------------ Transportschiff
@@ -989,7 +1046,15 @@ namespace RePlanet
             {
                 float prev = hangarOpen;
                 hangarOpen = Mathf.MoveTowards(hangarOpen, WantOpen(w, b.Hangar, near) ? 1f : 0f, dt * 0.85f);
-                hangarDoor.localScale = new Vector3(1f, Mathf.Lerp(1f, 0.04f, M.Smooth(hangarOpen)), 1f);
+                float dk = M.Smooth(hangarOpen);
+                if (stationStyle == 1) hangarDoor.localPosition = new Vector3(0f, b.Hangar.Inner.Y0 + 4.25f * dk, hangarDoor.localPosition.z); // Stahl-Hubtor fährt nach oben
+                else if (stationStyle == 3 && hangarDoorR != null)
+                {
+                    // Schleuse: zwei Hälften gleiten zur Seite
+                    hangarDoor.localPosition = new Vector3(-1.3f - 2.75f * dk, hangarDoor.localPosition.y, hangarDoor.localPosition.z);
+                    hangarDoorR.localPosition = new Vector3(1.3f + 2.75f * dk, hangarDoorR.localPosition.y, hangarDoorR.localPosition.z);
+                }
+                else hangarDoor.localScale = new Vector3(1f, Mathf.Lerp(1f, 0.04f, dk), 1f);
                 var dp = new Vector3(b.Hangar.Door.Cx, b.Hangar.Door.Y0 + 3f, b.Hangar.Door.Cz);
                 hangarMoving = MoveSound("hangar_door", hangarOpen != prev, hangarMoving, dp);
             }

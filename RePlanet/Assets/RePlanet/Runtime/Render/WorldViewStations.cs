@@ -473,7 +473,7 @@ namespace RePlanet
             {
                 float x = -7.6f + k * 0.75f;
                 if (Mathf.Abs(x) < 3.3f) continue;
-                det.For(Mats.Get(Mats.Opaque, new Color(0.8f, 0.9f, 1f), null, 0.9f)).Cylinder(new Vector3(x, gy + 6.25f, fz + 0.06f), 0.05f, -0.25f - (k % 3) * 0.15f, 5, false, 0f);
+                { float len = 0.25f + (k % 3) * 0.15f; det.For(Mats.Get(Mats.Opaque, new Color(0.8f, 0.9f, 1f), null, 0.9f)).Cylinder(new Vector3(x, gy + 6.25f - len, fz + 0.06f), 0.005f, len, 5, false, 0.05f); }
             }
         }
 
