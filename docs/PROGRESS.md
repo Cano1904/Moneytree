@@ -99,6 +99,21 @@ Shader-Prüfung OK, Server-Rauchtest 17/17.
 - Offen/ungetestet in Unity: Aussehen und Größe der Tiere, Wolkenschatten-Stärke, Spurtransparenz auf dem
   Gelände-Shader (Z-Kämpfe?), Pfützen-Glanz, Fahrverhalten an Kreuzungen, echte Bildrate.
 
+## Stationen je Planet, Schlafszene, Bildfehler aus den Screenshots (v4)
+- **Stationen:** vier eigene Stützpunkt-Bauten (Stadtdepot, Gießerei-Bunker, Pfahlbau mit Bootshaus, Forschungskuppel) mit
+  eigenen Innenräumen, Garagen, Toren und Nachtlichtern; gleiche Kollision und Funktionen, ergänzte Kollision nur für
+  PYRA-Felsflanke und PELAGIA-Hafenbecken. Vorschaubilder (Software-Renderer der Prüfumgebung, keine Unity-Aufnahmen):
+  `docs/vorschau/`.
+- **Schlaf:** sichtbare Schlafszene (Ladeplatz, Haltung, Augen, Z, Ladekabel, Aufwachen mit Strecken und Piepser, Kamera-
+  Kreisfahrt, gedimmtes Kabinenlicht), auch beim Mitspieler.
+- **Bildfehler:** dunkler „Kasten mit Linien“ vor dem TERRA-Hauptquartier = Asphaltstreifen der Hauptstraße unter dem
+  Vorplatz plus lückenhafte Bauraster-Linien der Geländetextur (jetzt Plattenbelag, scharfes Raster); helle Flecken =
+  Pfützen im Gelände-Shader, die immer den hellen Himmel spiegelten (jetzt nur bei Nässe); PELAGIA-Hügel mit Wiesen-Detail,
+  Büscheln und Steinen; der braune Achteck-Zylinder war eine Getränkedose des Streumülls direkt vor der Kamera (Form
+  verbessert, Kleinteile vor der Nahebene ausgeblendet); Abendlicht weniger orange.
+- Nicht in Unity getestet: Aussehen der Stationen und Lichter, Gelände-Shader-Änderungen, Rauch, Leuchtfeuer, Schlafszene,
+  Kamerafahrt, Wirkung der Farbkorrektur.
+
 ## Grenzen (Stand dieser Umgebung)
 - Kein Unity-Editor, kein Unity-Laufzeittest, keine echten Spiel-Screenshots, keine gebaute .exe.
 - Shader wurden nicht mit Unitys Compiler übersetzt (nur glslang-Prüfung).

@@ -117,6 +117,13 @@ gedreht, verschoben oder abgerissen:
 
 Das Lager gehört zum jeweiligen Planeten; Credits sind eine gemeinsame Kasse.
 
+**Jeder Planet hat seine eigene Station** (gleiche Funktionen, eigener Bau): TERRA ein umgebautes altes Stadtdepot aus
+Backstein mit Sheddach, Rolltor und Leuchtröhren-Schriftzug „MIKO“ · PYRA ein halb in den roten Fels gegrabener
+Gießerei-Bunker mit schwerem Stahl-Hubtor, rauchenden Schornsteinen, Rohrleitungen und glühenden Abluftgittern · PELAGIA eine
+Pfahlbau-Station mit Bohlensteg, Bootshaus samt Hafenbecken und Boot, Davit-Kran, Bojen und Leuchtfeuer · NIVALIS eine
+isolierte Forschungskuppel mit rundem Schleusentor, Antennenschüsseln, Radom, Heizstrahlern und Schnee auf den Dächern.
+Auch Hangar-Innenraum und Garage tragen den Stil des Planeten; nachts leuchten Wandlampen und Signale.
+
 ## 7. Großprojekte und „Die Stadt erwacht“
 
 Pro Bereich ein Projekt (Credits + Material aus dem Planetenlager), gebaut am Projektplatz. Das dritte Projekt jedes
@@ -149,6 +156,9 @@ die ökologischen Aktionen des Bereichs möglich. Großprojekte schalten Kosmeti
   Wer nicht hineinfahren will, muss nicht: die übrigen Unterschlüpfe gelten weiter.
 - **Schlafen** geht nur nachts in einem Unterschlupf (auch im Hangar und im Laderaum). Schlafen alle verbundenen Spieler,
   wird **nur die Nacht** übersprungen – Akku voll, Spielstand gesichert.
+- **Schlafszene:** MIKO fährt auf den Ladeplatz, klappt Arm und Antenne ein, senkt sich ab, das Augen-Display zeigt
+  geschlossene Augen und ein „z“, er „atmet“, das Ladekabel steckt, kleine Z steigen auf, die Kabinenlampen dimmen, die
+  Kamera kreist langsam. Beim Aufwachen streckt er sich und piepst fröhlich. Mitspieler sehen dieselbe Szene.
 - **Stürme lassen sich nicht verschlafen.** Man wartet sie im Unterschlupf ab: Die Schlaftaste heißt im Sturm am Tag
   „Sturm abwarten“. Warten **alle** verbundenen Spieler geschützt (Unterschlupf, Stützpunkt, Hangar, Laderaum), läuft die
   Zeit **×4** schneller, bis der Sturm vorbei ist – der Sturm selbst bleibt und dauert seine volle Zeit. Wer hinausgeht oder

@@ -70,6 +70,27 @@ Eingang, Schlafplatz, Vorplatz). `Rules.ShelterKind` liefert dafür 3 (Hangar) b
 Sammelaktionen serverseitig. Rampe und Laderaumboden sind begehbare Böden (`FloorPatch`, `PlanetLayout.GroundAt`), die
 der Motor, die Kamera und der Kampagnen-Bot gleichermaßen nutzen. Tor und Rampe sind reine Darstellung (`WorldViewBase`).
 
+## Stationen je Planet und Schlaf (`Runtime/Render/WorldViewStations.cs`, `RobotSleep.cs`)
+
+* **Gleiche Spielfläche, eigene Architektur:** Hangar, Stationen, Garage und Wege bleiben wie in `WorldGen.BuildBase`
+  (Kollision, `ShelterRoom`, Tests unverändert). `WorldViewBase.BuildBase` wählt je Planet den Stil: TERRA Stadtdepot
+  (`CoreBuilding` + `TerraDepotExtras`), PYRA `PyraBunker`, PELAGIA `PelagiaPier`, NIVALIS `NivalisDome`; dazu
+  `HangarStyleDetails` (Innenraum), `StationGarage`, `StationPad` (Platte unter jeder Station) und das Tor je Stil
+  (Rolltor, Stahl-Hubtor, Holz-Rolltor, Schleuse mit zwei Schiebehälften; Öffnen weiterhin über `hangarOpen`).
+* **Zusätzliche Kollision (nur ergänzt):** `WorldGen.StationExtras` – PYRA Felsflanke links der Halle, PELAGIA Hafenbecken des
+  Bootshauses (Art `stationdeco`, beide in einer Sackgasse ohne Stationen/Fahrzeugplätze).
+* **Leistung:** alles in einem Paletten-Mesh (39–47 Draws je Station wie vorher); Feindetail (Schrauben, Fugen, Nieten) in
+  „BaseDetail“, ab 75 m Kameraabstand ausgeblendet. Lichter: Wandleuchten in Planetenfarbe, Leuchtröhren (TERRA), Glut und
+  Rauch (PYRA, `FxView.Burst` nur in Kameranähe), Leuchtfeuer mit drehendem Strahl (PELAGIA), Heizstrahler/Warnfeuer (NIVALIS).
+* **Schlaf:** `ActorsView.SleepingVisual` = Server-`Sleeping` oder 6,5 s nach dem Serverereignis „sleep“ (allein wird die
+  Nacht sofort übersprungen – die Szene läuft dann in den Morgen). MIKO fährt auf den Ladeplatz (`SleepSpots`: Ladering im
+  Hangar, Laderaum, Ladefläche; mehrere Spieler nebeneinander), `RobotModel.ApplySleep` legt Haltung, geschlossene Augen,
+  Atmen, Ladekabel, Ladeleuchte und Z an; Aufwachen mit Strecken und Piepser. Alles aus repliziertem Zustand/Ereignis →
+  beim Mitspieler gleich. `CameraRig.SleepCamera`: langsame Kreisfahrt, danach zurück zur alten Blickrichtung. Das
+  Kabinenlicht im Hangar dimmt, solange jemand darin schläft.
+* **Prüfumgebung:** `dotnet run -- shots <Ordner> [Filter]` zeichnet Bilder aus dem laufenden Spiel (Software-Renderer, keine
+  Unity-Aufnahmen); `RP_SHOTS` eigene Aufnahmen, `RP_VIEWS`/`RP_PICK` für die statische Ansicht, `RP_SCHATTEN=1` Gebäudeschatten.
+
 ## Zusatzsysteme (Lieferlimit, Sturm abwarten, Helfer, Erfolge, Schnellreise, Ereignisse)
 
 Alles serverautoritativ in `Core/Sim/GameFeatures.cs` (Aktionen `wait`, `fasttravel`, `botfix`, `botfollow`, `botstay`;
