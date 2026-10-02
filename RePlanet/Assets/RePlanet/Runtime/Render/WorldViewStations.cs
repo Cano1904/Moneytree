@@ -132,8 +132,9 @@ namespace RePlanet
             var rail = steelD;
             mb.For(rail).Box(new Vector3(-0.2f, gy + 7.55f, fz + 0.05f), new Vector3(5.2f, 0.08f, 0.08f));
             for (int k = 0; k < 4; k++) det.For(rail).Box(new Vector3(-2.4f + k * 1.45f, gy + 7.95f, fz - 0.05f), new Vector3(0.05f, 0.85f, 0.05f));
-            float lx = -2.2f, ly = gy + 7.65f, lz = fz + 0.12f, H = 0.85f, r = 0.045f;
-            void Seg(float x0, float y0, float x1, float y1) { mb.For(neonMat).Tube(new Vector3(lx + x0, ly + y0, lz), new Vector3(lx + x1, ly + y1, lz), r, 6, true); }
+            // Lesbar von vorn (Blick nach −z): Schreibrichtung läuft in −x
+            float lx = 1.2f, ly = gy + 7.65f, lz = fz + 0.12f, H = 0.85f, r = 0.045f;
+            void Seg(float x0, float y0, float x1, float y1) { mb.For(neonMat).Tube(new Vector3(lx - x0, ly + y0, lz), new Vector3(lx - x1, ly + y1, lz), r, 6, true); }
             // M
             Seg(0f, 0f, 0f, H); Seg(0f, H, 0.32f, H * 0.45f); Seg(0.32f, H * 0.45f, 0.64f, H); Seg(0.64f, H, 0.64f, 0f);
             // I
