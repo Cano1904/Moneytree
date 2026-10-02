@@ -183,6 +183,28 @@ Sturm und Unterschlupf dämpfen; Lautstärke = Einstellung „Umgebung“.
   Meldungen/Ziele/Gründe werden beim Zeichnen übersetzt (die HUD-Kurzformen arbeiten auf dem deutschen Kanon).
 * Test `LocTests`: jeder deutsche Anzeigetext hat eine englische Übersetzung, Platzhalter und Leerzeichen stimmen.
 
+## TNT und Schätze im Müll
+
+* **Core:** Daten/Balancing `Core/Data/GameDataTnt.cs`, `Core/Data/GameDataTreasure.cs` (30 Schätze, 5 Satz-Erfolge mit Kosmetik);
+  Regeln `Core/Sim/TntRules.cs` (Wurfbahn `Rules.TntSimulate` – deterministisch, fester Zeitschritt, Server und Zielvorschau rechnen
+  gleich –, Zielhilfe `TntAim`, Müllberg-Größe `Rules.MoundScale` (Sauberkeit **und** Sprengstufen), `MoundBlastCheck`,
+  Flugziel Getroffener `TntKnockTarget`, Anteil am Hauptmüll `HeapCredit` → in `Rules.Cleanliness`); Ablauf `Core/Sim/GameTnt.cs`
+  (Aktionen `buytnt`, `tnt`, `tnthits`; `TickTnt` aus `TickFeatures`; Explosion, Stücke als `DynObj` mit `Heap` = Berg + 1,
+  Benommenheit `Game.Stunned`); Zustand `Core/Sim/TntState.cs` (`TntCharge`; Planetenteil `tnt`: scharfe Ladungen, Stufen,
+  Abklingzeiten, eingesammeltes Berg-Gewicht; Weltteile `tnt` (Host-Einstellung) und `treasure` (Samen, Funde, Umzüge);
+  `PlayerData.Tnt`). `Core/Sim/Treasures.cs`: Zuordnung Schatz → statisches Objekt aus dem Weltsamen (zwischengespeichert,
+  Server und Clients gleich), Fund in `Game.RemoveObj` (`FindTreasure`), Umzug bei älteren Ständen. Alle neuen Teile fehlen in alten
+  Ständen einfach (Standardwerte), Format bleibt v3.
+* **Klänge:** `Core/Audio/SynthFun.cs` (Zündschnur-Loop, Piepser, Wurf, Explosion, Trümmer, Fund, Benommen).
+* **Runtime:** `Runtime/Render/TntView.cs` (Zielvorschau, Bündel, Funken, Explosion, fliegende Stücke – solange ausgeblendet über
+  `TrashRenderer.HiddenUntil` –, Überschlag/Ruß/Sterne getroffener Roboter, `Wildlife.Scare`), `Runtime/Game/PlayerControllerTnt.cs`
+  (Zielen/Werfen, Flugbogen und Benommenheit des eigenen Roboters), `Runtime/Render/TreasureView.cs` (Funkeln, Fund-Anzeige, Hinweise),
+  `Runtime/Render/TreasureModels.cs` (30 prozedurale Modelle), `Runtime/UI/TreasureTab.cs` (Tablet-Reiter „Vitrine“, angemeldet per
+  `UIRoot.RegisterMenuTab`), `Runtime/UI/TntShop.cs` (Werkstatt-Zeile). Eingabe `GameAction.ThrowTnt` (Q, Controller B an Land).
+* **Prüfung:** `Tests/TntTests.cs`, `Tests/TreasureTests.cs`, Prüfumgebung `Tools/RenderHarness/ChecksFun.cs` (je Planet Müllberg
+  sprengen, Mitspieler treffen, Schatz finden). Kampagnen-Bot nutzt TNT, wo es sich lohnt (`CampaignBot.TryBlast`; Vergleich ohne
+  TNT: `BOT_NO_TNT=1`).
+
 ## Erweiterungspunkte
 
 * Neue Müllart: `GameData.DefineTrash` + Form in `MeshKit.Trash`.

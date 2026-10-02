@@ -178,13 +178,13 @@ namespace RePlanet.Core
             ps.MoundCool[mound] = Now + GameData.TntHeapCooldown;
             DP("tnt");
             S.AddStat("tntBlasts", 1); DW("stats");
-            // Müllarten des Bereichs (tragbar, ohne Wracks, Öl, Treibgut und schwere Gefahrstoffe)
+            // Müllarten des Bereichs – nur kleine Stücke (greifbar oder magnetisch, ≤ 6 kg; ohne Wracks, Öl, Treibgut, schwere Gefahrstoffe)
             var types = new List<string>();
             foreach (var s in GameData.Planets[ps.Id].Spawns[m.Area])
             {
                 var t = GameData.Trash[s.Type];
-                if (t.Crane || t.Oil || t.Floating || t.Hazard > 1 || t.Mass > 12f) continue;
-                if (t.Grab || t.Magnet || t.CutInto != null) types.Add(t.Id);
+                if (t.Crane || t.Oil || t.Floating || t.Hazard > 1 || t.Mass > 6f) continue;
+                if (t.Grab || t.Magnet) types.Add(t.Id);
             }
             if (types.Count == 0) types.Add(ps.Id == "pyra" ? "schrauben" : "dose");
             int count = GameData.TntPiecesPerStage + (m.Radius >= 7f ? 2 : 0);

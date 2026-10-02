@@ -492,6 +492,7 @@ public static partial class Checks
             ExposureInfo("Sturm (Tag)");
             BuildOut(app, g, pid, planet);
             FeatureChecks(app, g, pid, planet);
+            FunChecks(app, g, pid, planet);
             // Fotomodus mit Vorher-Ansicht
             PhotoMode.Active = true; PhotoMode.ShowBefore = true;
             Run(1.5f);

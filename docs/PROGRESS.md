@@ -118,6 +118,16 @@ Shader-Prüfung OK, Server-Rauchtest 17/17.
   Öffnen-Animation (GUI.matrix), 4:3 mit großer Textgröße, englische Beschriftungen der Reiter, ob das Flackern beim
   Nutzer damit weg ist (bitte mit F3 „Schriftatlas neu“/„Logo-Starts“ beobachten).
 
+## TNT werfen und Schätze im Müll
+- **TNT:** Ladungen in der Werkstatt (25/35/30/45 Credits, höchstens 3), werfen mit Zielvorschau (Q bzw. Controller B), Zündschnur 4 s,
+  Müllberge zerfallen stufenweise in sammelbare Stücke (15 % Staub, Anteil am Hauptmüll bis 25 % je Bereich), Treffer werfen Roboter
+  harmlos durch die Luft (Ruß, Sterne, 1,6 s benommen), Host-Einstellung „TNT trifft Mitspieler“. Nichts wird beschädigt.
+- **Schätze:** 30 Einzelstücke, Verteilung aus dem Weltsamen, Funkeln aus der Nähe, Fund-Anzeige, Tablet-Reiter „Vitrine“, 5 Satz-Erfolge
+  mit Kosmetik, unverkäuflich.
+- **Balancing:** Kampagnen-Bot vorher 9,83 h (Mensch-Modell 17,24 h); mit TNT je nach Lauf 9,72–9,94 h (Mensch 17,54–18,10 h) – für den Bot zeitneutral, Mensch-Modell im Mittel ≈ 3 % länger, im Rahmen der Schwankung (Läufe mit Umweg ×0,98…1,02 ohne TNT: 9,83–10,05 h bzw. 17,24–17,64 h).
+- Nicht in Unity getestet: Wurfgefühl/Zielvorschau, Explosion (Licht, Partikel, Kamerawackeln), Überschlag und Ruß am Roboter, Funkeln,
+  Vitrine-Symbole, Klangbild der neuen Synth-Klänge, Controller-Belegung B.
+
 ## Grenzen (Stand dieser Umgebung)
 - Kein Unity-Editor, kein Unity-Laufzeittest, keine echten Spiel-Screenshots, keine gebaute .exe.
 - Shader wurden nicht mit Unitys Compiler übersetzt (nur glslang-Prüfung).

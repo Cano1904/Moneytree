@@ -32,24 +32,24 @@ namespace RePlanet.Core
         /// <summary>Nach einer Sprengung muss sich der Staub legen, bevor derselbe Müllberg wieder gesprengt werden kann (s).</summary>
         public const float TntHeapCooldown = 12f;
         /// <summary>Stücke je Sprengung (vor dem Staubverlust); große Müllberge (Radius ab 7 m) +2.</summary>
-        public const int TntPiecesPerStage = 12;
+        public const int TntPiecesPerStage = 14;
         /// <summary>Anteil der Stücke, der als Staub verloren geht.</summary>
         public const float TntDustShare = 0.15f;
         /// <summary>
         /// Stücke aus gesprengten Müllbergen zählen beim Einsammeln zum Hauptmüll ihres Bereichs – höchstens bis zu diesem
         /// Anteil des Bereichs. Danach bringen Sprengungen nur noch Material.
         /// </summary>
-        public const float TntCleanShare = 0.15f;
+        public const float TntCleanShare = 0.25f;
 
         /// <summary>Preis einer Ladung in der Werkstatt (je Planet ≈ Wert einer Sprengung an unsortiertem Material).</summary>
         public static int TntPrice(string planet)
         {
             switch (planet)
             {
-                case "pyra": return 60;
-                case "pelagia": return 50;
-                case "nivalis": return 70;
-                default: return 40;
+                case "pyra": return 35;
+                case "pelagia": return 30;
+                case "nivalis": return 45;
+                default: return 25;
             }
         }
 

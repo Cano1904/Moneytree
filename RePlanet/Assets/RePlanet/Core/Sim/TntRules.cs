@@ -151,7 +151,7 @@ namespace RePlanet.Core
             V3 p = start, v = vel;
             if (path != null) { path.Clear(); path.Add(p); }
             float dt = GameData.TntStep, t = 0f;
-            int bounces = 0;
+            int bounces = 0, rollSteps = 0, stuck = 0;
             bool rolling = false, done = false;
             int mcount = l.Mounds.Count;
             var scales = new float[mcount];
@@ -196,18 +196,19 @@ namespace RePlanet.Core
                     else if (np.y <= gnd)
                     {
                         np.y = gnd;
-                        if (!rolling && v.y < -2.5f && bounces < 4) { v.y = -v.y * 0.3f; v.x *= 0.55f; v.z *= 0.55f; bounces++; }
+                        if (!rolling && v.y < -3.5f && bounces < 3) { v.y = -v.y * 0.25f; v.x *= 0.5f; v.z *= 0.5f; bounces++; }
                         else
                         {
                             rolling = true; v.y = 0f;
-                            v.x *= 0.82f; v.z *= 0.82f;
+                            v.x *= 0.78f; v.z *= 0.78f;
                             if (M.Sqrt(v.x * v.x + v.z * v.z) < 0.35f) done = true;
                         }
                     }
                     else if (rolling)
                     {
                         // abwärts rollend: am Boden bleiben, sonst wieder fallen
-                        if (np.y - gnd < 0.25f) np.y = gnd; else rolling = false;
+                        if (np.y - gnd < 0.25f) { np.y = gnd; v.x *= 0.9f; v.z *= 0.9f; if (M.Sqrt(v.x * v.x + v.z * v.z) < 0.35f) done = true; }
+                        else rolling = false;
                     }
                 }
                 if (Math.Abs(np.x) > 147f || Math.Abs(np.z) > 147f)
@@ -215,6 +216,9 @@ namespace RePlanet.Core
                     np = new V3(M.Clamp(np.x, -147f, 147f), np.y, M.Clamp(np.z, -147f, 147f));
                     v.x = 0; v.z = 0;
                 }
+                // Sicherung: nach 1 s Rollen bzw. ohne Bewegung (in einer Ecke, flacher Hang) bleibt die Ladung liegen
+                if (rolling && ++rollSteps > 30) done = true;
+                if (V3.Dist(np, p) < 0.003f) { if (++stuck > 8) done = true; } else stuck = 0;
                 p = np;
                 t += dt;
                 if (path != null) path.Add(p);
