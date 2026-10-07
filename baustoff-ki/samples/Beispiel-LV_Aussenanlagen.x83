@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<GAEB xmlns="http://www.gaeb.de/GAEB_DA_XML/DA83/3.2">
+<GAEBInfo><Version>3.2</Version><ProgSystem>Beispiel</ProgSystem></GAEBInfo>
+<PrjInfo><NamePrj>Außenanlagen Kita Sonnenschein</NamePrj></PrjInfo>
+<Award><DP>83</DP><BoQ><BoQInfo><Name>Außenanlagen</Name></BoQInfo><BoQBody>
+<BoQCtgy RNoPart="01"><LblTx><p><span>Pflasterarbeiten</span></p></LblTx><BoQBody><Itemlist>
+<Item RNoPart="0010"><Qty>245.500</Qty><QU>m2</QU><Description><CompleteText><DetailTxt><Text><p><span>Rechteckpflaster aus Beton, Format 20/10/8 cm, Farbe grau,</span></p><p><span>in Bettung aus Splitt 2/5 verlegen, Fugen mit Fugensand verfüllen.</span></p></Text></DetailTxt><OutlineText><OutlTxt><TextOutlTxt><p><span>Betonpflaster 20/10/8 cm grau</span></p></TextOutlTxt></OutlTxt></OutlineText></CompleteText></Description></Item>
+<Item RNoPart="0020"><Qty>245.500</Qty><QU>m2</QU><Description><CompleteText><DetailTxt><Text><p><span>Bettungsmaterial Splitt 2/5, Dicke 4 cm verdichtet.</span></p></Text></DetailTxt><OutlineText><OutlTxt><TextOutlTxt><p><span>Bettung Splitt 2/5</span></p></TextOutlTxt></OutlTxt></OutlineText></CompleteText></Description></Item>
+<Item RNoPart="0030"><Qty>86.000</Qty><QU>m</QU><Description><CompleteText><DetailTxt><Text><p><span>Tiefbord aus Beton, in Beton C12/15 mit Rückenstütze setzen.</span></p></Text></DetailTxt><OutlineText><OutlTxt><TextOutlTxt><p><span>Tiefbordstein 100/25/8 cm</span></p></TextOutlTxt></OutlTxt></OutlineText></CompleteText></Description></Item>
+<Item RNoPart="0040"><Qty>42.000</Qty><QU>m</QU><Description><CompleteText><DetailTxt><Text><p><span>Hochbord H 15/30, gerade, grau.</span></p></Text></DetailTxt><OutlineText><OutlTxt><TextOutlTxt><p><span>Hochbordstein 100/30/15 cm</span></p></TextOutlTxt></OutlTxt></OutlineText></CompleteText></Description></Item>
+<Item RNoPart="0050"><Qty>74.000</Qty><QU>m3</QU><Description><CompleteText><DetailTxt><Text><p><span>Frostschutzmaterial 0/32, Schichtdicke 30 cm, liefern und einbauen.</span></p></Text></DetailTxt><OutlineText><OutlTxt><TextOutlTxt><p><span>Frostschutzschicht 0/32</span></p></TextOutlTxt></OutlTxt></OutlineText></CompleteText></Description></Item>
+</Itemlist></BoQBody></BoQCtgy>
+<BoQCtgy RNoPart="02"><LblTx><p><span>Entwässerung</span></p></LblTx><BoQBody><Itemlist>
+<Item RNoPart="0010"><Qty>18.000</Qty><QU>m</QU><Description><CompleteText><DetailTxt><Text><p><span>Rinne aus Polymerbeton mit Gussrost, Baulänge 1,0 m.</span></p></Text></DetailTxt><OutlineText><OutlTxt><TextOutlTxt><p><span>Entwässerungsrinne Klasse C250, NW 100</span></p></TextOutlTxt></OutlTxt></OutlineText></CompleteText></Description></Item>
+<Item RNoPart="0020"><Qty>35.000</Qty><QU>m</QU><Description><CompleteText><DetailTxt><Text><p><span>KG 2000 Rohr DN 160 inkl. Muffen.</span></p></Text></DetailTxt><OutlineText><OutlTxt><TextOutlTxt><p><span>KG-Rohr DN 160, SN 8</span></p></TextOutlTxt></OutlTxt></OutlineText></CompleteText></Description></Item>
+<Item RNoPart="0030"><Provis>WithoutTotal</Provis><Qty>2.000</Qty><QU>St</QU><Description><CompleteText><DetailTxt><Text><p><span>Bedarfsposition: Straßenablauf komplett mit Aufsatz D400.</span></p></Text></DetailTxt><OutlineText><OutlTxt><TextOutlTxt><p><span>Straßenablauf 500/500</span></p></TextOutlTxt></OutlTxt></OutlineText></CompleteText></Description></Item>
+<Item RNoPart="0040"><QU>St</QU><Description><CompleteText><DetailTxt><Text><p><span>Schachtring aus Beton DN 1000, Höhe 500 mm.</span></p></Text></DetailTxt><OutlineText><OutlTxt><TextOutlTxt><p><span>Schachtring DN 1000</span></p></TextOutlTxt></OutlTxt></OutlineText></CompleteText></Description></Item>
+</Itemlist></BoQBody></BoQCtgy>
+<BoQCtgy RNoPart="03"><LblTx><p><span>Terrasse / Ausstattung</span></p></LblTx><BoQBody><Itemlist>
+<Item RNoPart="0010"><Qty>38.400</Qty><QU>m2</QU><Description><CompleteText><DetailTxt><Text><p><span>Feinsteinzeug-Terrassenplatten 60/60/2 cm auf Stelzlagern verlegen.</span></p></Text></DetailTxt><OutlineText><OutlTxt><TextOutlTxt><p><span>Terrassenplatte Feinsteinzeug 60/60/2 cm</span></p></TextOutlTxt></OutlTxt></OutlineText></CompleteText></Description></Item>
+<Item RNoPart="0020"><Qty>6.000</Qty><QU>St</QU><Description><CompleteText><DetailTxt><Text><p><span>Anlehnbügel aus Stahlrohr, zum Einbetonieren.</span></p></Text></DetailTxt><OutlineText><OutlTxt><TextOutlTxt><p><span>Fahrradbügel feuerverzinkt</span></p></TextOutlTxt></OutlTxt></OutlineText></CompleteText></Description></Item>
+<Item RNoPart="0030"><Qty>245.500</Qty><QU>m2</QU><Description><CompleteText><DetailTxt><Text><p><span>wie Pos. 01.0010</span></p></Text></DetailTxt><OutlineText><OutlTxt><TextOutlTxt><p><span>Betonpflaster 20/10/8 cm grau</span></p></TextOutlTxt></OutlTxt></OutlineText></CompleteText></Description></Item>
+</Itemlist></BoQBody></BoQCtgy>
+</BoQBody></BoQ></Award></GAEB>
