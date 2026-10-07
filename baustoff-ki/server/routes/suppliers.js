@@ -99,6 +99,7 @@ r.post('/projects/:id/requests', (req, res) => {
   if (!b.supplier_id) throw bad('Lieferant fehlt');
   let ids = (b.position_ids || []).map(Number);
   if (!ids.length && b.all_assigned) ids = all("SELECT p.id FROM lv_positions p JOIN lvs l ON l.id = p.lv_id WHERE l.project_id = ? AND p.supplier_id = ? AND p.pos_type != 'T' AND p.ek IS NULL", req.params.id, b.supplier_id).map((x) => x.id);
+  if (!ids.length && b.all_assigned) return res.json({ id: null, positions: 0 });
   if (!ids.length) throw bad('Keine Positionen für die Anfrage');
   const id = createOrExtendRequest({ projectId: Number(req.params.id), supplierId: b.supplier_id, positionIds: ids, channel: b.channel, contactId: b.contact_id, desiredDate: b.desired_date, userId: uid(req), user: userOf(req) });
   res.json({ id });
@@ -215,7 +216,7 @@ r.post('/projects/:id/quotes', (req, res) => {
       if (b.distribute_freight && b.freight_total && i.apply && pos?.qty && value > 0) freight = round((Number(b.freight_total) * (Number(i.price) * factor * pos.qty / value)) / pos.qty, 4);
       const disc = i.discount_pct ?? b.discount_pct ?? 0;
       const qiId = insert('supplier_quote_items', { quote_id: qid, position_id: i.position_id || null, text: i.text, article_no: i.article_no, qty: i.qty, unit: i.unit, price: Number(i.price), discount_pct: disc, freight, factor, delivery_days: i.delivery_days ?? null, delivery_text: i.delivery_text || b.delivery_time });
-      insert('prices', { product_id: pos?.product_id, supplier_id: b.supplier_id, project_id: projectId, position_id: pos?.id, text: pos?.short_text || i.text, group_name: pos?.group_name, price: Number(i.price) * factor, unit: pos?.unit || i.unit, qty: pos?.qty ?? i.qty, valid_until: b.valid_until || null, source: b.source || 'angebot', quote_id: qid });
+      insert('prices', { product_id: pos?.product_id, supplier_id: b.supplier_id, project_id: projectId, position_id: pos?.id, text: pos && i.text && i.text !== pos.short_text ? `${pos.short_text} | ${i.text}` : pos?.short_text || i.text, group_name: pos?.group_name, price: Number(i.price) * factor, unit: pos?.unit || i.unit, qty: pos?.qty ?? i.qty, valid_until: b.valid_until || null, source: b.source || 'angebot', quote_id: qid });
       if (i.apply && pos) {
         update('lv_positions', pos.id, { ek: round(Number(i.price) * factor, 4), discount_pct: disc, freight, supplier_id: b.supplier_id, quote_item_id: qiId, price_source: b.source || 'angebot', price_date: new Date().toISOString().slice(0, 10) });
         audit({ userId: uid(req), projectId, entity: 'position', entityId: pos.id, action: 'Preis übernommen', details: { oz: pos.oz, from: pos.ek, to: round(Number(i.price) * factor, 4), quote: qid } });

@@ -191,6 +191,8 @@ function Akte({ p, reload }) {
   );
 }
 
+const FIELD = { ek: 'EK', qty: 'Menge', unit: 'Einheit', markup_pct: 'Aufschlag %', markup_source: 'Aufschlagsquelle', supplier_id: 'Lieferant', discount_pct: 'Rabatt %', freight: 'Fracht', short_text: 'Kurztext', long_text: 'Langtext', group_name: 'Warengruppe', product_id: 'Produkt', pos_type: 'Art', vk_override: 'VK fix' };
+
 function History({ p, reload }) {
   const audit = useLoad(`/projects/${p.id}/audit`, [p.updated_at]);
   const [text, setText] = useState('');
@@ -199,8 +201,8 @@ function History({ p, reload }) {
   const describe = (a) => {
     const d = a.details || {};
     if (a.action === 'status') return `Status: ${statusLabel(d.from)} → ${statusLabel(d.to)}${d.auto ? ' (automatisch)' : ''}`;
-    if (a.action === 'geändert' && d) return `Pos. ${d.oz || ''}: ${Object.entries(d).filter(([k]) => k !== 'oz').map(([k, v]) => `${k} ${v?.from ?? '–'} → ${v?.to ?? '–'}`).join(', ')}`;
-    if (a.action === 'Massenänderung') return `${d.count} Positionen: ${(d.summary || []).map((s) => `${s.field} ${s.from} → ${s.to}`).join(', ')}`;
+    if (a.action === 'geändert' && d) return `Pos. ${d.oz || ''}: ${Object.entries(d).filter(([k]) => !['oz', 'price_source', 'price_date'].includes(k)).map(([k, v]) => `${FIELD[k] || k} ${v?.from ?? '–'} → ${v?.to ?? '–'}`).join(', ')}`;
+    if (a.action === 'Massenänderung') return `${d.count} Positionen: ${(d.summary || []).map((s) => `${FIELD[s.field] || s.field} ${s.from ?? '–'} → ${s.to}`).join(', ')}`;
     if (d.markup_pct !== undefined) return `${a.action}: ${d.markup_pct} % (${d.changed} geändert${d.skipped ? `, ${d.skipped} manuelle unverändert` : ''})`;
     return `${a.action}${d.filename ? `: ${d.filename}` : ''}${d.oz ? ` (Pos. ${d.oz})` : ''}${d.number ? ` ${d.number}` : ''}`;
   };

@@ -119,3 +119,9 @@ dotnet test tests/Glasscore.Tests            # Regeln, Netcode, Loopback-Match
 dotnet build tests/UnityCompileCheck         # Unity-API-Check aller Skripte
 dotnet run --project server/Glasscore.Server -- --port 27015
 ```
+
+---
+
+## Weitere Projekte in diesem Repository
+
+* [`baustoff-ki/`](baustoff-ki/README.md) – KI-LV- & Kalkulations-Arbeitsplatz für den Baustoffhandel (LV-Analyse, Lieferantenanfragen, Kalkulation, Angebots-PDF, Projektakte, Nachfassen, Plananalyse).

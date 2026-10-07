@@ -11,6 +11,15 @@ import misc from './routes/misc.js';
 import { HttpError } from './util.js';
 
 export const app = express();
+// Optionaler Zugangsschutz (HTTP Basic Auth) für den Betrieb im Netzwerk: APP_PASSWORD setzen
+if (process.env.APP_PASSWORD) {
+  app.use((req, res, next) => {
+    const [, b64] = (req.get('authorization') || '').split(' ');
+    const pass = b64 ? Buffer.from(b64, 'base64').toString().split(':').slice(1).join(':') : null;
+    if (pass === process.env.APP_PASSWORD) return next();
+    res.set('WWW-Authenticate', 'Basic realm="Baustoff-KI"').status(401).send('Anmeldung erforderlich');
+  });
+}
 app.use(express.json({ limit: '10mb' }));
 app.use('/api', projects, lv, suppliers, offers, misc);
 app.use('/api', (req, res) => res.status(404).json({ error: 'Unbekannter API-Endpunkt' }));

@@ -17,7 +17,7 @@ export default function RequestDialog({ projectId, positions, suppliers, onClose
   const start = async (ch) => {
     const r = await run(() => api.post(`/projects/${projectId}/requests`, { supplier_id: Number(supplierId), position_ids: positions.map((p) => p.id), channel: ch }));
     if (!r) return;
-    if (includeAll) await api.post(`/projects/${projectId}/requests`, { supplier_id: Number(supplierId), all_assigned: true, channel: ch }).catch(() => {}); // keine weiteren offenen Positionen ist kein Fehler
+    if (includeAll) await api.post(`/projects/${projectId}/requests`, { supplier_id: Number(supplierId), all_assigned: true, channel: ch });
     setChannel(ch); setRequestId(r.id);
   };
   if (requestId) return <Modal title={channel === 'telefon' ? '📞 Lieferant anrufen' : '✉ Anfrage-Mail'} onClose={onClose} wide><RequestView id={requestId} projectId={projectId} mode={channel} onDone={onClose} /></Modal>;
