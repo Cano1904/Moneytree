@@ -1,0 +1,36 @@
+{
+  "name": "baustoff-ki",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "KI-LV- & Kalkulations-Arbeitsplatz für den Baustoffhandel",
+  "scripts": {
+    "dev": "node --no-warnings --watch server/index.js & vite",
+    "dev:server": "node --no-warnings --watch server/index.js",
+    "dev:client": "vite",
+    "build": "vite build",
+    "start": "node --no-warnings server/index.js",
+    "test": "node --test tests/"
+  },
+  "engines": {
+    "node": ">=22.13"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.132.0",
+    "exceljs": "^4.4.0",
+    "express": "^5.2.1",
+    "fast-xml-parser": "^5.11.2",
+    "mammoth": "^1.13.0",
+    "multer": "^2.4.0",
+    "pdf-lib": "^1.17.1",
+    "pdfjs-dist": "^6.4.299",
+    "pdfkit": "^0.20.2"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-react": "^6.1.2",
+    "react": "^19.3.0",
+    "react-dom": "^19.3.0",
+    "react-router-dom": "^7.18.4",
+    "vite": "^8.3.3"
+  }
+}
