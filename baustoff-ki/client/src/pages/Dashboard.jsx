@@ -30,8 +30,8 @@ export default function Dashboard() {
         <div><h1>Guten Tag 👋</h1><div className="muted">Kundenanfrage → LV/Plan → Lieferanten → Preise → Kalkulation → Angebot → Versand → Nachfassen</div></div>
         <div className="row">{data.ai.enabled ? <Badge color="green">KI aktiv · {data.ai.model}</Badge> : <Link to="/einstellungen"><Badge color="yellow">KI aus – Regel-Modus (in Einstellungen aktivieren)</Badge></Link>}</div>
       </div>
-      <div className="grid g3" style={{ marginBottom: 14 }}>
-        {actions.map(([ico, t, s, fn]) => <button key={t} className="btn big" onClick={fn}><span className="ico">{ico}</span><span style={{ textAlign: 'left' }}>{t}<div className="muted small" style={{ fontWeight: 400 }}>{s}</div></span></button>)}
+      <div className="grid g3 actions" style={{ marginBottom: 14 }}>
+        {actions.map(([ico, t, s, fn]) => <button key={t} className="btn big" onClick={fn}><span className="ico">{ico}</span><span style={{ textAlign: 'left' }}>{t}<div className="muted small sub" style={{ fontWeight: 400 }}>{s}</div></span></button>)}
       </div>
       {empty && <div className="callout" style={{ marginBottom: 14 }}>Noch keine Projekte. Starten Sie mit <b>Neues LV</b> – oder laden Sie unter <Link to="/einstellungen">Einstellungen</Link> die Demo-Daten zum Ausprobieren.</div>}
       <div className="card">

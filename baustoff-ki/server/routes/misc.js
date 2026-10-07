@@ -3,7 +3,8 @@ import { Router } from 'express';
 import fs from 'node:fs';
 import path from 'node:path';
 import { db, all, get, insert, update, run, tx, audit, parseJsonCols, getSettings, setSettings, DATA_DIR } from '../db.js';
-import { saveDocument, readDocument, uid, must, bad, sendFile, todayIso, touchProject } from '../util.js';
+import { saveDocument, readDocument, uid, must, bad, sendFile, todayIso, touchProject, lanAddresses } from '../util.js';
+import QRCode from 'qrcode';
 import { upload, fixName } from './projects.js';
 import { createLv } from './lv.js';
 import { aiStatus, aiText, AiError } from '../services/ai.js';
@@ -123,6 +124,16 @@ r.post('/settings/cover', upload.single('file'), (req, res) => {
   res.json({ cover_document_id: id });
 });
 r.get('/ai/status', (req, res) => res.json(aiStatus()));
+
+/** iPhone-Einrichtung: Adressen im WLAN + QR-Code zum Abscannen mit der Kamera. */
+r.get('/mobile-info', async (req, res) => {
+  const host = req.get('host') || '';
+  const port = host.split(':')[1] || (req.protocol === 'https' ? '443' : '80');
+  const isLocal = /^(localhost|127\.|\[::1\])/.test(host);
+  const urls = isLocal ? lanAddresses().map((ip) => `${req.protocol}://${ip}:${port}`) : [`${req.protocol}://${host}`];
+  const qr = urls[0] ? await QRCode.toString(urls[0], { type: 'svg', margin: 1, width: 220 }) : null;
+  res.json({ urls, qr, secure: req.protocol === 'https' });
+});
 
 r.get('/users', (req, res) => res.json(all('SELECT * FROM users ORDER BY active DESC, name')));
 r.post('/users', (req, res) => { if (!req.body.name?.trim()) throw bad('Name fehlt'); res.json({ id: insert('users', { name: req.body.name.trim(), email: req.body.email, role: req.body.role || 'mitarbeiter' }) }); });

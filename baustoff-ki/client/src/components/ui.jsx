@@ -80,10 +80,13 @@ export function Modal({ title, onClose, children, footer, wide }) {
   );
 }
 
-export function Dropzone({ onFiles, accept, multiple = false, label = 'Datei hierher ziehen oder klicken', hint, disabled }) {
+export function Dropzone({ onFiles, accept, multiple = false, label = 'Datei hierher ziehen oder tippen', hint, disabled, camera = false }) {
   const [over, setOver] = useState(false);
   const ref = useRef();
+  const cam = useRef();
+  const mobile = useIsMobile();
   return (
+    <div>
     <div className={`drop ${over ? 'over' : ''}`} onClick={() => !disabled && ref.current.click()}
       onDragOver={(e) => { e.preventDefault(); setOver(true); }} onDragLeave={() => setOver(false)}
       onDrop={(e) => { e.preventDefault(); setOver(false); if (!disabled && e.dataTransfer.files.length) onFiles([...e.dataTransfer.files]); }}>
@@ -91,6 +94,11 @@ export function Dropzone({ onFiles, accept, multiple = false, label = 'Datei hie
       <div style={{ fontWeight: 600 }}>{label}</div>
       {hint && <div className="muted small">{hint}</div>}
       <input ref={ref} type="file" hidden accept={accept} multiple={multiple} onChange={(e) => { if (e.target.files.length) onFiles([...e.target.files]); e.target.value = ''; }} />
+    </div>
+    {camera && mobile && <>
+      <button type="button" className="btn primary camera-btn" disabled={disabled} onClick={() => cam.current.click()}>📷 Foto aufnehmen</button>
+      <input ref={cam} type="file" hidden accept="image/*" capture="environment" onChange={(e) => { if (e.target.files.length) onFiles([...e.target.files]); e.target.value = ''; }} />
+    </>}
     </div>
   );
 }
@@ -139,3 +147,16 @@ export async function copyText(text) {
 }
 
 export const Empty = ({ children }) => <div className="empty">{children}</div>;
+
+/** true auf Handy-Breite (≤ 760 px) – schaltet auf die Handy-Oberfläche um. */
+export function useIsMobile() {
+  const q = '(max-width: 760px)';
+  const [m, setM] = useState(() => typeof window !== 'undefined' && window.matchMedia(q).matches);
+  useEffect(() => {
+    const mq = window.matchMedia(q);
+    const h = () => setM(mq.matches);
+    mq.addEventListener('change', h);
+    return () => mq.removeEventListener('change', h);
+  }, []);
+  return m;
+}

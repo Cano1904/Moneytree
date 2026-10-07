@@ -29,6 +29,18 @@ Entwicklung mit Hot-Reload: `npm run dev` (API auf :3000, Oberfläche auf http:/
 | `ANTHROPIC_MODEL` | Modell (Standard `claude-opus-5-5`) |
 | `APP_PASSWORD` | Optionaler Zugangsschutz (HTTP-Basic-Auth, Benutzername beliebig) |
 
+## iPhone-App
+
+Baustoff-KI ist als **installierbare Web-App (PWA)** gebaut – kein App Store, kein Mac nötig:
+
+1. Server starten (`npm start`); in der Konsole steht die WLAN-Adresse, z. B. `http://192.168.1.20:3000`.
+2. Auf dem iPhone (im selben WLAN) unter **Einstellungen → iPhone-App einrichten** den QR-Code scannen oder die Adresse in **Safari** öffnen.
+3. **Teilen → „Zum Home-Bildschirm“** – die App startet danach im Vollbild mit eigenem Icon.
+
+Auf dem Handy gibt es eine eigene Oberfläche: untere Navigation (Start, Projekte, Anfragen, Nachfassen, Mehr), Positionen als Karten mit Menge/EK/Aufschlag direkt editierbar, Vollbild-Dialoge, **📷 Foto aufnehmen** für LVs, Lieferantenangebote und Pläne, Telefonnummern zum Antippen und Anrufen.
+
+Für den Zugriff **unterwegs** (außerhalb des WLANs) den Server per HTTPS erreichbar machen (Reverse-Proxy, VPN wie Tailscale o. Ä.) und `APP_PASSWORD` setzen. Unter HTTPS wird zusätzlich ein Service Worker aktiv (schnellerer Start, Oberfläche auch bei kurzem Funkloch).
+
 ## KI & Human-in-the-Loop
 
 * **Mit API-Key** liest Claude LVs (auch Scans/Fotos), Lieferantenangebote und Pläne. Ergebnisse kommen als strukturiertes JSON (Structured Outputs), jede Position trägt eine Erkennungssicherheit und konkrete Prüfhinweise.

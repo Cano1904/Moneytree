@@ -94,7 +94,7 @@ export function QuoteImport({ projectId, preset, suppliers, onClose }) {
     <Modal title="Lieferantenangebot übernehmen" wide onClose={onClose} footer={draft && <><button className="btn" onClick={onClose}>Abbrechen</button><button className="btn primary" disabled={busy || !supplierId || !draft.items.some((i) => i.price !== null)} onClick={save}>✓ Bestätigen & übernehmen ({draft.items.filter((i) => i.apply).length} in LV)</button></>}>
       <div className="stack">
         <Field label="Lieferant"><select value={supplierId} onChange={(e) => setSupplierId(e.target.value)}><option value="">Bitte wählen …</option>{suppliers.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}</select></Field>
-        {!draft && <Dropzone onFiles={analyze} disabled={busy} accept=".pdf,.xlsx,.csv,.docx,.png,.jpg,.jpeg,.txt" label={busy ? '⏳ Angebot wird ausgelesen …' : 'Angebot (PDF, Excel, Word, Foto) hier ablegen'} hint="Artikel, Preis, Einheit, Fracht, Rabatt, Lieferzeit und Preisbindung werden erkannt – Sie bestätigen vor der Übernahme." />}
+        {!draft && <Dropzone camera onFiles={analyze} disabled={busy} accept=".pdf,.xlsx,.csv,.docx,.png,.jpg,.jpeg,.txt" label={busy ? '⏳ Angebot wird ausgelesen …' : 'Angebot (PDF, Excel, Word, Foto) hier ablegen'} hint="Artikel, Preis, Einheit, Fracht, Rabatt, Lieferzeit und Preisbindung werden erkannt – Sie bestätigen vor der Übernahme." />}
         {draft && (
           <>
             {draft.warnings?.map((w) => <div key={w} className="callout warn">{w}</div>)}

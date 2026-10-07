@@ -35,7 +35,7 @@ function PlanStart() {
       {project ? (
         <div className="card">
           <div className="row between"><div>Projekt: <b>{project.name}</b></div><button className="btn sm" onClick={() => setPick(true)}>ändern</button></div>
-          <div style={{ marginTop: 12 }}><Dropzone accept=".pdf,.png,.jpg,.jpeg,.webp" disabled={busy} onFiles={async (f) => { const r = await run(() => api.upload(`/projects/${project.id}/plans`, f[0])); if (r) nav(`/plan/${r.id}`); }} label={busy ? 'Lade hoch …' : 'Plan hier ablegen (PDF, PNG, JPG)'} hint="Grundriss, Detail-, Terrassen-, Balkon-, Bewehrungs- oder Lageplan" /></div>
+          <div style={{ marginTop: 12 }}><Dropzone camera accept=".pdf,.png,.jpg,.jpeg,.webp" disabled={busy} onFiles={async (f) => { const r = await run(() => api.upload(`/projects/${project.id}/plans`, f[0])); if (r) nav(`/plan/${r.id}`); }} label={busy ? 'Lade hoch …' : 'Plan hier ablegen (PDF, PNG, JPG)'} hint="Grundriss, Detail-, Terrassen-, Balkon-, Bewehrungs- oder Lageplan" /></div>
         </div>
       ) : <Empty>Bitte Projekt wählen.</Empty>}
       {pick && <ProjectPicker title="Plan analysieren – Projekt wählen" onClose={() => setPick(false)} onPick={(p) => { setProject(p); setPick(false); }} />}
@@ -79,7 +79,7 @@ function PlanWork({ id }) {
         <div><div className="muted small"><Link to={`/projekte/${plan.project_id}?tab=plaene`}>{plan.project_name}</Link> › Plan</div><h1>📐 {plan.name}</h1></div>
         <div className="row">{plan.document_id && <a className="btn" href={docUrl(plan.document_id)} target="_blank" rel="noreferrer">Original öffnen</a>}</div>
       </div>
-      <div className="grid" style={{ gridTemplateColumns: 'minmax(0, 1.3fr) minmax(380px, 1fr)', alignItems: 'start' }}>
+      <div className="grid plan-layout">
         <PlanViewer docId={plan.document_id} mime={plan.mime} measurements={ms} onAdd={addMeasure} onCalibrate={(c) => save({ measurements: [...ms.filter((m) => m.kind !== 'kalibrierung'), { id: 'calib', kind: 'kalibrierung', label: 'Kalibrierung', ...c }] })} />
         <div className="stack">
           <Tabs tabs={[{ id: 'ki', label: '🤖 KI-Analyse' }, { id: 'masse', label: 'Maße', count: ms.filter((m) => m.kind !== 'kalibrierung').length }, { id: 'rechner', label: 'Berechnung' }, { id: 'liste', label: 'Materialliste', count: items.length }]} value={tab} onChange={setTab} />

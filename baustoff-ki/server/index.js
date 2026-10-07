@@ -8,9 +8,10 @@ import lv from './routes/lv.js';
 import suppliers from './routes/suppliers.js';
 import offers from './routes/offers.js';
 import misc from './routes/misc.js';
-import { HttpError } from './util.js';
+import { HttpError, lanAddresses } from './util.js';
 
 export const app = express();
+app.set('trust proxy', true); // korrektes https hinter Reverse-Proxy/Tunnel
 // Optionaler Zugangsschutz (HTTP Basic Auth) für den Betrieb im Netzwerk: APP_PASSWORD setzen
 if (process.env.APP_PASSWORD) {
   app.use((req, res, next) => {
@@ -39,5 +40,8 @@ app.use((err, req, res, _next) => {
 
 if (process.argv[1] && path.resolve(process.argv[1]) === path.resolve(import.meta.filename)) {
   const port = Number(process.env.PORT) || 3000;
-  app.listen(port, () => console.log(`Baustoff-KI läuft auf http://localhost:${port}`));
+  app.listen(port, () => {
+    console.log(`Baustoff-KI läuft auf http://localhost:${port}`);
+    for (const ip of lanAddresses()) console.log(`  im WLAN (z. B. iPhone): http://${ip}:${port}`);
+  });
 }

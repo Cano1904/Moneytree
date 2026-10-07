@@ -1,7 +1,7 @@
 // LV-Tabelle mit Kalkulation: Inline-Bearbeitung, Mehrfachauswahl, Aufschläge (global/Gruppe/Auswahl), Filter, Exporte
 import { memo, useCallback, useMemo, useRef, useState } from 'react';
 import { api, download, docUrl } from '../api.js';
-import { Badge, Dot, Dropzone, Empty, Field, Modal, NumInput, useAction, useLoad, useToast } from './ui.jsx';
+import { Badge, Dot, Dropzone, Empty, Field, Modal, NumInput, useAction, useIsMobile, useLoad, useToast } from './ui.jsx';
 import PositionDrawer from './PositionDrawer.jsx';
 import RequestDialog from './RequestDialog.jsx';
 import { fmtEUR, fmtNum, fmtPct, KNOWN_UNITS } from '../../../shared/format.js';
@@ -20,7 +20,7 @@ export function LvUpload({ projectId, onDone }) {
   return (
     <div className="card">
       <h2>LV hochladen</h2>
-      <Dropzone onFiles={up} disabled={busy} accept=".pdf,.xlsx,.xlsm,.csv,.docx,.x81,.x82,.x83,.x84,.x86,.d83,.p83,.d81,.xml,.png,.jpg,.jpeg,.txt"
+      <Dropzone camera onFiles={up} disabled={busy} accept=".pdf,.xlsx,.xlsm,.csv,.docx,.x81,.x82,.x83,.x84,.x86,.d83,.p83,.d81,.xml,.png,.jpg,.jpeg,.txt"
         label={busy ? '⏳ Dokument wird gelesen und analysiert …' : 'LV-Datei hierher ziehen oder klicken'}
         hint="PDF · Excel/CSV · GAEB (X83/X84/D83) · Word · Bild/Scan — das Original wird unverändert in der Projektakte gespeichert" />
       <div className="row" style={{ marginTop: 10 }}>
@@ -56,6 +56,7 @@ export default function LvWorkspace({ lvId, onChange, onDeleted }) {
   const lastClick = useRef(null);
   const [run, busy] = useAction();
   const toast = useToast();
+  const isMobile = useIsMobile();
 
   const positions = data?.positions || [];
   const visible = useMemo(() => positions.filter((p) => {
@@ -176,6 +177,16 @@ export default function LvWorkspace({ lvId, onChange, onDeleted }) {
         </div>
       )}
 
+      {isMobile ? (
+        <div>
+          {visible.map((p) => {
+            const title = p.title_path !== lastTitle && p.title_path ? <div key={`t${p.id}`} className="muted small" style={{ fontWeight: 700, margin: '12px 2px 6px' }}>{p.title_path}</div> : null;
+            lastTitle = p.title_path;
+            return [title, <MobileRow key={p.id} p={p} selected={sel.has(p.id)} toggle={toggle} onOpen={setOpen} patchPos={patchPos} />];
+          })}
+          {!visible.length && <Empty>{positions.length ? 'Keine Positionen für diesen Filter.' : 'Noch keine Positionen.'}</Empty>}
+        </div>
+      ) : (
       <div className="tablewrap">
         <table className="t">
           <thead><tr>
@@ -193,7 +204,8 @@ export default function LvWorkspace({ lvId, onChange, onDeleted }) {
         </table>
         {!visible.length && <Empty>{positions.length ? 'Keine Positionen für diesen Filter.' : 'Noch keine Positionen – über „＋ Position“ manuell erfassen.'}</Empty>}
       </div>
-      <div className="muted small">Tipp: Zeile anklicken für Details · Shift+Klick für Bereichsauswahl · Werte werden beim Verlassen des Feldes automatisch gespeichert · Positionsart: {Object.entries(POS_TYPES).map(([k, v]) => `${k}=${v}`).join(', ')}</div>
+      )}
+      <div className="muted small hide-mobile">Tipp: Zeile anklicken für Details · Shift+Klick für Bereichsauswahl · Werte werden beim Verlassen des Feldes automatisch gespeichert · Positionsart: {Object.entries(POS_TYPES).map(([k, v]) => `${k}=${v}`).join(', ')}</div>
 
       {open && <PositionDrawer id={open} projectId={project.id} mode={project.mode} suppliers={suppliers.data || []} onClose={() => setOpen(null)} onChanged={refresh}
         onPrev={idx > 0 ? () => setOpen(visible[idx - 1].id) : null} onNext={idx >= 0 && idx < visible.length - 1 ? () => setOpen(visible[idx + 1].id) : null} onRequest={(pos) => setReqFor([pos])} />}
@@ -238,5 +250,31 @@ const Row = memo(function Row({ p, selected, flash, toggle, onOpen, patchPos, su
       <td className="num"><b>{c.total !== null ? fmtNum(c.total) : ''}</b>{c.margin_pct !== null && <div style={{ fontSize: 11, color: c.below_min ? 'var(--red)' : 'var(--muted)' }}>{fmtPct(c.margin_pct)}</div>}</td>
       <td><Badge color={p.state.color}>{p.state.label}</Badge></td>
     </tr>
+  );
+});
+
+/** Handy-Ansicht einer Position: Karte mit den wichtigsten Feldern, Tippen öffnet die Details. */
+const MobileRow = memo(function MobileRow({ p, selected, toggle, onOpen, patchPos }) {
+  const c = p.calc;
+  const openFlags = (p.flags || []).filter((f) => !f.resolved && f.severity !== 'info');
+  return (
+    <div className={`mcard ${selected ? 'sel' : ''}`}>
+      <div className="row" style={{ flexWrap: 'nowrap', alignItems: 'flex-start' }} onClick={() => onOpen(p.id)}>
+        <input type="checkbox" checked={selected} onClick={(e) => { e.stopPropagation(); toggle(p.id, e); }} readOnly style={{ marginTop: 2 }} />
+        <div className="grow">
+          <div className="muted small"><Dot color={p.state.color} /> {p.oz} {p.pos_type !== 'N' && `· ${POS_TYPES[p.pos_type]}`} · {p.supplier_name || p.group_name || '–'}</div>
+          <div style={{ fontWeight: 600 }}>{p.short_text}</div>
+          {openFlags.length > 0 && <div className="small" style={{ color: 'var(--red)' }}>⚠ {openFlags[0].msg}</div>}
+        </div>
+        <div className="right nowrap"><b>{c.total !== null ? fmtEUR(c.total) : '–'}</b><div className="muted small">{c.vk !== null ? `EP ${fmtNum(c.vk)}` : p.state.label}</div></div>
+      </div>
+      {p.pos_type !== 'T' && (
+        <div className="mrow">
+          <label>Menge {p.unit || '?'}<NumInput value={p.qty} onCommit={(v) => patchPos(p.id, { qty: v })} /></label>
+          <label>EK €<NumInput value={p.ek} onCommit={(v) => patchPos(p.id, { ek: v })} placeholder="EK" /></label>
+          <label>Aufschlag %<NumInput value={p.markup_pct} onCommit={(v) => patchPos(p.id, { markup_pct: v })} /></label>
+        </div>
+      )}
+    </div>
   );
 });

@@ -136,7 +136,7 @@ function PlansTab({ p, reload, autoUpload, nav }) {
     <div className="grid g2">
       <div className="card">
         <h2>Plan hochladen & analysieren</h2>
-        <Dropzone onFiles={up} accept=".pdf,.png,.jpg,.jpeg,.webp" label={busy ? 'Lade hoch …' : autoUpload ? '👉 Bauplan hier ablegen' : 'Bauplan, Grundriss, Detail-, Terrassen- oder Bewehrungsplan'} hint="PDF, PNG, JPG – Maße werden per KI gelesen oder mit dem Messwerkzeug ermittelt" />
+        <Dropzone camera onFiles={up} accept=".pdf,.png,.jpg,.jpeg,.webp" label={busy ? 'Lade hoch …' : autoUpload ? '👉 Bauplan hier ablegen' : 'Bauplan, Grundriss, Detail-, Terrassen- oder Bewehrungsplan'} hint="PDF, PNG, JPG – Maße werden per KI gelesen oder mit dem Messwerkzeug ermittelt" />
       </div>
       <div className="card">
         <h2>Pläne im Projekt</h2>
@@ -158,7 +158,7 @@ function Akte({ p, reload }) {
         <div className="row" style={{ marginBottom: 10 }}>
           <select value={cat} onChange={(e) => setCat(e.target.value)} style={{ maxWidth: 260 }}>{Object.entries(DOC_CATEGORIES).filter(([k]) => !['lv_original', 'angebot'].includes(k)).map(([k, v]) => <option key={k} value={k}>{v}</option>)}</select>
         </div>
-        <Dropzone multiple onFiles={async (files) => { await run(() => api.upload(`/projects/${p.id}/documents`, files, { category: cat }, 'files'), `${files.length} Datei(en) abgelegt`); reload(); }} label={busy ? 'Lade hoch …' : 'Dateien hierher ziehen'} hint="Datenblätter, Korrespondenz, Deckblatt, Fotos – alles in der Akte" />
+        <Dropzone camera multiple onFiles={async (files) => { await run(() => api.upload(`/projects/${p.id}/documents`, files, { category: cat }, 'files'), `${files.length} Datei(en) abgelegt`); reload(); }} label={busy ? 'Lade hoch …' : 'Dateien hierher ziehen'} hint="Datenblätter, Korrespondenz, Deckblatt, Fotos – alles in der Akte" />
         <div className="callout" style={{ marginTop: 12 }}>
           <b>Deckblatt fürs Angebot:</b> Datei mit Kategorie „Deckblatt“ hochladen und hier als Projekt-Deckblatt festlegen – kein Ausdrucken & Einscannen mehr.
           <div style={{ marginTop: 8 }}>

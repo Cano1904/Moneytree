@@ -36,6 +36,7 @@ export default function Settings() {
           <Field label="Signatur Angebotsmail"><textarea value={s.signature || ''} onChange={set('signature')} /></Field>
         </div>
         <div className="stack">
+          <MobileSetup />
           <div className="card stack">
             <h2>Kalkulation & Ablauf</h2>
             <div className="grid g3">
@@ -75,6 +76,25 @@ export default function Settings() {
           </div>
         </div>
       </div>
+    </div>
+  );
+}
+
+function MobileSetup() {
+  const { data } = useLoad('/mobile-info');
+  return (
+    <div className="card stack">
+      <h2>📱 iPhone-App einrichten</h2>
+      <div className="row" style={{ alignItems: 'flex-start', gap: 16 }}>
+        {data?.qr && <div style={{ background: '#fff', padding: 6, borderRadius: 8, width: 150 }} dangerouslySetInnerHTML={{ __html: data.qr }} />}
+        <ol className="small grow" style={{ margin: 0, paddingLeft: 18 }}>
+          <li>iPhone im selben WLAN wie dieser Rechner.</li>
+          <li>QR-Code mit der Kamera scannen oder in Safari öffnen:<br />{(data?.urls || []).map((u) => <b key={u} style={{ display: 'block' }}>{u}</b>)}{data && !data.urls.length && <span className="muted">keine Netzwerkadresse gefunden</span>}</li>
+          <li>In Safari <b>Teilen</b> (□↑) → <b>„Zum Home-Bildschirm“</b>.</li>
+          <li>Baustoff-KI startet dann wie eine App – mit Kamera-Upload für LVs, Lieferantenangebote und Pläne.</li>
+        </ol>
+      </div>
+      {data && !data.secure && <div className="muted small">Tipp: Für unterwegs (außerhalb des WLANs) den Server über HTTPS erreichbar machen (z. B. Reverse-Proxy oder VPN) und <code>APP_PASSWORD</code> setzen.</div>}
     </div>
   );
 }

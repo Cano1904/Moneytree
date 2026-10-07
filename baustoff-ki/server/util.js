@@ -2,6 +2,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import crypto from 'node:crypto';
+import os from 'node:os';
 import { FILES_DIR, get, all, insert, run, audit, parseJsonCols, getSettings } from './db.js';
 import { STATUS_ORDER, FINAL_STATUS, positionState } from '../shared/status.js';
 import { calcPosition, calcTotals } from '../shared/pricing.js';
@@ -76,3 +77,6 @@ export const sendFile = (res, buf, filename, mime) => {
   res.send(buf);
 };
 export const todayIso = (offsetDays = 0) => { const d = new Date(); d.setDate(d.getDate() + offsetDays); return d.toISOString().slice(0, 10); };
+
+/** IPv4-Adressen im lokalen Netz – damit das iPhone den Server im WLAN findet. */
+export const lanAddresses = () => Object.values(os.networkInterfaces()).flat().filter((n) => n && n.family === 'IPv4' && !n.internal).map((n) => n.address);

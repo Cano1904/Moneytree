@@ -92,3 +92,52 @@ pre.mail { white-space: pre-wrap; font-family: inherit; background: var(--panel2
 .callout { padding: 12px 14px; border-radius: 10px; background: var(--blue-bg); color: var(--text); } .callout.warn { background: var(--yellow-bg); } .callout.err { background: var(--red-bg); }
 details > summary { cursor: pointer; color: var(--muted); }
 hr { border: none; border-top: 1px solid var(--line); margin: 14px 0; }
+
+/* ---------- Handy / iPhone ---------- */
+.bottomnav { display: none; }
+.menuitem { display: flex; align-items: center; gap: 12px; padding: 14px 16px; border-bottom: 1px solid var(--line); color: var(--text); }
+.menuitem:last-child { border-bottom: none; } .menuitem:hover { text-decoration: none; background: var(--panel2); } .menuitem .ico { font-size: 22px; }
+.mcard { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 12px; margin-bottom: 8px; }
+.mcard.sel { border-color: var(--accent); background: var(--accent-2); }
+.mcard .mrow { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; margin-top: 8px; align-items: end; }
+.mcard .mrow label { font-size: 11px; color: var(--muted); } .mcard .mrow input.cell { width: 100%; min-height: 40px; }
+.calc-layout { grid-template-columns: 260px 1fr; align-items: start; } .plan-layout { grid-template-columns: minmax(0, 1.3fr) minmax(380px, 1fr); align-items: start; }
+.show-mobile { display: none; }
+.camera-btn { margin-top: 10px; width: 100%; justify-content: center; }
+@media (max-width: 760px) {
+  body { -webkit-tap-highlight-color: transparent; }
+  .app { grid-template-columns: 1fr; }
+  .side { display: none; }
+  .top { padding: calc(env(safe-area-inset-top) + 8px) 12px 8px; gap: 6px; }
+  .top .search { max-width: none; }
+  .page { padding: 12px 12px calc(env(safe-area-inset-bottom) + 84px); }
+  .head { margin-bottom: 10px; } h1 { font-size: 20px; }
+  input, select, textarea { font-size: 16px; } /* verhindert Zoom beim Tippen auf dem iPhone */
+  .btn { min-height: 44px; } .btn.sm { min-height: 36px; }
+  .btn.big { min-height: 58px; }
+  .card { padding: 12px; }
+  html, body { overflow-x: hidden; } .main { overflow-x: hidden; }
+  .card table.t, .tablewrap { display: block; overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  .seg { flex-wrap: wrap; }
+  .tablewrap { max-height: none; border: none; background: none; }
+  .kpi .v { font-size: 19px; }
+  .modal-bg { padding: 0; place-items: stretch; }
+  .modal, .modal.wide { width: 100%; max-height: none; height: 100%; border-radius: 0; padding-bottom: env(safe-area-inset-bottom); }
+  .modal .mh { padding-top: calc(env(safe-area-inset-top) + 10px); }
+  .drawer { width: 100%; padding-bottom: env(safe-area-inset-bottom); } .drawer .dh { padding-top: calc(env(safe-area-inset-top) + 10px); }
+  .toasts { bottom: calc(env(safe-area-inset-bottom) + 76px); left: 12px; right: 12px; } .toast { max-width: none; }
+  .tabs { margin-left: -12px; margin-right: -12px; padding: 0 12px; }
+  .seg button { padding: 9px 10px; }
+  .pipeline { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .bottomnav { display: flex; position: fixed; left: 0; right: 0; bottom: 0; z-index: 30; background: var(--panel); border-top: 1px solid var(--line); padding: 4px 4px calc(env(safe-area-inset-bottom) + 4px); }
+  .bottomnav a { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 1px; font-size: 11px; color: var(--muted); padding: 6px 0; position: relative; }
+  .bottomnav a i { font-style: normal; font-size: 20px; } .bottomnav a.active { color: var(--accent); font-weight: 600; } .bottomnav a:hover { text-decoration: none; }
+  .bottomnav .cnt { position: absolute; top: 2px; left: 55%; background: var(--red); color: #fff; border-radius: 9px; font-size: 10px; padding: 0 5px; }
+  .hide-mobile { display: none !important; } .show-mobile { display: block; }
+  .g3, .g4 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .calc-layout, .plan-layout { grid-template-columns: minmax(0, 1fr); }
+  .actions { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+  .actions .btn.big { flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 10px 4px; white-space: normal; font-size: 13px; min-height: 84px; gap: 4px; }
+  .actions .btn.big span { text-align: center !important; } .actions .sub { display: none; }
+  .planview { max-height: 60vh; }
+}

@@ -19,8 +19,9 @@ export default function Calculators() {
   return (
     <div className="page">
       <div className="head"><div><h1>Material-Rechner</h1><div className="muted">Einfache Eingaben, nachvollziehbare Formeln. Fehlende Angaben werden nicht geraten.</div></div></div>
-      <div className="grid" style={{ gridTemplateColumns: '260px 1fr', alignItems: 'start' }}>
-        <div className="card" style={{ padding: 8 }}>
+      <div className="grid calc-layout">
+        <select className="show-mobile" value={calcId} onChange={(e) => setCalcId(e.target.value)}>{list.map((c) => <option key={c.id} value={c.id}>{c.icon} {c.name}</option>)}</select>
+        <div className="card hide-mobile" style={{ padding: 8 }}>
           {list.map((c) => <button key={c.id} className={`btn ${c.id === calcId ? 'primary' : 'ghost'}`} style={{ width: '100%', justifyContent: 'flex-start', marginBottom: 2, whiteSpace: 'normal', textAlign: 'left' }} onClick={() => setCalcId(c.id)}>{c.icon} {c.name}{!c.modes.includes(mode) && <span className="small" style={{ marginLeft: 'auto', opacity: 0.7 }}>{c.modes[0] === 'hochbau' ? 'HB' : 'GaLa'}</span>}</button>)}
         </div>
         <div className="stack">
